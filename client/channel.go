@@ -51,3 +51,14 @@ func (c *HTTPClient) ArchiveChannel(appID, channelID string) error {
 	}
 	return nil
 }
+
+// GetChannel returns channel details and release history
+func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+	path := fmt.Sprintf("/v1/app/%s/channel/%s/releases", appID, channelID)
+	respBody := channels.InlineResponse2001{}
+	err := c.doJSON("GET", path, http.StatusOK, nil, &respBody)
+	if err != nil {
+		return nil, nil, fmt.Errorf("GetChannel: %v", err)
+	}
+	return &respBody.Channel, respBody.Releases, nil
+}

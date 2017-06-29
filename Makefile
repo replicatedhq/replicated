@@ -1,3 +1,5 @@
+API_PKGS=apps channels releases
+
 docker:
 	docker build -t replicatedhq.replicated .
 
@@ -7,7 +9,7 @@ shell:
 		replicatedhq.replicated
 
 clean:
-	rm -rf gen
+	sudo rm -rf gen/go
 
 deps:
 	docker run --rm \
@@ -15,30 +17,41 @@ deps:
 		replicatedhq.replicated glide install
 
 test:
-	go test ./client
+	go test ./cli/test
 
-gen:
-	docker run --rm \
-		--volume `pwd`:/local \
-		swaggerapi/swagger-codegen-cli generate \
-		-Dmodels -DmodelsDocs=false \
-		-i https://api.replicated.com/vendor/v1/spec/channels.json \
-		-l go \
-		-o /local/gen/go/channels
-	docker run --rm \
-		--volume `pwd`:/local \
-		swaggerapi/swagger-codegen-cli generate \
-		-Dmodels -DmodelsDocs=false \
-		-i https://api.replicated.com/vendor/v1/spec/releases.json \
-		-l go \
-		-o /local/gen/go/releases
-	sudo chown -R ${USER}:${USER} gen/
-	# fix time.Time fields. Codegen generates empty Time struct.
-	rm gen/go/releases/time.go
-	sed -i 's/Time/time.Time/' gen/go/releases/app_release_info.go
-	# import "time"
-	docker run --rm \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicatedhq.replicated goimports -w gen/go/releases
+# fetch the swagger specs from the production Vendor API
+get-spec-prod:
+	mkdir -p gen/spec/
+	for PKG in ${API_PKGS}; do \
+		curl -o gen/spec/$$PKG.json \
+			https://api.replicated.com/vendor/v1/spec/$$PKG.json; \
+	done
 
-build: deps gen
+# generate the swagger specs from the local replicatedcom/vendor-api repo
+get-spec-local:
+	mkdir -p gen/spec/
+	docker run --rm \
+		--volume ${GOPATH}/src/github.com:/go/src/github.com \
+		replicatedhq.replicated /bin/bash -c ' \
+			for PKG in ${API_PKGS}; do \
+				swagger generate spec \
+					-b ../../replicatedcom/vendor-api/handlers/replv1/$$PKG \
+					-o gen/spec/$$PKG.json; \
+			done'
+
+gen-models:
+	for PKG in ${API_PKGS}; do \
+		docker run --rm \
+			--volume `pwd`:/local \
+			swaggerapi/swagger-codegen-cli generate \
+			-Dmodels -DmodelsDocs=false \
+			-i /local/gen/spec/$$PKG.json \
+			-l go \
+			-o /local/gen/go/$$PKG; \
+	done
+
+build: deps gen-models
+
+install:
+	go build -o replicated cli/main.go
+	mv replicated ${GOPATH}/bin
