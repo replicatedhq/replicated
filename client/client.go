@@ -6,17 +6,38 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	channels "github.com/replicatedhq/replicated/gen/go/channels"
+	releases "github.com/replicatedhq/replicated/gen/go/releases"
 )
 
-// A Client communicates with the Replicated Vendor API.
-type Client struct {
+type Client interface {
+	ListChannels(appID string) ([]channels.AppChannel, error)
+	CreateChannel(appID, name, desc string) ([]channels.AppChannel, error)
+	ArchiveChannel(appID, channelID string) error
+
+	ListReleases(appID string) ([]releases.AppReleaseInfo, error)
+	CreateRelease(appID string) (*releases.AppReleaseInfo, error)
+	UpdateRelease(appID string, sequence int64, yaml string) error
+	GetRelease(appID string, sequence int64) (*releases.AppReleaseInfo, error)
+	PromoteRelease(
+		appID string,
+		sequence int64,
+		label string,
+		notes string,
+		required bool,
+		channelIDs ...string) error
+}
+
+// A Client communicates with the Replicated Vendor HTTP API.
+type HTTPClient struct {
 	apiKey    string
 	apiOrigin string
 }
 
-// New returns a new client.
-func New(origin string, apiKey string) *Client {
-	c := &Client{
+// New returns a new  HTTP client.
+func New(origin string, apiKey string) Client {
+	c := &HTTPClient{
 		apiKey:    apiKey,
 		apiOrigin: origin,
 	}
@@ -24,7 +45,7 @@ func New(origin string, apiKey string) *Client {
 	return c
 }
 
-func (c *Client) doJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
+func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {

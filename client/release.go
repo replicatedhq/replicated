@@ -9,7 +9,7 @@ import (
 )
 
 // ListReleases lists all releases for an app.
-func (c *Client) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
+func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/releases", appID)
 	releases := make([]releases.AppReleaseInfo, 0)
 	if err := c.doJSON("GET", path, http.StatusOK, nil, &releases); err != nil {
@@ -19,7 +19,7 @@ func (c *Client) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
 }
 
 // CreateRelease adds a release to an app.
-func (c *Client) CreateRelease(appID string) (*releases.AppReleaseInfo, error) {
+func (c *HTTPClient) CreateRelease(appID string) (*releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/release", appID)
 	body := &releases.Body{
 		Source: "latest",
@@ -32,7 +32,7 @@ func (c *Client) CreateRelease(appID string) (*releases.AppReleaseInfo, error) {
 }
 
 // UpdateRelease updates a release's yaml.
-func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error {
+func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) error {
 	endpoint := fmt.Sprintf("/v1/app/%s/%d/raw", appID, sequence)
 	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(yaml))
 	if err != nil {
@@ -40,7 +40,7 @@ func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error 
 	}
 	req.Header.Set("Authorization", c.apiKey)
 	req.Header.Set("Content-Type", "application/yaml")
-	resp, err := (&http.Client{}).Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("UpdateRelease (%s %s): %v", req.Method, endpoint, err)
 	}
@@ -52,7 +52,7 @@ func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error 
 }
 
 // GetRelease returns a release's properties.
-func (c *Client) GetRelease(appID string, sequence int64) (*releases.AppReleaseInfo, error) {
+func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("%s/v1/app/%s/release/%d/properties", c.apiOrigin, appID, sequence)
 	release := &releases.AppReleaseInfo{}
 	if err := c.doJSON("GET", path, http.StatusOK, nil, release); err != nil {
@@ -62,7 +62,7 @@ func (c *Client) GetRelease(appID string, sequence int64) (*releases.AppReleaseI
 }
 
 // PromoteRelease points the specified channels at a release sequence.
-func (c *Client) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
+func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/%d/promote", appID, sequence)
 	body := &releases.Body1{
 		Label:        label,
