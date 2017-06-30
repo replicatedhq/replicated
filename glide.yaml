@@ -1,0 +1,4 @@
+package: github.com/replicatedhq/replicated
+import:
+- package: gopkg.in/go-resty/resty.v0
+  version: ^0.13.0

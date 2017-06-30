@@ -1,0 +1,10 @@
+hash: 7401793483743807d35d4a921e17dbab2bc293da606fa0b3b7729d9663576ffc
+updated: 2017-06-27T17:18:03.865507609-07:00
+imports:
+- name: golang.org/x/net
+  version: 455220fa52c866a8aa14ff5e8cc68cde16b8395e
+  subpackages:
+  - publicsuffix
+- name: gopkg.in/go-resty/resty.v0
+  version: cf81ed0a604d373be63b4c036c6b05c06520615f
+testImports: []
