@@ -7,7 +7,7 @@ import (
 // releaseCmd represents the release command
 var releaseCmd = &cobra.Command{
 	Use:   "release",
-	Short: "manage app releases",
+	Short: "Manage app releases",
 	Long:  `The release command allows vendors to create, display, modify, and archive their releases.`,
 }
 

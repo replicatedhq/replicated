@@ -8,9 +8,9 @@ import (
 
 // channelRmCmd represents the channelRm command
 var channelRmCmd = &cobra.Command{
-	Use:   "rm <id>",
+	Use:   "rm CHANNEL_ID",
 	Short: "Remove (archive) a channel",
-	Long:  `replicated channel rm 4d3d240ea1ec4dab0be3b2105ff4b4ed`,
+	Long:  "Remove (archive) a channel",
 }
 
 func init() {

@@ -13,10 +13,8 @@ import (
 // releaseInspectCmd represents the inspect command
 var releaseInspectCmd = &cobra.Command{
 	Use:   "inspect",
-	Short: "replicated release inspect <sequence>",
-	Long: `Print the YAML config for a release
-replicated release inspect 123
-	`,
+	Short: "Print the YAML config for a release",
+	Long:  "Print the YAML config for a release",
 }
 
 func init() {

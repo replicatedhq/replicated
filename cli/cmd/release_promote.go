@@ -14,9 +14,11 @@ var releaseVersion string
 
 // releasePromoteCmd represents the releasePromote command
 var releasePromoteCmd = &cobra.Command{
-	Use:   "promote <sequence> <channelID>",
+	Use:   "promote SEQUENCE CHANNEL",
 	Short: "Set the release for a channel",
-	Long:  `replicated release promote <sequence> <channelID>`,
+	Long: `Set the release for a channel
+
+Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
 }
 
 func init() {

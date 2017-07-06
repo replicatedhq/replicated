@@ -8,10 +8,8 @@ import (
 // lsCmd represents the ls command
 var releaseLsCmd = &cobra.Command{
 	Use:   "ls",
-	Short: "list all of an app's releases",
-	Long: `List all of an app's releases
-	replicatedReleaseLs
-`,
+	Short: "List all of an app's releases",
+	Long:  "List all of an app's releases",
 }
 
 func init() {

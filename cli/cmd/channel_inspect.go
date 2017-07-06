@@ -12,7 +12,7 @@ import (
 var channelInspectCmd = &cobra.Command{
 	Use:   "inspect",
 	Short: "Show full details for a channel",
-	Long:  `replicated channel inspect be52315888f23408e2e4dc9242d4cc2c`,
+	Long:  "Show full details for a channel",
 }
 
 func init() {

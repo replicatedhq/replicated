@@ -10,8 +10,9 @@ var createReleaseYaml string
 
 var releaseCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "create a new release",
-	Long:  `Provide YAML configuration for the next release in your sequence.`,
+	Short: "Create a new release",
+	Long: `Create a new release by providing YAML configuration for the next release in
+your sequence.`,
 }
 
 func init() {
@@ -21,7 +22,6 @@ func init() {
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	// TODO can cobra do this?
 	if createReleaseYaml == "" {
 		return fmt.Errorf("yaml is required")
 	}
