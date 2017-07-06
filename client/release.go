@@ -33,7 +33,7 @@ func (c *HTTPClient) CreateRelease(appID string) (*releases.AppReleaseInfo, erro
 
 // UpdateRelease updates a release's yaml.
 func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) error {
-	endpoint := fmt.Sprintf("/v1/app/%s/%d/raw", appID, sequence)
+	endpoint := fmt.Sprintf("%s/v1/app/%s/%d/raw", c.apiOrigin, appID, sequence)
 	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(yaml))
 	if err != nil {
 		return err
@@ -42,19 +42,22 @@ func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) er
 	req.Header.Set("Content-Type", "application/yaml")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("UpdateRelease (%s %s): %v", req.Method, endpoint, err)
+		return fmt.Errorf("UpdateRelease: %v", err)
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
+		if badRequestErr, err := unmarshalBadRequest(resp.Body); err == nil {
+			return badRequestErr
+		}
 		return fmt.Errorf("UpdateRelease (%s %s): status %d", req.Method, endpoint, resp.StatusCode)
 	}
 	return nil
 }
 
 // GetRelease returns a release's properties.
-func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppReleaseInfo, error) {
-	path := fmt.Sprintf("%s/v1/app/%s/release/%d/properties", c.apiOrigin, appID, sequence)
-	release := &releases.AppReleaseInfo{}
+func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
+	path := fmt.Sprintf("/v1/app/%s/%d/properties", appID, sequence)
+	release := &releases.AppRelease{}
 	if err := c.doJSON("GET", path, http.StatusOK, nil, release); err != nil {
 		return nil, fmt.Errorf("GetRelease: %v", err)
 	}

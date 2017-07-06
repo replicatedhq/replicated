@@ -4,22 +4,31 @@ package client
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
+	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
 )
 
+var ErrNotFound = errors.New("Not found")
+
 type Client interface {
+	GetAppBySlug(slug string) (*apps.App, error)
+	CreateApp(name string) (*apps.App, error)
+	DeleteApp(id string) error
+
 	ListChannels(appID string) ([]channels.AppChannel, error)
 	CreateChannel(appID, name, desc string) ([]channels.AppChannel, error)
 	ArchiveChannel(appID, channelID string) error
+	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
 
 	ListReleases(appID string) ([]releases.AppReleaseInfo, error)
 	CreateRelease(appID string) (*releases.AppReleaseInfo, error)
 	UpdateRelease(appID string, sequence int64, yaml string) error
-	GetRelease(appID string, sequence int64) (*releases.AppReleaseInfo, error)
+	GetRelease(appID string, sequence int64) (*releases.AppRelease, error)
 	PromoteRelease(
 		appID string,
 		sequence int64,
@@ -50,7 +59,7 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 	var buf bytes.Buffer
 	if reqBody != nil {
 		if err := json.NewEncoder(&buf).Encode(reqBody); err != nil {
-			return fmt.Errorf("%s %s: %v", method, endpoint, err)
+			return err
 		}
 	}
 	req, err := http.NewRequest(method, endpoint, &buf)
@@ -62,9 +71,12 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 	req.Header.Set("Accept", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("%s %s: %v", method, endpoint, err)
+		return err
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrNotFound
+	}
 	if resp.StatusCode != successStatus {
 		return fmt.Errorf("%s %s: status %d", method, endpoint, resp.StatusCode)
 	}

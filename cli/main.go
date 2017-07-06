@@ -1,0 +1,15 @@
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/replicatedhq/replicated/cli/cmd"
+)
+
+func main() {
+	if err := cmd.Execute(os.Stdout); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}
