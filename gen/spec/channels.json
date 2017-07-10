@@ -1,0 +1,680 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "List, create, update, delete and archive channels.",
+    "title": "Vendor API V1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/app/{app_id}/channel": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Create a channel for an app.",
+        "operationId": "createChannel",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON input",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/createChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Update a channel for an app.",
+        "operationId": "updateChannel",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON input",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/archive": {
+      "post": {
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Archive a channel for an app.",
+        "operationId": "archiveChannel",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/responseOk"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/release/{sequence}": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel",
+          "release"
+        ],
+        "summary": "Update an existing release.",
+        "operationId": "updateChannelReleases",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON payload",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "version",
+                "release_notes",
+                "required"
+              ],
+              "properties": {
+                "release_notes": {
+                  "type": "string",
+                  "x-go-name": "ReleaseNotes"
+                },
+                "required": {
+                  "type": "boolean",
+                  "x-go-name": "Required"
+                },
+                "version": {
+                  "type": "string",
+                  "x-go-name": "Version"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/releases": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel",
+          "releases"
+        ],
+        "summary": "List the releases for an app channel.",
+        "operationId": "listChannelReleases",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listChannelReleasesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channels": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "channels"
+        ],
+        "summary": "List channels for an app.",
+        "operationId": "listChannels",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listChannelsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AppChannel": {
+      "description": "An app channel belongs to an app. It contains references to the top (current)\nrelease in the channel.",
+      "type": "object",
+      "title": "AppChannel represents a single app channel",
+      "required": [
+        "Id",
+        "Name",
+        "Description"
+      ],
+      "properties": {
+        "Adoption": {
+          "$ref": "#/definitions/ChannelAdoption"
+        },
+        "Description": {
+          "description": "Description that will be shown during license installation",
+          "type": "string"
+        },
+        "Id": {
+          "description": "The ID of the channel",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "LicenseCounts": {
+          "$ref": "#/definitions/LicenseCounts"
+        },
+        "Name": {
+          "description": "The name of channel",
+          "type": "string"
+        },
+        "Position": {
+          "description": "The position for which the channel occurs in a list",
+          "type": "integer",
+          "format": "int64"
+        },
+        "ReleaseLabel": {
+          "description": "The label of the current release sequence",
+          "type": "string"
+        },
+        "ReleaseNotes": {
+          "description": "Release notes for the current release sequence",
+          "type": "string"
+        },
+        "ReleaseSequence": {
+          "description": "A reference to the current release sequence",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "ChannelAdoption": {
+      "description": "ChannelAdoption represents the versions that licenses are on in the channel",
+      "type": "object",
+      "properties": {
+        "current_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountActive"
+        },
+        "current_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountAll"
+        },
+        "other_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountActive"
+        },
+        "other_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountAll"
+        },
+        "previous_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountActive"
+        },
+        "previous_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountAll"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "ChannelRelease": {
+      "type": "object",
+      "properties": {
+        "airgap_build_error": {
+          "type": "string",
+          "x-go-name": "AirgapBuildError"
+        },
+        "airgap_build_status": {
+          "type": "string",
+          "x-go-name": "AirgapBuildStatus"
+        },
+        "channel_id": {
+          "type": "string",
+          "x-go-name": "ChannelId"
+        },
+        "channel_sequence": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ChannelSequence"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Created"
+        },
+        "release_notes": {
+          "type": "string",
+          "x-go-name": "ReleaseNotes"
+        },
+        "release_sequence": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReleaseSequence"
+        },
+        "required": {
+          "type": "boolean",
+          "x-go-name": "Required"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Updated"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseCounts": {
+      "description": "LicenseCounts is a struct to hold license count information",
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Active"
+        },
+        "airgap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Airgap"
+        },
+        "inactive": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Inactive"
+        },
+        "total": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Total"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    }
+  },
+  "responses": {
+    "createChannelResponse": {
+      "description": "CreateChannelResponse contains the JSON channels list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "AppChannel": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppChannel"
+            }
+          }
+        }
+      }
+    },
+    "listChannelReleasesResponse": {
+      "description": "ListChannelReleasesResponse lists the channel releases",
+      "schema": {
+        "type": "object",
+        "required": [
+          "channel",
+          "releases"
+        ],
+        "properties": {
+          "channel": {
+            "$ref": "#/definitions/AppChannel"
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ChannelRelease"
+            },
+            "x-go-name": "Releases"
+          }
+        }
+      }
+    },
+    "listChannelsResponse": {
+      "description": "ListChannelsResponse contains the JSON channels list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "AppChannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppChannel"
+            }
+          }
+        }
+      }
+    },
+    "responseErrBadRequest": {
+      "description": "Returned on bad input"
+    },
+    "responseErrConflict": {
+      "description": "Returned on a conflict"
+    },
+    "responseErrForbidden": {
+      "description": "Returned if the caller does not have the needed permission"
+    },
+    "responseErrNotFound": {
+      "description": "Returned on resource not found"
+    },
+    "responseErrUnauthorized": {
+      "description": "Return if the caller is not authorized"
+    },
+    "responseNoContent": {
+      "description": "On success, no payload returned"
+    },
+    "responseOk": {
+      "description": "On success"
+    }
+  }
+}

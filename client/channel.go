@@ -47,6 +47,9 @@ func (c *HTTPClient) ArchiveChannel(appID, channelID string) error {
 	}
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
+		}
 		return fmt.Errorf("ArchiveChannel (%s %s): status %d", req.Method, endpoint, resp.StatusCode)
 	}
 	return nil

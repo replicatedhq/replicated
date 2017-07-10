@@ -20,7 +20,7 @@ const (
 
 var appSlug string
 var apiToken string
-var apiOrigin = "https://api.replicated.com"
+var apiOrigin = "https://api.replicated.com/vendor"
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&appSlug, "app", "", "The app slug to use in all calls")

@@ -8,9 +8,6 @@ shell:
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicatedhq.replicated
 
-clean:
-	sudo rm -rf gen/go
-
 deps:
 	docker run --rm \
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
@@ -39,6 +36,7 @@ get-spec-local:
 					-o gen/spec/$$PKG.json; \
 			done'
 
+# generate from the specs in gen/spec, which come from either get-spec-prod or get-spec-local
 gen-models:
 	for PKG in ${API_PKGS}; do \
 		docker run --rm \
@@ -50,8 +48,13 @@ gen-models:
 			-o /local/gen/go/$$PKG; \
 	done
 
-build: deps gen-models
-
-install:
+build:
 	go build -o replicated cli/main.go
 	mv replicated ${GOPATH}/bin
+
+# release the latest tag
+release:
+	docker run --rm -it \
+		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
+		--env GITHUB_TOKEN=${GITHUB_TOKEN} \
+		replicatedhq.replicated goreleaser

@@ -10,6 +10,9 @@ RUN go get github.com/spf13/cobra/cobra
 
 RUN go get github.com/go-swagger/go-swagger/cmd/swagger
 
+RUN curl --location -o goreleaser.deb https://github.com/goreleaser/goreleaser/releases/download/v0.24.0/goreleaser_Linux_x86_64.deb
+RUN dpkg -i goreleaser.deb
+
 WORKDIR $PROJECTPATH
 
 CMD ["/bin/bash"]

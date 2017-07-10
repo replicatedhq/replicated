@@ -1,0 +1,926 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Create, list, promote, update and archive releases.",
+    "title": "Vendor API V1",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/app/{app_id}/release": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Create a new release.",
+        "operationId": "createRelease",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Create release parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "source",
+                "sourcedata"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "source": {
+                  "type": "string",
+                  "x-go-name": "Source"
+                },
+                "sourcedata": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "SourceData"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/createRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/releases": {
+      "get": {
+        "description": "Deprecated - please use the list releases with paging route.",
+        "produces": [
+          "application/json",
+          "Deprecated: true"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "releases"
+        ],
+        "summary": "Lists the releases for an app.",
+        "operationId": "listAppRelease",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/releases/paged": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "releases"
+        ],
+        "summary": "Returns a paged set of releases for an app.",
+        "operationId": "pagedListAppRelease",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Start",
+            "description": "Start of the next page, defaults to zero",
+            "name": "start",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Count",
+            "description": "Number of elements to return per page, defaults to 30",
+            "name": "count",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/appResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/archive": {
+      "post": {
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Archive a release.",
+        "operationId": "archiveReleaseProperties",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/preflightchecks": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release preflight checks.",
+        "operationId": "readPreflightChecks",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readPreflightChecks"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/promote": {
+      "post": {
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Promote a release.",
+        "operationId": "promoteReleaseProperties",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Archive parameters",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "channels",
+                "release_notes",
+                "label",
+                "required"
+              ],
+              "properties": {
+                "channels": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "ChannelIDs"
+                },
+                "label": {
+                  "type": "string",
+                  "x-go-name": "Label"
+                },
+                "release_notes": {
+                  "type": "string",
+                  "x-go-name": "ReleaseNotes"
+                },
+                "required": {
+                  "type": "boolean",
+                  "x-go-name": "Required"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/properties": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release properties.",
+        "operationId": "readReleaseProperties",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readReleaseProperties"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/raw": {
+      "get": {
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release config.",
+        "operationId": "readRawRelease",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readRawRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "put": {
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Update the release config.",
+        "operationId": "updateRawRelease",
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Config",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateRawRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          },
+          "409": {
+            "$ref": "#/responses/responseErrConflict"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "App": {
+      "description": "An app belongs to a team. It contains channels onto which releases can be\npromoted.",
+      "type": "object",
+      "title": "App represents a vendor application",
+      "required": [
+        "Id",
+        "Name",
+        "Slug"
+      ],
+      "properties": {
+        "Id": {
+          "description": "The ID of the app",
+          "type": "string"
+        },
+        "Name": {
+          "description": "The name of the app",
+          "type": "string"
+        },
+        "Slug": {
+          "description": "A unique slug for the app",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppChannel": {
+      "description": "An app channel belongs to an app. It contains references to the top (current)\nrelease in the channel.",
+      "type": "object",
+      "title": "AppChannel represents a single app channel",
+      "required": [
+        "Id",
+        "Name",
+        "Description"
+      ],
+      "properties": {
+        "Adoption": {
+          "$ref": "#/definitions/ChannelAdoption"
+        },
+        "Description": {
+          "description": "Description that will be shown during license installation",
+          "type": "string"
+        },
+        "Id": {
+          "description": "The ID of the channel",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "LicenseCounts": {
+          "$ref": "#/definitions/LicenseCounts"
+        },
+        "Name": {
+          "description": "The name of channel",
+          "type": "string"
+        },
+        "Position": {
+          "description": "The position for which the channel occurs in a list",
+          "type": "integer",
+          "format": "int64"
+        },
+        "ReleaseLabel": {
+          "description": "The label of the current release sequence",
+          "type": "string"
+        },
+        "ReleaseNotes": {
+          "description": "Release notes for the current release sequence",
+          "type": "string"
+        },
+        "ReleaseSequence": {
+          "description": "A reference to the current release sequence",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppRelease": {
+      "type": "object",
+      "properties": {
+        "Config": {
+          "type": "string"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Editable": {
+          "type": "boolean"
+        },
+        "EditedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Sequence": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppReleaseInfo": {
+      "description": "AppReleaseInfo represents an app release",
+      "type": "object",
+      "properties": {
+        "ActiveChannels": {
+          "description": "The active channels",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppChannel"
+          }
+        },
+        "AppId": {
+          "description": "The application ID",
+          "type": "string"
+        },
+        "CreatedAt": {
+          "description": "The time at which the release was created",
+          "type": "string",
+          "format": "date-time"
+        },
+        "Editable": {
+          "description": "If the release is editable",
+          "type": "boolean"
+        },
+        "EditedAt": {
+          "description": "The last time at which the release was changed",
+          "type": "string",
+          "format": "date-time"
+        },
+        "PreflightChecks": {
+          "description": "Release preflight checks",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreflightCheck"
+          }
+        },
+        "Sequence": {
+          "description": "The app sequence number",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Version": {
+          "description": "The vendor supplied version",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "ChannelAdoption": {
+      "description": "ChannelAdoption represents the versions that licenses are on in the channel",
+      "type": "object",
+      "properties": {
+        "current_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountActive"
+        },
+        "current_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountAll"
+        },
+        "other_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountActive"
+        },
+        "other_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountAll"
+        },
+        "previous_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountActive"
+        },
+        "previous_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountAll"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseCounts": {
+      "description": "LicenseCounts is a struct to hold license count information",
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Active"
+        },
+        "airgap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Airgap"
+        },
+        "inactive": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Inactive"
+        },
+        "total": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Total"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "PreflightCheck": {
+      "type": "object",
+      "properties": {
+        "Category": {
+          "type": "string"
+        },
+        "CheckName": {
+          "type": "string"
+        },
+        "CheckValue": {
+          "type": "string"
+        },
+        "IsRequired": {
+          "type": "boolean"
+        },
+        "Scheduler": {
+          "type": "string"
+        },
+        "Score": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    }
+  },
+  "responses": {
+    "appResponse": {
+      "description": "AppResponse represents an app.",
+      "schema": {
+        "$ref": "#/definitions/App"
+      }
+    },
+    "createRelease": {
+      "description": "CreateReleaseResponse contains the new release properties"
+    },
+    "listAppRelease": {
+      "description": "ListAppResponse contains a JSON array of app release data",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/AppReleaseInfo"
+        }
+      }
+    },
+    "pagedListAppRelease": {
+      "description": "PagedListAppResponse contains a releases array and the total count found",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/AppReleaseInfo"
+        }
+      }
+    },
+    "readPreflightChecks": {
+      "description": "ReadPreflightChecksResponse release preflight checks"
+    },
+    "readRawRelease": {
+      "description": "ReadRawReleaseResponse contains the app config contents",
+      "headers": {
+        "Editable": {
+          "type": "string",
+          "description": "True if the config is editable\nRequired: true\nIn: header"
+        }
+      }
+    },
+    "readReleaseProperties": {
+      "description": "ReadReleaseResponse release properties",
+      "schema": {
+        "$ref": "#/definitions/AppRelease"
+      }
+    },
+    "responseErrBadRequest": {
+      "description": "Returned on bad input"
+    },
+    "responseErrConflict": {
+      "description": "Returned on a conflict"
+    },
+    "responseErrForbidden": {
+      "description": "Returned if the caller does not have the needed permission"
+    },
+    "responseErrNotFound": {
+      "description": "Returned on resource not found"
+    },
+    "responseErrUnauthorized": {
+      "description": "Return if the caller is not authorized"
+    },
+    "responseNoContent": {
+      "description": "On success, no payload returned"
+    },
+    "responseOk": {
+      "description": "On success"
+    },
+    "updateRawRelease": {
+      "description": "UpdateRawReleaseResponse contains the app config contents"
+    }
+  }
+}

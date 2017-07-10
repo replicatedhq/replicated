@@ -1,3 +1,2 @@
-gen/
-vendor/
+dist/
 .glide
