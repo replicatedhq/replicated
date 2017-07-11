@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
@@ -14,7 +14,7 @@ var releaseVersion string
 
 // releasePromoteCmd represents the releasePromote command
 var releasePromoteCmd = &cobra.Command{
-	Use:   "promote SEQUENCE CHANNEL",
+	Use:   "promote SEQUENCE CHANNEL_ID",
 	Short: "Set the release for a channel",
 	Long: `Set the release for a channel
 
@@ -32,8 +32,7 @@ func init() {
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	// parse sequence and channel ID positional arguments
 	if len(args) != 2 {
-		cmd.Usage()
-		os.Exit(1)
+		return errors.New("releasese sequence and channel ID are required")
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {

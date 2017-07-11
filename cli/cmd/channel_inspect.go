@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -10,7 +11,7 @@ import (
 
 // channelInspectCmd represents the channelInspect command
 var channelInspectCmd = &cobra.Command{
-	Use:   "inspect",
+	Use:   "inspect CHANNEL_ID",
 	Short: "Show full details for a channel",
 	Long:  "Show full details for a channel",
 }
@@ -21,7 +22,7 @@ func init() {
 
 func (r *runners) channelInspect(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf(cmd.UsageString())
+		return errors.New("channel ID is required")
 	}
 	chanID := args[0]
 
