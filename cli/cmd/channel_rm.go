@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -19,7 +20,7 @@ func init() {
 
 func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("channel ID is required")
+		return errors.New("channel ID is required")
 	}
 	chanID := args[0]
 

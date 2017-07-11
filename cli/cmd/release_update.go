@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -26,7 +27,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("yaml is required")
 	}
 	if len(args) < 1 {
-		return fmt.Errorf("release sequence is required")
+		return errors.New("release sequence is required")
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 
 // releaseInspectCmd represents the inspect command
 var releaseInspectCmd = &cobra.Command{
-	Use:   "inspect",
+	Use:   "inspect SEQUENCE",
 	Short: "Print the YAML config for a release",
 	Long:  "Print the YAML config for a release",
 }

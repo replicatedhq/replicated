@@ -2,18 +2,18 @@ package print
 
 import (
 	"fmt"
-	"html/template"
 	"text/tabwriter"
+	"text/template"
 
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 )
 
 var channelReleasesTmplSrc = `CHANNEL_SEQUENCE	RELEASE_SEQUENCE	RELEASED	VERSION	REQUIRED	AIRGAP_STATUS	RELEASE_NOTES
 {{ range . -}}
-{{ .ChannelSequence }}	{{ .ReleaseSequence }}	{{ .Created }}	{{ .Version }}	{{ .Required }}	{{ .AirgapBuildStatus}}	{{ .ReleaseNotes }}
+{{ .ChannelSequence }}	{{ .ReleaseSequence }}	{{ time .Created }}	{{ .Version }}	{{ .Required }}	{{ .AirgapBuildStatus}}	{{ .ReleaseNotes }}
 {{ end }}`
 
-var channelReleasesTmpl = template.Must(template.New("ChannelReleases").Parse(channelReleasesTmplSrc))
+var channelReleasesTmpl = template.Must(template.New("ChannelReleases").Funcs(funcs).Parse(channelReleasesTmplSrc))
 
 func ChannelReleases(w *tabwriter.Writer, releases []channels.ChannelRelease) error {
 	if len(releases) == 0 {

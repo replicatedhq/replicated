@@ -1,8 +1,8 @@
 package print
 
 import (
-	"html/template"
 	"text/tabwriter"
+	"text/template"
 
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 )
