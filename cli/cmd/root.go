@@ -62,7 +62,7 @@ func Execute(w io.Writer) error {
 				return errors.New("Please provide your API token")
 			}
 		}
-		api := client.New(apiOrigin, apiToken)
+		api := client.NewHTTPClient(apiOrigin, apiToken)
 		runCmds.api = api
 
 		if appSlug == "" {
