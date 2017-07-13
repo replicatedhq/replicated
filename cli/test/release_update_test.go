@@ -27,8 +27,7 @@ var _ = Describe("release update", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("with an existing release sequence and valid --yaml", func() {

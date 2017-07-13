@@ -29,8 +29,7 @@ var _ = Describe("release inspect", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("with an existing release sequence", func() {

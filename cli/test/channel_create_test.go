@@ -12,6 +12,7 @@ import (
 )
 
 var _ = Describe("channel create", func() {
+	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 
 	BeforeEach(func() {
@@ -22,14 +23,13 @@ var _ = Describe("channel create", func() {
 
 	AfterEach(func() {
 		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	name := mustToken(8)
 	desc := mustToken(16)
 	Describe(fmt.Sprintf("--name %s --description %s", name, desc), func() {
 		It("should print the created channel", func() {
-			t := GinkgoT()
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 

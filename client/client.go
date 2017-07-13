@@ -4,7 +4,6 @@ package client
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -13,12 +12,12 @@ import (
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
 )
 
-var ErrNotFound = errors.New("Not found")
+const apiOrigin = "https://api.replicated.com/vendor"
 
+// Client provides methods to manage apps, channels, and releases.
 type Client interface {
 	GetAppBySlug(slug string) (*apps.App, error)
 	CreateApp(name string) (*apps.App, error)
-	DeleteApp(id string) error
 
 	ListChannels(appID string) ([]channels.AppChannel, error)
 	CreateChannel(appID, name, desc string) ([]channels.AppChannel, error)
@@ -38,14 +37,23 @@ type Client interface {
 		channelIDs ...string) error
 }
 
-// A Client communicates with the Replicated Vendor HTTP API.
+// An HTTPClient communicates with the Replicated Vendor HTTP API.
 type HTTPClient struct {
 	apiKey    string
 	apiOrigin string
 }
 
 // New returns a new  HTTP client.
-func New(origin string, apiKey string) Client {
+func New(apiKey string) Client {
+	c := &HTTPClient{
+		apiKey:    apiKey,
+		apiOrigin: apiOrigin,
+	}
+
+	return c
+}
+
+func NewHTTPClient(origin string, apiKey string) Client {
 	c := &HTTPClient{
 		apiKey:    apiKey,
 		apiOrigin: origin,

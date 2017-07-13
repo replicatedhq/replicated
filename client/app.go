@@ -7,6 +7,7 @@ import (
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 )
 
+// ListApps returns all apps and their channels.
 func (c *HTTPClient) ListApps() ([]apps.AppAndChannels, error) {
 	appsAndChannels := make([]apps.AppAndChannels, 0)
 	err := c.doJSON("GET", "/v1/apps", http.StatusOK, nil, &appsAndChannels)
@@ -16,6 +17,7 @@ func (c *HTTPClient) ListApps() ([]apps.AppAndChannels, error) {
 	return appsAndChannels, nil
 }
 
+// GetAppBySlug resolves an app by slug.
 func (c *HTTPClient) GetAppBySlug(slug string) (*apps.App, error) {
 	appsAndChannels, err := c.ListApps()
 	if err != nil {
@@ -29,6 +31,7 @@ func (c *HTTPClient) GetAppBySlug(slug string) (*apps.App, error) {
 	return nil, ErrNotFound
 }
 
+// CreateApp creates a new app with the given name and returns it.
 func (c *HTTPClient) CreateApp(name string) (*apps.App, error) {
 	reqBody := &apps.Body{Name: name}
 	app := &apps.App{}
@@ -39,6 +42,7 @@ func (c *HTTPClient) CreateApp(name string) (*apps.App, error) {
 	return app, nil
 }
 
+// DeleteApp deletes an app by id.
 func (c *HTTPClient) DeleteApp(id string) error {
 	endpoint := fmt.Sprintf("%s/v1/app/%s", c.apiOrigin, id)
 	req, err := http.NewRequest("DELETE", endpoint, nil)
