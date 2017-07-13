@@ -3,4 +3,6 @@ go: 1.8.3
 script:
   - make build
   - make test
+after_success:
   - test -n "$TRAVIS_TAG" && make package_docker_docs
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
