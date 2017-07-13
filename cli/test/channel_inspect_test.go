@@ -12,11 +12,11 @@ import (
 )
 
 var _ = Describe("channel inspect", func() {
+	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 	var appChan = &channels.AppChannel{}
 
 	BeforeEach(func() {
-		t := GinkgoT()
 		var err error
 		app, err = api.CreateApp(app.Name)
 		assert.Nil(t, err)
@@ -28,13 +28,12 @@ var _ = Describe("channel inspect", func() {
 
 	AfterEach(func() {
 		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("with an existing channel ID", func() {
 		Context("with no licenses and no releases", func() {
 			It("should print the full channel details", func() {
-				t := GinkgoT()
 				var stdout bytes.Buffer
 				var stderr bytes.Buffer
 

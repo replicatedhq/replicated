@@ -10,47 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var yaml = `---
-replicated_api_version: 2.9.2
-name: "Test"
-
-#
-# https://www.replicated.com/docs/packaging-an-application/application-properties
-#
-properties:
-  app_url: http://{{repl ConfigOption "hostname" }}
-  console_title: "Test"
-
-#
-# https://www.replicated.com/docs/kb/supporting-your-customers/install-known-versions
-#
-host_requirements:
-  replicated_version: ">=2.9.2"
-
-#
-# Settings screen
-# https://www.replicated.com/docs/packaging-an-application/config-screen
-#
-config:
-- name: hostname
-  title: Hostname
-  description: Ensure this domain name is routable on your network.
-  items:
-  - name: hostname
-    title: Hostname
-    value: '{{repl ConsoleSetting "tls.hostname"}}'
-    type: text
-    test_proc:
-    display_name: Check DNS
-    command: resolve_host
-
-#
-# Define how the application containers will be created and started
-# https://www.replicated.com/docs/packaging-an-application/components-and-containers
-#
-components: []
-`
-
 var _ = Describe("release create", func() {
 	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
@@ -62,8 +21,7 @@ var _ = Describe("release create", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("with valid --yaml in an app with no releases", func() {

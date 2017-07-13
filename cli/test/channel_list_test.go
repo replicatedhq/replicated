@@ -27,8 +27,7 @@ var _ = Describe("channel ls", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("when an app has three channels without releases", func() {

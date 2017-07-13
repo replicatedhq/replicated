@@ -33,8 +33,7 @@ var _ = Describe("release promote", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("when a channel with no releases is promoted to release 1", func() {

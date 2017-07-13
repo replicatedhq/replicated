@@ -1,6 +1,8 @@
 package: github.com/replicatedhq/replicated
 import:
 - package: github.com/spf13/cobra
+  subpackages:
+  - doc
 - package: github.com/spf13/pflag
 - package: github.com/onsi/ginkgo
   version: ~1.3.1
@@ -10,3 +12,9 @@ import:
   version: ~1.1.4
   subpackages:
   - assert
+- package: github.com/spf13/hugo
+  version: 0.21.0
+  subpackages:
+  - hugolib
+  - helpers
+  - parser

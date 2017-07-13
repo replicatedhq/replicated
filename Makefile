@@ -1,3 +1,5 @@
+.PHONY: docs
+
 API_PKGS=apps channels releases
 
 docker:
@@ -58,3 +60,12 @@ release:
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
 		--env GITHUB_TOKEN=${GITHUB_TOKEN} \
 		replicatedhq.replicated goreleaser
+
+docs:
+	go run docs/generate.go --path ./gen/docs
+
+package_docker_docs: docs
+	docker login -p $(QUAY_PASS) -u $(QUAY_USER) quay.io
+	docker build -t quay.io/replicatedcom/vendor-cli-docs:release -f docs/Dockerfile .
+	docker push quay.io/replicatedcom/vendor-cli-docs:release
+	docker rmi -f quay.io/replicatedcom/vendor-cli-docs:release

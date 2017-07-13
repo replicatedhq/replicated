@@ -1,16 +1,170 @@
-hash: 690af7774aac79575dce985b2874f3793eb71300858658c4341cbb6a44144b2e
-updated: 2017-07-05T22:42:48.843649956Z
+hash: 043e00ab3e019c420b0b5a7f5fce873e789c2f81ac6c63e2a6aed0cf96205721
+updated: 2017-07-13T20:09:05.55627848Z
 imports:
+- name: github.com/bep/gitmap
+  version: de8030ebafb76c6e84d50ee6d143382637c00598
+- name: github.com/bep/inflect
+  version: b896c45f5af983b1f416bdf3bb89c4f1f0926f69
+- name: github.com/BurntSushi/toml
+  version: a368813c5e648fee92e5f6c30e3944ff9d5e8895
+- name: github.com/chaseadamsio/goorgeous
+  version: 677defd0e024333503d8c946dd4ba3f32ad3e5d2
+- name: github.com/cpuguy83/go-md2man
+  version: 23709d0847197db6021a51fdb193e66e9222d4e7
+  subpackages:
+  - md2man
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/dchest/cssmin
+  version: fb8d9b44afdc258bfff6052d3667521babcb2239
+- name: github.com/eknkc/amber
+  version: 5fa7895500976542b0e28bb266f42ff1c7ce07f5
+  subpackages:
+  - parser
+- name: github.com/fsnotify/fsnotify
+  version: 4da3e2cfbabc9f751898f250b49f2439785783a1
+- name: github.com/hashicorp/hcl
+  version: 392dba7d905ed5d04a5794ba89f558b27e2ba1ca
+  subpackages:
+  - hcl/ast
+  - hcl/parser
+  - hcl/scanner
+  - hcl/strconv
+  - hcl/token
+  - json/parser
+  - json/scanner
+  - json/token
+- name: github.com/inconshreveable/mousetrap
+  version: 76626ae9c91c4f2a10f34cad8ce83ea42c93bb75
+- name: github.com/kyokomi/emoji
+  version: ddd4753eac3f6480ca86b16cc6c98d26a0935d17
+- name: github.com/magiconair/properties
+  version: be5ece7dd465ab0765a9682137865547526d1dfb
+- name: github.com/miekg/mmark
+  version: fd2f6c1403b37925bd7fe13af05853b8ae58ee5f
+- name: github.com/mitchellh/mapstructure
+  version: d0303fe809921458f417bcf828397a65db30a7e4
+- name: github.com/nicksnyder/go-i18n
+  version: 3e70a1a463008cea6726380c908b1a6a8bdf7b24
+  subpackages:
+  - i18n/bundle
+  - i18n/language
+  - i18n/translation
 - name: github.com/onsi/ginkgo
   version: 77a8c1e5c40d6bb6c5eb4dd4bdce9763564f6298
+  subpackages:
+  - config
+  - internal/codelocation
+  - internal/containernode
+  - internal/failer
+  - internal/leafnodes
+  - internal/remote
+  - internal/spec
+  - internal/spec_iterator
+  - internal/specrunner
+  - internal/suite
+  - internal/testingtproxy
+  - internal/writer
+  - reporters
+  - reporters/stenographer
+  - reporters/stenographer/support/go-colorable
+  - reporters/stenographer/support/go-isatty
+  - types
 - name: github.com/onsi/gomega
   version: 334b8f472b3af5d541c5642701c1e29e2126f486
+- name: github.com/pelletier/go-toml
+  version: 69d355db5304c0f7f809a2edc054553e7142f016
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/PuerkitoBio/purell
+  version: b938d81255b5473c57635324295cb0fe398c7a58
+- name: github.com/PuerkitoBio/urlesc
+  version: bbf7a2afc14f93e1e0a5c06df524fbd75e5031e5
+- name: github.com/russross/blackfriday
+  version: 067529f716f4c3f5e37c8c95ddd59df1007290ae
+- name: github.com/shurcooL/sanitized_anchor_name
+  version: 541ff5ee47f1dddf6a5281af78307d921524bcb5
+- name: github.com/spf13/afero
+  version: 9be650865eab0c12963d8753212f4f9c66cdcf12
+  subpackages:
+  - mem
+- name: github.com/spf13/cast
+  version: acbeb36b902d72a7a4c18e8f3241075e7ab763e4
 - name: github.com/spf13/cobra
   version: 8c6fa02d2225de0f9bdcb7ca912556f68d172d8c
+  subpackages:
+  - doc
+- name: github.com/spf13/hugo
+  version: f63ee6567dea6efa40197dbf8cb0a65b060e5fe3
+  subpackages:
+  - bufferpool
+  - config
+  - deps
+  - docshelper
+  - helpers
+  - hugofs
+  - hugolib
+  - i18n
+  - media
+  - output
+  - parser
+  - source
+  - tpl
+  - tpl/cast
+  - tpl/collections
+  - tpl/compare
+  - tpl/crypto
+  - tpl/data
+  - tpl/encoding
+  - tpl/fmt
+  - tpl/images
+  - tpl/inflect
+  - tpl/internal
+  - tpl/lang
+  - tpl/math
+  - tpl/os
+  - tpl/partials
+  - tpl/safe
+  - tpl/strings
+  - tpl/time
+  - tpl/tplimpl
+  - tpl/transform
+  - tpl/urls
+  - transform
+- name: github.com/spf13/jwalterweatherman
+  version: 0efa5202c04663c757d84f90f5219c1250baf94f
+- name: github.com/spf13/nitro
+  version: 24d7ef30a12da0bdc5e2eb370a79c659ddccf0e8
 - name: github.com/spf13/pflag
   version: e57e3eeb33f795204c1ca35f56c44f83227c6e66
+- name: github.com/spf13/viper
+  version: c1de95864d73a5465492829d7cb2dd422b19ac96
 - name: github.com/stretchr/testify
   version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
   subpackages:
   - assert
+- name: github.com/yosssi/ace
+  version: ea038f4770b6746c3f8f84f14fa60d9fe1205b56
+- name: golang.org/x/net
+  version: 455220fa52c866a8aa14ff5e8cc68cde16b8395e
+  subpackages:
+  - idna
+- name: golang.org/x/sys
+  version: abf9c25f54453410d0c6668e519582a9e1115027
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: cfdf022e86b4ecfb646e1efbd7db175dd623a8fa
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+  - width
+- name: gopkg.in/yaml.v2
+  version: 1be3d31502d6eabc0dd7ce5b0daab022e14a5538
 testImports: []

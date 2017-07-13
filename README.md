@@ -57,6 +57,10 @@ func main() {
 ### Tests
 REPLICATED_API_ORIGIN may be set for testing an alternative environment.
 
+Since apps can only be deleted in a login session, set these to cleanup garbage from the tests.
+VENDOR_USER_EMAIL should be set to delete app
+VENDOR_USER_PASSWORD should be set to delete app
+
 ### Releases
 Releases are created locally with [goreleaser](https://github.com/goreleaser/goreleaser).
 Tag the commit to release then run goreleaser.

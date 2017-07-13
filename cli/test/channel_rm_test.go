@@ -27,8 +27,7 @@ var _ = Describe("channel rm", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("when the channel ID exists", func() {

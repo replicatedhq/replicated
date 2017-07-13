@@ -18,7 +18,6 @@ const apiOrigin = "https://api.replicated.com/vendor"
 type Client interface {
 	GetAppBySlug(slug string) (*apps.App, error)
 	CreateApp(name string) (*apps.App, error)
-	DeleteApp(id string) error
 
 	ListChannels(appID string) ([]channels.AppChannel, error)
 	CreateChannel(appID, name, desc string) ([]channels.AppChannel, error)

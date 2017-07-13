@@ -24,8 +24,7 @@ var _ = Describe("release ls", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		api.DeleteApp(app.Id)
+		deleteApp(t, app.Id)
 	})
 
 	Context("when an app has one release", func() {
