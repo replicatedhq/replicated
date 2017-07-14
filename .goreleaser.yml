@@ -4,8 +4,12 @@ release:
     owner: replicatedhq
     name: replicated
 brew:
-  github: {}
+  github:
+    owner: replicatedhq
+    name: replicated
   install: bin.install "replicated"
+  homepage: https://replicated.com
+  description: "Manage your app's channels and releases from the command line"
 builds:
 - goos:
   - linux

@@ -17,7 +17,7 @@ Set the following env vars to avoid passing them as arguments to each command.
 
 ## Client
 
-(GoDoc)[https://godoc.org/github.com/replicatedhq/replicated/client]
+[GoDoc](https://godoc.org/github.com/replicatedhq/replicated/client)
 
 ```golang
 package main
