@@ -7,7 +7,7 @@ This repository provides a client and CLI for interacting with the Replicated Ve
 
 ### Mac Install
 ```
-brew install replicatedhq/replicated
+brew install replicatedhq/replicated/replicated
 ```
 
 ### Linux Install
@@ -22,8 +22,8 @@ replicated channel ls --app my-app-slug --token e8d7ce8e3d3278a8b1255237e6310069
 ```
 
 Set the following env vars to avoid passing them as arguments to each command.
-* ```REPLICATED_APP_SLUG```
-* ```REPLICATED_API_TOKEN```
+* REPLICATED_APP_SLUG
+* REPLICATED_API_TOKEN
 
 Then the above command would be simply
 ```
@@ -31,9 +31,9 @@ replicated channel ls
 ```
 
 ### CI Example
-Creating a new release for every tagged build is a common use of the ```replicated``` command.
+Creating a new release for every tagged build is a common use of the replicated command.
 
-Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your ```REPLICATED_APP_SLUG``` and ```REPLICATED_API_TOKEN``` environment variables, as well as ```UNSTABLE_CHANNEL_ID```.
+Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your REPLICATED_APP_SLUG and REPLICATED_API_TOKEN environment variables, as well as UNSTABLE_CHANNEL_ID```.
 
 Then add  a release.sh script to your project looking something like this:
 
@@ -132,17 +132,11 @@ The models are generated from the API's swagger spec.
 ### Tests
 
 #### Environment
-
-REPLICATED_API_ORIGIN may be set for testing an alternative environment.
-
-Since apps can only be deleted in a login session, set these to cleanup garbage from the tests.
-VENDOR_USER_EMAIL should be set to delete app
-VENDOR_USER_PASSWORD should be set to delete app
+* ```REPLICATED_API_ORIGIN``` may be set to override the API endpoint
+* ```VENDOR_USER_EMAIL``` and ```VENDOR_USER_PASSWORD``` should be set to delete apps created for testing
 
 ### Releases
 Releases are created on Travis when a tag is pushed. This will also update the docs container.
-* ```REPLICATED_API_ORIGIN``` may be set to override the API endpoint
-* ```VENDOR_USER_EMAIL``` and ```VENDOR_USER_PASSWORD``` should be set to delete apps created for testing
 ```
 git tag -a v0.1.0 -m "First release" && git push origin v0.1.0
 ```
