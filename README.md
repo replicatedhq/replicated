@@ -1,19 +1,93 @@
 # replicated
 
 This repository provides a client and CLI for interacting with the Replicated Vendor API.
-The models are generated from the API's swagger spec.
 
 ## CLI
 
-Grab the latest [release](https://github.com/replicatedhq/replicated/releases) and extract it to your path.
 
+### Mac Install
+```
+brew install replicatedhq/replicated
+```
+
+### Linux Install
+```
+curl -sSL https://raw.githubusercontent.com/replicatedhq/replicated/master/install.sh
+sudo bash ./install.sh
+```
+
+### Getting Started
 ```
 replicated channel ls --app my-app-slug --token e8d7ce8e3d3278a8b1255237e6310069
 ```
 
 Set the following env vars to avoid passing them as arguments to each command.
-* REPLICATED_APP_SLUG
-* REPLICATED_API_TOKEN
+* ```REPLICATED_APP_SLUG```
+* ```REPLICATED_API_TOKEN```
+
+Then the above command would be simply
+```
+replicated channel ls
+```
+
+### CI Example
+Creating a new release for every tagged build is a common use of the ```replicated``` command.
+
+Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your ```REPLICATED_APP_SLUG``` and ```REPLICATED_API_TOKEN``` environment variables, as well as ```UNSTABLE_CHANNEL_ID```.
+
+Then add  a release.sh script to your project looking something like this:
+
+```bash
+#!/bin/bash
+
+# Create a new release from replicated.yaml and promote the Unstable channel to use it.
+# Aborts if version tag is empty.
+
+set -e
+
+VERSION=$1
+INSTALL_SCRIPT=https://raw.githubusercontent.com/replicatedhq/replicated/master/install.sh
+
+if [ -z "$VERSION" ]; then
+echo "No version; skipping replicated release"
+  exit
+fi
+
+unstable_channel_id() {
+  replicated channel ls | grep Unstable | awk '{print $1}'
+}
+
+new_sequence() {
+  replicated release create --yaml "$(< replicated.yaml)" | grep 'SEQUENCE:' | grep -Eo '[0-9]+'
+}
+
+# install replicated
+curl -sSL "$INSTALL_SCRIPT" > install.sh
+sudo bash ./install.sh
+
+replicated release promote $(new_sequence) $(unstable_channel_id) --version "$VERSION"
+# Channel ee9d99e87b4a5acc2863f68cb2a0c390 successfully promoted to release 15
+```
+
+Now you can automate tagged releases in TravisCI or CircleCI:
+
+```yaml
+# .travis.yml
+sudo: required
+after_success:
+  - ./release.sh "$TRAVIS_TAG"
+
+```
+
+```yaml
+# circle.yml
+deployment:
+  tag:
+    tag: /v.*/
+    owner: replicatedcom
+    commands:
+      - ./release.sh "$CIRCLE_TAG"
+```
 
 ## Client
 
@@ -53,8 +127,12 @@ func main() {
 
 ## Development
 ```make build``` installs the binary to ```$GOPATH/bin```
+The models are generated from the API's swagger spec.
 
 ### Tests
+
+#### Environment
+
 REPLICATED_API_ORIGIN may be set for testing an alternative environment.
 
 Since apps can only be deleted in a login session, set these to cleanup garbage from the tests.
@@ -62,11 +140,9 @@ VENDOR_USER_EMAIL should be set to delete app
 VENDOR_USER_PASSWORD should be set to delete app
 
 ### Releases
-Releases are created locally with [goreleaser](https://github.com/goreleaser/goreleaser).
-Tag the commit to release then run goreleaser.
-Ensure GITHUB_TOKEN is [set](https://github.com/settings/tokens/new).
-
+Releases are created on Travis when a tag is pushed. This will also update the docs container.
+* ```REPLICATED_API_ORIGIN``` may be set to override the API endpoint
+* ```VENDOR_USER_EMAIL``` and ```VENDOR_USER_PASSWORD``` should be set to delete apps created for testing
 ```
 git tag -a v0.1.0 -m "First release" && git push origin v0.1.0
-make release
 ```
