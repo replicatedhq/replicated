@@ -33,9 +33,9 @@ replicated channel ls
 ### CI Example
 Creating a new release for every tagged build is a common use of the replicated command.
 
-Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your REPLICATED_APP_SLUG and REPLICATED_API_TOKEN environment variables, as well as UNSTABLE_CHANNEL_ID```.
+Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your REPLICATED_APP_SLUG and REPLICATED_API_TOKEN environment variables.
 
-Then add  a release.sh script to your project looking something like this:
+Then add  a release.sh script to your project something like this:
 
 ```bash
 #!/bin/bash
@@ -138,5 +138,5 @@ The models are generated from the API's swagger spec.
 ### Releases
 Releases are created on Travis when a tag is pushed. This will also update the docs container.
 ```
-git tag -a v0.1.0 -m "First release" && git push origin v0.1.0
+git tag -a v0.1.0 -m "First release" && git push upstream v0.1.0
 ```
