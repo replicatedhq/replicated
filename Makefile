@@ -54,13 +54,6 @@ build:
 	go build -o replicated cli/main.go
 	mv replicated ${GOPATH}/bin
 
-# release the latest tag
-release:
-	docker run --rm -it \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		--env GITHUB_TOKEN=${GITHUB_TOKEN} \
-		replicatedhq.replicated goreleaser
-
 docs:
 	go run docs/generate.go --path ./gen/docs
 
