@@ -9,3 +9,5 @@ import (
 func TestCLI(t *testing.T) {
 	RunSpecs(t, "CLI Suite")
 }
+
+var _ = AfterSuite(cleanupApps)

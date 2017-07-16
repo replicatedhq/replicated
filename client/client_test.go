@@ -8,11 +8,11 @@ import (
 
 func ExampleNew() {
 	token := os.Getenv("REPLICATED_API_TOKEN")
-	appSlug := os.Getenv("REPLICATED_APP_SLUG")
+	appSlugOrID := os.Getenv("REPLICATED_APP")
 
 	api := New(token)
 
-	app, err := api.GetAppBySlug(appSlug)
+	app, err := api.GetApp(appSlug)
 	if err != nil {
 		log.Fatal(err)
 	}

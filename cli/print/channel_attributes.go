@@ -7,9 +7,11 @@ import (
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 )
 
-var channelAttrsTmplSrc = `ID: {{ .Id }}
-NAME: {{ .Name }}
-DESCRIPTION: {{ .Description }}
+var channelAttrsTmplSrc = `ID:	{{ .Id }}
+NAME:	{{ .Name }}
+DESCRIPTION:	{{ .Description }}
+RELEASE:	{{ .ReleaseSequence }}
+VERSION:	{{ .ReleaseLabel }}
 `
 
 var channelAttrsTmpl = template.Must(template.New("ChannelAttributes").Parse(channelAttrsTmplSrc))

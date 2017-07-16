@@ -13,7 +13,7 @@ package swagger
 // An app channel belongs to an app. It contains references to the top (current) release in the channel.
 type AppChannel struct {
 
-	Adoption ChannelAdoption `json:"Adoption,omitempty"`
+	Adoption *ChannelAdoption `json:"Adoption,omitempty"`
 
 	// Description that will be shown during license installation
 	Description string `json:"Description"`
@@ -21,7 +21,7 @@ type AppChannel struct {
 	// The ID of the channel
 	Id string `json:"Id"`
 
-	LicenseCounts LicenseCounts `json:"LicenseCounts,omitempty"`
+	LicenseCounts *LicenseCounts `json:"LicenseCounts,omitempty"`
 
 	// The name of channel
 	Name string `json:"Name"`

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +35,8 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid release sequence: %s", args[0])
 	}
 
-	if err := r.api.UpdateRelease(r.appID, seq, updateReleaseYaml); err != nil {
+	opts := &client.ReleaseOptions{YAML: updateReleaseYaml}
+	if err := r.api.UpdateRelease(r.appID, seq, opts); err != nil {
 		return fmt.Errorf("Failure setting new yaml config for release: %v", err)
 	}
 

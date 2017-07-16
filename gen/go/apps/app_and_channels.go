@@ -12,7 +12,7 @@ package swagger
 
 type AppAndChannels struct {
 
-	App App `json:"App"`
+	App *App `json:"App"`
 
 	// Channels of the app
 	Channels []AppChannel `json:"Channels"`

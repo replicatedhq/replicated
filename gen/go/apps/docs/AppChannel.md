@@ -3,10 +3,10 @@
 ## Properties
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Adoption** | [**ChannelAdoption**](ChannelAdoption.md) |  | [optional] [default to null]
+**Adoption** | [***ChannelAdoption**](ChannelAdoption.md) |  | [optional] [default to null]
 **Description** | **string** | Description that will be shown during license installation | [default to null]
 **Id** | **string** | The ID of the channel | [default to null]
-**LicenseCounts** | [**LicenseCounts**](LicenseCounts.md) |  | [optional] [default to null]
+**LicenseCounts** | [***LicenseCounts**](LicenseCounts.md) |  | [optional] [default to null]
 **Name** | **string** | The name of channel | [default to null]
 **Position** | **int64** | The position for which the channel occurs in a list | [optional] [default to null]
 **ReleaseLabel** | **string** | The label of the current release sequence | [optional] [default to null]

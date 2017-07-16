@@ -25,6 +25,7 @@ get-spec-prod:
 		curl -o gen/spec/$$PKG.json \
 			https://api.replicated.com/vendor/v1/spec/$$PKG.json; \
 	done
+	curl -o gen/spec/v2.json https://api.replicated.com/vendor/v2/spec/swagger.json;
 
 # generate the swagger specs from the local replicatedcom/vendor-api repo
 get-spec-local:
@@ -36,7 +37,10 @@ get-spec-local:
 				swagger generate spec \
 					-b ../../replicatedcom/vendor-api/handlers/replv1/$$PKG \
 					-o gen/spec/$$PKG.json; \
-			done'
+			done \
+			&& swagger generate spec \
+				-b ../../replicatedcom/vendor-api/handlers/replv2 \
+				-o gen/spec/v2.json'
 
 # generate from the specs in gen/spec, which come from either get-spec-prod or get-spec-local
 gen-models:
@@ -49,6 +53,13 @@ gen-models:
 			-l go \
 			-o /local/gen/go/$$PKG; \
 	done
+	docker run --rm \
+		--volume `pwd`:/local \
+		swaggerapi/swagger-codegen-cli generate \
+		-Dmodels -DmodelsDocs=false \
+		-i /local/gen/spec/v2.json \
+		-l go \
+		-o /local/gen/go/v2;
 
 build:
 	go build -o replicated cli/main.go

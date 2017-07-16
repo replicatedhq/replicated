@@ -5,28 +5,30 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	v2 "github.com/replicatedhq/replicated/gen/go/v2"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
 
 // Client provides methods to manage apps, channels, and releases.
 type Client interface {
-	GetAppBySlug(slug string) (*apps.App, error)
-	CreateApp(name string) (*apps.App, error)
+	GetApp(slugOrID string) (*apps.App, error)
+	CreateApp(opts *AppOptions) (*apps.App, error)
 
 	ListChannels(appID string) ([]channels.AppChannel, error)
-	CreateChannel(appID, name, desc string) ([]channels.AppChannel, error)
+	CreateChannel(appID string, opts *ChannelOptions) ([]channels.AppChannel, error)
 	ArchiveChannel(appID, channelID string) error
 	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
 
 	ListReleases(appID string) ([]releases.AppReleaseInfo, error)
-	CreateRelease(appID string) (*releases.AppReleaseInfo, error)
-	UpdateRelease(appID string, sequence int64, yaml string) error
+	CreateRelease(appID string, opts *ReleaseOptions) (*releases.AppReleaseInfo, error)
+	UpdateRelease(appID string, sequence int64, opts *ReleaseOptions) error
 	GetRelease(appID string, sequence int64) (*releases.AppRelease, error)
 	PromoteRelease(
 		appID string,
@@ -35,6 +37,21 @@ type Client interface {
 		notes string,
 		required bool,
 		channelIDs ...string) error
+
+	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
+}
+
+type AppOptions struct {
+	Name string
+}
+
+type ChannelOptions struct {
+	Name        string
+	Description string
+}
+
+type ReleaseOptions struct {
+	YAML string
 }
 
 // An HTTPClient communicates with the Replicated Vendor HTTP API.
@@ -86,7 +103,8 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 		return ErrNotFound
 	}
 	if resp.StatusCode != successStatus {
-		return fmt.Errorf("%s %s: status %d", method, endpoint, resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return fmt.Errorf("%s %s %d: %s", method, endpoint, resp.StatusCode, body)
 	}
 	if respBody != nil {
 		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {

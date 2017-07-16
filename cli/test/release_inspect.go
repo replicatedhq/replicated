@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
 	"github.com/stretchr/testify/assert"
@@ -19,17 +20,15 @@ var _ = Describe("release inspect", func() {
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(app.Name)
+		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 
-		release, err = api.CreateRelease(app.Id)
-		assert.Nil(t, err)
-		err = api.UpdateRelease(app.Id, release.Sequence, yaml)
+		release, err = api.CreateRelease(app.Id, &client.ReleaseOptions{YAML: yaml})
 		assert.Nil(t, err)
 	})
 
 	AfterEach(func() {
-		deleteApp(t, app.Id)
+		deleteApp(app.Id)
 	})
 
 	Context("with an existing release sequence", func() {
@@ -50,13 +49,13 @@ var _ = Describe("release inspect", func() {
 			r := bufio.NewScanner(&stdout)
 
 			assert.True(t, r.Scan())
-			assert.Equal(t, "SEQUENCE: "+seq, r.Text())
+			assert.Regexp(t, `^SEQUENCE:\s+`+seq, r.Text())
 
 			assert.True(t, r.Scan())
-			assert.Regexp(t, `^CREATED: \d+`, r.Text())
+			assert.Regexp(t, `^CREATED:\s+\d+`, r.Text())
 
 			assert.True(t, r.Scan())
-			assert.Regexp(t, `^EDITED: \d+`, r.Text())
+			assert.Regexp(t, `^EDITED:\s+\d+`, r.Text())
 
 			assert.True(t, r.Scan())
 			assert.Equal(t, "CONFIG:", r.Text())

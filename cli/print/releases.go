@@ -9,9 +9,9 @@ import (
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
 )
 
-var releasesTmplSrc = `SEQUENCE	VERSION	CREATED	EDITED	ACTIVE_CHANNELS
+var releasesTmplSrc = `SEQUENCE	CREATED	EDITED	ACTIVE_CHANNELS
 {{ range . -}}
-{{ .Sequence }}	{{ .Version }}	{{ time .CreatedAt }}	{{ .EditedAt }}	{{ .ActiveChannels }}
+{{ .Sequence }}	{{ time .CreatedAt }}	{{ .EditedAt }}	{{ .ActiveChannels }}
 {{ end }}`
 
 var releasesTmpl = template.Must(template.New("Releases").Funcs(funcs).Parse(releasesTmplSrc))
@@ -34,7 +34,6 @@ func Releases(w *tabwriter.Writer, appReleases []releases.AppReleaseInfo) error 
 		}
 		rs[i] = map[string]interface{}{
 			"Sequence":       r.Sequence,
-			"Version":        r.Version,
 			"CreatedAt":      r.CreatedAt,
 			"EditedAt":       edited,
 			"ActiveChannels": activeChansField,

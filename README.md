@@ -22,7 +22,7 @@ replicated channel ls --app my-app-slug --token e8d7ce8e3d3278a8b1255237e6310069
 ```
 
 Set the following env vars to avoid passing them as arguments to each command.
-* REPLICATED_APP_SLUG
+* REPLICATED_APP - either an app slug or app ID
 * REPLICATED_API_TOKEN
 
 Then the above command would be simply
@@ -33,7 +33,7 @@ replicated channel ls
 ### CI Example
 Creating a new release for every tagged build is a common use of the replicated command.
 
-Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your REPLICATED_APP_SLUG and REPLICATED_API_TOKEN environment variables.
+Assume the app's yaml config is checked in at replicated.yaml and you have configured TravisCI or CircleCI with your REPLICATED_APP and REPLICATED_API_TOKEN environment variables.
 
 Then add  a release.sh script to your project something like this:
 
@@ -106,11 +106,11 @@ import (
 
 func main() {
 	token := os.Getenv("REPLICATED_API_TOKEN")
-	appSlug := os.Getenv("REPLICATED_APP_SLUG")
+	appSlugOrID := os.Getenv("REPLICATED_APP")
 
 	api := client.New(token)
 
-	app, err := api.GetAppBySlug(appSlug)
+	app, err := api.GetApp(appSlugOrID)
 	if err != nil {
 		log.Fatal(err)
 	}

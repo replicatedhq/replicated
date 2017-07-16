@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
 )
 
@@ -26,8 +27,10 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("yaml is required")
 	}
 
-	// API does not accept yaml in create operation, so first create then udpate
-	release, err := r.api.CreateRelease(r.appID)
+	opts := &client.ReleaseOptions{
+		YAML: createReleaseYaml,
+	}
+	release, err := r.api.CreateRelease(r.appID, opts)
 	if err != nil {
 		return err
 	}
@@ -36,10 +39,6 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	r.w.Flush()
-
-	if err := r.api.UpdateRelease(r.appID, release.Sequence, createReleaseYaml); err != nil {
-		return fmt.Errorf("Failure setting yaml config for release: %v", err)
-	}
 
 	return nil
 }
