@@ -12,7 +12,7 @@ package swagger
 
 type InlineResponse2001 struct {
 
-	Channel AppChannel `json:"channel"`
+	Channel *AppChannel `json:"channel"`
 
 	Releases []ChannelRelease `json:"releases"`
 }

@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ var _ = Describe("channel inspect", func() {
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(app.Name)
+		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 
 		appChans, err := api.ListChannels(app.Id)
@@ -27,8 +28,7 @@ var _ = Describe("channel inspect", func() {
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
-		deleteApp(t, app.Id)
+		deleteApp(app.Id)
 	})
 
 	Context("with an existing channel ID", func() {
@@ -49,40 +49,32 @@ var _ = Describe("channel inspect", func() {
 				r := bufio.NewScanner(&stdout)
 
 				assert.True(t, r.Scan())
-				assert.Regexp(t, `^ID: `+appChan.Id+`$`, r.Text())
+				assert.Regexp(t, `^ID:\s+`+appChan.Id+`$`, r.Text())
 
 				assert.True(t, r.Scan())
-				assert.Regexp(t, `^NAME: `+appChan.Name+`$`, r.Text())
+				assert.Regexp(t, `^NAME:\s+`+appChan.Name+`$`, r.Text())
 
 				assert.True(t, r.Scan())
-				assert.Regexp(t, `^DESCRIPTION: `+appChan.Description+`$`, r.Text())
+				assert.Regexp(t, `^DESCRIPTION:\s+`+appChan.Description+`$`, r.Text())
 
 				assert.True(t, r.Scan())
-				assert.Equal(t, "", r.Text())
+				assert.Regexp(t, `^RELEASE:\s+`, r.Text())
+				/*
+					assert.True(t, r.Scan())
+					assert.Equal(t, "LICENSE_COUNTS", r.Text())
 
-				assert.True(t, r.Scan())
-				assert.Equal(t, "ADOPTION", r.Text())
+					assert.True(t, r.Scan())
+					assert.Equal(t, "No licenses in channel", r.Text())
 
-				assert.True(t, r.Scan())
-				assert.Equal(t, "No licenses in channel", r.Text())
+					assert.True(t, r.Scan())
+					assert.Equal(t, "", r.Text())
 
-				assert.True(t, r.Scan())
-				assert.Equal(t, "", r.Text())
+					assert.True(t, r.Scan())
+					assert.Equal(t, "RELEASES", r.Text())
 
-				assert.True(t, r.Scan())
-				assert.Equal(t, "LICENSE_COUNTS", r.Text())
-
-				assert.True(t, r.Scan())
-				assert.Equal(t, "No licenses in channel", r.Text())
-
-				assert.True(t, r.Scan())
-				assert.Equal(t, "", r.Text())
-
-				assert.True(t, r.Scan())
-				assert.Equal(t, "RELEASES", r.Text())
-
-				assert.True(t, r.Scan())
-				assert.Equal(t, "No releases in channel", r.Text())
+					assert.True(t, r.Scan())
+					assert.Equal(t, "No releases in channel", r.Text())
+				*/
 			})
 		})
 	})

@@ -29,14 +29,15 @@ type licenseAdoption struct {
 }
 
 func ChannelAdoption(w *tabwriter.Writer, adoption *channels.ChannelAdoption) error {
-	countsByLicense := make(map[string]licenseAdoption)
+	countsByLicense := make(map[string]*licenseAdoption)
 
 	var getOrSetLicenseAdoption = func(licenseType string) *licenseAdoption {
-		licenseAdoption, ok := countsByLicense[licenseType]
+		la, ok := countsByLicense[licenseType]
 		if !ok {
-			countsByLicense[licenseType] = licenseAdoption
+			la = &licenseAdoption{}
+			countsByLicense[licenseType] = la
 		}
-		return &licenseAdoption
+		return la
 	}
 
 	// current
@@ -64,7 +65,7 @@ func ChannelAdoption(w *tabwriter.Writer, adoption *channels.ChannelAdoption) er
 	}
 
 	if len(countsByLicense) == 0 {
-		if _, err := fmt.Fprintln(w, "No licenses in channel"); err != nil {
+		if _, err := fmt.Fprintln(w, "No active licenses in channel"); err != nil {
 			return err
 		}
 		return w.Flush()

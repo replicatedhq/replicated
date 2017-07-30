@@ -3,9 +3,25 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"sort"
 
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 )
+
+// AppChannels sorts []channels.AppChannel by Channel.Position
+type AppChannels []channels.AppChannel
+
+func (acs AppChannels) Len() int {
+	return len(acs)
+}
+
+func (acs AppChannels) Swap(i, j int) {
+	acs[i], acs[j] = acs[j], acs[i]
+}
+
+func (acs AppChannels) Less(i, j int) bool {
+	return acs[i].Position < acs[j].Position
+}
 
 // ListChannels returns all channels for an app.
 func (c *HTTPClient) ListChannels(appID string) ([]channels.AppChannel, error) {
@@ -15,15 +31,16 @@ func (c *HTTPClient) ListChannels(appID string) ([]channels.AppChannel, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ListChannels: %v", err)
 	}
+	sort.Sort(AppChannels(appChannels))
 	return appChannels, nil
 }
 
 // CreateChannel adds a channel to an app.
-func (c *HTTPClient) CreateChannel(appID, name, desc string) ([]channels.AppChannel, error) {
+func (c *HTTPClient) CreateChannel(appID string, opts *ChannelOptions) ([]channels.AppChannel, error) {
 	path := fmt.Sprintf("/v1/app/%s/channel", appID)
 	body := &channels.Body{
-		Name:        name,
-		Description: desc,
+		Name:        opts.Name,
+		Description: opts.Description,
 	}
 	appChannels := make([]channels.AppChannel, 0)
 	err := c.doJSON("POST", path, http.StatusOK, body, &appChannels)
@@ -55,6 +72,21 @@ func (c *HTTPClient) ArchiveChannel(appID, channelID string) error {
 	return nil
 }
 
+// ChannelReleases sorts []channels.ChannelRelease newest to oldest
+type ChannelReleases []channels.ChannelRelease
+
+func (crs ChannelReleases) Len() int {
+	return len(crs)
+}
+
+func (crs ChannelReleases) Swap(i, j int) {
+	crs[i], crs[j] = crs[j], crs[i]
+}
+
+func (crs ChannelReleases) Less(i, j int) bool {
+	return crs[i].ChannelSequence > crs[j].ChannelSequence
+}
+
 // GetChannel returns channel details and release history
 func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 	path := fmt.Sprintf("/v1/app/%s/channel/%s/releases", appID, channelID)
@@ -63,5 +95,6 @@ func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, 
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetChannel: %v", err)
 	}
-	return &respBody.Channel, respBody.Releases, nil
+	sort.Sort(ChannelReleases(respBody.Releases))
+	return respBody.Channel, respBody.Releases, nil
 }

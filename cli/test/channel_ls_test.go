@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 	"github.com/stretchr/testify/assert"
@@ -18,7 +19,7 @@ var _ = Describe("channel ls", func() {
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(app.Name)
+		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 
 		appChans, err = api.ListChannels(app.Id)
@@ -27,7 +28,7 @@ var _ = Describe("channel ls", func() {
 	})
 
 	AfterEach(func() {
-		deleteApp(t, app.Id)
+		deleteApp(app.Id)
 	})
 
 	Context("when an app has three channels without releases", func() {

@@ -21,14 +21,15 @@ type licenseTypeCounts struct {
 }
 
 func LicenseCounts(w *tabwriter.Writer, counts *channels.LicenseCounts) error {
-	countsByLicenseType := make(map[string]licenseTypeCounts)
+	countsByLicenseType := make(map[string]*licenseTypeCounts)
 
 	var getOrSetLicenseCounts = func(licenseType string) *licenseTypeCounts {
 		licenseCounts, ok := countsByLicenseType[licenseType]
 		if !ok {
+			licenseCounts = &licenseTypeCounts{}
 			countsByLicenseType[licenseType] = licenseCounts
 		}
-		return &licenseCounts
+		return licenseCounts
 	}
 
 	for licenseType, count := range counts.Active {
@@ -45,7 +46,7 @@ func LicenseCounts(w *tabwriter.Writer, counts *channels.LicenseCounts) error {
 	}
 
 	if len(countsByLicenseType) == 0 {
-		if _, err := fmt.Fprintln(w, "No licenses in channel"); err != nil {
+		if _, err := fmt.Fprintln(w, "No active licenses in channel"); err != nil {
 			return err
 		}
 		return w.Flush()

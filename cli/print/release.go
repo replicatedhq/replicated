@@ -7,9 +7,9 @@ import (
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
 )
 
-var releaseTmplSrc = `SEQUENCE: {{ .Sequence }}
-CREATED: {{ time .CreatedAt }}
-EDITED: {{ time .EditedAt }}
+var releaseTmplSrc = `SEQUENCE:	{{ .Sequence }}
+CREATED:	{{ time .CreatedAt }}
+EDITED:	{{ time .EditedAt }}
 CONFIG:
 {{ .Config }}
 `

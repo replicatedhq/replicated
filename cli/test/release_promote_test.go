@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	channels "github.com/replicatedhq/replicated/gen/go/channels"
 	releases "github.com/replicatedhq/replicated/gen/go/releases"
@@ -21,10 +22,10 @@ var _ = Describe("release promote", func() {
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(app.Name)
+		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 
-		release, err = api.CreateRelease(app.Id)
+		release, err = api.CreateRelease(app.Id, nil)
 		assert.Nil(t, err)
 
 		appChannels, err := api.ListChannels(app.Id)
@@ -33,7 +34,7 @@ var _ = Describe("release promote", func() {
 	})
 
 	AfterEach(func() {
-		deleteApp(t, app.Id)
+		deleteApp(app.Id)
 	})
 
 	Context("when a channel with no releases is promoted to release 1", func() {

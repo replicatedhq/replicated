@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -26,33 +25,12 @@ func (r *runners) channelInspect(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[0]
 
-	appChan, releases, err := r.api.GetChannel(r.appID, chanID)
+	appChan, _, err := r.api.GetChannel(r.appID, chanID)
 	if err != nil {
 		return err
 	}
 
 	if err = print.ChannelAttrs(r.w, appChan); err != nil {
-		return err
-	}
-
-	if _, err = fmt.Fprint(r.w, "\nADOPTION\n"); err != nil {
-		return err
-	}
-	if err = print.ChannelAdoption(r.w, &appChan.Adoption); err != nil {
-		return err
-	}
-
-	if _, err = fmt.Fprint(r.w, "\nLICENSE_COUNTS\n"); err != nil {
-		return err
-	}
-	if err = print.LicenseCounts(r.w, &appChan.LicenseCounts); err != nil {
-		return err
-	}
-
-	if _, err = fmt.Fprint(r.w, "\nRELEASES\n"); err != nil {
-		return err
-	}
-	if err = print.ChannelReleases(r.w, releases); err != nil {
 		return err
 	}
 

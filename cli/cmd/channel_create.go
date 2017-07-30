@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,11 @@ func init() {
 }
 
 func (r *runners) channelCreate(cmd *cobra.Command, args []string) error {
-	allChannels, err := r.api.CreateChannel(r.appID, channelCreateName, channelCreateDescription)
+	opts := &client.ChannelOptions{
+		Name:        channelCreateName,
+		Description: channelCreateDescription,
+	}
+	allChannels, err := r.api.CreateChannel(r.appID, opts)
 	if err != nil {
 		return err
 	}

@@ -17,23 +17,23 @@ func (c *HTTPClient) ListApps() ([]apps.AppAndChannels, error) {
 	return appsAndChannels, nil
 }
 
-// GetAppBySlug resolves an app by slug.
-func (c *HTTPClient) GetAppBySlug(slug string) (*apps.App, error) {
+// GetApp resolves an app by either slug or ID.
+func (c *HTTPClient) GetApp(slugOrID string) (*apps.App, error) {
 	appsAndChannels, err := c.ListApps()
 	if err != nil {
-		return nil, fmt.Errorf("GetAppBySlug: %v", err)
+		return nil, fmt.Errorf("GetApp: %v", err)
 	}
 	for _, ac := range appsAndChannels {
-		if ac.App.Slug == slug {
-			return &ac.App, nil
+		if ac.App.Slug == slugOrID || ac.App.Id == slugOrID {
+			return ac.App, nil
 		}
 	}
 	return nil, ErrNotFound
 }
 
 // CreateApp creates a new app with the given name and returns it.
-func (c *HTTPClient) CreateApp(name string) (*apps.App, error) {
-	reqBody := &apps.Body{Name: name}
+func (c *HTTPClient) CreateApp(opts *AppOptions) (*apps.App, error) {
+	reqBody := &apps.Body{Name: opts.Name}
 	app := &apps.App{}
 	err := c.doJSON("POST", "/v1/app", http.StatusCreated, reqBody, app)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/apps"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,13 +18,13 @@ var _ = Describe("channel create", func() {
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(app.Name)
+		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(GinkgoT(), err)
 	})
 
 	AfterEach(func() {
 		// ignore error, garbage collection
-		deleteApp(t, app.Id)
+		deleteApp(app.Id)
 	})
 
 	name := mustToken(8)

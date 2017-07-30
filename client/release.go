@@ -19,7 +19,7 @@ func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, erro
 }
 
 // CreateRelease adds a release to an app.
-func (c *HTTPClient) CreateRelease(appID string) (*releases.AppReleaseInfo, error) {
+func (c *HTTPClient) CreateRelease(appID string, opts *ReleaseOptions) (*releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/release", appID)
 	body := &releases.Body{
 		Source: "latest",
@@ -28,13 +28,19 @@ func (c *HTTPClient) CreateRelease(appID string) (*releases.AppReleaseInfo, erro
 	if err := c.doJSON("POST", path, http.StatusCreated, body, release); err != nil {
 		return nil, fmt.Errorf("CreateRelease: %v", err)
 	}
+	// API does not accept yaml in create operation, so first create then udpate
+	if opts != nil && opts.YAML != "" {
+		if err := c.UpdateRelease(appID, release.Sequence, opts); err != nil {
+			return nil, fmt.Errorf("CreateRelease with YAML: %v", err)
+		}
+	}
 	return release, nil
 }
 
 // UpdateRelease updates a release's yaml.
-func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) error {
+func (c *HTTPClient) UpdateRelease(appID string, sequence int64, opts *ReleaseOptions) error {
 	endpoint := fmt.Sprintf("%s/v1/app/%s/%d/raw", c.apiOrigin, appID, sequence)
-	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(yaml))
+	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(opts.YAML))
 	if err != nil {
 		return err
 	}
