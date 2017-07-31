@@ -9,8 +9,8 @@ import (
 
 var channelReleasesCmd = &cobra.Command{
 	Use:   "releases CHANNEL_ID",
-	Short: "Print channel license counts",
-	Long:  "Print channel license counts",
+	Short: "List all releases in a channel",
+	Long:  "List all releases in a channel",
 }
 
 func init() {
