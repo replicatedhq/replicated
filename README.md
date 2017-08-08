@@ -1,6 +1,6 @@
-# replicated
+# Replicated Vendor CLI
 
-This repository provides a client and CLI for interacting with the Replicated Vendor API.
+This repository provides a Go client and CLI for interacting with the Replicated Vendor API.
 
 ## CLI
 
