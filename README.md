@@ -12,7 +12,7 @@ brew install replicatedhq/replicated/replicated
 
 ### Linux Install
 ```
-curl -sSL https://raw.githubusercontent.com/replicatedhq/replicated/master/install.sh
+curl -o install.sh -sSL https://raw.githubusercontent.com/replicatedhq/replicated/master/install.sh
 sudo bash ./install.sh
 ```
 
