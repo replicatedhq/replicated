@@ -140,3 +140,13 @@ Releases are created on Travis when a tag is pushed. This will also update the d
 ```
 git tag -a v0.1.0 -m "First release" && git push upstream v0.1.0
 ```
+
+## Usage Recipes
+
+#### Make a new release by editing another
+```
+replicated release inspect 130 | sed 1,4d > config.yaml
+vim config.yaml
+replicated release create --yaml "$(< config.yaml)"
+# SEQUENCE: 131
+```
