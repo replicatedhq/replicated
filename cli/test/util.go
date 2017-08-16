@@ -12,11 +12,7 @@ import (
 	"os"
 
 	. "github.com/onsi/ginkgo"
-
-	"github.com/replicatedhq/replicated/client"
 )
-
-var api = client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 
 var yaml = `---
 replicated_api_version: 2.9.2
