@@ -12,7 +12,7 @@ func ExampleNew() {
 
 	api := New(token)
 
-	app, err := api.GetApp(appSlug)
+	app, err := api.GetApp(appSlugOrID)
 	if err != nil {
 		log.Fatal(err)
 	}

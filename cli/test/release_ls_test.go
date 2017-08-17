@@ -3,6 +3,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
@@ -12,6 +13,7 @@ import (
 )
 
 var _ = Describe("release ls", func() {
+	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	app := &apps.App{Name: mustToken(8)}
 

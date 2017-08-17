@@ -3,6 +3,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"os"
 	"strconv"
 
 	. "github.com/onsi/ginkgo"
@@ -14,6 +15,7 @@ import (
 )
 
 var _ = Describe("release update", func() {
+	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	app := &apps.App{Name: mustToken(8)}
 	var release *releases.AppReleaseInfo

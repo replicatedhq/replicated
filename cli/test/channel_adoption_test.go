@@ -3,6 +3,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"os"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
@@ -15,11 +16,13 @@ import (
 // This only tests with no active licenses since the vendor API does not provide
 // a way to update licenses' last_active field.
 var _ = Describe("channel adoption", func() {
+	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 	var appChan = &channels.AppChannel{}
 
 	BeforeEach(func() {
+		t.Logf("%+v\n", api)
 		var err error
 		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
