@@ -1,4 +1,4 @@
-project_name: replicated
+project_name: cli
 release:
   github:
     owner: replicatedhq

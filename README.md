@@ -7,7 +7,7 @@ This repository provides a Go client and CLI for interacting with the Replicated
 
 ### Mac Install
 ```
-brew install replicatedhq/replicated/replicated
+brew install replicatedhq/replicated/cli
 ```
 
 ### Linux Install
