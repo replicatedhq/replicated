@@ -16,7 +16,7 @@ deps:
 		replicatedhq.replicated glide install
 
 test:
-	go test ./cli/test
+	cd cli/test && go test
 
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:

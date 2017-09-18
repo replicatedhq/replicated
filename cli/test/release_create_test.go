@@ -15,6 +15,8 @@ import (
 var _ = Describe("release create", func() {
 	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
+	t.Log(os.Getenv("REPLICATED_API_ORIGIN"))
+	t.Log(os.Getenv("REPLICATED_API_TOKEN")[0:4])
 	var app = &apps.App{Name: mustToken(8)}
 
 	BeforeEach(func() {
