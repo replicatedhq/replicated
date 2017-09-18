@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
@@ -32,7 +31,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	if createReleaseYaml == "-" {
-		bytes, err := ioutil.ReadAll(os.Stdin)
+		bytes, err := ioutil.ReadAll(r.stdin)
 		if err != nil {
 			return err
 		}

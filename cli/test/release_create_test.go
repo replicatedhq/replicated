@@ -34,7 +34,7 @@ var _ = Describe("release create", func() {
 
 			cmd.RootCmd.SetArgs([]string{"release", "create", "--yaml", yaml, "--app", app.Slug})
 			cmd.RootCmd.SetOutput(&stderr)
-			err := cmd.Execute(&stdout)
+			err := cmd.Execute(nil, &stdout, &stderr)
 
 			assert.Nil(t, err)
 
@@ -47,6 +47,28 @@ var _ = Describe("release create", func() {
 			assert.Equal(t, "SEQUENCE: 1", r.Text())
 
 			assert.False(t, r.Scan())
+		})
+	})
+
+	Context(`with "-" argument to --yaml flag in an app with no release where stdin contains valid yaml`, func() {
+		It("should create a release from stdin", func() {
+			var stdin = bytes.NewBufferString(yaml)
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+
+			cmd.RootCmd.SetArgs([]string{"release", "create", "--yaml", "-", "--app", app.Slug})
+			cmd.RootCmd.SetOutput(&stderr)
+			err := cmd.Execute(stdin, &stdout, &stderr)
+
+			assert.Nil(t, err)
+
+			assert.Empty(t, stderr.String(), "Expected no stderr output")
+			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+
+			r := bufio.NewScanner(&stdout)
+
+			assert.True(t, r.Scan())
+			assert.Equal(t, "SEQUENCE: 1", r.Text())
 		})
 	})
 })

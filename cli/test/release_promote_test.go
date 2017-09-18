@@ -49,7 +49,7 @@ var _ = Describe("release promote", func() {
 			cmd.RootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
 			cmd.RootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(&stdout)
+			err := cmd.Execute(nil, &stdout, &stderr)
 			assert.Nil(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")

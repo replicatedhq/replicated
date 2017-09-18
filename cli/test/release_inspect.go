@@ -42,7 +42,7 @@ var _ = Describe("release inspect", func() {
 			cmd.RootCmd.SetArgs([]string{"release", "inspect", seq, "--app", app.Slug})
 			cmd.RootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(&stdout)
+			err := cmd.Execute(nil, &stdout, &stderr)
 			assert.Nil(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")

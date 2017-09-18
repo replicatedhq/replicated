@@ -68,9 +68,17 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(w io.Writer) error {
+func Execute(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
+	w := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
+
 	// get api client and app ID after flags are parsed
-	runCmds := &runners{w: tabwriter.NewWriter(w, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)}
+	runCmds := &runners{
+		stdin: stdin,
+		w:     w,
+	}
+	if stderr != nil {
+		RootCmd.SetOutput(stderr)
+	}
 
 	channelCreateCmd.RunE = runCmds.channelCreate
 	channelInspectCmd.RunE = runCmds.channelInspect

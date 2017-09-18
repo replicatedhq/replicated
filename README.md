@@ -147,6 +147,6 @@ git tag -a v0.1.0 -m "First release" && git push upstream v0.1.0
 ```
 replicated release inspect 130 | sed 1,4d > config.yaml
 vim config.yaml
-replicated release create --yaml "$(< config.yaml)"
+cat config.yaml | replicated release create --yaml -
 # SEQUENCE: 131
 ```
