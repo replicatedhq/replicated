@@ -52,7 +52,7 @@ var _ = Describe("channel releases", func() {
 			cmd.RootCmd.SetArgs([]string{"channel", "releases", appChan.Id, "--app", app.Slug})
 			cmd.RootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(&stdout)
+			err := cmd.Execute(nil, &stdout, &stderr)
 			assert.Nil(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")

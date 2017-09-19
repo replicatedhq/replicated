@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
@@ -27,6 +28,14 @@ func init() {
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if createReleaseYaml == "" {
 		return fmt.Errorf("yaml is required")
+	}
+
+	if createReleaseYaml == "-" {
+		bytes, err := ioutil.ReadAll(r.stdin)
+		if err != nil {
+			return err
+		}
+		createReleaseYaml = string(bytes)
 	}
 
 	// if the --promote param was used make sure it identifies exactly one

@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 
 	"github.com/replicatedhq/replicated/client"
@@ -26,6 +27,13 @@ func init() {
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	if updateReleaseYaml == "" {
 		return fmt.Errorf("yaml is required")
+	}
+	if updateReleaseYaml == "-" {
+		bytes, err := ioutil.ReadAll(r.stdin)
+		if err != nil {
+			return err
+		}
+		updateReleaseYaml = string(bytes)
 	}
 	if len(args) < 1 {
 		return errors.New("release sequence is required")

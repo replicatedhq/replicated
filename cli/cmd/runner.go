@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"text/tabwriter"
 
 	"github.com/replicatedhq/replicated/client"
@@ -9,7 +10,8 @@ import (
 // Runner holds the I/O dependencies and configurations used by individual
 // commands, which are defined as methods on this type.
 type runners struct {
-	api   client.Client
-	w     *tabwriter.Writer
 	appID string
+	api   client.Client
+	stdin io.Reader
+	w     *tabwriter.Writer
 }
