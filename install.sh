@@ -19,8 +19,8 @@ download() {
 		ARCH=386
 	fi
 	VERSION="$(last_version)"
-	# https://github.com/replicatedhq/replicated/releases/download/v0.1.1/replicated_0.1.1_linux_amd64.tar.gz
-	URL="${RELEASES_URL}/download/v${VERSION}/replicated_${VERSION}_$(uname -s)_${ARCH}.tar.gz"
+	# https://github.com/replicatedhq/replicated/releases/download/v0.4.0/cli_0.4.0_linux_amd64.tar.gz
+	URL="${RELEASES_URL}/download/v${VERSION}/cli_${VERSION}_$(uname -s)_${ARCH}.tar.gz"
 
 	rm -f "$TAR_FILE"
 	curl -s -L -o "$TAR_FILE" "$URL"
