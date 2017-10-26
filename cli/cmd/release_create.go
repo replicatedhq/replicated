@@ -21,7 +21,7 @@ your sequence.`,
 func init() {
 	releaseCmd.AddCommand(releaseCreateCmd)
 
-	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release")
+	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin")
 	releaseCreateCmd.Flags().StringVar(&createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 }
 
