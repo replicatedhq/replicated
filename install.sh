@@ -1,19 +1,16 @@
 #!/bin/bash
 set -e
 
-TAR_FILE="/tmp/replicated.tar.gz"
-
 RELEASES_URL="https://github.com/replicatedhq/replicated/releases"
 
-test -z "$TMPDIR" && TMPDIR="$(mktemp -d)"
-
 last_version() {
-	curl --silent --location --output /dev/null --write-out %{url_effective} ${RELEASES_URL}/latest |
-		grep -Eo '[[:digit:]]+\.[[:digit:]]+\.[[:digit:]]$'
+	curl --silent --location --fail \
+        --output /dev/null --write-out %{url_effective} ${RELEASES_URL}/latest |
+		grep -Eo '[0-9]+\.[0-9]+\.[0-9]+$'
 }
 
-download() {
-	if [[ $(uname -m) =~ '64$' ]]; then
+download_tar() {
+	if expr "$(uname -m)" : '.*64$' &>/dev/null; then
 		ARCH=amd64
 	else
 		ARCH=386
@@ -22,10 +19,24 @@ download() {
 	# https://github.com/replicatedhq/replicated/releases/download/v0.4.0/cli_0.4.0_linux_amd64.tar.gz
 	URL="${RELEASES_URL}/download/v${VERSION}/cli_${VERSION}_$(uname -s)_${ARCH}.tar.gz"
 
-	rm -f "$TAR_FILE"
-	curl -s -L -o "$TAR_FILE" "$URL"
+	curl --silent --location --fail "$URL"
 }
+default_dir=/usr/local/bin
+tar_binary=replicated
 
-download
-tar -xf "$TAR_FILE" -C "$TMPDIR"
-mv "${TMPDIR}/replicated" /usr/local/bin
+if [[ -z "$replicated_bindir" ]]; then
+    replicated_bindir="$default_dir"
+    if [[ "$1" ]]; then
+        replicated_bindir="$1"
+    fi
+fi
+if [[ ! -d "$replicated_bindir" ]]; then
+    cat >&2 <<MSG
+Destination directory "$replicated_bindir" is not a directory
+
+Usage: $0 [install-dir]
+ If install-dir is not provided, the script will use "$default_dir"
+MSG
+    exit 1
+fi
+download_tar | tar -xzf - -C "$replicated_bindir" $tar_binary
