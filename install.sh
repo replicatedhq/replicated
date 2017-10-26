@@ -6,7 +6,7 @@ RELEASES_URL="https://github.com/replicatedhq/replicated/releases"
 last_version() {
 	curl --silent --location --fail \
         --output /dev/null --write-out %{url_effective} ${RELEASES_URL}/latest |
-		grep -Eo '\d+\.\d+\.\d+$'
+		grep -Eo '[0-9]+\.[0-9]+\.[0-9]+$'
 }
 
 download_tar() {
