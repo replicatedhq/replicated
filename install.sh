@@ -39,4 +39,4 @@ Usage: $0 [install-dir]
 MSG
     exit 1
 fi
-download_tar | tar -xf - -C "$replicated_bindir" $tar_binary
+download_tar | tar -xzf - -C "$replicated_bindir" $tar_binary
