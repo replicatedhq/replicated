@@ -10,6 +10,9 @@ import (
 
 var createReleaseYaml string
 var createReleasePromote string
+var createReleasePromoteRequired bool
+var createReleasePromoteNotes string
+var createReleasePromoteVersion string
 
 var releaseCreateCmd = &cobra.Command{
 	Use:   "create",
@@ -23,6 +26,9 @@ func init() {
 
 	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin")
 	releaseCreateCmd.Flags().StringVar(&createReleasePromote, "promote", "", "Channel name or id to promote this release to")
+	releaseCreateCmd.Flags().StringVar(&createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
+	releaseCreateCmd.Flags().BoolVar(&createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
+	releaseCreateCmd.Flags().StringVar(&createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
@@ -80,9 +86,9 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		if err := r.api.PromoteRelease(
 			r.appID,
 			release.Sequence,
-			"",
-			"",
-			false,
+			createReleasePromoteVersion,
+			createReleasePromoteNotes,
+			createReleasePromoteRequired,
 			promoteChanID,
 		); err != nil {
 			return err
