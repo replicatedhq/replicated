@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	apps "github.com/replicatedhq/replicated/gen/go/apps"
-	channels "github.com/replicatedhq/replicated/gen/go/channels"
-	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	apps "github.com/replicatedhq/replicated/gen/go/v1"
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	v2 "github.com/replicatedhq/replicated/gen/go/v2"
 )
 

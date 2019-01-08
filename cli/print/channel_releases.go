@@ -5,7 +5,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	channels "github.com/replicatedhq/replicated/gen/go/channels"
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 var channelReleasesTmplSrc = `CHANNEL_SEQUENCE	RELEASE_SEQUENCE	RELEASED	VERSION	REQUIRED	AIRGAP_STATUS	RELEASE_NOTES

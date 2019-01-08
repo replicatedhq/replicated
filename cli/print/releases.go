@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 var releasesTmplSrc = `SEQUENCE	CREATED	EDITED	ACTIVE_CHANNELS

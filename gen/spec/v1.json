@@ -1,0 +1,4487 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "Apps documentation",
+    "title": "Vendor API V1",
+    "contact": {
+      "name": "Replicated, Inc.",
+      "url": "http://www.replicated.com/",
+      "email": "info@replicated.com"
+    },
+    "version": "1.0.0"
+  },
+  "host": "api.replicated.com",
+  "basePath": "/vendor/v1",
+  "paths": {
+    "/app": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps",
+          "team"
+        ],
+        "summary": "Creates an app with the specified parameters.",
+        "operationId": "createApp",
+        "parameters": [
+          {
+            "description": "App create parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "description": "Name of the app that is to be created.",
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "scheduler": {
+                  "description": "Scheduler of the app that is to be created",
+                  "type": "string",
+                  "x-go-name": "Scheduler"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/appResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/app/{app_id}": {
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "description": "Requires secondary authentication in request params.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps",
+          "team"
+        ],
+        "summary": "Deletes an app by ID.",
+        "operationId": "deleteApp",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "User authenticate parameters",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "password"
+              ],
+              "properties": {
+                "password": {
+                  "description": "Password of the user",
+                  "type": "string",
+                  "x-go-name": "Password"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/branding": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "branding",
+          "team"
+        ],
+        "summary": "Lists all apps and their channels.",
+        "operationId": "listBranding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listBrandingResponse"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "description": "Adds CSS to a specific app channel",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "team",
+          "branding"
+        ],
+        "operationId": "createBranding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Branding create parameters",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "channel_id",
+                "css"
+              ],
+              "properties": {
+                "channel_id": {
+                  "description": "ChannelID to create branding for",
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                },
+                "css": {
+                  "description": "CSS to apply to the channel",
+                  "type": "string",
+                  "x-go-name": "CSS"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/createBrandingResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "description": "Requires secondary authentication in request params.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps",
+          "branding",
+          "team"
+        ],
+        "summary": "Removes branding from an app channel.",
+        "operationId": "removeBranding",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "ID of the channel to remove branding from.",
+            "name": "channelID",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Create a channel for an app.",
+        "operationId": "createChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON input",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "airgap_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "AirgapEnabled"
+                },
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/createChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Update a channel for an app.",
+        "operationId": "updateChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON input",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "airgap_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "AirgapEnabled"
+                },
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "is_default": {
+                  "type": "boolean",
+                  "x-go-name": "IsDefault"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/archive": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel"
+        ],
+        "summary": "Archive a channel for an app.",
+        "operationId": "archiveChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/responseOk"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/release/{sequence}": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel",
+          "release"
+        ],
+        "summary": "Update an existing release.",
+        "operationId": "updateChannelReleases",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON payload",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "version",
+                "release_notes",
+                "required"
+              ],
+              "properties": {
+                "release_notes": {
+                  "type": "string",
+                  "x-go-name": "ReleaseNotes"
+                },
+                "required": {
+                  "type": "boolean",
+                  "x-go-name": "Required"
+                },
+                "version": {
+                  "type": "string",
+                  "x-go-name": "Version"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/releases": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channel",
+          "releases"
+        ],
+        "summary": "List the releases for an app channel.",
+        "operationId": "listChannelReleases",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listChannelReleasesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channels": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "channels"
+        ],
+        "summary": "List channels for an app.",
+        "operationId": "listChannels",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listChannelsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/licensefield": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app"
+        ],
+        "summary": "List license fields for a given appId.",
+        "operationId": "listLicenseFields",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listLicenseFieldsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app"
+        ],
+        "summary": "Create a license field for a given app.",
+        "operationId": "createLicenseField",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "type",
+                "title",
+                "default",
+                "required",
+                "hidden"
+              ],
+              "properties": {
+                "default": {
+                  "type": "string",
+                  "x-go-name": "Default"
+                },
+                "hidden": {
+                  "type": "boolean",
+                  "x-go-name": "Hidden"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "required": {
+                  "type": "boolean",
+                  "x-go-name": "Required"
+                },
+                "title": {
+                  "type": "string",
+                  "x-go-name": "Title"
+                },
+                "type": {
+                  "type": "string",
+                  "x-go-name": "Type"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/createLicenseFieldResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/licensefield/{license_field_name}": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app"
+        ],
+        "summary": "Update a license field for a given appId and licenseFieldName.",
+        "operationId": "editLicenseField",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "LicenseFieldName",
+            "description": "App identifier",
+            "name": "license_field_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "title",
+                "default",
+                "hidden"
+              ],
+              "properties": {
+                "default": {
+                  "description": "Optional default value for this licensefield.",
+                  "type": "string",
+                  "x-go-name": "Default"
+                },
+                "hidden": {
+                  "description": "Indicates if this field will be visible from the on-premise license screen.",
+                  "type": "boolean",
+                  "x-go-name": "Hidden"
+                },
+                "title": {
+                  "description": "Title of custom license field to display.",
+                  "type": "string",
+                  "x-go-name": "Title"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/editLicenseFieldResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app"
+        ],
+        "summary": "Delete a field for a given app and named field.",
+        "operationId": "deleteLicenseField",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "LicenseFieldName",
+            "description": "Field name",
+            "name": "license_field_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/deleteLicenseFieldResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/licenses": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "licenses"
+        ],
+        "summary": "List all licenses for a given appId.",
+        "operationId": "listAppLicenses",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppLicensesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/licenses/search": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "licenses"
+        ],
+        "summary": "Search for a given license by appId and licenseField.",
+        "operationId": "licensesSearch",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "fields"
+              ],
+              "properties": {
+                "fields": {
+                  "description": "An array of fields that have values you are trying to search for",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LicenseFieldNameValue"
+                  },
+                  "x-go-name": "Fields"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/licensesSearchResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/release": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Create a new release.",
+        "operationId": "createRelease",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Create release parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "sourcedata"
+              ],
+              "properties": {
+                "source": {
+                  "description": "Currently supported values for this field are \"copy\" and \"latest\".\nWhen set to \"copy\", sourcedata must be set to release number to copy YAML from.\nWhen set to \"latest\", YAML will be copied from the latest app release.\nWhen omitted, the release will be created with default placeholder YAML.",
+                  "type": "string",
+                  "x-go-name": "Source"
+                },
+                "sourcedata": {
+                  "description": "If source is set to \"copy\", sourcedata must be the release number to copy YAML from.",
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "SourceData"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/createRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Batch archive releases.",
+        "operationId": "batchArchiveReleaseProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "collectionFormat": "multi",
+            "x-go-name": "Sequences",
+            "description": "Sequences of the releases to archive",
+            "name": "sequence",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/releases": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "description": "Deprecated - please use the list releases with paging route.",
+        "produces": [
+          "application/json",
+          "Deprecated: true"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "releases"
+        ],
+        "summary": "Lists the releases for an app.",
+        "operationId": "listAppRelease",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/releases/paged": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "releases"
+        ],
+        "summary": "Returns a paged set of releases for an app.",
+        "operationId": "pagedListAppRelease",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Start",
+            "description": "Start of the next page, defaults to zero",
+            "name": "start",
+            "in": "query",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Count",
+            "description": "Number of elements to return per page, defaults to 30",
+            "name": "count",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/appResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/archive": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Archive a release.",
+        "operationId": "archiveReleaseProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/preflightchecks": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release preflight checks.",
+        "operationId": "readPreflightChecks",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readPreflightChecks"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/promote": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Promote a release.",
+        "operationId": "promoteReleaseProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Archive parameters",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "channels",
+                "release_notes",
+                "label",
+                "required"
+              ],
+              "properties": {
+                "channels": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "ChannelIDs"
+                },
+                "label": {
+                  "type": "string",
+                  "x-go-name": "Label"
+                },
+                "release_notes": {
+                  "type": "string",
+                  "x-go-name": "ReleaseNotes"
+                },
+                "required": {
+                  "type": "boolean",
+                  "x-go-name": "Required"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/properties": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release properties.",
+        "operationId": "readReleaseProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readReleaseProperties"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/{sequence}/raw": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Get the release config.",
+        "operationId": "readRawRelease",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/readRawRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "release"
+        ],
+        "summary": "Update the release config.",
+        "operationId": "updateRawRelease",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Config",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateRawRelease"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          },
+          "409": {
+            "$ref": "#/responses/responseErrConflict"
+          }
+        }
+      }
+    },
+    "/apps": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps",
+          "team"
+        ],
+        "summary": "Lists all apps and their channels.",
+        "operationId": "listApps",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppsResponse"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/auditlogtoken": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "auditlog"
+        ],
+        "summary": "Returns a new Audit Log token scoped to the current user.",
+        "operationId": "getAuditLogToken",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "TargetID",
+            "name": "target_id",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getAuditLogTokenResponse"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/license": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Create a license.",
+        "operationId": "createLicense",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "license_type",
+                "assignee",
+                "app_id",
+                "channel_id",
+                "field_values",
+                "require_activation",
+                "activation_email",
+                "update_policy",
+                "expiration_date",
+                "expiration_policy",
+                "airgap_download_enabled"
+              ],
+              "properties": {
+                "activation_email": {
+                  "description": "If activation is required this is the email the code will be sent to.",
+                  "type": "string",
+                  "x-go-name": "ActivationEmail"
+                },
+                "airgap_download_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "AirgapDownloadEnabled"
+                },
+                "app_id": {
+                  "description": "App Id that this license will be associated with.",
+                  "type": "string",
+                  "x-go-name": "AppID"
+                },
+                "assignee": {
+                  "description": "License Label name, ie name of customer who is using license.",
+                  "type": "string",
+                  "x-go-name": "Assignee"
+                },
+                "assisted_setup_enabled": {
+                  "description": "deprecated",
+                  "type": "boolean",
+                  "x-go-name": "AssistedSetupEnabled"
+                },
+                "channel_id": {
+                  "description": "Channel id that the license will be associated with.",
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                },
+                "expiration_date": {
+                  "description": "Date that the license will expire, can be null for no expiration or formatted by year-month-day ex. 2016-02-02.",
+                  "type": "string",
+                  "x-go-name": "ExpirationDate"
+                },
+                "expiration_policy": {
+                  "description": "Defines expiration policy for this license.\n\nValues:\nignore: replicated will take no action on a expired license\nnoupdate-norestart: application updates will not be downloaded, and once the application is stopped, it will not be started again\nnoupdate-stop: application updates will not be downloaded and the application will be stopped",
+                  "type": "string",
+                  "x-go-name": "ExpirationPolicy"
+                },
+                "external_support_bundle": {
+                  "description": "Defines whether this license should use the external support bundle generator.",
+                  "type": "boolean",
+                  "x-go-name": "ExternalSupportBundle"
+                },
+                "field_values": {
+                  "description": "An array of field values for custom fields of a given app",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LicenseFieldValue"
+                  },
+                  "x-go-name": "FieldValues"
+                },
+                "license_type": {
+                  "description": "LicenseType can be set to \"dev\", \"trial\", or \"prod\"",
+                  "type": "string",
+                  "x-go-name": "LicenseType"
+                },
+                "require_activation": {
+                  "description": "If this license requires activation set to true, make sure to set activation email as well.",
+                  "type": "boolean",
+                  "x-go-name": "RequireActivation"
+                },
+                "update_policy": {
+                  "description": "If set to automatic will auto update remote license installation with every release. If set to manual will update only when on-premise admin clicks the install update button.",
+                  "type": "string",
+                  "x-go-name": "UpdatePolicy"
+                },
+                "use_console_support_spec": {
+                  "description": "Defines whether this license should use support bundle specs from console.",
+                  "type": "boolean",
+                  "x-go-name": "UseConsoleSupportSpec"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/createLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Get app license for a given licenseId.",
+        "operationId": "getLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "description": "Note: that all fields are required to be passed or they will be overwritten to blank or default values.",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Update app license for a given licenseId.",
+        "operationId": "updateLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "license_type",
+                "assignee",
+                "channel_id",
+                "field_values",
+                "require_activation",
+                "activation_email",
+                "update_policy",
+                "assisted_setup_enabled",
+                "expiration_date",
+                "expiration_policy",
+                "airgap_download_enabled"
+              ],
+              "properties": {
+                "activation_email": {
+                  "description": "If activation is required this is the email the code will be sent to.",
+                  "type": "string",
+                  "x-go-name": "ActivationEmail"
+                },
+                "airgap_download_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "AirgapDownloadEnabled"
+                },
+                "assignee": {
+                  "description": "License Label name, ie name of customer who is using license.",
+                  "type": "string",
+                  "x-go-name": "Assignee"
+                },
+                "assisted_setup_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "AssistedSetupEnabled"
+                },
+                "channel_id": {
+                  "description": "Channel id that the license will be associated with.",
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                },
+                "expiration_date": {
+                  "description": "Date that the license will expire, can be null for no expiration or formated by year-month-day ex. 2016-02-02.",
+                  "type": "string",
+                  "x-go-name": "ExpirationDate"
+                },
+                "expiration_policy": {
+                  "description": "Defines expiration policy for this license.\n\nValues:\nignore: replicated will take no action on a expired license\nnoupdate-norestart: application updates will not be downloaded, and once the application is stopped, it will not be started again\nnoupdate-stop: application updates will not be downloaded and the application will be stopped",
+                  "type": "string",
+                  "x-go-name": "ExpirationPolicy"
+                },
+                "external_support_bundle": {
+                  "description": "Defines whether this license should use the external support bundle generator.",
+                  "type": "boolean",
+                  "x-go-name": "ExternalSupportBundle"
+                },
+                "field_values": {
+                  "description": "An array of field values for custom fields of a given app",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/LicenseFieldValue"
+                  },
+                  "x-go-name": "FieldValues"
+                },
+                "is_app_version_locked": {
+                  "description": "A license can be optionally locked to a specific release",
+                  "type": "boolean",
+                  "x-go-name": "IsAppVersionLocked"
+                },
+                "license_type": {
+                  "description": "LicenseType can be set to \"dev\", \"trial\", or \"prod\"",
+                  "type": "string",
+                  "x-go-name": "LicenseType"
+                },
+                "locked_app_version": {
+                  "description": "If app version is locked, this is the version to lock it to (sequence)",
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "LockedAppVersion"
+                },
+                "require_activation": {
+                  "description": "If this license requires activation set to true, make sure to set activation email as well.",
+                  "type": "boolean",
+                  "x-go-name": "RequireActivation"
+                },
+                "update_policy": {
+                  "description": "If set to automatic will auto update remote license installation with every release. If set to manual will update only when on-premise admin clicks the install update button.",
+                  "type": "string",
+                  "x-go-name": "UpdatePolicy"
+                },
+                "use_console_support_spec": {
+                  "description": "Defines whether this license should use support bundle specs from console.",
+                  "type": "boolean",
+                  "x-go-name": "UseConsoleSupportSpec"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Archive a license.",
+        "operationId": "archiveLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/airgap/password": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license",
+          "airgap"
+        ],
+        "summary": "Update an airgap passsword.",
+        "operationId": "postAirgapPassword",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/postAirgapPasswordResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/billing": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Update license billing information for a given licenseId.",
+        "operationId": "updateLicenseBilling",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "license_type",
+                "frequency",
+                "revenue",
+                "begin",
+                "end"
+              ],
+              "properties": {
+                "begin": {
+                  "description": "Begining date formated by year-month-day ex. 2016-02-02.",
+                  "type": "string",
+                  "x-go-name": "Begin"
+                },
+                "end": {
+                  "description": "Ending date formated by year-month-day ex. 2016-02-02.",
+                  "type": "string",
+                  "x-go-name": "End"
+                },
+                "frequency": {
+                  "description": "Can be set to Monthly, Quarterly, Annually, One Time, or Other to indicate interval that this billing happens.",
+                  "type": "string",
+                  "x-go-name": "Frequency"
+                },
+                "license_type": {
+                  "description": "LicenseType can be set to \"dev\", \"trial\", or \"prod\"",
+                  "type": "string",
+                  "x-go-name": "LicenseType"
+                },
+                "revenue": {
+                  "description": "Amount of money associated with this billing event.",
+                  "type": "string",
+                  "x-go-name": "Revenue"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseBillingResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/billing-events": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app"
+        ],
+        "summary": "List license billing events for a given license_id.",
+        "operationId": "listLicenseBillingEvents",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listLicenseBillingEventsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/billing_event": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Create a license billing event.",
+        "operationId": "createLicenseBillingEvent",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "amount",
+                "description",
+                "vendor_invoice_to_customer_date",
+                "vendor_due_from_customer_date",
+                "vendor_paid_by_customer_date"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Amount"
+                },
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "vendor_due_from_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorDueCustomerDate"
+                },
+                "vendor_invoice_to_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorInvoiceCustomerDate"
+                },
+                "vendor_paid_by_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorPaidCustomerDate"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/createLicenseBillingEventResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/billing_event/{id}": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Update a license billing event.",
+        "operationId": "updateLicenseBillingEvent",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ID",
+            "description": "Event ID",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "amount",
+                "description",
+                "vendor_invoice_to_customer_date",
+                "vendor_due_from_customer_date",
+                "vendor_paid_by_customer_date"
+              ],
+              "properties": {
+                "amount": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Amount"
+                },
+                "description": {
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "vendor_due_from_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorDueCustomerDate"
+                },
+                "vendor_invoice_to_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorInvoiceCustomerDate"
+                },
+                "vendor_paid_by_customer_date": {
+                  "type": "string",
+                  "x-go-name": "VendorPaidCustomerDate"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseBillingEventResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/channel": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license",
+          "channel"
+        ],
+        "summary": "Update a license channel for a given license.",
+        "operationId": "updateLicenseChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "channel_id": {
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/expire": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "operationId": "updateLicenseExpiration",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "expiration_date"
+              ],
+              "properties": {
+                "expiration_date": {
+                  "type": "string",
+                  "x-go-name": "ExpirationDate"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseExpirationResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/field": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Set the value for a license field.",
+        "operationId": "createLicenseFieldValue",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "field",
+                "value"
+              ],
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "x-go-name": "FieldName"
+                },
+                "value": {
+                  "type": "string",
+                  "x-go-name": "Value"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/fields": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Get license field values for a given licenseId.",
+        "operationId": "getLicenseFieldValues",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getLicenseFieldValuesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Update license field values for a given licenseId.",
+        "operationId": "updateLicenseFields",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "LicenseFieldValues"
+              ],
+              "properties": {
+                "LicenseFieldValues": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/licenseFieldValue"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/updateLicenseFieldsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/instance/{instance_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Get a license instance.",
+        "operationId": "getLicenseInstance",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "InstanceID",
+            "description": "Instance identifier",
+            "name": "instance_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getLicenseInstanceResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/instances": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Lists all tracked license instances for a given licenseId.",
+        "operationId": "listLicenseInstances",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listLicenseInstancesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/instances/untracked": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Lists all untracked license instances for a given licenseId.",
+        "operationId": "getLicenseInstanceUntracked",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getLicenseInstanceUntrackedResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/revoke": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Revoke a license for a given licenseId.",
+        "operationId": "revokeLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/revokeLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/license/{license_id}/unarchive": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Unarchive a license.",
+        "operationId": "unarchiveLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/licensekey/{license_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license"
+        ],
+        "summary": "Download app license (base64 deliverable to your end customer) key for a given licenseId.",
+        "operationId": "downloadLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "LicenseID",
+            "description": "License identifier",
+            "name": "license_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/downloadLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/licenses": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "licenses"
+        ],
+        "summary": "Lists all licenses.",
+        "operationId": "licenses",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listLicensesResponse"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "App": {
+      "description": "An app belongs to a team. It contains channels onto which releases can be\npromoted.",
+      "type": "object",
+      "title": "App represents a vendor application",
+      "required": [
+        "Id",
+        "Name",
+        "Slug"
+      ],
+      "properties": {
+        "Id": {
+          "description": "The ID of the app",
+          "type": "string"
+        },
+        "Name": {
+          "description": "The name of the app",
+          "type": "string"
+        },
+        "Scheduler": {
+          "description": "The scheduler associated with the app",
+          "type": "string"
+        },
+        "Slug": {
+          "description": "A unique slug for the app",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppAndChannels": {
+      "type": "object",
+      "title": "AppAndChannels represents the app and a list of app channels.",
+      "required": [
+        "App",
+        "Channels"
+      ],
+      "properties": {
+        "App": {
+          "$ref": "#/definitions/App"
+        },
+        "Channels": {
+          "description": "Channels of the app",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppChannel"
+          }
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/handlers/replv1/apps"
+    },
+    "AppChannel": {
+      "description": "An app channel belongs to an app. It contains references to the top (current)\nrelease in the channel.",
+      "type": "object",
+      "title": "AppChannel represents a single app channel",
+      "required": [
+        "Id",
+        "Name",
+        "Description"
+      ],
+      "properties": {
+        "Adoption": {
+          "$ref": "#/definitions/ChannelAdoption"
+        },
+        "AirgapEnabled": {
+          "description": "AirgapEnabled indicates if airgap builds will be created automatically for this channel",
+          "type": "boolean"
+        },
+        "Description": {
+          "description": "Description that will be shown during license installation",
+          "type": "string"
+        },
+        "Id": {
+          "description": "The ID of the channel",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "IsDefault": {
+          "description": "IsDefault shows if channel is default or not",
+          "type": "boolean"
+        },
+        "LicenseCounts": {
+          "$ref": "#/definitions/LicenseCounts"
+        },
+        "Name": {
+          "description": "The name of channel",
+          "type": "string"
+        },
+        "Position": {
+          "description": "The position for which the channel occurs in a list",
+          "type": "integer",
+          "format": "int64"
+        },
+        "ReleaseLabel": {
+          "description": "The label of the current release sequence",
+          "type": "string"
+        },
+        "ReleaseNotes": {
+          "description": "Release notes for the current release sequence",
+          "type": "string"
+        },
+        "ReleaseSequence": {
+          "description": "A reference to the current release sequence",
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppRelease": {
+      "type": "object",
+      "properties": {
+        "Config": {
+          "type": "string"
+        },
+        "CreatedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Editable": {
+          "type": "boolean"
+        },
+        "EditedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Sequence": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "AppReleaseInfo": {
+      "description": "AppReleaseInfo represents an app release",
+      "type": "object",
+      "properties": {
+        "ActiveChannels": {
+          "description": "The active channels",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppChannel"
+          }
+        },
+        "AppId": {
+          "description": "The application ID",
+          "type": "string"
+        },
+        "CreatedAt": {
+          "description": "The time at which the release was created",
+          "type": "string",
+          "format": "date-time"
+        },
+        "Editable": {
+          "description": "If the release is editable",
+          "type": "boolean"
+        },
+        "EditedAt": {
+          "description": "The last time at which the release was changed",
+          "type": "string",
+          "format": "date-time"
+        },
+        "PreflightChecks": {
+          "description": "Release preflight checks",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PreflightCheck"
+          }
+        },
+        "Sequence": {
+          "description": "The app sequence number",
+          "type": "integer",
+          "format": "int64"
+        },
+        "Version": {
+          "description": "The vendor supplied version",
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "Branding": {
+      "type": "object",
+      "properties": {
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Created"
+        },
+        "css": {
+          "type": "string",
+          "x-go-name": "Css"
+        },
+        "default": {
+          "type": "boolean",
+          "x-go-name": "Default"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Updated"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "ChannelAdoption": {
+      "description": "ChannelAdoption represents the versions that licenses are on in the channel",
+      "type": "object",
+      "properties": {
+        "current_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountActive"
+        },
+        "current_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "CurrentVersionCountAll"
+        },
+        "other_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountActive"
+        },
+        "other_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "OtherVersionCountAll"
+        },
+        "previous_version_count_active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountActive"
+        },
+        "previous_version_count_all": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "PreviousVersionCountAll"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "ChannelRelease": {
+      "type": "object",
+      "properties": {
+        "airgap_build_error": {
+          "type": "string",
+          "x-go-name": "AirgapBuildError"
+        },
+        "airgap_build_status": {
+          "type": "string",
+          "x-go-name": "AirgapBuildStatus"
+        },
+        "channel_id": {
+          "type": "string",
+          "x-go-name": "ChannelId"
+        },
+        "channel_sequence": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ChannelSequence"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Created"
+        },
+        "release_notes": {
+          "type": "string",
+          "x-go-name": "ReleaseNotes"
+        },
+        "release_sequence": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ReleaseSequence"
+        },
+        "required": {
+          "type": "boolean",
+          "x-go-name": "Required"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Updated"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "InstalledAppVersion": {
+      "type": "object",
+      "properties": {
+        "Label": {
+          "type": "string"
+        },
+        "LastCheck": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Sequence": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "UpdateAvailable": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "License": {
+      "type": "object",
+      "properties": {
+        "ActivationEmail": {
+          "type": "string"
+        },
+        "ActiveInstanceCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "AirgapDownloadEnabled": {
+          "type": "boolean"
+        },
+        "AirgapDownloadPassword": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          }
+        },
+        "Anonymous": {
+          "type": "boolean"
+        },
+        "AppId": {
+          "type": "string"
+        },
+        "AppStatus": {
+          "type": "string"
+        },
+        "Archived": {
+          "type": "boolean"
+        },
+        "Assignee": {
+          "type": "string"
+        },
+        "AssistedSetupEnabled": {
+          "type": "boolean"
+        },
+        "Billing": {
+          "$ref": "#/definitions/LicenseBilling"
+        },
+        "BillingEvents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LicenseBillingEvent"
+          }
+        },
+        "ChannelId": {
+          "type": "string"
+        },
+        "ChannelName": {
+          "type": "string"
+        },
+        "Clouds": {
+          "type": "string"
+        },
+        "ExpirationPolicy": {
+          "type": "string"
+        },
+        "ExpireDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ExternalSupportBundle": {
+          "type": "boolean"
+        },
+        "FieldValues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LicenseFieldValue"
+          }
+        },
+        "GrantDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Id": {
+          "type": "string"
+        },
+        "InactiveInstanceCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "IsAppVersionLocked": {
+          "type": "boolean"
+        },
+        "IsInstanceTracked": {
+          "type": "boolean"
+        },
+        "LastSync": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "LicenseType": {
+          "type": "string"
+        },
+        "LicenseVersions": {
+          "$ref": "#/definitions/LicenseVersions"
+        },
+        "LockedAppVersion": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "RequireActivation": {
+          "type": "boolean"
+        },
+        "RevokationDate": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "UntrackedInstanceCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "UpdatePolicy": {
+          "type": "string"
+        },
+        "UseConsoleSupportSpec": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseBilling": {
+      "type": "object",
+      "properties": {
+        "begin": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Begin"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "End"
+        },
+        "frequency": {
+          "type": "string",
+          "x-go-name": "Frequency"
+        },
+        "revenue": {
+          "type": "string",
+          "x-go-name": "Revenue"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseBillingEvent": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Amount"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "event_date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "EventDate"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "vendor_due_from_customer_date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "VendorDueCustomerDate"
+        },
+        "vendor_invoice_to_customer_date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "VendorInvoiceCustomerDate"
+        },
+        "vendor_paid_by_customer_date": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "VendorPaidCustomerDate"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseCounts": {
+      "description": "LicenseCounts is a struct to hold license count information",
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Active"
+        },
+        "airgap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Airgap"
+        },
+        "inactive": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Inactive"
+        },
+        "total": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "x-go-name": "Total"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseField": {
+      "type": "object",
+      "properties": {
+        "default": {
+          "type": "string",
+          "x-go-name": "Default"
+        },
+        "hidden": {
+          "type": "boolean",
+          "x-go-name": "Hidden"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "required": {
+          "type": "boolean",
+          "x-go-name": "Required"
+        },
+        "title": {
+          "type": "string",
+          "x-go-name": "Title"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseFieldNameValue": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "x-go-name": "Field"
+        },
+        "value": {
+          "type": "object",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseFieldValue": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string",
+          "x-go-name": "FieldName"
+        },
+        "title": {
+          "type": "string",
+          "x-go-name": "FieldTitle"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "FieldType"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/handlers/replv1/license"
+    },
+    "LicenseInstance": {
+      "type": "object",
+      "properties": {
+        "Active": {
+          "type": "boolean"
+        },
+        "AppStatus": {
+          "type": "string"
+        },
+        "AssistSessionId": {
+          "type": "string"
+        },
+        "Cloud": {
+          "type": "string"
+        },
+        "Created": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "InstanceId": {
+          "type": "string"
+        },
+        "LastActive": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "LicenseId": {
+          "type": "string"
+        },
+        "ReplicatedAgentVersion": {
+          "type": "string"
+        },
+        "ReplicatedOperatorVersion": {
+          "type": "string"
+        },
+        "ReplicatedSyncTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ReplicatedUiVersion": {
+          "type": "string"
+        },
+        "ReplicatedUpdaterVersion": {
+          "type": "string"
+        },
+        "ReplicatedVersion": {
+          "type": "string"
+        },
+        "VersionHistory": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LicenseInstanceVersionHistory"
+          }
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseInstanceUntracked": {
+      "type": "object",
+      "properties": {
+        "CurrentSequence": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "CurrentVersion": {
+          "type": "string"
+        },
+        "LicenseId": {
+          "type": "string"
+        },
+        "ReplicatedAgentVersion": {
+          "type": "string"
+        },
+        "ReplicatedOperatorVersion": {
+          "type": "string"
+        },
+        "ReplicatedSyncTime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "ReplicatedUiVersion": {
+          "type": "string"
+        },
+        "ReplicatedUpdaterVersion": {
+          "type": "string"
+        },
+        "ReplicatedVersion": {
+          "type": "string"
+        },
+        "SyncTime": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseInstanceVersionHistory": {
+      "type": "object",
+      "properties": {
+        "InstanceId": {
+          "type": "string"
+        },
+        "Start": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "Stop": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "VersionChannel": {
+          "type": "string"
+        },
+        "VersionLabel": {
+          "type": "string"
+        },
+        "VersionSequence": {
+          "type": "integer",
+          "format": "int64"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "LicenseVersions": {
+      "type": "object",
+      "properties": {
+        "InstalledAppVersion": {
+          "$ref": "#/definitions/InstalledAppVersion"
+        },
+        "ReplicatedVersions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "PreflightCheck": {
+      "type": "object",
+      "properties": {
+        "Category": {
+          "type": "string"
+        },
+        "CheckName": {
+          "type": "string"
+        },
+        "CheckValue": {
+          "type": "string"
+        },
+        "IsRequired": {
+          "type": "boolean"
+        },
+        "Scheduler": {
+          "type": "string"
+        },
+        "Score": {
+          "type": "string"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/models"
+    },
+    "licenseFieldValue": {
+      "type": "object",
+      "required": [
+        "field",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "description": "The name of the custom field which you want to populate a value.",
+          "type": "string",
+          "x-go-name": "FieldName"
+        },
+        "value": {
+          "description": "The value that you wish to populate the custom field with.",
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/replicatedcom/vendor-api/handlers/replv1/license"
+    }
+  },
+  "responses": {
+    "appResponse": {
+      "description": "AppResponse represents an app.",
+      "schema": {
+        "$ref": "#/definitions/App"
+      }
+    },
+    "createBrandingResponse": {
+      "description": "CreateBrandingResponse represents a branding object",
+      "schema": {
+        "$ref": "#/definitions/Branding"
+      }
+    },
+    "createChannelResponse": {
+      "description": "CreateChannelResponse contains the JSON channels list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "AppChannel": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppChannel"
+            }
+          }
+        }
+      }
+    },
+    "createLicenseBillingEventResponse": {
+      "description": "CreateLicenseBillingEventResponse contains the license billing event",
+      "schema": {
+        "type": "object",
+        "required": [
+          "LicenseBillingEvent"
+        ],
+        "properties": {
+          "LicenseBillingEvent": {
+            "$ref": "#/definitions/LicenseBillingEvent"
+          }
+        }
+      }
+    },
+    "createLicenseFieldResponse": {
+      "description": "CreateLicenseFieldResponse contains the response of all license fields",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ListAppLicenseFieldsResponse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseField"
+            }
+          }
+        }
+      }
+    },
+    "createLicenseResponse": {
+      "description": "CreateLicenseResponse contains the created license",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "createRelease": {
+      "description": "CreateReleaseResponse contains the new release properties"
+    },
+    "deleteLicenseFieldResponse": {
+      "description": "DeleteLicenseFieldResponse contains the response from deleting a license field",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ListAppLicenseFieldsResponse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseField"
+            }
+          }
+        }
+      }
+    },
+    "downloadLicenseResponse": {
+      "description": "DownloadLicenseResponse contains the licenses response",
+      "headers": {
+        "ContentDisposition": {
+          "type": "string",
+          "description": "Recommended filename\nRequired: true\nIn: header"
+        }
+      }
+    },
+    "editLicenseFieldResponse": {
+      "description": "EditLicenseFieldResponse contains the license fields",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ListAppLicenseFieldsResponse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseField"
+            }
+          }
+        }
+      }
+    },
+    "getAuditLogTokenResponse": {
+      "description": "GetAuditLogTokenResponse represents a single audit log token"
+    },
+    "getLicenseFieldValuesResponse": {
+      "description": "GetLicenseFieldValuesResponse contains the field values",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/LicenseFieldValue"
+        }
+      }
+    },
+    "getLicenseInstanceResponse": {
+      "description": "GetLicenseInstanceResponse contains the license instance",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/LicenseInstance"
+          }
+        }
+      }
+    },
+    "getLicenseInstanceUntrackedResponse": {
+      "description": "GetLicenseInstanceUntrackedResponse contains a list of untracked instances",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/LicenseInstanceUntracked"
+          }
+        }
+      }
+    },
+    "getLicenseResponse": {
+      "description": "GetLicenseResponse contains the returned license",
+      "schema": {
+        "type": "object",
+        "required": [
+          "License"
+        ],
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "licensesSearchResponse": {
+      "description": "LicensesSearchResponse contains the search response",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "LicenseIDs": {
+            "description": "List of License IDs",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "listAppLicensesResponse": {
+      "description": "ListAppLicensesResponse contains the list of licenses",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "Licenses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/License"
+            }
+          }
+        }
+      }
+    },
+    "listAppRelease": {
+      "description": "ListAppResponse contains a JSON array of app release data",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/AppReleaseInfo"
+        }
+      }
+    },
+    "listAppsResponse": {
+      "description": "ListAppsResponse represents a list of apps and the corresponding channels.",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/AppAndChannels"
+        }
+      }
+    },
+    "listBrandingResponse": {
+      "description": "ListBrandingResponse represents the return value for a list branding call.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "branding": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/definitions/Branding"
+            },
+            "x-go-name": "Branding"
+          },
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppChannel"
+            },
+            "x-go-name": "Channels"
+          }
+        }
+      }
+    },
+    "listChannelReleasesResponse": {
+      "description": "ListChannelReleasesResponse lists the channel releases",
+      "schema": {
+        "type": "object",
+        "required": [
+          "channel",
+          "releases"
+        ],
+        "properties": {
+          "channel": {
+            "$ref": "#/definitions/AppChannel"
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ChannelRelease"
+            },
+            "x-go-name": "Releases"
+          }
+        }
+      }
+    },
+    "listChannelsResponse": {
+      "description": "ListChannelsResponse contains the JSON channels list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "AppChannels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppChannel"
+            }
+          }
+        }
+      }
+    },
+    "listLicenseBillingEventsResponse": {
+      "description": "GetLicenseBillingEventsResponse contains the list of license billing events",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "BillingEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseBillingEvent"
+            }
+          }
+        }
+      }
+    },
+    "listLicenseFieldsResponse": {
+      "description": "ListLicenseFieldsResponse contains the list of license fields",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ListAppLicenseFieldsResponse": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseField"
+            }
+          }
+        }
+      }
+    },
+    "listLicenseInstancesResponse": {
+      "description": "ListLicenseInstancesResponse contains the response license instances",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "ListInstances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/LicenseInstance"
+            }
+          }
+        }
+      }
+    },
+    "listLicensesResponse": {
+      "description": "ListLicensesResponse contains the parameters needed to call list licenses",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "Licenses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/License"
+            }
+          }
+        }
+      }
+    },
+    "pagedListAppRelease": {
+      "description": "PagedListAppResponse contains a releases array and the total count found",
+      "schema": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/AppReleaseInfo"
+        }
+      }
+    },
+    "postAirgapPasswordResponse": {
+      "description": "PostAirgapPasswordResponse contains the returned password",
+      "schema": {
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string",
+            "x-go-name": "Password"
+          }
+        }
+      }
+    },
+    "readPreflightChecks": {
+      "description": "ReadPreflightChecksResponse release preflight checks"
+    },
+    "readRawRelease": {
+      "description": "ReadRawReleaseResponse contains the app config contents",
+      "headers": {
+        "Editable": {
+          "type": "string",
+          "description": "True if the config is editable\nRequired: true\nIn: header"
+        }
+      }
+    },
+    "readReleaseProperties": {
+      "description": "ReadReleaseResponse release properties",
+      "schema": {
+        "$ref": "#/definitions/AppRelease"
+      }
+    },
+    "responseErrBadRequest": {
+      "description": "Returned on bad input"
+    },
+    "responseErrConflict": {
+      "description": "Returned on a conflict"
+    },
+    "responseErrForbidden": {
+      "description": "Returned if the caller does not have the needed permission"
+    },
+    "responseErrNotFound": {
+      "description": "Returned on resource not found"
+    },
+    "responseErrUnauthorized": {
+      "description": "Return if the caller is not authorized"
+    },
+    "responseNoContent": {
+      "description": "On success, no payload returned"
+    },
+    "responseOk": {
+      "description": "On success"
+    },
+    "revokeLicenseResponse": {
+      "description": "RevokeLicenseResponse contains the revoked license",
+      "schema": {
+        "type": "object",
+        "required": [
+          "License"
+        ],
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateLicenseBillingEventResponse": {
+      "description": "UpdateLicenseBillingEventResponse contains the resulting billing event",
+      "schema": {
+        "type": "object",
+        "required": [
+          "LicenseBillingEvent"
+        ],
+        "properties": {
+          "LicenseBillingEvent": {
+            "$ref": "#/definitions/LicenseBillingEvent"
+          }
+        }
+      }
+    },
+    "updateLicenseBillingResponse": {
+      "description": "UpdateLicenseBillingResponse contains the license",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateLicenseChannelResponse": {
+      "description": "UpdateLicenseChannelResponse update channel response",
+      "schema": {
+        "type": "object",
+        "required": [
+          "License"
+        ],
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateLicenseExpirationResponse": {
+      "description": "UpdateLicenseExpirationResponse contains the returned license",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateLicenseFieldsResponse": {
+      "description": "UpdateLicenseFieldsResponse contains the license",
+      "schema": {
+        "type": "object",
+        "required": [
+          "License"
+        ],
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateLicenseResponse": {
+      "description": "UpdateLicenseResponse contains the license",
+      "schema": {
+        "type": "object",
+        "required": [
+          "License"
+        ],
+        "properties": {
+          "License": {
+            "$ref": "#/definitions/License"
+          }
+        }
+      }
+    },
+    "updateRawRelease": {
+      "description": "UpdateRawReleaseResponse contains the app config contents"
+    }
+  }
+}

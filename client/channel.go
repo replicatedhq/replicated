@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sort"
 
-	channels "github.com/replicatedhq/replicated/gen/go/channels"
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 // AppChannels sorts []channels.AppChannel by Channel.Position
@@ -38,7 +38,7 @@ func (c *HTTPClient) ListChannels(appID string) ([]channels.AppChannel, error) {
 // CreateChannel adds a channel to an app.
 func (c *HTTPClient) CreateChannel(appID string, opts *ChannelOptions) ([]channels.AppChannel, error) {
 	path := fmt.Sprintf("/v1/app/%s/channel", appID)
-	body := &channels.Body{
+	body := &channels.BodyCreateChannel{
 		Name:        opts.Name,
 		Description: opts.Description,
 	}
@@ -90,7 +90,7 @@ func (crs ChannelReleases) Less(i, j int) bool {
 // GetChannel returns channel details and release history
 func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 	path := fmt.Sprintf("/v1/app/%s/channel/%s/releases", appID, channelID)
-	respBody := channels.InlineResponse2001{}
+	respBody := channels.GetChannelInlineResponse200{}
 	err := c.doJSON("GET", path, http.StatusOK, nil, &respBody)
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetChannel: %v", err)
