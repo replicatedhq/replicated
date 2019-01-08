@@ -81,6 +81,11 @@ func cleanupApps() {
 	}
 	t := GinkgoT()
 	origin := os.Getenv("REPLICATED_API_ORIGIN")
+	idOrigin := os.Getenv("REPLICATED_ID_ORIGIN")
+	if idOrigin == "" {
+		idOrigin = "https://id.replicated.com"
+	}
+
 	email := os.Getenv("VENDOR_USER_EMAIL")
 	password := os.Getenv("VENDOR_USER_PASSWORD")
 
@@ -100,7 +105,7 @@ func cleanupApps() {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", origin+"/v1/user/login", buf)
+	req, err := http.NewRequest("POST", idOrigin + "/v1/login", buf)
 	if err != nil {
 		t.Fatal(err)
 	}

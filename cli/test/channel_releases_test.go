@@ -71,7 +71,7 @@ var _ = Describe("channel releases", func() {
 			assert.Equal(t, "2", words[1], "RELEASE_SEQUENCE")
 			assert.Equal(t, "v2", words[3], "VERSION")
 			assert.Equal(t, "false", words[4], "REQURED")
-			assert.Equal(t, "Small", words[6], "RELEASE_NOTES")
+			assert.Equal(t, "Small", words[5], "RELEASE_NOTES")
 
 			assert.True(t, r.Scan())
 			words = strings.Fields(r.Text())
@@ -80,7 +80,7 @@ var _ = Describe("channel releases", func() {
 			assert.Equal(t, "1", words[1], "RELEASE_SEQUENCE")
 			assert.Equal(t, "v1", words[3], "VERSION")
 			assert.Equal(t, "true", words[4], "REQUIRED")
-			assert.Equal(t, "Big", words[6], "RELEASE_NOTES")
+			assert.Equal(t, "Big", words[5], "RELEASE_NOTES")
 
 			assert.False(t, r.Scan())
 		})
