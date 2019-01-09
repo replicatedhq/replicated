@@ -141,6 +141,14 @@ Releases are created on Travis when a tag is pushed. This will also update the d
 git tag -a v0.1.0 -m "First release" && git push upstream v0.1.0
 ```
 
+### Regenerating Client Code
+
+When the swagger definitions change, you can regenerate the Client code from the swagger spec with
+
+    make get-spec-prod gen-models
+
+models for the v2 api isn't really working yet, need to find the URL for that OpenAPI spec.
+
 ## Usage Recipes
 
 #### Make a new release by editing another

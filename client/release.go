@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 // ListReleases lists all releases for an app.
@@ -21,7 +21,7 @@ func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, erro
 // CreateRelease adds a release to an app.
 func (c *HTTPClient) CreateRelease(appID string, opts *ReleaseOptions) (*releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/release", appID)
-	body := &releases.Body{
+	body := &releases.BodyCreateRelease{
 		Source: "latest",
 	}
 	release := &releases.AppReleaseInfo{}
@@ -73,7 +73,7 @@ func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRele
 // PromoteRelease points the specified channels at a release sequence.
 func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/%d/promote", appID, sequence)
-	body := &releases.Body1{
+	body := &releases.BodyPromoteRelease{
 		Label:        label,
 		ReleaseNotes: notes,
 		Required:     required,

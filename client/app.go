@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	apps "github.com/replicatedhq/replicated/gen/go/apps"
+	apps "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 // ListApps returns all apps and their channels.

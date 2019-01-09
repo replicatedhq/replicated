@@ -5,7 +5,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	channels "github.com/replicatedhq/replicated/gen/go/channels"
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 var channelAdoptionTmplSrc = `

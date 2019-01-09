@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/client"
-	apps "github.com/replicatedhq/replicated/gen/go/apps"
-	channels "github.com/replicatedhq/replicated/gen/go/channels"
+	apps "github.com/replicatedhq/replicated/gen/go/v1"
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,7 +26,14 @@ var _ = Describe("channel rm", func() {
 
 		appChans, err := api.ListChannels(app.Id)
 		assert.Nil(t, err)
-		appChan = &appChans[0]
+
+		// can't archive the default channel
+		for _, channel := range appChans {
+			if !channel.IsDefault {
+				appChan = &channel
+				break
+			}
+		}
 	})
 
 	AfterEach(func() {
@@ -38,11 +45,12 @@ var _ = Describe("channel rm", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
-			cmd.RootCmd.SetArgs([]string{"channel", "rm", appChan.Id, "--app", app.Slug})
+			args := []string{"channel", "rm", appChan.Id, "--app", app.Slug}
+			cmd.RootCmd.SetArgs(args)
 			cmd.RootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			assert.Nil(t, err, "execute channel rm -- args: %v", args)
 
 			assert.Zero(t, stderr, "Expected no stderr output")
 			assert.NotZero(t, stdout, "Expected stdout output")

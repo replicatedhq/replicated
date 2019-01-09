@@ -4,7 +4,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 var releaseTmplSrc = `SEQUENCE:	{{ .Sequence }}

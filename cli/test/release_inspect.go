@@ -9,8 +9,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/client"
-	apps "github.com/replicatedhq/replicated/gen/go/apps"
-	releases "github.com/replicatedhq/replicated/gen/go/releases"
+	apps "github.com/replicatedhq/replicated/gen/go/v1"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -21,11 +21,8 @@ test:
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:
 	mkdir -p gen/spec/
-	for PKG in ${API_PKGS}; do \
-		curl -o gen/spec/$$PKG.json \
-			https://api.replicated.com/vendor/v1/spec/$$PKG.json; \
-	done
-	curl -o gen/spec/v2.json https://api.replicated.com/vendor/v2/spec/swagger.json;
+	curl -o gen/spec/v1.json https://api.replicated.com/vendor/v1/spec/vendor-api.json
+	curl -o gen/spec/v2.json https://api.replicated.com/vendor/v2/spec/swagger.json; # TODO this is still wrong, need to find where this is hosted
 
 # generate the swagger specs from the local replicatedcom/vendor-api repo
 get-spec-local:
@@ -44,15 +41,14 @@ get-spec-local:
 
 # generate from the specs in gen/spec, which come from either get-spec-prod or get-spec-local
 gen-models:
-	for PKG in ${API_PKGS}; do \
-		docker run --rm \
-			--volume `pwd`:/local \
-			swaggerapi/swagger-codegen-cli generate \
-			-Dmodels -DmodelsDocs=false \
-			-i /local/gen/spec/$$PKG.json \
-			-l go \
-			-o /local/gen/go/$$PKG; \
-	done
+	docker run --rm \
+		--volume `pwd`:/local \
+		swaggerapi/swagger-codegen-cli generate \
+		-Dmodels -DmodelsDocs=false \
+		-i /local/gen/spec/v1.json \
+		-l go \
+		-o /local/gen/go/v1; \
+	# TODO this will fail, see note above in get-spec-prod
 	docker run --rm \
 		--volume `pwd`:/local \
 		swaggerapi/swagger-codegen-cli generate \
