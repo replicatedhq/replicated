@@ -1,0 +1,25 @@
+---
+version: "2"
+
+plugins:
+  govet:
+   enabled: true
+  gofmt:
+    enabled: true
+  golint:
+    enabled: true
+    config:
+      min_confidence: 0.9
+    checks:
+      GoLint/Comments/DocComments:
+        enabled: false
+
+exclude_paterns:
+  - "**/vendor/"
+  - "**/*_test.go"
+  - "**/node_modules"
+
+checks:
+  return-statements:
+    enabled: false
+

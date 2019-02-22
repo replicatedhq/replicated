@@ -1,0 +1,82 @@
+- name: no config, one inline asset
+  spec:
+    assets:
+      v1:
+        - inline:
+           contents: |
+             #!/bin/sh
+             kubectl delete ns retraced
+           dest: ./uninstall.sh
+           mode: 0777
+  expect:
+    ./uninstall.sh: |
+       #!/bin/sh
+       kubectl delete ns retraced
+
+- name: one config, one inline asset, accept default
+  responses:
+    'Enter a value for option "namespace" [retraced]:': ""
+  viper_config:
+    namespace: "retraced"
+  spec:
+    config:
+      v1:
+        - name: Kubernetes Cluster
+          items:
+            - name: namespace
+              title: Namespace
+    assets:
+      v1:
+        - inline:
+           contents: |
+             #!/bin/sh
+             kubectl delete ns {{repl ConfigOption "namespace" }}
+           dest: ./scripts/uninstall.sh
+           mode: 0777
+  expect:
+    ./scripts/uninstall.sh: |
+       #!/bin/sh
+       kubectl delete ns retraced
+
+- name: one config, one inline asset, empty viper
+  responses:
+    'Enter a value for option "namespace":': "retraced"
+  spec:
+    config:
+      v1:
+        - name: Kubernetes Cluster
+          items:
+            - name: namespace
+              title: Namespace
+    assets:
+      v1:
+        - inline:
+           contents: |
+             #!/bin/sh
+             kubectl delete ns {{repl ConfigOption "namespace" }}
+           dest: ./uninstall.sh
+           mode: 0777
+  expect:
+    ./uninstall.sh: |
+       #!/bin/sh
+       kubectl delete ns retraced
+
+- name: ship context access
+  spec:
+    assets:
+      v1:
+        - inline:
+           contents: |
+             #!/bin/sh
+             cat {{repl context "state_file_path" }}
+           dest: ./inspect_state.sh
+           mode: 0777
+  expect:
+    ./inspect_state.sh: |
+       #!/bin/sh
+       cat .ship/state.json
+
+# ship context state_file_path
+# password
+# hidden
+# required

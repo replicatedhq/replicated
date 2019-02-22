@@ -1,0 +1,36 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  labels:
+    app: modify-chart
+    release: modify-chart
+  name: modify-chart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: modify-chart
+      release: modify-chart
+  template:
+    metadata:
+      labels:
+        app: modify-chart
+        release: modify-chart
+    spec:
+      containers:
+      - image: nginx:stable
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        name: modify-chart
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+        resources: {}
