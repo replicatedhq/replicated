@@ -1,0 +1,24 @@
+bin/
+dist/
+e2e-retraced/retraced-post.sh
+node_modules
+
+.idea
+.vscode
+/installer/
+/installer.bak/
+/.ship/
+integration/*/_test_*
+
+/.state/
+/overlays/
+/base/
+web/.state/
+/rendered.yaml
+
+.DS_Store
+
+# delve
+cmd/ship/.ship
+cmd/ship/base
+cmd/ship/overlays

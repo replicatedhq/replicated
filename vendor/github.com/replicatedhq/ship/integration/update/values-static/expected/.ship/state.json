@@ -1,0 +1,25 @@
+{
+  "v1": {
+    "config": {},
+    "helmValues": "replicaCount: 2\nimage:\n  repository: nginx\n  tag: stable\n\n",
+    "releaseName": "values-update",
+    "helmValuesDefaults": "replicaCount: 1\nimage:\n  repository: nginx\n  tag: stable\n\n",
+    "kustomize": {
+      "overlays": {
+        "ship": {
+          "patches": {
+            "/deployment.yaml": "apiVersion: apps/v1beta2\nkind: Deployment\nmetadata:\n  labels:\n    app: my-app\n    chart: values-update\n    heritage: Tiller\n    release: values-update\n  name: deployment\nspec:\n  template:\n    spec:\n      $setElementOrder/containers:\n      - name: values-update\n      containers:\n      - imagePullPolicy: IfNotPresent\n        name: values-update\n"
+          }
+        }
+      }
+    },
+    "upstream": "github.com/replicatedhq/test-charts/values-static",
+    "metadata": {
+      "applicationType": "helm",
+      "name": "values-update",
+      "releaseNotes": "add static chart (will not be updated)",
+      "version": "0.1.0"
+    },
+    "contentSHA": "b45cccb80cc250e5762918ca6e56e05edaef7bd023906be9411af9345353c016"
+  }
+}

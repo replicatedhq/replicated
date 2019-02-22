@@ -1,0 +1,1239 @@
+[
+  {
+    "path": "properties.config.properties.v1.items.properties",
+    "delete": [
+      "filters",
+      "test_proc"
+    ]
+  },
+  {
+    "path": "properties.config.properties.v1.items.properties.description",
+    "merge": {
+      "description": "The `description` of a config item should tell end users what data needs to be collected and how it will be used.",
+      "examples": [
+        "Configure application authentication below."
+      ]
+    }
+  },
+  {
+    "path": "properties.config.properties.v1.items.properties.items",
+    "merge": {
+      "description": "The `items` property is a grouping of similar config items.",
+      "examples": [
+        {
+          "name": "http_enabled",
+          "title": "HTTP Enabled",
+          "help_text": "When enabled we will listen to http",
+          "type": "bool",
+          "default": "0"
+        }
+      ]
+    }
+  },
+  {
+    "path": "properties.config.properties.v1.items.properties.name",
+    "merge": {
+      "description": "The `name` is used to reference an item in a template function.",
+      "examples": [
+        "authentication"
+      ]
+    }
+  },
+  {
+    "path": "properties.config.properties.v1.items.properties.title",
+    "merge": {
+      "description": "The `title` is the header of an item displayed to the end user.`",
+      "examples": [
+        "Authentication"
+      ]
+    }
+  },
+  {
+    "path": "properties.config.properties.v1.items.properties.when",
+    "merge": {
+      "description": "The `when` property is used to control whether an item will be shown to the end user.",
+      "examples": [
+        "'{{repl or (ConfigOptionEquals \"select_one\" \"external\") (ConfigOptionEquals \"select_one\" \"embedded\")}}'"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets",
+    "merge": {
+      "description": "Assets allows you to configure the application artifacts and deployment manifests will be delivered to end users running your application"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.inline",
+    "merge": {
+      "description": "An `inline` asset is one that is specified directly in your Ship application's spec.",
+      "examples": [
+        {
+          "dest": "install.sh",
+          "mode": 755,
+          "contents": "#!/bin/sh\nkubectl apply -f ./deploy.yml -n {{repl ConfigOption \"k8s_namespace\" }}"
+        },
+        {
+          "dest": "deploy.yml",
+          "contents": "\napiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n  name: api\nspec:\n  replicas: 1\n  template:\n    metadata:\n      labels:\n        app: retraced\n        tier: api\n    spec:\n      volumes:\n        - name: var-run\n          hostPath:\n            path: /var/run/retraced/\n      imagePullSecrets:\n        - name: quayio\n      containers:\n        - name: api\n          image: quay.io/retracedhq/api:{{ tag }}\n          ports:\n            - containerPort: 3000\n\n"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "contents",
+        "dest"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.inline.properties.contents",
+    "merge": {
+      "description": "The contents of the file"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.inline.properties.dest",
+    "merge": {
+      "description": "A path to which the file should be written when generating assets"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.inline.properties.mode",
+    "merge": {
+      "description": "Specifies file mode of the created asset, defaults to `0644`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.inline.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker",
+    "merge": {
+      "description": "A `docker` asset will pull an image from a public docker registry, registry.replicated.com, or a configured third party registry and produce a tar archive of the container image.",
+      "examples": [
+        {
+          "image": "quay.io/cooltool-enterprise/api:1.0.1",
+          "source": "quayio-private",
+          "dest": "images/api.tar"
+        },
+        {
+          "image": "registry.replicated.com/cooltool/worker:1.1.0",
+          "dest": "images/worker.tar",
+          "source": "replicated"
+        },
+        {
+          "image": "postgres:9.6",
+          "dest": "images/postgres.tar",
+          "source": "public",
+          "mode": 600
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "dest",
+        "image",
+        "source"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker.properties.dest",
+    "merge": {
+      "description": "The destination for the docker image, such as `api.tar` or `docker-images/worker.tar`."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker.properties.image",
+    "merge": {
+      "description": "The docker image URL"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker.properties.source",
+    "merge": {
+      "description": "The source for the image. Should be either `public`, `replicated`, or the name of a third-party private registry previously configured on [console.replicated.com](https://console.replicated.com)"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker.properties.mode",
+    "merge": {
+      "description": "The unix file permissions to be set on the image tar archive, e.g `600`."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.docker.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm",
+    "merge": {
+      "description": "A `helm` asset will template and render an existing helm chart. You can either reference an existing chart in a private or public github repo, or your installer runbook can include assets to drop an existing helm chart at `local.chart_root`.",
+      "examples": [
+        {
+          "github": {
+            "repo": "github.com/replicatedhq/superbigtool-k8s",
+            "ref": "8fcaebe55af67fe6789fa678faaa76fa867fbc",
+            "path": "k8s-yamls/",
+            "proxy": true
+          },
+          "dest": "charts/rendered/"
+        },
+        {
+          "values":  {
+            "AppFlavor": "ship",
+            "NginxReplicas": "{{repl ConfigOption \\\"nginx_replicas\\\"}}"
+          },
+          "helm_opts": [
+            "--name",
+            "{{repl Installation \\\"channel_name\\\"}}-{{repl Installation \\\"semver\\\"}}"
+          ],
+          "local": {
+            "chart_root": "charts/src/nginx/"
+          },
+          "dest": "charts/rendered/"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "dest"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.dest",
+    "merge": {
+      "description": "The directory in which to render the chart. If the source chart is at `charts/src/nginx`, and `dest` is set to `charts/rendered/`, then the chart will be templated at `charts/rendered/nginx`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.helm_opts",
+    "merge": {
+      "description": "Additional options as would be passed to `helm template`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.local",
+    "merge": {
+      "description": "Configuration for indicating an already existing source chart to render from."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.local.properties.chart_root",
+    "merge": {
+      "description": "The base directory of the existing chart."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.helm_fetch",
+    "merge": {
+      "description": "Configuration for indicating a chart hosted somewhere that would be accessible to the `helm fetch` function."
+    },
+    "replace": {
+      "required": [
+        "chart_ref"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.helm_fetch.properties.chart_ref",
+    "merge": {
+      "description": "`chart URL | repo/chartname` as would be passed to `helm fetch`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.helm_fetch.properties.repo_url",
+    "merge": {
+      "description": "repository URL as would be passed to `helm fetch` with the `--repo` flag"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.helm_fetch.properties.version",
+    "merge": {
+      "description": "version as would be passed to `helm fetch` with the `--version` flag"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github",
+    "merge": {
+      "description": "Configuration for indicating a chart hosted in a private or public github repo. Fields are same as `assets.v1.github`"
+    },
+    "replace": {
+      "required": [
+        "repo",
+        "ref",
+        "path"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties",
+    "delete": [
+      "dest",
+      "mode",
+      "strip_path"
+    ]
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties.path",
+    "merge": {
+      "description": "Path in repo from which to pull file or directory"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties.ref",
+
+    "merge": {
+      "description": "Reference to a github commit to pull, usually a SHA or a tag -- usage of branches is supported but discouraged as content could change within a single Ship release"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties.repo",
+    "merge": {
+      "description": "The GitHub repository to pull from, formated as `owner`/`repo` e.g. `replicatedhq/ship`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties.source",
+    "merge": {
+      "description": "Deprecated"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.github.properties.proxy",
+    "merge": {
+      "description": "Boolean true or false, determines whether a repository is fetched via the Replicated API. Should be used for private repos."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties",
+    "delete": [
+      "mode",
+      "upstream"
+    ]
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.values",
+    "merge": {
+      "description": "Values to set during rendering, overrides defaults in `values.yaml` if present in the chart root."
+    },
+    "replace": {
+      "patternProperties": {
+        ".*": {
+          "type": ["string", "number", "boolean"]
+        }
+      }
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.values.patternProperties[\".*\"]",
+    "merge": {
+      "description": "Key-value pairs to set."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.values_from",
+    "merge": {
+      "description": "values_from"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.values_from.properties",
+    "delete": [
+      "path",
+      "save_to_state"
+    ]
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.helm.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer",
+    "merge": {
+      "description": "A `dockerlayer` asset will pull an image from a public docker registry, registry.replicated.com, or a configured third party registry and produce a tar archive of the container image.",
+      "examples": [
+        {
+          "image": "quay.io/cooltool-enterprise/configs:1.0.1",
+          "dest": "config/",
+          "source": "quayio-private",
+          "layer": "f7126e84abc96fbc8495c33052724fad48115829e86987adbf556474f0ead5c1"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "dest",
+        "image",
+        "source",
+        "layer"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties.dest",
+    "merge": {
+      "description": "The directory in which the layer should be unpacked"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties.image",
+    "merge": {
+      "description": "The docker image URL"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties.source",
+    "merge": {
+      "description": "The source for the image. Should be either `public`, `replicated`, or the name of a third-party private registry previously configured on [console.replicated.com](https://console.replicated.com)"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties",
+    "delete": [
+      "mode"
+    ]
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties.layer",
+    "merge": {
+      "description": "a SHA256 of the layer to extract. You can inspect the layer SHAs of a docker image by running something like `docker save myimage > myimage.tar && tar xvf myimage.tar -C /tmp`. Ship will unpack the archive at `<layer sha>/layer.tar` to the `dest` directory."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.dockerlayer.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github",
+    "merge": {
+      "description": "A `github` asset is created from files downloaded from either a public or a linked Github repo.",
+      "examples": [
+        {
+          "repo": "github.com/replicatedhq/superbigtool-k8s",
+          "ref": "8fcaebe55af67fe6789fa678faaa76fa867fbc",
+          "path": "k8s-yamls/",
+          "dest": "./k8s/",
+          "proxy": true,
+          "strip_path": ""
+        },
+        {
+          "repo": "github.com/replicatedhq/ship",
+          "ref": "master",
+          "path": "hack/docs/",
+          "dest": "./docs{{repl Add 1 1}}/",
+          "proxy": false,
+          "mode": 644,
+          "strip_path": "{{repl ParseBool \"true\"}}"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "repo",
+        "path",
+        "dest"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.dest",
+    "merge": {
+      "description": "Destination directory"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.mode",
+    "merge": {
+      "description": "If present, overrides the file mode of all files included by this asset."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.path",
+    "merge": {
+      "description": "Path in repo from which to pull file or directory"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.ref",
+    "merge": {
+      "description": "Reference to a github commit to pull, usually a SHA or a tag -- usage of branches is supported but discouraged as content could change within a single Ship release"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.repo",
+    "merge": {
+      "description": "The GitHub repository to pull from, formated as `owner`/`repo` e.g. `replicatedhq/ship`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.source",
+    "merge": {
+      "description": "Deprecated"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.proxy",
+    "merge": {
+      "description": "Boolean true or false, determines whether a repository is fetched via the Replicated API. Should be used for private repos."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.strip_path",
+    "merge": {
+      "description": "If true, the github directory will not be included in the filepath of the generated files. For instance, when outputting all files within 'source/' in the repository to the 'dest/' directory, the file 'source/a/file.txt' would be placed at 'dest/source/a/file.txt' when this is false and 'dest/a/file.txt' when this is true."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.github.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web",
+    "replace": {
+      "required": ["url", "dest"]
+    },
+    "merge": {
+      "description": "A `web` asset delivers web content from a private or public URL",
+      "examples": [
+        {
+          "url": "https://my_bucket.s3.amazonaws.com/path-to-file",
+          "dest": "./my-bucket-contents"
+        }
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.body",
+    "merge": {
+      "description": "Content to send with a `POST` request"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.bodyFormat",
+    "merge": {
+      "description": "Content type of the body sent with a `POST` request"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.dest",
+    "merge": {
+      "description": "A path to which the file should be written when generating assets"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.url",
+    "merge": {
+      "description": "A public or private URL to pull content from"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.method",
+    "merge": {
+      "description": "Defaults to `GET` if not present, supports `POST`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.headers",
+    "merge": {
+      "description": "HTTP request headers to send with the request",
+      "patternProperties": {
+        ".*": {
+          "description": "Header values",
+          "type": "array"
+        }
+      }
+    },
+    "delete": "properties"
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.mode",
+    "merge": {
+      "description": "Unix file permissions to set on the asset"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.web.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks",
+    "replace": {
+      "required": [
+        "cluster_name",
+        "region",
+        "autoscaling_groups"
+      ],
+      "oneOf": [
+        {
+          "required": [
+            "created_vpc"
+          ]
+        },
+        {
+          "required": [
+            "existing_vpc"
+          ]
+        }
+      ]
+    },
+    "merge": {
+      "description": "An `amazon_eks` asset generates a terraform file that will create an Amazon EKS Cluster.",
+      "extended_description": "It also populates a template function `AmazonEKS` that takes the name of the cluster and returns the path to the generated kubeconfig for the cluster. This template function is only valid after the asset has been generated as part of the `render` lifecycle step, but can be used by later assets within that step. The file itself is created when the generated terraform is applied, whether by the `terraform` lifecycle step or otherwise. This is intended to be used within the [kubectlApply](/api/ship-lifecycle/kubectlapply/) lifecycle step.",
+      "examples": [
+        {
+          "cluster_name": "existing-vpc-cluster",
+          "region": "us-east-1",
+          "existing_vpc": {
+            "vpc_id": "abc123",
+            "public_subnets": [
+              "abc123-1",
+              "abc123-2"
+            ],
+            "private_subnets": [
+              "xyz789-1",
+              "xyz789-2"
+            ]
+          },
+          "autoscaling_groups": [
+            {
+              "name": "group1",
+              "group_size": "2",
+              "machine_type": "m5.large"
+            },
+            {
+              "name": "group2",
+              "group_size": "1",
+              "machine_type": "t2.large"
+            }
+          ]
+        },
+        {
+          "cluster_name": "new-vpc-cluster",
+          "region": "us-west-2",
+          "created_vpc": {
+            "zones": [
+              "us-west-2a",
+              "us-west-2b"
+            ],
+            "vpc_cidr": "10.0.0.0/16",
+            "public_subnets": [
+              "10.0.1.0/24",
+              "10.0.2.0/24"
+            ],
+            "private_subnets": [
+              "10.0.129.0/24",
+              "10.0.130.0/24"
+            ]
+          },
+          "autoscaling_groups": [
+            {
+              "name": "firstgroup",
+              "group_size": "3",
+              "machine_type": "m5.large"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.autoscaling_groups",
+    "replace": {
+      "required": [
+        "name",
+        "group_size",
+        "machine_type"
+      ]
+    },
+    "merge": {
+      "description": "Autoscaling groups to include in your EKS cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.autoscaling_groups.items.properties.name",
+    "merge": {
+      "description": "The name to give the created autoscaling group"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.autoscaling_groups.items.properties.group_size",
+    "merge": {
+      "description": "The number of instances to be included in the group"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.autoscaling_groups.items.properties.machine_type",
+    "merge": {
+      "description": "The AWS instance type to use within the group"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.cluster_name",
+    "merge": {
+      "description": "The name of the created EKS cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.region",
+    "merge": {
+      "description": "The AWS region to build the cluster in. At time of writing, AWS supports EKS in us-east and us-west"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.created_vpc",
+    "replace": {
+      "required": [
+        "zones",
+        "vpc_cidr",
+        "public_subnets",
+        "private_subnets"
+      ]
+    },
+    "merge": {
+      "description": "The VPC to create for the EKS cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.created_vpc.properties.zones",
+    "merge": {
+      "description": "The availability zones to create subnets within"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.created_vpc.properties.vpc_cidr",
+    "merge": {
+      "description": "The CIDR to use for this VPC"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.created_vpc.properties.public_subnets",
+    "merge": {
+      "description": "The public subnets to create within the VPC"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.created_vpc.properties.private_subnets",
+    "merge": {
+      "description": "The private subnets to create within the VPC. All workers will be placed on these subnets"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.existing_vpc",
+    "replace": {
+      "required": [
+        "vpc_id",
+        "public_subnets",
+        "private_subnets"
+      ]
+    },
+    "merge": {
+      "description": "The existing VPC to use for the EKS cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.existing_vpc.properties.vpc_id",
+    "merge": {
+      "description": "The ID of the existing VPC to use"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.existing_vpc.properties.public_subnets",
+    "merge": {
+      "description": "The public subnets to use within the VPC"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.existing_vpc.properties.private_subnets",
+    "merge": {
+      "description": "The private subnets to use within the VPC. All workers will be placed on these subnets"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.mode",
+    "merge": {
+      "description": "Ignored"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.dest",
+    "merge": {
+      "description": "The path within `installer/` to place the generated file. Defaults to `amazon_eks.tf`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.amazon_eks.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks",
+    "merge": {
+      "description": "An `azure_aks` asset generates a terraform file that will create an Azure AKS Cluster.",
+      "extended_description": "It also populates a template function `AzureAKS` that takes the name of the cluster and returns the path to the generated kubeconfig for the cluster. This template function is only valid after the asset has been generated as part of the `render` lifecycle step, but can be used by later assets within that step. The file itself is created when the generated terraform is applied, whether by the `terraform` lifecycle step or otherwise. This is intended to be used within the [kubectlApply](/api/ship-lifecycle/kubectlapply/) lifecycle step.",
+      "examples": [
+        {
+          "tenant_id": "5c87f096-eafc-41e1-82f3-1d2282887dff",
+          "subscription_id": "75cfa510-7123-4812-89bb-fc0286968bf5",
+          "service_principal_id": "651ed514-6d89-4e51-adaf-c3d3f6dac5a3",
+          "service_principal_secret": "hvS/lhixCYsPxXgFt04Ilj14NLU4o8LOAIDSAktrwbo=",
+          "resource_group_name": "DefaultResourceGroup-EUS",
+          "location": "East US",
+          "kubernetes_version": "v1.11.2",
+          "cluster_name": "AKS cluster",
+          "public_key": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDdEcdAqClaNZdHAGHhiSBobJo5ZUL3sDfrZbBQinLvx3HN/9UaXp5mimlzhUkUQwX4jPqJ78w52idmXItd55HVboSQ8uKaRicgLLaNhSqrNpb+W3k2RToRPsjuaCi6a8XET0kcma6NaIbae9n0+nKzTtadX/hkrPEMS56BYpnHjQ== user@example.com",
+          "node_count": "3",
+          "node_type": "Standard_D1_v2",
+          "disk_gb": "50"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "cluster_name",
+        "location",
+        "node_count",
+        "node_type",
+        "resource_group_name",
+        "service_principal_id",
+        "service_principal_secret",
+        "subscription_id",
+        "tenant_id"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.cluster_name",
+    "merge": {
+      "description": "The name of the cluster."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.description",
+    "merge": {
+      "description": "A description for the cluster."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.dest",
+    "merge": {
+      "description": "The path within `installer/` to place the generated file. Defaults to `azure_aks.tf`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.disk_gb",
+    "merge": {
+      "description": "The size of the disk the the operating system will be installed on for each node in the cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.kubernetes_version",
+    "merge": {
+      "description": "The cluster version to create"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.location",
+    "merge": {
+      "description": "The location of the resource group specified in resource_group_name"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.mode",
+    "merge": {
+      "description": "Ignored"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.node_count",
+    "merge": {
+      "description": "The number of nodes to create in the cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.node_type",
+    "merge": {
+      "description": "The size of VM to create for each node in the cluster"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.public_key",
+    "merge": {
+      "description": "Enables SSH access to the nodes in the cluster with the corresponding private key"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.resource_group_name",
+    "merge": {
+      "description": "The name of a resource group within the subscription specified in subscription_id"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.service_principal_id",
+    "merge": {
+      "description": "The Application ID of a registered application."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.service_principal_secret",
+    "merge": {
+      "description": "A key associated with a registered application."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.subscription_id",
+    "merge": {
+      "description": "An Azure subscription ID"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.tenant_id",
+    "merge": {
+      "description": "The tenant ID, also known as Directory ID, from Azure Active Directory"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.azure_aks.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke",
+    "merge": {
+      "description": "A `google_gke` asset generates a terraform file that will create a Google GKE Cluster.",
+      "extended_description": "It also populates a template function `GoogleGKE` that takes the name of the cluster and returns the path to the generated kubeconfig for the cluster. This template function is only valid after the asset has been generated as part of the `render` lifecycle step, but can be used by later assets within that step. The file itself is created when the generated terraform is applied, whether by the `terraform` lifecycle step or otherwise. This is intended to be used within the [kubectlApply](/api/ship-lifecycle/kubectlapply/) lifecycle step.",
+      "examples": [
+        {
+          "credentials": "<BASE64 ENCODED STRING>",
+          "project": "my-project",
+          "region": "us-east",
+          "cluster_name": "cluster-with-all-options",
+          "zone": "us-east1-b",
+          "initial_node_count": "5",
+          "machine_type": "n1-standard-4",
+          "additional_zones": "us-east1-c,us-east1-d",
+          "min_master_version": "1.10.6-gke.1"
+        }
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.credentials",
+    "merge": {
+      "description": "Base64 encoded contents of a file that contains your service account private key in JSON format."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.project",
+    "merge": {
+      "description": "The ID of the project to apply any resources to."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.region",
+    "merge": {
+      "description": "The region to operate under, if not specified by a given resource."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.cluster_name",
+    "merge": {
+      "description": "The name of the cluster."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.zone",
+    "merge": {
+      "description": "The zone that the master and the number of nodes specified in initial_node_count should be created in."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.initial_node_count",
+    "merge": {
+      "description": "The number of nodes to create in this cluster (not including the Kubernetes master). Defaults to 3."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.machine_type",
+    "merge": {
+      "description": "The name of a Google Compute Engine machine type. Defaults to n1-standard-1."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.additional_zones",
+    "merge": {
+      "description": "A comma separated list of additional Google Compute Engine locations in which the cluster's nodes should be located. If additional zones are configured, the number of nodes specified in initial_node_count is created in all specified zones."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.min_master_version",
+    "merge": {
+      "description": "The minimum version of the master. GKE will auto-update the master to new versions, so this does not guarantee the current master version--use the read-only master_version field to obtain that. If unset, the cluster's version will be set by GKE to the version of the most recent official release (which is not necessarily the latest version)."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.mode",
+    "merge": {
+      "description": "Ignored"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.dest",
+    "merge": {
+      "description": "The path within `installer/` to place the generated file. Defaults to `google_gke.tf`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.google_gke.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform",
+    "merge": {
+      "description": "A `terraform` asset is text specified directly in your Ship application's spec.",
+      "examples": [
+        {
+          "inline": "resource \"random_id\" \"server\" { byte_length = {{repl ConfigOption \"id_length\" | ParseInt}}}"
+        },
+        {
+          "dest": "terraform/random_id.tf",
+          "inline": "resource \"random_id\" \"server\" { byte_length = {{repl ConfigOption \"id_length\" | ParseInt}}}"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "inline"
+      ]
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform.properties.inline",
+    "merge": {
+      "description": "The contents of the file"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform.properties.dest",
+    "merge": {
+      "description": "A path to which the file should be written when generating assets. Defaults to `main.tf`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform.properties.mode",
+    "merge": {
+      "description": "Specifies file mode of the created asset, defaults to `0644`"
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform.properties.when",
+    "merge": {
+      "description": "This asset will be included when 'when' is omitted or true"
+    }
+  },
+  {
+    "path": "properties.config",
+    "merge": {
+      "description": "Config allows you to describe your application's environment-specific configuration options. This can be things like\n\n- External database configuration\n- Infrastructure topology details\n- internal container or artifact repositories\n- TCP Ports to listen on"
+    }
+  },
+  {
+    "path": "properties.config.properties.v1.items",
+    "replace": {
+      "required": ["name", "items"]
+    }
+  },
+  {
+    "path": "properties.lifecycle",
+    "merge": {
+      "description": "Lifecycle allows you to customize the messaging and workflow for your end customer."
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1",
+    "merge": {
+      "description": "v1 defines lifecycle/v1 steps"
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.message",
+    "merge": {
+      "description": "A `message` step will print a message to the console or UI.",
+      "examples": [
+        { "contents": "This tool will prepare assets to deploy CoolTool Enterprise to your Kubernetes cluster" },
+        {
+          "contents": "You may be missing a required prerequisite for this application. Please ensure docker is configured on the target server.",
+          "level": "warn"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "contents"
+      ]
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.message.properties.contents",
+    "merge": {
+      "description": "the message to display"
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.message.properties.level",
+    "merge": {
+      "description": "the severity of the message -- defaults to `info`. Other options are `debug`, `warn`, and `error`"
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.render",
+    "merge": {
+      "description": "A `render` step will do the work of collecting configuration values from a user and using them to generate the final assets that can be used to deploy an application.",
+      "examples": [
+        {}
+      ]
+    },
+    "replace": {
+      "required": []
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.terraform",
+    "merge": {
+      "description": "A `terraform` step will deploy terraform resources.",
+      "examples": [
+        {},
+        {
+          "path": "terraform/"
+        }
+      ]
+    },
+    "replace": {
+      "required": []
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.terraform.properties.path",
+    "merge": {
+      "description": "the directory within `installer` within which to run terraform."
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.terraform.properties.when",
+    "merge": {
+      "description": "If 'when' is not empty and evaluates to false, the terraform lifecycle step will be skipped."
+    }
+  },
+  {
+    "path": "properties.assets.properties.v1.items.properties.terraform.properties",
+    "delete": ["github"]
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.kubectlApply",
+    "merge": {
+      "description": "A `kubectlApply` step will run `kubectl apply` with the provided file path and kubeconfig.",
+      "examples": [
+        { "path": "config.yml" },
+        {
+          "path": "k8s/another.yml",
+          "kubeconfig": "k8s/generated_kubeconfig"
+        },
+        {
+          "path": "k8s/another.yml",
+          "kubeconfig": "{{repl AmazonEKS \"eks_cluster_name\" }}"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "path"
+      ]
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.kubectlApply.properties.path",
+    "merge": {
+      "description": "the file to apply"
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.kubectlApply.properties.kubeconfig",
+    "merge": {
+      "description": "the kubeconfig file to use, overriding the system default"
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.kustomize",
+    "merge": {
+      "description": "Kustomize adds an interactive step for last-mile customization of kubernetes YAML manifests. The user will be able to examine all output manifests, and store any desired changes/tweaks separate from the base yaml. For more info on Kustomize, see [kustomize.io](https://kustomize.io).",
+      "examples": [
+        {
+          "base": "./k8s/base",
+          "overlay": "./overlays/production",
+          "dest": "./rendered.yaml"
+        }
+      ]
+    },
+    "replace": {
+      "required": [
+        "base"
+      ]
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.kustomizeIntro",
+    "merge": {
+      "description": "This step presents an introduction page about kustomize, usually used before a `kustomize` step. Kustomize adds an interactive step for last-mile customization of kubernetes YAML manifests. The user will be able to examine all output manifests, and store any desired changes/tweaks separate from the base yaml. For more info on Kustomize, see [kustomize.io](https://kustomize.io).",
+      "examples": [
+        {}
+      ]
+    }
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties.config",
+    "merge": {
+      "description": "A `config` step will present the user with a screen to customize options as defined in your top-level `config` section.",
+      "examples": [
+        {}
+      ]
+    },
+    "replace": {
+      "required": []
+    }
+  },
+  { "comment": "last step -- delete internal spec types"},
+  {
+    "path": "properties.assets.properties.v1.items.properties",
+    "delete": [
+      "local"
+    ]
+  },
+  {
+    "path": "properties.lifecycle.properties.v1.items.properties",
+    "delete": [
+      "helmIntro",
+      "helmValues",
+      "kubectlApply.properties.StepShared",
+      "unfork"
+    ]
+  }
+]
