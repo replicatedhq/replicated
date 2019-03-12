@@ -101,14 +101,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/replicatedhq/replicated/client"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 )
 
 func main() {
 	token := os.Getenv("REPLICATED_API_TOKEN")
 	appSlugOrID := os.Getenv("REPLICATED_APP")
 
-	api := client.New(token)
+	api := platformclient.New(token)
 
 	app, err := api.GetApp(appSlugOrID)
 	if err != nil {

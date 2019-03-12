@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/replicatedhq/replicated/cli/print"
-	vendorAPI "github.com/replicatedhq/replicated/client"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +30,9 @@ func (r *runners) releaseInspect(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
 	}
 
-	release, err := r.api.GetRelease(r.appID, seq)
+	release, err := r.platformAPI.GetRelease(r.appID, seq)
 	if err != nil {
-		if err == vendorAPI.ErrNotFound {
+		if err == platformclient.ErrNotFound {
 			return fmt.Errorf("No such release %d", seq)
 		}
 		return err

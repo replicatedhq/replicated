@@ -23,7 +23,7 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[0]
 
-	_, releases, err := r.api.GetChannel(r.appID, chanID)
+	_, releases, err := r.platformAPI.GetChannel(r.appID, chanID)
 	if err != nil {
 		return err
 	}

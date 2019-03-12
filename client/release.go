@@ -1,86 +1,114 @@
 package client
 
 import (
-	"fmt"
-	"net/http"
-	"strings"
+	"errors"
 
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-// ListReleases lists all releases for an app.
-func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
-	path := fmt.Sprintf("/v1/app/%s/releases", appID)
-	releases := make([]releases.AppReleaseInfo, 0)
-	if err := c.doJSON("GET", path, http.StatusOK, nil, &releases); err != nil {
-		return nil, fmt.Errorf("ListReleases: %v", err)
+func (c *Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
 	}
-	return releases, nil
-}
 
-// CreateRelease adds a release to an app.
-func (c *HTTPClient) CreateRelease(appID string, opts *ReleaseOptions) (*releases.AppReleaseInfo, error) {
-	path := fmt.Sprintf("/v1/app/%s/release", appID)
-	body := &releases.BodyCreateRelease{
-		Source: "latest",
-	}
-	release := &releases.AppReleaseInfo{}
-	if err := c.doJSON("POST", path, http.StatusCreated, body, release); err != nil {
-		return nil, fmt.Errorf("CreateRelease: %v", err)
-	}
-	// API does not accept yaml in create operation, so first create then udpate
-	if opts != nil && opts.YAML != "" {
-		if err := c.UpdateRelease(appID, release.Sequence, opts); err != nil {
-			return nil, fmt.Errorf("CreateRelease with YAML: %v", err)
+	if appType == "platform" {
+		platformReleases, err := c.PlatformClient.ListReleases(appID)
+		if err != nil {
+			return nil, err
 		}
+
+		releaseInfos := make([]types.ReleaseInfo, 0, 0)
+		for _, platformRelease := range platformReleases {
+			activeChannels := make([]types.Channel, 0, 0)
+			for _, platformReleaseChannel := range platformRelease.ActiveChannels {
+				activeChannel := types.Channel{
+					ID:          platformReleaseChannel.Id,
+					Name:        platformReleaseChannel.Name,
+					Description: platformReleaseChannel.Description,
+				}
+
+				activeChannels = append(activeChannels, activeChannel)
+			}
+			releaseInfo := types.ReleaseInfo{
+				AppID:          platformRelease.AppId,
+				CreatedAt:      platformRelease.CreatedAt,
+				EditedAt:       platformRelease.EditedAt,
+				Editable:       platformRelease.Editable,
+				Sequence:       platformRelease.Sequence,
+				Version:        platformRelease.Version,
+				ActiveChannels: activeChannels,
+			}
+
+			releaseInfos = append(releaseInfos, releaseInfo)
+		}
+
+		return releaseInfos, nil
+	} else if appType == "ship" {
+		return c.ShipClient.ListReleases(appID)
 	}
-	return release, nil
+
+	return nil, errors.New("unknown app type")
 }
 
-// UpdateRelease updates a release's yaml.
-func (c *HTTPClient) UpdateRelease(appID string, sequence int64, opts *ReleaseOptions) error {
-	endpoint := fmt.Sprintf("%s/v1/app/%s/%d/raw", c.apiOrigin, appID, sequence)
-	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(opts.YAML))
+func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "platform" {
+		platformReleaseInfo, err := c.PlatformClient.CreateRelease(appID, yaml)
+		if err != nil {
+			return nil, err
+		}
+
+		activeChannels := make([]types.Channel, 0, 0)
+
+		for _, platformReleaseChannel := range platformReleaseInfo.ActiveChannels {
+			activeChannel := types.Channel{
+				ID:          platformReleaseChannel.Id,
+				Name:        platformReleaseChannel.Name,
+				Description: platformReleaseChannel.Description,
+			}
+
+			activeChannels = append(activeChannels, activeChannel)
+		}
+		return &types.ReleaseInfo{
+			AppID:          platformReleaseInfo.AppId,
+			CreatedAt:      platformReleaseInfo.CreatedAt,
+			EditedAt:       platformReleaseInfo.EditedAt,
+			Editable:       platformReleaseInfo.Editable,
+			Sequence:       platformReleaseInfo.Sequence,
+			Version:        platformReleaseInfo.Version,
+			ActiveChannels: activeChannels,
+		}, nil
+	} else if appType == "ship" {
+		return c.ShipClient.CreateRelease(appID, yaml)
+	}
+
+	return nil, errors.New("unknown app type")
+}
+
+func (c *Client) UpdateRelease(appID string, sequence int64, releaseOptions interface{}) error {
+	return nil
+}
+
+func (c *Client) GetRelease(appID string, sequence int64) (interface{}, error) {
+	return nil, nil
+}
+
+func (c *Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
+	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", c.apiKey)
-	req.Header.Set("Content-Type", "application/yaml")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("UpdateRelease: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		if badRequestErr, err := unmarshalBadRequest(resp.Body); err == nil {
-			return badRequestErr
-		}
-		return fmt.Errorf("UpdateRelease (%s %s): status %d", req.Method, endpoint, resp.StatusCode)
-	}
-	return nil
-}
 
-// GetRelease returns a release's properties.
-func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
-	path := fmt.Sprintf("/v1/app/%s/%d/properties", appID, sequence)
-	release := &releases.AppRelease{}
-	if err := c.doJSON("GET", path, http.StatusOK, nil, release); err != nil {
-		return nil, fmt.Errorf("GetRelease: %v", err)
+	if appType == "platform" {
+		return c.PlatformClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
+	} else if appType == "ship" {
+		return c.ShipClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
 	}
-	return release, nil
-}
 
-// PromoteRelease points the specified channels at a release sequence.
-func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
-	path := fmt.Sprintf("/v1/app/%s/%d/promote", appID, sequence)
-	body := &releases.BodyPromoteRelease{
-		Label:        label,
-		ReleaseNotes: notes,
-		Required:     required,
-		Channels:     channelIDs,
-	}
-	if err := c.doJSON("POST", path, http.StatusNoContent, body, nil); err != nil {
-		return fmt.Errorf("PromoteRelease: %v", err)
-	}
-	return nil
+	return errors.New("unknown app type")
 }
