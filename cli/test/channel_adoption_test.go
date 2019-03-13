@@ -7,16 +7,16 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
-	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
 
 // This only tests with no active licenses since the vendor API does not provide
 // a way to update licenses' last_active field.
 var _ = Describe("channel adoption", func() {
-	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 	var appChan = &channels.AppChannel{}
@@ -24,7 +24,7 @@ var _ = Describe("channel adoption", func() {
 	BeforeEach(func() {
 		t.Logf("%+v\n", api)
 		var err error
-		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
+		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 
 		appChans, err := api.ListChannels(app.Id)

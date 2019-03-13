@@ -6,14 +6,15 @@ import (
 	"io/ioutil"
 	"net/url"
 
+	"os"
+	"strings"
+
 	"github.com/go-kit/kit/log"
 	"github.com/mitchellh/cli"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/ship/pkg/e2e"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"strings"
 )
 
 func init() {
@@ -117,10 +118,7 @@ func (r *Releaser) getParams() (token, specContents, semver, channelID, gqlAddr 
 	return
 }
 
-func (r *Releaser) Release(
-	ctx context.Context,
-) error {
-
+func (r *Releaser) Release(ctx context.Context) error {
 	token, specContents, semver, channelID, gqlAddr, err := r.getParams()
 	if err != nil {
 		return errors.Wrap(err, "load params")

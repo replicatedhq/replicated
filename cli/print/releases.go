@@ -6,7 +6,7 @@ import (
 	"text/template"
 	"time"
 
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 var releasesTmplSrc = `SEQUENCE	CREATED	EDITED	ACTIVE_CHANNELS
@@ -16,7 +16,7 @@ var releasesTmplSrc = `SEQUENCE	CREATED	EDITED	ACTIVE_CHANNELS
 
 var releasesTmpl = template.Must(template.New("Releases").Funcs(funcs).Parse(releasesTmplSrc))
 
-func Releases(w *tabwriter.Writer, appReleases []releases.AppReleaseInfo) error {
+func Releases(w *tabwriter.Writer, appReleases []types.ReleaseInfo) error {
 	rs := make([]map[string]interface{}, len(appReleases))
 
 	for i, r := range appReleases {

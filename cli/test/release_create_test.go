@@ -7,19 +7,19 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
-	"github.com/replicatedhq/replicated/client"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("release create", func() {
-	api := client.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 
 	BeforeEach(func() {
 		var err error
-		app, err = api.CreateApp(&client.AppOptions{Name: app.Name})
+		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
 		assert.Nil(t, err)
 	})
 

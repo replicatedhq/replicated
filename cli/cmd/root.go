@@ -6,7 +6,10 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/replicatedhq/replicated/pkg/shipclient"
+
 	"github.com/replicatedhq/replicated/client"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -20,7 +23,8 @@ const (
 
 var appSlugOrID string
 var apiToken string
-var apiOrigin = "https://api.replicated.com/vendor"
+var platformOrigin = "https://api.replicated.com/vendor"
+var shipOrigin = "https://g.replicated.com/graphql"
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
@@ -28,7 +32,12 @@ func init() {
 
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {
-		apiOrigin = originFromEnv
+		platformOrigin = originFromEnv
+	}
+
+	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
+	if shipOriginFromEnv != "" {
+		shipOrigin = shipOriginFromEnv
 	}
 }
 
@@ -102,18 +111,38 @@ func Execute(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 				return errors.New("Please provide your API token")
 			}
 		}
-		api := client.NewHTTPClient(apiOrigin, apiToken)
-		runCmds.api = api
+		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
+		runCmds.platformAPI = platformAPI
+
+		shipAPI := shipclient.NewGraphQLClient(shipOrigin, apiToken)
+		runCmds.shipAPI = shipAPI
+
+		commonAPI := client.NewClient(platformOrigin, shipOrigin, apiToken)
+		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {
 			appSlugOrID = os.Getenv("REPLICATED_APP")
 		}
 
-		app, err := api.GetApp(appSlugOrID)
+		appType, err := commonAPI.GetAppType(appSlugOrID)
 		if err != nil {
 			return err
 		}
-		runCmds.appID = app.Id
+		runCmds.appType = appType
+
+		if appType == "platform" {
+			app, err := platformAPI.GetApp(appSlugOrID)
+			if err != nil {
+				return err
+			}
+			runCmds.appID = app.Id
+		} else if appType == "ship" {
+			app, err := shipAPI.GetApp(appSlugOrID)
+			if err != nil {
+				return err
+			}
+			runCmds.appID = app.ID
+		}
 
 		return nil
 	}

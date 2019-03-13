@@ -1,4 +1,4 @@
-package client
+package platformclient
 
 import (
 	"encoding/json"

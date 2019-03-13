@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
 )
 
@@ -55,8 +54,8 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 
 		promoteChannelIDs := make([]string, 0)
 		for _, c := range channels {
-			if c.Id == createReleasePromote || c.Name == createReleasePromote {
-				promoteChannelIDs = append(promoteChannelIDs, c.Id)
+			if c.ID == createReleasePromote || c.Name == createReleasePromote {
+				promoteChannelIDs = append(promoteChannelIDs, c.ID)
 			}
 		}
 
@@ -69,10 +68,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		promoteChanID = promoteChannelIDs[0]
 	}
 
-	opts := &client.ReleaseOptions{
-		YAML: createReleaseYaml,
-	}
-	release, err := r.api.CreateRelease(r.appID, opts)
+	release, err := r.api.CreateRelease(r.appID, createReleaseYaml)
 	if err != nil {
 		return err
 	}
