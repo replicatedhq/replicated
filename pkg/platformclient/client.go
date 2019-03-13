@@ -12,6 +12,7 @@ import (
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	v2 "github.com/replicatedhq/replicated/gen/go/v2"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
@@ -32,6 +33,7 @@ type Client interface {
 	UpdateRelease(appID string, sequence int64, yaml string) error
 	GetRelease(appID string, sequence int64) (*releases.AppRelease, error)
 	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
+	LintRelease(string, string) ([]types.LintMessage, error)
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }

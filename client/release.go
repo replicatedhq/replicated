@@ -112,3 +112,19 @@ func (c *Client) PromoteRelease(appID string, sequence int64, label string, note
 
 	return errors.New("unknown app type")
 }
+
+func (c *Client) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "platform" {
+		return nil, errors.New("Linting is not yet supported for Platform applications")
+		// return c.PlatformClient.LintRelease(appID, yaml)
+	} else if appType == "ship" {
+		return c.ShipClient.LintRelease(appID, yaml)
+	}
+
+	return nil, errors.New("unknown app type")
+}
