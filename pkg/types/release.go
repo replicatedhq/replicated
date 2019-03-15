@@ -11,3 +11,21 @@ type ReleaseInfo struct {
 	Sequence       int64
 	Version        string
 }
+
+type LintMessage struct {
+	Rule      string
+	Type      string
+	Positions []*LintPosition
+}
+
+type LintPosition struct {
+	Path  string
+	Start *LintLinePosition
+	End   *LintLinePosition
+}
+
+type LintLinePosition struct {
+	Position int64
+	Line     int64
+	Column   int64
+}

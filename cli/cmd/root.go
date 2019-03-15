@@ -101,6 +101,7 @@ func Execute(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	releaseLsCmd.RunE = runCmds.releaseList
 	releaseUpdateCmd.RunE = runCmds.releaseUpdate
 	releasePromoteCmd.RunE = runCmds.releasePromote
+	releaseLintCmd.RunE = runCmds.releaseLint
 
 	RootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

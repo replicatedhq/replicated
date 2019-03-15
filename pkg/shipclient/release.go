@@ -31,6 +31,33 @@ type ShipReleaseCreateData struct {
 	ShipRelease *ShipRelease `json:"createRelease"`
 }
 
+type GraphQLResponseLintRelease struct {
+	Data   *ShipReleaseLintData `json:"data,omitempty"`
+	Errors []GraphQLError       `json:"errors,omitempty"`
+}
+
+type ShipReleaseLintData struct {
+	Messages []*ShipLintMessage `json:"lintRelease"`
+}
+
+type ShipLintMessage struct {
+	Rule      string              `json:"rule"`
+	Type      string              `json:"type"`
+	Positions []*ShipLintPosition `json:"positions"`
+}
+
+type ShipLintPosition struct {
+	Path  string                `json:"path"`
+	Start *ShipLintLinePosition `json:"start"`
+	End   *ShipLintLinePosition `json:"end"`
+}
+
+type ShipLintLinePosition struct {
+	Position int64 `json:"position"`
+	Line     int64 `json:"line"`
+	Column   int64 `json:"column"`
+}
+
 func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	response := GraphQLResponseListReleases{}
 
@@ -160,4 +187,71 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 	}
 
 	return nil
+}
+
+func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
+	response := GraphQLResponseLintRelease{}
+
+	request := GraphQLRequest{
+		Query: `
+mutation lintRelease($appId: ID!, $spec: String!) {
+  lintRelease(appId: $appId, spec: $spec) {
+    rule
+    type
+    positions {
+      path
+      start {
+        position
+        line
+        column
+      }
+      end {
+        position
+        line
+        column
+      }
+    }
+  }
+}`,
+		Variables: map[string]interface{}{
+			"appId": appID,
+			"spec":  yaml,
+		},
+	}
+
+	if err := c.executeRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	lintMessages := make([]types.LintMessage, 0, 0)
+	for _, message := range response.Data.Messages {
+		positions := make([]*types.LintPosition, 0, 0)
+		for _, lintPosition := range message.Positions {
+			position := types.LintPosition{
+				Path: lintPosition.Path,
+				Start: &types.LintLinePosition{
+					Position: lintPosition.Start.Position,
+					Column:   lintPosition.Start.Column,
+					Line:     lintPosition.Start.Line,
+				},
+				End: &types.LintLinePosition{
+					Position: lintPosition.End.Position,
+					Column:   lintPosition.End.Column,
+					Line:     lintPosition.End.Line,
+				},
+			}
+
+			positions = append(positions, &position)
+		}
+
+		lintMessage := types.LintMessage{
+			Rule:      message.Rule,
+			Type:      message.Type,
+			Positions: positions,
+		}
+
+		lintMessages = append(lintMessages, lintMessage)
+	}
+
+	return lintMessages, nil
 }

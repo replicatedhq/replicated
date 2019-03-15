@@ -1,11 +1,13 @@
 package platformclient
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 // ListReleases lists all releases for an app.
@@ -72,7 +74,7 @@ func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRele
 
 // PromoteRelease points the specified channels at a release sequence.
 func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
-	path := fmt.Sprintf("/v1/app/%s/%d/promote", appID, sequence)
+	path := fmt.Sprintf("/v1/app/%s/%d/promote?dry_run=true", appID, sequence)
 	body := &releases.BodyPromoteRelease{
 		Label:        label,
 		ReleaseNotes: notes,
@@ -83,4 +85,8 @@ func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes s
 		return fmt.Errorf("PromoteRelease: %v", err)
 	}
 	return nil
+}
+
+func (c *HTTPClient) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
+	return nil, errors.New("Not implemnented")
 }

@@ -25,6 +25,7 @@ type Client interface {
 	CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error)
 	UpdateRelease(appID string, sequence int64, yaml string) error
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
+	LintRelease(string, string) ([]types.LintMessage, error)
 }
 
 type AppOptions struct {
