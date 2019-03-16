@@ -1,9 +1,12 @@
 package shipclient
 
 import (
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseListReleases struct {
@@ -22,13 +25,27 @@ type ShipRelease struct {
 	ReleaseNotes string `json:"releaseNotes"`
 }
 
-type GraphQLResponseCreateRelease struct {
-	Data   *ShipReleaseCreateData `json:"data,omitempty"`
-	Errors []GraphQLError         `json:"errors,omitempty"`
+type GraphQLResponseFinalizeRelease struct {
+	Data   *ShipFinalizeCreateData `json:"data,omitempty"`
+	Errors []GraphQLError          `json:"errors,omitempty"`
 }
 
-type ShipReleaseCreateData struct {
-	ShipRelease *ShipRelease `json:"createRelease"`
+type ShipFinalizeCreateData struct {
+	ShipRelease *ShipRelease `json:"finalizeUploadedRelease"`
+}
+
+type GraphQLResponseUploadRelease struct {
+	Data   ShipReleaseUploadData `json:"data,omitempty"`
+	Errors []GraphQLError        `json:"errors,omitempty"`
+}
+
+type ShipReleaseUploadData struct {
+	ShipPendingReleaseData *ShipPendingReleaseData `json:"uploadRelease"`
+}
+
+type ShipPendingReleaseData struct {
+	UploadURI string `json:"uploadUri"`
+	UploadID  string `json:"id"`
 }
 
 type GraphQLResponseLintRelease struct {
@@ -114,12 +131,44 @@ query allReleases($appId: ID!) {
 }
 
 func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
-	response := GraphQLResponseCreateRelease{}
+	response := GraphQLResponseUploadRelease{}
 
 	request := GraphQLRequest{
 		Query: `
-mutation createRelease($appId: ID!, $spec: String!) {
-  createRelease(appId: $appId, spec: $spec) {
+mutation uploadRelease($appId: ID!) {
+  uploadRelease(appId: $appId) {
+    id
+    uploadUri
+  }
+}`,
+		Variables: map[string]interface{}{
+			"appId": appID,
+		},
+	}
+
+	if err := c.executeRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "replicated-")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.Write([]byte(yaml)); err != nil {
+		return nil, err
+	}
+	tmpFile.Close()
+
+	if err := util.UploadFile(tmpFile.Name(), response.Data.ShipPendingReleaseData.UploadURI); err != nil {
+		return nil, err
+	}
+
+	request = GraphQLRequest{
+		Query: `
+mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
+  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
     id
     sequence
     spec
@@ -128,12 +177,15 @@ mutation createRelease($appId: ID!, $spec: String!) {
   }
 }`,
 		Variables: map[string]interface{}{
-			"appId": appID,
-			"spec":  yaml,
+			"appId":    appID,
+			"uploadId": response.Data.ShipPendingReleaseData.UploadID,
 		},
 	}
 
-	if err := c.executeRequest(request, &response); err != nil {
+	// call finalize release
+	finalizeResponse := GraphQLResponseFinalizeRelease{}
+
+	if err := c.executeRequest(request, &finalizeResponse); err != nil {
 		return nil, err
 	}
 
@@ -142,16 +194,17 @@ mutation createRelease($appId: ID!, $spec: String!) {
 		return nil, err
 	}
 
-	createdAt, err := time.Parse("Mon Jan 02 2006 15:04:05 MST-0700 (MST)", response.Data.ShipRelease.CreatedAt)
+	createdAt, err := time.Parse("Mon Jan 02 2006 15:04:05 MST-0700 (MST)", finalizeResponse.Data.ShipRelease.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
+
 	releaseInfo := types.ReleaseInfo{
 		AppID:     appID,
 		CreatedAt: createdAt.In(location),
 		EditedAt:  time.Now(),
 		Editable:  false,
-		Sequence:  response.Data.ShipRelease.Sequence,
+		Sequence:  finalizeResponse.Data.ShipRelease.Sequence,
 		Version:   "ba",
 	}
 
