@@ -17,8 +17,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-func init() {
-	shipReleaseCommand.AddCommand(Cmd())
+func (r *runners) InitShipReleaseCommand(parent *cobra.Command) {
+	parent.AddCommand(Cmd())
 }
 
 func Cmd() *cobra.Command {

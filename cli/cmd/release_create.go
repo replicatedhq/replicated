@@ -7,60 +7,55 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var createReleaseYaml string
-var createReleaseYamlFile string
-var createReleasePromote string
-var createReleasePromoteRequired bool
-var createReleasePromoteNotes string
-var createReleasePromoteVersion string
+func (r *runners) InitReleaseCreate(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "Create a new release",
+		Long: `Create a new release by providing YAML configuration for the next release in
+  your sequence.`,
+	}
 
-var releaseCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a new release",
-	Long: `Create a new release by providing YAML configuration for the next release in
-your sequence.`,
-}
+	parent.AddCommand(cmd)
 
-func init() {
-	releaseCmd.AddCommand(releaseCreateCmd)
+	cmd.Flags().StringVar(&r.args.createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
+	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
+	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
+	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
+	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
 
-	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
-	releaseCreateCmd.Flags().StringVar(&createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
-	releaseCreateCmd.Flags().StringVar(&createReleasePromote, "promote", "", "Channel name or id to promote this release to")
-	releaseCreateCmd.Flags().StringVar(&createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
-	releaseCreateCmd.Flags().BoolVar(&createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
-	releaseCreateCmd.Flags().StringVar(&createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
+	cmd.RunE = r.releaseCreate
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	if createReleaseYaml == "" && createReleaseYamlFile == "" {
+	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" {
 		return fmt.Errorf("yaml is required")
 	}
 
-	if createReleaseYaml != "" && createReleaseYamlFile != "" {
+	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
 		return fmt.Errorf("only yaml or yaml-file has to be specified")
 	}
 
-	if createReleaseYaml == "-" {
+	if r.args.createReleaseYaml == "-" {
 		bytes, err := ioutil.ReadAll(r.stdin)
 		if err != nil {
 			return err
 		}
-		createReleaseYaml = string(bytes)
+		r.args.createReleaseYaml = string(bytes)
 	}
 
-	if createReleaseYamlFile != "" {
-		bytes, err := ioutil.ReadFile(createReleaseYamlFile)
+	if r.args.createReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(r.args.createReleaseYamlFile)
 		if err != nil {
 			return err
 		}
-		createReleaseYaml = string(bytes)
+		r.args.createReleaseYaml = string(bytes)
 	}
 
 	// if the --promote param was used make sure it identifies exactly one
 	// channel before proceeding
 	var promoteChanID string
-	if createReleasePromote != "" {
+	if r.args.createReleasePromote != "" {
 		channels, err := r.api.ListChannels(r.appID)
 		if err != nil {
 			return err
@@ -68,21 +63,21 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 
 		promoteChannelIDs := make([]string, 0)
 		for _, c := range channels {
-			if c.ID == createReleasePromote || c.Name == createReleasePromote {
+			if c.ID == r.args.createReleasePromote || c.Name == r.args.createReleasePromote {
 				promoteChannelIDs = append(promoteChannelIDs, c.ID)
 			}
 		}
 
 		if len(promoteChannelIDs) == 0 {
-			return fmt.Errorf("Channel %q not found", createReleasePromote)
+			return fmt.Errorf("Channel %q not found", r.args.createReleasePromote)
 		}
 		if len(promoteChannelIDs) > 1 {
-			return fmt.Errorf("Channel %q is ambiguous. Please use channel ID", createReleasePromote)
+			return fmt.Errorf("Channel %q is ambiguous. Please use channel ID", r.args.createReleasePromote)
 		}
 		promoteChanID = promoteChannelIDs[0]
 	}
 
-	release, err := r.api.CreateRelease(r.appID, createReleaseYaml)
+	release, err := r.api.CreateRelease(r.appID, r.args.createReleaseYaml)
 	if err != nil {
 		return err
 	}
@@ -96,9 +91,9 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		if err := r.api.PromoteRelease(
 			r.appID,
 			release.Sequence,
-			createReleasePromoteVersion,
-			createReleasePromoteNotes,
-			createReleasePromoteRequired,
+			r.args.createReleasePromoteVersion,
+			r.args.createReleasePromoteNotes,
+			r.args.createReleasePromoteRequired,
 			promoteChanID,
 		); err != nil {
 			return err

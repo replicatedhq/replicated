@@ -39,10 +39,11 @@ var _ = Describe("channel inspect", func() {
 				var stdout bytes.Buffer
 				var stderr bytes.Buffer
 
-				cmd.RootCmd.SetArgs([]string{"channel", "inspect", appChan.Id, "--app", app.Slug})
-				cmd.RootCmd.SetOutput(&stderr)
+				rootCmd := cmd.GetRootCmd()
+				rootCmd.SetArgs([]string{"channel", "inspect", appChan.Id, "--app", app.Slug})
+				rootCmd.SetOutput(&stderr)
 
-				err := cmd.Execute(nil, &stdout, &stderr)
+				err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 				assert.Nil(t, err)
 
 				assert.Zero(t, stderr, "Expected no stderr output")

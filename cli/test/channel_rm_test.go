@@ -46,10 +46,11 @@ var _ = Describe("channel rm", func() {
 			var stderr bytes.Buffer
 
 			args := []string{"channel", "rm", appChan.Id, "--app", app.Slug}
-			cmd.RootCmd.SetArgs(args)
-			cmd.RootCmd.SetOutput(&stderr)
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs(args)
+			rootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(nil, &stdout, &stderr)
+			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err, "execute channel rm -- args: %v", args)
 
 			assert.Zero(t, stderr, "Expected no stderr output")

@@ -8,25 +8,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var releaseOptional bool
-var releaseNotes string
-var releaseVersion string
+func (r *runners) InitReleasePromote(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "promote SEQUENCE CHANNEL_ID",
+		Short: "Set the release for a channel",
+		Long: `Set the release for a channel
 
-// releasePromoteCmd represents the releasePromote command
-var releasePromoteCmd = &cobra.Command{
-	Use:   "promote SEQUENCE CHANNEL_ID",
-	Short: "Set the release for a channel",
-	Long: `Set the release for a channel
+  Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
+	}
 
-Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
-}
+	parent.AddCommand(cmd)
 
-func init() {
-	releaseCmd.AddCommand(releasePromoteCmd)
+	cmd.Flags().StringVar(&r.args.releaseNotes, "release-notes", "", "The **markdown** release notes")
+	cmd.Flags().BoolVar(&r.args.releaseOptional, "optional", false, "If set, this release can be skipped")
+	cmd.Flags().StringVar(&r.args.releaseVersion, "version", "", "A version label for the release in this channel")
 
-	releasePromoteCmd.Flags().StringVar(&releaseNotes, "release-notes", "", "The **markdown** release notes")
-	releasePromoteCmd.Flags().BoolVar(&releaseOptional, "optional", false, "If set, this release can be skipped")
-	releasePromoteCmd.Flags().StringVar(&releaseVersion, "version", "", "A version label for the release in this channel")
+	cmd.RunE = r.releasePromote
 }
 
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
@@ -40,7 +37,7 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[1]
 
-	if err := r.platformAPI.PromoteRelease(r.appID, seq, releaseVersion, releaseNotes, !releaseOptional, chanID); err != nil {
+	if err := r.platformAPI.PromoteRelease(r.appID, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, chanID); err != nil {
 		return err
 	}
 

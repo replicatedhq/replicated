@@ -7,14 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var channelCountsCmd = &cobra.Command{
-	Use:   "counts CHANNEL_ID",
-	Short: "Print channel license counts",
-	Long:  "Print channel license counts",
-}
+func (r *runners) InitChannelCounts(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "counts CHANNEL_ID",
+		Short: "Print channel license counts",
+		Long:  "Print channel license counts",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelCountsCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelCounts
 }
 
 func (r *runners) channelCounts(cmd *cobra.Command, args []string) error {

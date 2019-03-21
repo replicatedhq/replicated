@@ -5,15 +5,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// lsCmd represents the ls command
-var releaseLsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List all of an app's releases",
-	Long:  "List all of an app's releases",
-}
+func (r *runners) IniReleaseList(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List all of an app's releases",
+		Long:  "List all of an app's releases",
+	}
 
-func init() {
-	releaseCmd.AddCommand(releaseLsCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.releaseList
 }
 
 func (r *runners) releaseList(cmd *cobra.Command, args []string) error {

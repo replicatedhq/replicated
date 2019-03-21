@@ -46,10 +46,11 @@ var _ = Describe("release promote", func() {
 
 			sequence := strconv.Itoa(int(release.Sequence))
 
-			cmd.RootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
-			cmd.RootCmd.SetOutput(&stderr)
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
+			rootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(nil, &stdout, &stderr)
+			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")

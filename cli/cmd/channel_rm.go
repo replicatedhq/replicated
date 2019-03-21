@@ -7,15 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// channelRmCmd represents the channelRm command
-var channelRmCmd = &cobra.Command{
-	Use:   "rm CHANNEL_ID",
-	Short: "Remove (archive) a channel",
-	Long:  "Remove (archive) a channel",
-}
+func (r *runners) InitChannelRemove(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "rm CHANNEL_ID",
+		Short: "Remove (archive) a channel",
+		Long:  "Remove (archive) a channel",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelRmCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelRemove
 }
 
 func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
