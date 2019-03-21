@@ -10,6 +10,7 @@ import (
 )
 
 var updateReleaseYaml string
+var updateReleaseYamlFile string
 
 var releaseUpdateCmd = &cobra.Command{
 	Use:   "update SEQUENCE",
@@ -20,13 +21,19 @@ var releaseUpdateCmd = &cobra.Command{
 func init() {
 	releaseCmd.AddCommand(releaseUpdateCmd)
 
-	releaseUpdateCmd.Flags().StringVar(&updateReleaseYaml, "yaml", "", "The new YAML config for this release")
+	releaseUpdateCmd.Flags().StringVar(&updateReleaseYaml, "yaml", "", "The new YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
+	releaseUpdateCmd.Flags().StringVar(&updateReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
 }
 
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
-	if updateReleaseYaml == "" {
+	if updateReleaseYaml == "" && updateReleaseYamlFile == "" {
 		return fmt.Errorf("yaml is required")
 	}
+
+	if updateReleaseYaml != "" && updateReleaseYamlFile != "" {
+		return fmt.Errorf("only yaml or yaml-file has to be specified")
+	}
+
 	if updateReleaseYaml == "-" {
 		bytes, err := ioutil.ReadAll(r.stdin)
 		if err != nil {
@@ -34,6 +41,15 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		}
 		updateReleaseYaml = string(bytes)
 	}
+
+	if updateReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(updateReleaseYamlFile)
+		if err != nil {
+			return err
+		}
+		updateReleaseYaml = string(bytes)
+	}
+
 	if len(args) < 1 {
 		return errors.New("release sequence is required")
 	}

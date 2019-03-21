@@ -9,6 +9,7 @@ import (
 )
 
 var lintReleaseYaml string
+var lintReleaseYamlFile string
 
 var releaseLintCmd = &cobra.Command{
 	Use:   "lint",
@@ -19,12 +20,17 @@ var releaseLintCmd = &cobra.Command{
 func init() {
 	releaseCmd.AddCommand(releaseLintCmd)
 
-	releaseLintCmd.Flags().StringVar(&lintReleaseYaml, "yaml", "", "The YAML config to lint. Use '-' to read from stdin")
+	releaseLintCmd.Flags().StringVar(&lintReleaseYaml, "yaml", "", "The YAML config to lint. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
+	releaseLintCmd.Flags().StringVar(&lintReleaseYamlFile, "yaml-file", "", "The file name with YAML config to lint.  Cannot be used with the `yaml` flag.")
 }
 
 func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
-	if lintReleaseYaml == "" {
+	if lintReleaseYaml == "" && lintReleaseYamlFile == "" {
 		return fmt.Errorf("yaml is required")
+	}
+
+	if lintReleaseYaml != "" && lintReleaseYamlFile != "" {
+		return fmt.Errorf("only yaml or yaml-file has to be specified")
 	}
 
 	if lintReleaseYaml == "-" {
@@ -33,6 +39,14 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		lintReleaseYaml = string(bytes)
+	}
+
+	if lintReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(lintReleaseYamlFile)
+		if err != nil {
+			return err
+		}
+		lintReleaseYamlFile = string(bytes)
 	}
 
 	lintResult, err := r.api.LintRelease(r.appID, lintReleaseYaml)

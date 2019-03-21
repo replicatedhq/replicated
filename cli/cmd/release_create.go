@@ -8,6 +8,7 @@ import (
 )
 
 var createReleaseYaml string
+var createReleaseYamlFile string
 var createReleasePromote string
 var createReleasePromoteRequired bool
 var createReleasePromoteNotes string
@@ -23,7 +24,8 @@ your sequence.`,
 func init() {
 	releaseCmd.AddCommand(releaseCreateCmd)
 
-	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin")
+	releaseCreateCmd.Flags().StringVar(&createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
+	releaseCreateCmd.Flags().StringVar(&createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
 	releaseCreateCmd.Flags().StringVar(&createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	releaseCreateCmd.Flags().StringVar(&createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	releaseCreateCmd.Flags().BoolVar(&createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
@@ -31,12 +33,24 @@ func init() {
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	if createReleaseYaml == "" {
+	if createReleaseYaml == "" && createReleaseYamlFile == "" {
 		return fmt.Errorf("yaml is required")
+	}
+
+	if createReleaseYaml != "" && createReleaseYamlFile != "" {
+		return fmt.Errorf("only yaml or yaml-file has to be specified")
 	}
 
 	if createReleaseYaml == "-" {
 		bytes, err := ioutil.ReadAll(r.stdin)
+		if err != nil {
+			return err
+		}
+		createReleaseYaml = string(bytes)
+	}
+
+	if createReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(createReleaseYamlFile)
 		if err != nil {
 			return err
 		}
