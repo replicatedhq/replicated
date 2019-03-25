@@ -33,7 +33,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-		return fmt.Errorf("only yaml or yaml-file has to be specified")
+		return fmt.Errorf("only one of yaml or yaml-file may be specified")
 	}
 
 	if r.args.createReleaseYaml == "-" {
