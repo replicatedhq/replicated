@@ -35,10 +35,11 @@ var _ = Describe("release ls", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
-			cmd.RootCmd.SetArgs([]string{"release", "ls", "--app", app.Slug})
-			cmd.RootCmd.SetOutput(&stderr)
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "ls", "--app", app.Slug})
+			rootCmd.SetOutput(&stderr)
 
-			err := cmd.Execute(nil, &stdout, &stderr)
+			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")

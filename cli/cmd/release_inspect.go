@@ -10,15 +10,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// releaseInspectCmd represents the inspect command
-var releaseInspectCmd = &cobra.Command{
-	Use:   "inspect SEQUENCE",
-	Short: "Print the YAML config for a release",
-	Long:  "Print the YAML config for a release",
-}
+func (r *runners) InitReleaseInspect(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "inspect SEQUENCE",
+		Short: "Print the YAML config for a release",
+		Long:  "Print the YAML config for a release",
+	}
 
-func init() {
-	releaseCmd.AddCommand(releaseInspectCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.releaseInspect
 }
 
 func (r *runners) releaseInspect(cmd *cobra.Command, args []string) error {

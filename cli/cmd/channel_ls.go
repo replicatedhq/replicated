@@ -5,15 +5,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// channelLsCmd represents the channelLs command
-var channelLsCmd = &cobra.Command{
-	Use:   "ls",
-	Short: "List all channels in your app",
-	Long:  "List all channels in your app",
-}
+func (r *runners) InitChannelList(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List all channels in your app",
+		Long:  "List all channels in your app",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelLsCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelList
 }
 
 func (r *runners) channelList(cmd *cobra.Command, args []string) error {

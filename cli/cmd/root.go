@@ -27,9 +27,6 @@ var platformOrigin = "https://api.replicated.com/vendor"
 var shipOrigin = "https://g.replicated.com/graphql"
 
 func init() {
-	RootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
-	RootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
-
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {
 		platformOrigin = originFromEnv
@@ -42,10 +39,16 @@ func init() {
 }
 
 // RootCmd represents the base command when called without any subcommands
-var RootCmd = &cobra.Command{
-	Use:   "replicated",
-	Short: "Manage channels and releases",
-	Long:  `The replicated CLI allows vendors to manage their apps' channels and releases.`,
+func GetRootCmd() *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:   "replicated",
+		Short: "Manage channels and releases",
+		Long:  `The replicated CLI allows vendors to manage their apps' channels and releases.`,
+	}
+	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
+	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
+
+	return rootCmd
 }
 
 // Almost the same as the default but don't print help subcommand
@@ -77,35 +80,62 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
-func Execute(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
+func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	w := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
 
 	// get api client and app ID after flags are parsed
 	runCmds := &runners{
-		stdin: stdin,
-		w:     w,
+		rootCmd: rootCmd,
+		stdin:   stdin,
+		w:       w,
+	}
+	if runCmds.rootCmd == nil {
+		runCmds.rootCmd = GetRootCmd()
 	}
 	if stderr != nil {
-		RootCmd.SetOutput(stderr)
+		runCmds.rootCmd.SetOutput(stderr)
 	}
 
-	channelCreateCmd.RunE = runCmds.channelCreate
-	channelInspectCmd.RunE = runCmds.channelInspect
-	channelAdoptionCmd.RunE = runCmds.channelAdoption
-	channelReleasesCmd.RunE = runCmds.channelReleases
-	channelCountsCmd.RunE = runCmds.channelCounts
-	channelLsCmd.RunE = runCmds.channelList
-	channelRmCmd.RunE = runCmds.channelRemove
-	releaseCreateCmd.RunE = runCmds.releaseCreate
-	releaseInspectCmd.RunE = runCmds.releaseInspect
-	releaseLsCmd.RunE = runCmds.releaseList
-	releaseUpdateCmd.RunE = runCmds.releaseUpdate
-	releasePromoteCmd.RunE = runCmds.releasePromote
-	releaseLintCmd.RunE = runCmds.releaseLint
+	channelCmd := &cobra.Command{
+		Use:   "channel",
+		Short: "Manage and review channels",
+		Long:  "Manage and review channels",
+	}
+	var releaseCmd = &cobra.Command{
+		Use:   "release",
+		Short: "Manage app releases",
+		Long:  `The release command allows vendors to create, display, modify, and archive their releases.`,
+	}
+	shipReleaseCommand := &cobra.Command{
+		Use:    "shiprelease",
+		Short:  "Manage ship releases",
+		Long:   `The shiprelease command allows vendors to create, display, modify, and archive their Ship releases.`,
+		Hidden: true,
+	}
 
-	RootCmd.SetUsageTemplate(rootCmdUsageTmpl)
+	runCmds.rootCmd.AddCommand(channelCmd)
+	runCmds.InitChannelCreate(channelCmd)
+	runCmds.InitChannelInspect(channelCmd)
+	runCmds.InitChannelAdoption(channelCmd)
+	runCmds.InitChannelReleases(channelCmd)
+	runCmds.InitChannelCounts(channelCmd)
+	runCmds.InitChannelList(channelCmd)
+	runCmds.InitChannelRemove(channelCmd)
 
-	RootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	runCmds.rootCmd.AddCommand(releaseCmd)
+	runCmds.InitReleaseCreate(releaseCmd)
+	runCmds.InitReleaseInspect(releaseCmd)
+	runCmds.IniReleaseList(releaseCmd)
+	runCmds.InitReleaseUpdate(releaseCmd)
+	runCmds.InitReleasePromote(releaseCmd)
+	runCmds.InitReleaseLint(releaseCmd)
+
+	runCmds.rootCmd.AddCommand(shipReleaseCommand)
+	runCmds.InitShipReleaseCommand(shipReleaseCommand)
+
+	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
+
+	runCmds.rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			apiToken = os.Getenv("REPLICATED_API_TOKEN")
 			if apiToken == "" {
@@ -148,5 +178,5 @@ func Execute(stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 		return nil
 	}
 
-	return RootCmd.Execute()
+	return runCmds.rootCmd.Execute()
 }

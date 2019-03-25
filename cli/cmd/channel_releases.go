@@ -7,14 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var channelReleasesCmd = &cobra.Command{
-	Use:   "releases CHANNEL_ID",
-	Short: "List all releases in a channel",
-	Long:  "List all releases in a channel",
-}
+func (r *runners) InitChannelReleases(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "releases CHANNEL_ID",
+		Short: "List all releases in a channel",
+		Long:  "List all releases in a channel",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelReleasesCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelReleases
 }
 
 func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {

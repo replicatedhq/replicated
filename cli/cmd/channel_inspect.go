@@ -8,15 +8,15 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 )
 
-// channelInspectCmd represents the channelInspect command
-var channelInspectCmd = &cobra.Command{
-	Use:   "inspect CHANNEL_ID",
-	Short: "Show full details for a channel",
-	Long:  "Show full details for a channel",
-}
+func (r *runners) InitChannelInspect(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "inspect CHANNEL_ID",
+		Short: "Show full details for a channel",
+		Long:  "Show full details for a channel",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelInspectCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelInspect
 }
 
 func (r *runners) channelInspect(cmd *cobra.Command, args []string) error {

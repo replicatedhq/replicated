@@ -9,31 +9,46 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var updateReleaseYaml string
+func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "update SEQUENCE",
+		Short: "Updated a release's yaml config",
+		Long:  "Updated a release's yaml config",
+	}
 
-var releaseUpdateCmd = &cobra.Command{
-	Use:   "update SEQUENCE",
-	Short: "Updated a release's yaml config",
-	Long:  "Updated a release's yaml config",
-}
+	parent.AddCommand(cmd)
 
-func init() {
-	releaseCmd.AddCommand(releaseUpdateCmd)
+	cmd.Flags().StringVar(&r.args.updateReleaseYaml, "yaml", "", "The new YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
+	cmd.Flags().StringVar(&r.args.updateReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
 
-	releaseUpdateCmd.Flags().StringVar(&updateReleaseYaml, "yaml", "", "The new YAML config for this release")
+	cmd.RunE = r.releaseUpdate
 }
 
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
-	if updateReleaseYaml == "" {
+	if r.args.updateReleaseYaml == "" && r.args.updateReleaseYamlFile == "" {
 		return fmt.Errorf("yaml is required")
 	}
-	if updateReleaseYaml == "-" {
+
+	if r.args.updateReleaseYaml != "" && r.args.updateReleaseYamlFile != "" {
+		return fmt.Errorf("only yaml or yaml-file has to be specified")
+	}
+
+	if r.args.updateReleaseYaml == "-" {
 		bytes, err := ioutil.ReadAll(r.stdin)
 		if err != nil {
 			return err
 		}
-		updateReleaseYaml = string(bytes)
+		r.args.updateReleaseYaml = string(bytes)
 	}
+
+	if r.args.updateReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(r.args.updateReleaseYamlFile)
+		if err != nil {
+			return err
+		}
+		r.args.updateReleaseYaml = string(bytes)
+	}
+
 	if len(args) < 1 {
 		return errors.New("release sequence is required")
 	}
@@ -42,7 +57,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid release sequence: %s", args[0])
 	}
 
-	if err := r.platformAPI.UpdateRelease(r.appID, seq, updateReleaseYaml); err != nil {
+	if err := r.platformAPI.UpdateRelease(r.appID, seq, r.args.updateReleaseYaml); err != nil {
 		return fmt.Errorf("Failure setting new yaml config for release: %v", err)
 	}
 

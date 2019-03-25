@@ -3,6 +3,7 @@ package test
 import (
 	"bufio"
 	"bytes"
+	"io/ioutil"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -32,9 +33,10 @@ var _ = Describe("release create", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
-			cmd.RootCmd.SetArgs([]string{"release", "create", "--yaml", yaml, "--app", app.Slug})
-			cmd.RootCmd.SetOutput(&stderr)
-			err := cmd.Execute(nil, &stdout, &stderr)
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "create", "--yaml", yaml, "--app", app.Slug})
+			rootCmd.SetOutput(&stderr)
+			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 			assert.Nil(t, err)
 
@@ -56,9 +58,10 @@ var _ = Describe("release create", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
-			cmd.RootCmd.SetArgs([]string{"release", "create", "--yaml", "-", "--app", app.Slug})
-			cmd.RootCmd.SetOutput(&stderr)
-			err := cmd.Execute(stdin, &stdout, &stderr)
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "create", "--yaml", "-", "--app", app.Slug})
+			rootCmd.SetOutput(&stderr)
+			err := cmd.Execute(rootCmd, stdin, &stdout, &stderr)
 
 			assert.Nil(t, err)
 
@@ -69,6 +72,39 @@ var _ = Describe("release create", func() {
 
 			assert.True(t, r.Scan())
 			assert.Equal(t, "SEQUENCE: 1", r.Text())
+		})
+	})
+
+	Context("with valid --yaml-file in an app with no releases", func() {
+		It("should create release 1", func() {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+
+			file, err := ioutil.TempFile("", app.Slug)
+			assert.Nil(t, err)
+			fileName := file.Name()
+			defer os.Remove(fileName)
+			_, err = file.WriteString(yaml)
+			assert.Nil(t, err)
+			err = file.Close()
+			assert.Nil(t, err)
+
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "create", "--yaml-file", fileName, "--app", app.Slug})
+			rootCmd.SetOutput(&stderr)
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+
+			assert.Nil(t, err)
+
+			assert.Empty(t, stderr.String(), "Expected no stderr output")
+			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+
+			r := bufio.NewScanner(&stdout)
+
+			assert.True(t, r.Scan())
+			assert.Equal(t, "SEQUENCE: 1", r.Text())
+
+			assert.False(t, r.Scan())
 		})
 	})
 })

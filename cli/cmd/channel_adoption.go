@@ -7,14 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var channelAdoptionCmd = &cobra.Command{
-	Use:   "adoption CHANNEL_ID",
-	Short: "Print channel adoption statistics by license type",
-	Long:  "Print channel adoption statistics by license type",
-}
+func (r *runners) InitChannelAdoption(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "adoption CHANNEL_ID",
+		Short: "Print channel adoption statistics by license type",
+		Long:  "Print channel adoption statistics by license type",
+	}
 
-func init() {
-	channelCmd.AddCommand(channelAdoptionCmd)
+	parent.AddCommand(cmd)
+	cmd.RunE = r.channelAdoption
 }
 
 func (r *runners) channelAdoption(cmd *cobra.Command, args []string) error {
