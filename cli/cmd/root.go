@@ -133,6 +133,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.rootCmd.AddCommand(shipReleaseCommand)
 	runCmds.InitShipReleaseCommand(shipReleaseCommand)
 
+	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)
+	runCmds.InitEntitlementsDefineFields(entitlementsCmd)
+	runCmds.InitEntitlementsSetValueCommand(entitlementsCmd)
+	runCmds.InitEntitlementsGetCustomerReleaseCommand(entitlementsCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	runCmds.rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
