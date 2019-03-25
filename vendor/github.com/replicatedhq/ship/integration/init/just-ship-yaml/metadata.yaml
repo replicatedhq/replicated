@@ -1,3 +1,0 @@
-upstream: "https://github.com/replicatedhq/test-charts/tree/ebebc9e692db3caeadb308ddeec37e9565acba1e/just-ship-yaml"
-args: ["--prefer-git"]
-skip_cleanup: false

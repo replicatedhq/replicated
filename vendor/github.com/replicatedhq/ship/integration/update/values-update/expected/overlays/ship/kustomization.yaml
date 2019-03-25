@@ -1,6 +1,0 @@
-kind: ""
-apiversion: ""
-bases:
-- ../../base
-patchesStrategicMerge:
-- deployment.yaml
