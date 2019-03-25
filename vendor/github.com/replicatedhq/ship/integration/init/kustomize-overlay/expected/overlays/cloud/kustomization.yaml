@@ -1,6 +1,0 @@
-kind: ""
-apiversion: ""
-bases:
-  - ../../base
-patches:
-  - ./patch-configmap-l4.yaml

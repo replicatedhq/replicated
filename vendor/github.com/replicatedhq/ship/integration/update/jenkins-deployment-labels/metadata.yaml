@@ -1,5 +1,0 @@
-args: ["--prefer-git"]
-
-skip_cleanup: false
-ignoredFiles:
-  - base/jenkins-test.yaml
