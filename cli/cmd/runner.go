@@ -43,4 +43,17 @@ type runnerArgs struct {
 	releaseVersion               string
 	updateReleaseYaml            string
 	updateReleaseYamlFile        string
+
+	entitlementsAPIServer string
+	entitlementsVerbose bool
+	entitlementsDefineFieldsFile string
+	entitlementsDefineFieldsName string
+	entitlementsGetReleaseCustomerID string
+	entitlementsGetReleaseInstallationID string
+	entitlementsGetReleaseAPIServer string
+	entitlementsSetValueCustomerID string
+	entitlementsSetValueDefinitionsID string
+	entitlementsSetValueKey string
+	entitlementsSetValueValue string
+	entitlementsSetValueType string
 }
