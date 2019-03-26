@@ -23,14 +23,6 @@
   revision = "bbf7a2afc14f93e1e0a5c06df524fbd75e5031e5"
 
 [[projects]]
-  digest = "1:c47f4964978e211c6e566596ec6246c329912ea92e9bb99c00798bb4564c5b09"
-  name = "github.com/armon/go-radix"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "1a2de0c21c94309923825da3df33a4381872c795"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:513980596dae9b84ed4641c161a4815b18ee94e735b32dfa380a8274e46c53a6"
   name = "github.com/bep/gitmap"
   packages = ["."]
@@ -44,14 +36,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "b896c45f5af983b1f416bdf3bb89c4f1f0926f69"
-
-[[projects]]
-  digest = "1:1343a2963481a305ca4d051e84bc2abd16b601ee22ed324f8d605de1adb291b0"
-  name = "github.com/bgentry/speakeasy"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "4aabc24848ce5fd31929f7d1e4ea74d3709c14cd"
-  version = "v0.1.0"
 
 [[projects]]
   digest = "1:ac33328017002cec2f58d0891e7d4438e577f08ffc9ab9565802d5550aa0ebd5"
@@ -91,14 +75,6 @@
   ]
   pruneopts = "UT"
   revision = "5fa7895500976542b0e28bb266f42ff1c7ce07f5"
-
-[[projects]]
-  branch = "master"
-  digest = "1:ae7af28895023cc60b0c04e7c9e236ff04a0dfbe8bc4c4d9be8c86aad3fc4fcd"
-  name = "github.com/fatih/color"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "3f9d52f7176a6927daacff70a3e8d1dc2025c53e"
 
 [[projects]]
   digest = "1:38c783cf85b9454cc02a1a8319239800ed0af6c1c864adf19cea0539e134adad"
@@ -151,13 +127,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  digest = "1:a3716cd2bb11b2b31b492f26378fcf1a6c5ce372160a727538d48a153759bf9b"
+  digest = "1:b5090146529377f77830ae60f254e37bbf9bb89aac519829405c1ac010d1ec97"
   name = "github.com/hashicorp/hcl"
   packages = [
     ".",
     "hcl/ast",
     "hcl/parser",
-    "hcl/printer",
     "hcl/scanner",
     "hcl/strconv",
     "hcl/token",
@@ -200,36 +175,12 @@
   version = "v1.7.3"
 
 [[projects]]
-  digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
-  name = "github.com/mattn/go-colorable"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
-  version = "v0.0.9"
-
-[[projects]]
-  digest = "1:e150b5fafbd7607e2d638e4e5cf43aa4100124e5593385147b0a74e2733d8b0d"
-  name = "github.com/mattn/go-isatty"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "c2a7a6ca930a4cd0bc33a3f298eb71960732a3a7"
-  version = "v0.0.7"
-
-[[projects]]
   digest = "1:3594d9954adeb0fee90efa2dec5752d5107d8f1e5337744099859781c34cf808"
   name = "github.com/miekg/mmark"
   packages = ["."]
   pruneopts = "UT"
   revision = "fd2f6c1403b37925bd7fe13af05853b8ae58ee5f"
   version = "v1.3.6"
-
-[[projects]]
-  digest = "1:dac0667a3fcdd4102a5da07abeddc89eb2f125b1e91af1ea9544c80eaff19c9a"
-  name = "github.com/mitchellh/cli"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "3d22a244be8aa6fb16ac24af0e195c08b7d973aa"
-  version = "v1.0.0"
 
 [[projects]]
   digest = "1:3d64942cc75c655215a64496e35a2ca1a30ee0007cd24f41b57631486f3d083c"
@@ -298,25 +249,6 @@
   packages = ["difflib"]
   pruneopts = "UT"
   revision = "d8ed2627bdf02c080bf22230dbb337003b7aba2d"
-
-[[projects]]
-  digest = "1:110a3ec56496ec5d38158e2af6d9a25af7b6b22eeecf4a6fdcfd37dc9c7d4c7b"
-  name = "github.com/posener/complete"
-  packages = [
-    ".",
-    "cmd",
-    "cmd/install",
-    "match",
-  ]
-  pruneopts = "UT"
-  revision = "43c37e8a9f3330efd8d954d555a6c3c15aadf3db"
-
-[[projects]]
-  digest = "1:cb495f359a6cec029125ba0d86c1c81c3ef3a0b0431411f5c869f4d26b11fff2"
-  name = "github.com/replicatedhq/ship"
-  packages = ["pkg/e2e"]
-  pruneopts = "UT"
-  revision = "871abc30582a80f5f6313b5e5c778c9df83f1286"
 
 [[projects]]
   digest = "1:68a035fb064937766a06f82bb38cd349ff3c88cad23855dcaa0eb91a3bddff22"
@@ -493,17 +425,15 @@
   analyzer-version = 1
   input-imports = [
     "github.com/go-kit/kit/log",
+    "github.com/go-kit/kit/log/level",
     "github.com/hashicorp/go-multierror",
-    "github.com/mitchellh/cli",
     "github.com/onsi/ginkgo",
     "github.com/pkg/errors",
-    "github.com/replicatedhq/ship/pkg/e2e",
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/spf13/hugo/helpers",
     "github.com/spf13/hugo/hugolib",
     "github.com/spf13/hugo/parser",
-    "github.com/spf13/viper",
     "github.com/stretchr/testify/assert",
   ]
   solver-name = "gps-cdcl"

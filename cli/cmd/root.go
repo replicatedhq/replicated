@@ -106,12 +106,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		Short: "Manage app releases",
 		Long:  `The release command allows vendors to create, display, modify, and archive their releases.`,
 	}
-	shipReleaseCommand := &cobra.Command{
-		Use:    "shiprelease",
-		Short:  "Manage ship releases",
-		Long:   `The shiprelease command allows vendors to create, display, modify, and archive their Ship releases.`,
-		Hidden: true,
-	}
 
 	runCmds.rootCmd.AddCommand(channelCmd)
 	runCmds.InitChannelCreate(channelCmd)
@@ -129,9 +123,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleaseUpdate(releaseCmd)
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
-
-	runCmds.rootCmd.AddCommand(shipReleaseCommand)
-	runCmds.InitShipReleaseCommand(shipReleaseCommand)
 
 	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)
 	runCmds.InitEntitlementsDefineFields(entitlementsCmd)

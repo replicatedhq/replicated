@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/replicatedhq/ship/pkg/specs/replicatedapp"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -16,6 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// don't care what it looks like, just gonna json.MarshalIndent it to stdout
+type ShipRelease map[string]interface{}
+
 type PremGraphQLClient struct {
 	GQLServer      *url.URL
 	CustomerID     string
@@ -25,19 +27,18 @@ type PremGraphQLClient struct {
 
 type GraphQLResponseCustomerSpec struct {
 	Data   GetCustomerSpecResponse `json:"data,omitempty"`
-	Errors []GraphQLError                 `json:"errors,omitempty"`
+	Errors []GraphQLError          `json:"errors,omitempty"`
 }
 
 type GetCustomerSpecResponse struct {
-	ShipRelease *replicatedapp.ShipRelease `json:"shipRelease,omitempty"`
+	ShipRelease ShipRelease `json:"shipRelease,omitempty"` //
 }
-
 
 func (r GraphQLResponseCustomerSpec) GraphQLError() []GraphQLError {
 	return r.Errors
 }
 
-func (c *PremGraphQLClient) FetchCustomerRelease() (*replicatedapp.ShipRelease, error) {
+func (c *PremGraphQLClient) FetchCustomerRelease() (ShipRelease, error) {
 	requestObj := GraphQLRequest{
 		Query: `
 query {
@@ -112,7 +113,7 @@ func (c *PremGraphQLClient) executeRequest(
 		return errors.Wrap(err, "marshal body")
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Basic " + base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", c.CustomerID, c.InstallationID))))
+	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", c.CustomerID, c.InstallationID))))
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
