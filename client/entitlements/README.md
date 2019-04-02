@@ -24,7 +24,7 @@ cat <<EOF > entitlements.yaml
 EOF
 ```
 
-Create a spec with API token from https://vendor.replicated.com/team/tokens
+Create a spec from this file
 
 ```
 $ replicated entitlements define-fields --file=./entitlements.yaml --name=testing 
