@@ -21,22 +21,27 @@ download_tar() {
 
 	curl --silent --location --fail "$URL"
 }
-default_dir=/usr/local/bin
-tar_binary=replicated
 
-if [[ -z "$replicated_bindir" ]]; then
-    replicated_bindir="$default_dir"
-    if [[ "$1" ]]; then
-        replicated_bindir="$1"
-    fi
-fi
-if [[ ! -d "$replicated_bindir" ]]; then
-    cat >&2 <<MSG
+main() {
+	default_dir=/usr/local/bin
+	tar_binary=replicated
+
+	if [[ -z "$replicated_bindir" ]]; then
+	    replicated_bindir="$default_dir"
+	    if [[ "$1" ]]; then
+	        replicated_bindir="$1"
+	    fi
+	fi
+	if [[ ! -d "$replicated_bindir" ]]; then
+	    cat >&2 <<MSG
 Destination directory "$replicated_bindir" is not a directory
 
 Usage: $0 [install-dir]
  If install-dir is not provided, the script will use "$default_dir"
 MSG
-    exit 1
-fi
-download_tar | tar -xzf - -C "$replicated_bindir" $tar_binary
+	    exit 1
+	fi
+	download_tar | tar -xzf - -C "$replicated_bindir" $tar_binary
+}
+
+main "$@"
