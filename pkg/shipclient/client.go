@@ -26,6 +26,10 @@ type Client interface {
 	UpdateRelease(appID string, sequence int64, yaml string) error
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
+
+	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
+	SetDefaultEntitlementSpec(specID string) error
+	SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appID string) (*types.EntitlementValue, error)
 }
 
 type AppOptions struct {
