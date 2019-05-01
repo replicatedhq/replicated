@@ -127,6 +127,14 @@
   version = "v1.0.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:14f3dc47ce9fec6a2696a28cf21ffd5aef579584897acfdeb0190bc8cf7b1132"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "192140e6f3e645d971b134d4e35b5191adb9dfd3"
+
+[[projects]]
   digest = "1:b5090146529377f77830ae60f254e37bbf9bb89aac519829405c1ac010d1ec97"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -142,6 +150,14 @@
   ]
   pruneopts = "UT"
   revision = "392dba7d905ed5d04a5794ba89f558b27e2ba1ca"
+
+[[projects]]
+  branch = "master"
+  digest = "1:16ae35b3a854c667baaf55ff5d455c486f7c2baf040a2727f2ef0e4b096b2a95"
+  name = "github.com/hashicorp/logutils"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a335183dfd075f638afcc820c90591ca3c97eba6"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
@@ -227,6 +243,22 @@
   pruneopts = "UT"
   revision = "77a8c1e5c40d6bb6c5eb4dd4bdce9763564f6298"
   version = "v1.3.1"
+
+[[projects]]
+  digest = "1:d3b7af902faf50a957c415c2e1bdb9b60614b0fa58e23f37c67028dfb8b0b370"
+  name = "github.com/pact-foundation/pact-go"
+  packages = [
+    ".",
+    "client",
+    "command",
+    "dsl",
+    "install",
+    "types",
+    "utils",
+  ]
+  pruneopts = "UT"
+  revision = "6ec25718366e22bf3f50b126b9c4db4d91b9cfce"
+  version = "v1.0.0-beta.3"
 
 [[projects]]
   digest = "1:de0ddb0011faf826abe3009bdc202c7459100a3c87a0fb2d26145a1852356611"
@@ -428,6 +460,8 @@
     "github.com/go-kit/kit/log/level",
     "github.com/hashicorp/go-multierror",
     "github.com/onsi/ginkgo",
+    "github.com/pact-foundation/pact-go",
+    "github.com/pact-foundation/pact-go/dsl",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",

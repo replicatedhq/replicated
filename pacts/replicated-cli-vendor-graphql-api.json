@@ -1,0 +1,55 @@
+{
+  "consumer": {
+    "name": "replicated-cli"
+  },
+  "provider": {
+    "name": "vendor-graphql-api"
+  },
+  "interactions": [
+    {
+      "description": "A request to list objects in a cluster",
+      "providerState": "Prepare to upload a release for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation uploadRelease($appId: ID!) {\n  uploadRelease(appId: $appId) {\n    id\n    uploadUri\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "uploadRelease": {
+              "id": "generated",
+              "uploadUri": "generated"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.uploadRelease.id": {
+            "match": "type"
+          },
+          "$.body.data.uploadRelease.uploadUri": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}

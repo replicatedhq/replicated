@@ -1,3 +1,4 @@
 dist/
 .glide
 gen/docs
+logs/
