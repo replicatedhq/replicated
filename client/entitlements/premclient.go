@@ -13,6 +13,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/shipclient"
 )
 
 // don't care what it looks like, just gonna json.MarshalIndent it to stdout
@@ -26,20 +27,20 @@ type PremGraphQLClient struct {
 }
 
 type GraphQLResponseCustomerSpec struct {
-	Data   GetCustomerSpecResponse `json:"data,omitempty"`
-	Errors []GraphQLError          `json:"errors,omitempty"`
+	Data   GetCustomerSpecResponse   `json:"data,omitempty"`
+	Errors []shipclient.GraphQLError `json:"errors,omitempty"`
 }
 
 type GetCustomerSpecResponse struct {
 	ShipRelease ShipRelease `json:"shipRelease,omitempty"` //
 }
 
-func (r GraphQLResponseCustomerSpec) GraphQLError() []GraphQLError {
+func (r GraphQLResponseCustomerSpec) GraphQLError() []shipclient.GraphQLError {
 	return r.Errors
 }
 
 func (c *PremGraphQLClient) FetchCustomerRelease() (ShipRelease, error) {
-	requestObj := GraphQLRequest{
+	requestObj := shipclient.GraphQLRequest{
 		Query: `
 query {
   shipRelease {
@@ -83,7 +84,7 @@ query {
     registrySecret
   }
 }`,
-		Variables: map[string]string{},
+		Variables: map[string]interface{}{},
 	}
 	response := GraphQLResponseCustomerSpec{}
 	err := c.executeRequest(requestObj, &response)
@@ -99,7 +100,7 @@ query {
 }
 
 func (c *PremGraphQLClient) executeRequest(
-	requestObj GraphQLRequest,
+	requestObj shipclient.GraphQLRequest,
 	deserializeTarget interface{},
 ) error {
 	debug := log.With(level.Debug(c.Logger), "type", "graphQLClient")
@@ -137,7 +138,7 @@ func (c *PremGraphQLClient) executeRequest(
 	return nil
 }
 
-func (c *PremGraphQLClient) checkErrors(errer Errer) error {
+func (c *PremGraphQLClient) checkErrors(errer shipclient.ShipError) error {
 	if errer.GraphQLError() != nil && len(errer.GraphQLError()) > 0 {
 		var multiErr *multierror.Error
 		for _, err := range errer.GraphQLError() {

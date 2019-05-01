@@ -18,6 +18,23 @@ deps:
 test:
 	go test ./cli/test
 
+.PHONY: pacts
+pacts:
+	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
+	docker run --rm --name replicated-cli-tests \
+		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
+		replicated-cli-test \
+		go test -v ./pkg/shipclient/...
+
+publish-pacts:
+	curl \
+		--silent --output /dev/null --show-error --fail \
+		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
+		-X PUT \
+		-H "Content-Type: application/json" \
+		-d@pacts/replicated-cli-vendor-graphql-api.json \
+		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/0.10.0
+
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:
 	mkdir -p gen/spec/
