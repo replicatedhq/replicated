@@ -4,9 +4,9 @@ services:
 language: go
 go: 1.11.6
 script:
-  - make build
-  - make test
   - make pacts
+  - make test
+  - make build
   - make publish-pacts
 after_success:
   - test -n "$TRAVIS_TAG" && make package_docker_docs
