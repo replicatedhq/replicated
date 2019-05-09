@@ -1,0 +1,102 @@
+{
+  "consumer": {
+    "name": "replicated-cli"
+  },
+  "provider": {
+    "name": "vendor-graphql-api"
+  },
+  "interactions": [
+    {
+      "description": "A request to create a new entitlement spec for ship team",
+      "providerState": "A new entitlement spec to set for ship-team",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) {\n  createEntitlementSpec(spec: $spec, name: $name, labels:[{key:\"replicated.com/app\", value:$appId}]) {\n    id\n    spec\n    name\n    createdAt\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1",
+            "name": "0.1.0",
+            "spec": "---\n- name: My Field\n  key: num_seats\n  description: Number of Seats\n  type: string\n  default: \"10\"\n  labels:\n    - owner=somePerson\n"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "createEntitlementSpec": {
+              "createdAt": "2019-01-01T01:23:45.678Z",
+              "id": "generated",
+              "name": "0.1.0",
+              "spec": "generated"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.createEntitlementSpec.createdAt": {
+            "match": "type"
+          },
+          "$.body.data.createEntitlementSpec.id": {
+            "match": "type"
+          },
+          "$.body.data.createEntitlementSpec.spec": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to upload a new release for ship-app-1",
+      "providerState": "Prepare to upload a release for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation uploadRelease($appId: ID!) {\n  uploadRelease(appId: $appId) {\n    id\n    uploadUri\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "uploadRelease": {
+              "id": "generated",
+              "uploadUri": "generated"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.uploadRelease.id": {
+            "match": "type"
+          },
+          "$.body.data.uploadRelease.uploadUri": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
