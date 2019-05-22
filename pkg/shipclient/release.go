@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/util"
 )
@@ -111,7 +113,7 @@ query allReleases($appId: ID!) {
 
 	releaseInfos := make([]types.ReleaseInfo, 0, 0)
 	for _, shipRelease := range response.Data.ShipReleases {
-		createdAt, err := time.Parse("Mon Jan 02 2006 15:04:05 MST-0700 (MST)", shipRelease.CreatedAt)
+		createdAt, err := util.ParseTime(shipRelease.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -194,7 +196,7 @@ mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
 		return nil, err
 	}
 
-	createdAt, err := time.Parse("Mon Jan 02 2006 15:04:05 MST-0700 (MST)", finalizeResponse.Data.ShipRelease.CreatedAt)
+	createdAt, err := util.ParseTime(finalizeResponse.Data.ShipRelease.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -220,8 +222,8 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 
 	request := GraphQLRequest{
 		Query: `
-mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {
-  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {
+mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!, $analyzeSpecId: ID!) {
+  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId, analyzeSpecId: $analyzeSpecId) {
     id
   }
 }`,
@@ -231,12 +233,17 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 			"versionLabel":       label,
 			"releaseNotes":       notes,
 			"troubleshootSpecId": "",
+			"analyzeSpecId":      "",
 			"channelIds":         channelIDs,
 		},
 	}
 
 	if err := c.executeRequest(request, &response); err != nil {
 		return err
+	}
+
+	if len(response.Errors) != 0 {
+		return errors.New(response.Errors[0].Message)
 	}
 
 	return nil
