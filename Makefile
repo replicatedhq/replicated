@@ -1,6 +1,7 @@
 .PHONY: docs
 
 API_PKGS=apps channels releases
+VERSION=$(shell git describe)
 
 docker:
 	docker build -t replicatedhq.replicated .
@@ -33,7 +34,7 @@ publish-pacts:
 		-X PUT \
 		-H "Content-Type: application/json" \
 		-d@pacts/replicated-cli-vendor-graphql-api.json \
-		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/0.10.0
+		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(VERSION)
 
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:
