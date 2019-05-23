@@ -92,6 +92,90 @@
           }
         }
       }
+    },
+    {
+      "description": "A mocked minimal request to promote a new release for ship-app-1",
+      "providerState": "Prepare to (mock) promote a release for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {\n  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, troubleshootSpecId: $troubleshootSpecId) {\n    id\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1",
+            "channelIds": [
+              "Nightly"
+            ],
+            "sequence": 1,
+            "troubleshootSpecId": ""
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "promoteShipRelease": {
+              "id": "generated uuid"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.promoteShipRelease.id": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A real request to promote a new release for ship-app-1",
+      "providerState": "Prepare to promote a release for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {\n  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {\n    id\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1",
+            "channelIds": [
+              "Nightly"
+            ],
+            "releaseNotes": "notesHere",
+            "sequence": 1,
+            "troubleshootSpecId": "",
+            "versionLabel": "versionHere"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "promoteShipRelease": {
+              "id": "generated uuid"
+            }
+          }
+        },
+        "matchingRules": {
+          "$.body.data.promoteShipRelease.id": {
+            "match": "type"
+          }
+        }
+      }
     }
   ],
   "metadata": {

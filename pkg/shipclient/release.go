@@ -222,8 +222,8 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 
 	request := GraphQLRequest{
 		Query: `
-mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!, $analyzeSpecId: ID!) {
-  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId, analyzeSpecId: $analyzeSpecId) {
+mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {
+  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {
     id
   }
 }`,
@@ -233,7 +233,6 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 			"versionLabel":       label,
 			"releaseNotes":       notes,
 			"troubleshootSpecId": "",
-			"analyzeSpecId":      "",
 			"channelIds":         channelIDs,
 		},
 	}
