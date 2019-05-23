@@ -89,7 +89,7 @@ func Test_PromoteReleaseMinimal(t *testing.T) {
 		request := GraphQLRequest{
 			Query: `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {
-  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, troubleshootSpecId: $troubleshootSpecId) {
+  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {
     id
   }
 }`,
@@ -97,6 +97,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 			Variables: map[string]interface{}{
 				"appId":              "ship-app-1",
 				"sequence":           1,
+				"versionLabel":       "",
 				"troubleshootSpecId": "",
 				"channelIds":         []string{"Nightly"},
 			},
@@ -131,13 +132,14 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 				"operationName": "",
 				"query": `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {
-  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, troubleshootSpecId: $troubleshootSpecId) {
+  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {
     id
   }
 }`,
 				"variables": map[string]interface{}{
 					"appId":              "ship-app-1",
 					"sequence":           1,
+					"versionLabel":       "",
 					"troubleshootSpecId": "",
 					"channelIds":         []string{"Nightly"},
 				},
