@@ -245,20 +245,19 @@
   version = "v1.3.1"
 
 [[projects]]
-  digest = "1:d3b7af902faf50a957c415c2e1bdb9b60614b0fa58e23f37c67028dfb8b0b370"
+  digest = "1:3bf1b548c360f000cd76b577960e7c4536de51dae3b3d125371f2d117b2ef00e"
   name = "github.com/pact-foundation/pact-go"
   packages = [
-    ".",
     "client",
-    "command",
     "dsl",
     "install",
+    "proxy",
     "types",
     "utils",
   ]
   pruneopts = "UT"
-  revision = "6ec25718366e22bf3f50b126b9c4db4d91b9cfce"
-  version = "v1.0.0-beta.3"
+  revision = "b5a493b9157808d187d372288d092cfef9cec25f"
+  version = "v1.0.0-beta.5"
 
 [[projects]]
   digest = "1:de0ddb0011faf826abe3009bdc202c7459100a3c87a0fb2d26145a1852356611"
@@ -460,7 +459,6 @@
     "github.com/go-kit/kit/log/level",
     "github.com/hashicorp/go-multierror",
     "github.com/onsi/ginkgo",
-    "github.com/pact-foundation/pact-go",
     "github.com/pact-foundation/pact-go/dsl",
     "github.com/pkg/errors",
     "github.com/spf13/cobra",
