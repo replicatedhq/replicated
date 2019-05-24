@@ -105,14 +105,15 @@
         },
         "body": {
           "operationName": "",
-          "query": "\nmutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {\n  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, troubleshootSpecId: $troubleshootSpecId) {\n    id\n  }\n}",
+          "query": "\nmutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {\n  promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {\n    id\n  }\n}",
           "variables": {
             "appId": "ship-app-1",
             "channelIds": [
-              "Nightly"
+              "ship-app-nightly"
             ],
             "sequence": 1,
-            "troubleshootSpecId": ""
+            "troubleshootSpecId": "",
+            "versionLabel": ""
           }
         }
       },
@@ -150,7 +151,7 @@
           "variables": {
             "appId": "ship-app-1",
             "channelIds": [
-              "Nightly"
+              "ship-app-beta"
             ],
             "releaseNotes": "notesHere",
             "sequence": 1,
