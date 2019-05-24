@@ -99,7 +99,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 				"sequence":           1,
 				"versionLabel":       "",
 				"troubleshootSpecId": "",
-				"channelIds":         []string{"Nightly"},
+				"channelIds":         []string{"ship-app-nightly"},
 			},
 		}
 
@@ -141,7 +141,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 					"sequence":           1,
 					"versionLabel":       "",
 					"troubleshootSpecId": "",
-					"channelIds":         []string{"Nightly"},
+					"channelIds":         []string{"ship-app-nightly"},
 				},
 			},
 		}).
@@ -172,7 +172,7 @@ func Test_PromoteReleaseActual(t *testing.T) {
 			Token:     "basic-read-write-token",
 		}
 
-		err = c.PromoteRelease("ship-app-1", 1, "versionHere", "notesHere", "Nightly")
+		err = c.PromoteRelease("ship-app-1", 1, "versionHere", "notesHere", "ship-app-beta")
 		assert.Nil(t, err)
 
 		return nil
@@ -202,7 +202,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 					"versionLabel":       "versionHere",
 					"releaseNotes":       "notesHere",
 					"troubleshootSpecId": "",
-					"channelIds":         []string{"Nightly"},
+					"channelIds":         []string{"ship-app-beta"},
 				},
 			},
 		}).
