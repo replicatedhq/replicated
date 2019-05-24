@@ -7,7 +7,8 @@ script:
   - make pacts
   - make test
   - make build
-  - make publish-pacts
+#  - make publish-pacts-prerelease
 after_success:
   - test -n "$TRAVIS_TAG" && make package_docker_docs
   - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
+  - test -n "$TRAVIS_TAG" && make publish-pacts

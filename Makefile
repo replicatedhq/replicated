@@ -1,7 +1,8 @@
-.PHONY: docs
+.PHONY: docker shell deps test pacts publish-pacts publish-pacts-prerelease get-spec-prod get-spec-local gen-models build docs package_docker_docs
 
 API_PKGS=apps channels releases
-VERSION=$(shell git describe)
+VERSION=$(shell git describe --abbrev=0)
+PREVERSION=$(shell git describe --abbrev=0 | sed 's/v\([0-9]\+\)\.\([0-9]\+\)\.\([0-9]\+\)/echo "v\1.$$((\2+1)).\3-prerelease"/ge') # note - this only works with GNU sed
 
 docker:
 	docker build -t replicatedhq.replicated .
@@ -19,7 +20,6 @@ deps:
 test:
 	go test ./cli/test
 
-.PHONY: pacts
 pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
@@ -35,6 +35,15 @@ publish-pacts:
 		-H "Content-Type: application/json" \
 		-d@pacts/replicated-cli-vendor-graphql-api.json \
 		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(VERSION)
+
+publish-pacts-prerelease:
+	curl \
+		--silent --output /dev/null --show-error --fail \
+		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
+		-X PUT \
+		-H "Content-Type: application/json" \
+		-d@pacts/replicated-cli-vendor-graphql-api.json \
+		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(PREVERSION)
 
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:
