@@ -1,7 +1,7 @@
-.PHONY: docs
+.PHONY: docker shell deps test pacts publish-pacts get-spec-prod get-spec-local gen-models build docs package_docker_docs
 
 API_PKGS=apps channels releases
-VERSION=$(shell git describe)
+VERSION=$(shell git describe --abbrev=0)
 
 docker:
 	docker build -t replicatedhq.replicated .
@@ -19,7 +19,6 @@ deps:
 test:
 	go test ./cli/test
 
-.PHONY: pacts
 pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
