@@ -10,6 +10,7 @@ import (
 
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
+	collectors "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	v2 "github.com/replicatedhq/replicated/gen/go/v2"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -34,6 +35,12 @@ type Client interface {
 	GetRelease(appID string, sequence int64) (*releases.AppRelease, error)
 	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
+
+	ListCollectors(appID string) ([]collectors.AppCollectorInfo, error)
+	CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error)
+	UpdateCollector(appID string, name string, yaml string) error
+	GetCollector(appID string, name string) (*collectors.AppCollector, error)
+	PromoteCollector(appID string, name string, channelIDs ...string) error
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }
