@@ -7,13 +7,14 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseListReleases struct {
-	Data   *ShipReleasesData `json:"data,omitempty"`
-	Errors []GraphQLError    `json:"errors,omitempty"`
+	Data   *ShipReleasesData  `json:"data,omitempty"`
+	Errors []graphql.GQLError `json:"errors,omitempty"`
 }
 
 type ShipReleasesData struct {
@@ -29,7 +30,7 @@ type ShipRelease struct {
 
 type GraphQLResponseFinalizeRelease struct {
 	Data   *ShipFinalizeCreateData `json:"data,omitempty"`
-	Errors []GraphQLError          `json:"errors,omitempty"`
+	Errors []graphql.GQLError      `json:"errors,omitempty"`
 }
 
 type ShipFinalizeCreateData struct {
@@ -38,7 +39,7 @@ type ShipFinalizeCreateData struct {
 
 type GraphQLResponseUploadRelease struct {
 	Data   ShipReleaseUploadData `json:"data,omitempty"`
-	Errors []GraphQLError        `json:"errors,omitempty"`
+	Errors []graphql.GQLError    `json:"errors,omitempty"`
 }
 
 type ShipReleaseUploadData struct {
@@ -52,7 +53,7 @@ type ShipPendingReleaseData struct {
 
 type GraphQLResponseLintRelease struct {
 	Data   *ShipReleaseLintData `json:"data,omitempty"`
-	Errors []GraphQLError       `json:"errors,omitempty"`
+	Errors []graphql.GQLError   `json:"errors,omitempty"`
 }
 
 type ShipReleaseLintData struct {
@@ -80,7 +81,7 @@ type ShipLintLinePosition struct {
 func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	response := GraphQLResponseListReleases{}
 
-	request := GraphQLRequest{
+	request := graphql.Request{
 		Query: `
 query allReleases($appId: ID!) {
   allReleases(appId: $appId) {
@@ -102,7 +103,7 @@ query allReleases($appId: ID!) {
 		},
 	}
 
-	if err := c.executeRequest(request, &response); err != nil {
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -135,7 +136,7 @@ query allReleases($appId: ID!) {
 func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
 	response := GraphQLResponseUploadRelease{}
 
-	request := GraphQLRequest{
+	request := graphql.Request{
 		Query: `
 mutation uploadRelease($appId: ID!) {
   uploadRelease(appId: $appId) {
@@ -148,7 +149,7 @@ mutation uploadRelease($appId: ID!) {
 		},
 	}
 
-	if err := c.executeRequest(request, &response); err != nil {
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -167,7 +168,7 @@ mutation uploadRelease($appId: ID!) {
 		return nil, err
 	}
 
-	request = GraphQLRequest{
+	request = graphql.Request{
 		Query: `
 mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
   finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
@@ -187,7 +188,7 @@ mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
 	// call finalize release
 	finalizeResponse := GraphQLResponseFinalizeRelease{}
 
-	if err := c.executeRequest(request, &finalizeResponse); err != nil {
+	if err := c.ExecuteRequest(request, &finalizeResponse); err != nil {
 		return nil, err
 	}
 
@@ -218,9 +219,9 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, yaml string)
 }
 
 func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
-	response := GraphQLResponseErrorOnly{}
+	response := graphql.ResponseErrorOnly{}
 
-	request := GraphQLRequest{
+	request := graphql.Request{
 		Query: `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {
@@ -237,7 +238,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 		},
 	}
 
-	if err := c.executeRequest(request, &response); err != nil {
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return err
 	}
 
@@ -251,7 +252,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
 	response := GraphQLResponseLintRelease{}
 
-	request := GraphQLRequest{
+	request := graphql.Request{
 		Query: `
 mutation lintRelease($appId: ID!, $spec: String!) {
   lintRelease(appId: $appId, spec: $spec) {
@@ -278,7 +279,7 @@ mutation lintRelease($appId: ID!, $spec: String!) {
 		},
 	}
 
-	if err := c.executeRequest(request, &response); err != nil {
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return nil, err
 	}
 

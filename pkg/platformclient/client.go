@@ -13,10 +13,12 @@ import (
 	collectors "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	v2 "github.com/replicatedhq/replicated/gen/go/v2"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
+const graphqlApiOrigin = "https://pg.replicated.com/graphql"
 
 // Client provides methods to manage apps, channels, and releases.
 type Client interface {
@@ -55,25 +57,24 @@ type ChannelOptions struct {
 }
 
 // An HTTPClient communicates with the Replicated Vendor HTTP API.
+// TODO: rename this to client
 type HTTPClient struct {
 	apiKey    string
 	apiOrigin string
+
+	graphqlClient *graphql.Client
 }
 
 // New returns a new  HTTP client.
 func New(apiKey string) Client {
-	c := &HTTPClient{
-		apiKey:    apiKey,
-		apiOrigin: apiOrigin,
-	}
-
-	return c
+	return NewHTTPClient(apiOrigin, graphqlApiOrigin, apiKey)
 }
 
-func NewHTTPClient(origin string, apiKey string) Client {
+func NewHTTPClient(origin, graphqlOrigin, apiKey string) Client {
 	c := &HTTPClient{
-		apiKey:    apiKey,
-		apiOrigin: origin,
+		apiKey:        apiKey,
+		apiOrigin:     origin,
+		graphqlClient: graphql.NewClient(graphqlOrigin, apiKey),
 	}
 
 	return c

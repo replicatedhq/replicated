@@ -4,27 +4,105 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
-	collectors "github.com/replicatedhq/replicated/gen/go/v1"
+	v1 "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 )
 
+type GraphQLResponseListCollectors struct {
+	Data   *SupportBundleSpecsData `json:"data,omitempty"`
+	Errors []graphql.GQLError      `json:"errors,omitempty"`
+}
+
+type SupportBundleSpecsData struct {
+	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
+}
+
+type SupportBundleSpec struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	CreatedAt string `json:"createdAt"`
+
+	Channels []PlatformChannel `json:"platformChannels"`
+}
+
+type PlatformChannel struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // ListCollectors lists all collectors for an app.
-func (c *HTTPClient) ListCollectors(appID string) ([]collectors.AppCollectorInfo, error) {
-	path := fmt.Sprintf("/v1/app/%s/collectors", appID)
-	collectors := make([]collectors.AppCollectorInfo, 0)
-	if err := c.doJSON("GET", path, http.StatusOK, nil, &collectors); err != nil {
-		return nil, fmt.Errorf("ListCollectors: %v", err)
+func (c *HTTPClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
+	response := GraphQLResponseListCollectors{}
+
+	request := graphql.Request{
+		Query: `
+query supportBundleSpecs($appId: String) {
+  supportBundleSpecs(appId: $appId) {
+    id
+    name
+    spec
+    createdAt
+    updatedAt
+    isArchived
+    isImmutable
+    githubRef {
+      owner
+      repoFullName
+      branch
+      path
+    }
+    channels {
+      id
+      name
+    }
+    platformChannels {
+      id
+      name
+    }
+  }
+}`,
+
+		Variables: map[string]interface{}{
+			"appId": appID,
+		},
 	}
+
+	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	location, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, err
+	}
+
+	collectors := make([]v1.AppCollectorInfo, 0, 0)
+	for _, spec := range response.Data.SupportBundleSpecs {
+		createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		collector := v1.AppCollectorInfo{
+			// ID:   spec.ID,
+			Name:      spec.Name,
+			CreatedAt: createdAt.In(location),
+		}
+
+		collectors = append(collectors, collector)
+	}
+
 	return collectors, nil
 }
 
 // CreateCollector adds a release to an app.
-func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
+func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/collector/%d", appID, name)
-	body := &collectors.BodyCreateCollector{
+	body := &v1.BodyCreateCollector{
 		Source: "latest",
 	}
-	collector := &collectors.AppCollectorInfo{}
+	collector := &v1.AppCollectorInfo{}
 	if err := c.doJSON("POST", path, http.StatusCreated, body, collector); err != nil {
 		return nil, fmt.Errorf("CreateCollector: %v", err)
 	}
@@ -61,9 +139,9 @@ func (c *HTTPClient) UpdateCollector(appID string, name string, yaml string) err
 }
 
 // GetCollector returns a collector's properties.
-func (c *HTTPClient) GetCollector(appID string, name string) (*collectors.AppCollector, error) {
+func (c *HTTPClient) GetCollector(appID string, name string) (*v1.AppCollector, error) {
 	path := fmt.Sprintf("/v1/app/%s/collectors/%d/properties", appID, name)
-	collector := &collectors.AppCollector{}
+	collector := &v1.AppCollector{}
 	if err := c.doJSON("GET", path, http.StatusOK, nil, collector); err != nil {
 		return nil, fmt.Errorf("GetCollector: %v", err)
 	}
@@ -73,7 +151,7 @@ func (c *HTTPClient) GetCollector(appID string, name string) (*collectors.AppCol
 // PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, name string, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/collectors/%d/promote?dry_run=true", appID, name)
-	body := &collectors.BodyPromoteCollector{
+	body := &v1.BodyPromoteCollector{
 		Channels: channelIDs,
 	}
 	if err := c.doJSON("POST", path, http.StatusNoContent, body, nil); err != nil {
