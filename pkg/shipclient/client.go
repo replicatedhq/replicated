@@ -27,6 +27,11 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
+	ListCollectors(appID string) ([]types.CollectorInfo, error)
+	CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error)
+	UpdateCollector(appID string, name string, yaml string) error
+	PromoteCollector(appID string, name string, channelIDs ...string) error
+
 	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
 	SetDefaultEntitlementSpec(specID string) error
 	SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appID string) (*types.EntitlementValue, error)
