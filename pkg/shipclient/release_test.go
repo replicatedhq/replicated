@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +30,7 @@ func Test_CreateRelease(t *testing.T) {
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil
@@ -153,7 +154,7 @@ func Test_PromoteReleaseMinimal(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {
@@ -179,7 +180,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil
