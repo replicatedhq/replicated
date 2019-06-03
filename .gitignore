@@ -2,3 +2,4 @@ dist/
 .glide
 gen/docs
 logs/
+.DS_Store
