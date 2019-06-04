@@ -13,7 +13,7 @@ func Test_CreateRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := graphql.Request{
+		request := GraphQLRequest{
 			Query: `
 mutation uploadRelease($appId: ID!) {
   uploadRelease(appId: $appId) {
@@ -35,7 +35,7 @@ mutation uploadRelease($appId: ID!) {
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.ExecuteRequest(request, &response)
+		err = c.executeRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil
@@ -86,7 +86,7 @@ func Test_PromoteReleaseMinimal(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := graphql.Request{
+		request := GraphQLRequest{
 			Query: `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {
@@ -112,7 +112,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.ExecuteRequest(request, &response)
+		err = c.executeRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil

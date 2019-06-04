@@ -2,13 +2,12 @@ package shipclient
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type GraphQLResponseListApps struct {
-	Data   *ShipData          `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
+	Data   *ShipData      `json:"data,omitempty"`
+	Errors []GraphQLError `json:"errors,omitempty"`
 }
 
 type ShipData struct {
@@ -29,7 +28,7 @@ type ShipApp struct {
 func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 	response := GraphQLResponseListApps{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 query {
   ship {
@@ -54,7 +53,7 @@ query {
 		Variables: map[string]interface{}{},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 

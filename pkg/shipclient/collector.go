@@ -7,14 +7,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseListCollectors struct {
 	Data   *ShipCollectorsData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
+	Errors []GraphQLError      `json:"errors,omitempty"`
 }
 
 type ShipCollectorsData struct {
@@ -29,7 +28,7 @@ type ShipCollector struct {
 
 type GraphQLResponseFinalizeCollector struct {
 	Data   *ShipFinalizeCreateCollectorData `json:"data,omitempty"`
-	Errors []graphql.GQLError               `json:"errors,omitempty"`
+	Errors []GraphQLError                   `json:"errors,omitempty"`
 }
 
 type ShipFinalizeCreateCollectorData struct {
@@ -38,7 +37,7 @@ type ShipFinalizeCreateCollectorData struct {
 
 type GraphQLResponseUploadCollector struct {
 	Data   ShipCollectorUploadData `json:"data,omitempty"`
-	Errors []graphql.GQLError      `json:"errors,omitempty"`
+	Errors []GraphQLError          `json:"errors,omitempty"`
 }
 
 type ShipCollectorUploadData struct {
@@ -53,7 +52,7 @@ type ShipPendingCollectorData struct {
 func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error) {
 	response := GraphQLResponseUploadCollector{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation uploadCollector($appId: ID!) {
   uploadCollector(appId: $appId) {
@@ -66,7 +65,7 @@ mutation uploadCollector($appId: ID!) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +84,7 @@ mutation uploadCollector($appId: ID!) {
 		return nil, err
 	}
 
-	request = graphql.Request{
+	request = GraphQLRequest{
 		Query: `
 mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
   finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
@@ -104,7 +103,7 @@ mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
 	// call finalize release
 	finalizeCollectorResponse := GraphQLResponseFinalizeCollector{}
 
-	if err := c.ExecuteRequest(request, &finalizeCollectorResponse); err != nil {
+	if err := c.executeRequest(request, &finalizeCollectorResponse); err != nil {
 		return nil, err
 	}
 
@@ -132,9 +131,9 @@ func (c *GraphQLClient) UpdateCollector(appID string, name string, yaml string) 
 }
 
 func (c *GraphQLClient) PromoteCollector(appID string, name string, channelIDs ...string) error {
-	response := graphql.ResponseErrorOnly{}
+	response := GraphQLResponseErrorOnly{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation promoteShipCollector($appId: ID!, $name: String!, $channelIds: [String]) {
   promoteShipCollector(appId: $appId, name: $name, channelIds: $channelIds) {
@@ -148,7 +147,7 @@ mutation promoteShipCollector($appId: ID!, $name: String!, $channelIds: [String]
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return err
 	}
 
@@ -162,7 +161,7 @@ mutation promoteShipCollector($appId: ID!, $name: String!, $channelIds: [String]
 func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 query allCollectors($appId: ID!) {
   allReleases(appId: $appId) {
@@ -183,7 +182,7 @@ query allCollectors($appId: ID!) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 

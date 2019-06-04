@@ -10,10 +10,10 @@ type Client struct {
 	ShipClient     shipclient.Client
 }
 
-func NewClient(platformOrigin string, graphqlOrigin string, apiToken string) Client {
+func NewClient(platformOrigin string, shipOrigin string, apiToken string) Client {
 	client := Client{
-		PlatformClient: platformclient.NewHTTPClient(platformOrigin, graphqlOrigin, apiToken),
-		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
+		PlatformClient: platformclient.NewHTTPClient(platformOrigin, apiToken),
+		ShipClient:     shipclient.NewGraphQLClient(shipOrigin, apiToken),
 	}
 
 	return client

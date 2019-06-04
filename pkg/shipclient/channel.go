@@ -2,13 +2,12 @@ package shipclient
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type GraphQLResponseListChannels struct {
-	Data   *ShipChannelData   `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
+	Data   *ShipChannelData `json:"data,omitempty"`
+	Errors []GraphQLError   `json:"errors,omitempty"`
 }
 
 type ShipChannelData struct {
@@ -27,7 +26,7 @@ type ShipChannel struct {
 func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	response := GraphQLResponseListChannels{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 query getAppChannels($appId: ID!) {
   getAppChannels(appId: $appId) {
@@ -64,7 +63,7 @@ query getAppChannels($appId: ID!) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -85,9 +84,9 @@ query getAppChannels($appId: ID!) {
 }
 
 func (c *GraphQLClient) CreateChannel(appID string, name string, description string) error {
-	response := graphql.ResponseErrorOnly{}
+	response := GraphQLResponseErrorOnly{}
 
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation createChannel($appId: String!, $channelName: String!, $description: String) {
   createChannel(appId: $appId, channelName: $channelName, description: $description) {
@@ -111,7 +110,7 @@ mutation createChannel($appId: String!, $channelName: String!, $description: Str
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return err
 	}
 
