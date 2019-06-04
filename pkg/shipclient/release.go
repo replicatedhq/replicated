@@ -8,14 +8,13 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseListReleases struct {
-	Data   *ShipReleasesData  `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
+	Data   *ShipReleasesData `json:"data,omitempty"`
+	Errors []GraphQLError    `json:"errors,omitempty"`
 }
 
 type ShipReleasesData struct {
@@ -31,7 +30,7 @@ type ShipRelease struct {
 
 type GraphQLResponseFinalizeRelease struct {
 	Data   *ShipFinalizeCreateData `json:"data,omitempty"`
-	Errors []graphql.GQLError      `json:"errors,omitempty"`
+	Errors []GraphQLError          `json:"errors,omitempty"`
 }
 
 type ShipFinalizeCreateData struct {
@@ -40,7 +39,7 @@ type ShipFinalizeCreateData struct {
 
 type GraphQLResponseUploadRelease struct {
 	Data   ShipReleaseUploadData `json:"data,omitempty"`
-	Errors []graphql.GQLError    `json:"errors,omitempty"`
+	Errors []GraphQLError        `json:"errors,omitempty"`
 }
 
 type ShipReleaseUploadData struct {
@@ -54,7 +53,7 @@ type ShipPendingReleaseData struct {
 
 type GraphQLResponseLintRelease struct {
 	Data   *ShipReleaseLintData `json:"data,omitempty"`
-	Errors []graphql.GQLError   `json:"errors,omitempty"`
+	Errors []GraphQLError       `json:"errors,omitempty"`
 }
 
 type ShipReleaseLintData struct {
@@ -106,7 +105,7 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -165,7 +164,7 @@ func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.Release
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -195,7 +194,7 @@ func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.Release
 	// call finalize release
 	finalizeResponse := GraphQLResponseFinalizeRelease{}
 
-	if err := c.ExecuteRequest(request, &finalizeResponse); err != nil {
+	if err := c.executeRequest(request, &finalizeResponse); err != nil {
 		return nil, err
 	}
 
@@ -251,7 +250,7 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return err
 	}
 
@@ -294,7 +293,7 @@ func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMess
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 

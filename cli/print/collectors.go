@@ -8,9 +8,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var collectorsTmplSrc = `NAME	CREATED	ACTIVE_CHANNELS
+var collectorsTmplSrc = `SEQUENCE	CREATED	ACTIVE_CHANNELS
 {{ range . -}}
-{{ .Name }}	{{ time .CreatedAt }}	{{ .ActiveChannels }}
+{{ .Sequence }}	{{ time .CreatedAt }}	{{ .ActiveChannels }}
 {{ end }}`
 
 var collectorsTmpl = template.Must(template.New("Collectors").Funcs(funcs).Parse(collectorsTmplSrc))

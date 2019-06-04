@@ -1,13 +1,10 @@
 package shipclient
 
-import (
-	"github.com/replicatedhq/replicated/pkg/graphql"
-	"github.com/replicatedhq/replicated/pkg/types"
-)
+import "github.com/replicatedhq/replicated/pkg/types"
 
 type GraphQLResponseCreateEntitlementSpec struct {
 	Data   *CreateEntitlementSpecResponse `json:"data,omitempty"`
-	Errors []graphql.GQLError             `json:"errors,omitempty"`
+	Errors []GraphQLError                 `json:"errors,omitempty"`
 }
 
 type CreateEntitlementSpecResponse struct {
@@ -16,12 +13,12 @@ type CreateEntitlementSpecResponse struct {
 
 type GraphQLResponseSetDefault struct {
 	Data   map[string]interface{} `json:"data,omitempty"` // dont care
-	Errors []graphql.GQLError     `json:"errors,omitempty"`
+	Errors []GraphQLError         `json:"errors,omitempty"`
 }
 
 type GraphQLResponseCreateEntitlementValue struct {
 	Data   *CreateEntitlementValueResponse `json:"data,omitempty"`
-	Errors []graphql.GQLError              `json:"errors,omitempty"`
+	Errors []GraphQLError                  `json:"errors,omitempty"`
 }
 
 type CreateEntitlementValueResponse struct {
@@ -30,7 +27,7 @@ type CreateEntitlementValueResponse struct {
 
 func (c *GraphQLClient) CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error) {
 	response := GraphQLResponseCreateEntitlementSpec{}
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) {
   createEntitlementSpec(spec: $spec, name: $name, labels:[{key:"replicated.com/app", value:$appId}]) {
@@ -47,7 +44,7 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -56,7 +53,7 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 
 func (c *GraphQLClient) SetDefaultEntitlementSpec(specID string) error {
 	response := GraphQLResponseSetDefault{}
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation setDefaultEntitlementSpec($specId: ID!) {
   setDefaultEntitlementSpec(id: $specId)
@@ -66,7 +63,7 @@ mutation setDefaultEntitlementSpec($specId: ID!) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return err
 	}
 
@@ -75,7 +72,7 @@ mutation setDefaultEntitlementSpec($specId: ID!) {
 
 func (c *GraphQLClient) SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appId string) (*types.EntitlementValue, error) {
 	response := GraphQLResponseCreateEntitlementValue{}
-	request := graphql.Request{
+	request := GraphQLRequest{
 		Query: `
 mutation($customerId: String!, $specId: String!, $key: String!, $value: String!, $type: String!, $appId: String!) {
   createEntitlementValue(customerId: $customerId, specId: $specId, key: $key, value: $value, labels: [{key: "type", value: $type},{key:"replicated.com/app", value:$appId}]) {
@@ -97,7 +94,7 @@ mutation($customerId: String!, $specId: String!, $key: String!, $value: String!,
 			"appId":      appId,
 		},
 	}
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.executeRequest(request, &response); err != nil {
 		return nil, err
 	}
 
