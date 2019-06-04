@@ -13,7 +13,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 )
 
 // don't care what it looks like, just gonna json.MarshalIndent it to stdout
@@ -27,20 +27,20 @@ type PremGraphQLClient struct {
 }
 
 type GraphQLResponseCustomerSpec struct {
-	Data   GetCustomerSpecResponse   `json:"data,omitempty"`
-	Errors []shipclient.GraphQLError `json:"errors,omitempty"`
+	Data   GetCustomerSpecResponse `json:"data,omitempty"`
+	Errors []graphql.Error         `json:"errors,omitempty"`
 }
 
 type GetCustomerSpecResponse struct {
 	ShipRelease ShipRelease `json:"shipRelease,omitempty"` //
 }
 
-func (r GraphQLResponseCustomerSpec) GraphQLError() []shipclient.GraphQLError {
+func (r GraphQLResponseCustomerSpec) GraphQLError() []graphql.Error {
 	return r.Errors
 }
 
 func (c *PremGraphQLClient) FetchCustomerRelease() (ShipRelease, error) {
-	requestObj := shipclient.GraphQLRequest{
+	requestObj := graphql.Request{
 		Query: `
 query {
   shipRelease {
@@ -87,7 +87,7 @@ query {
 		Variables: map[string]interface{}{},
 	}
 	response := GraphQLResponseCustomerSpec{}
-	err := c.executeRequest(requestObj, &response)
+	err := c.ExecuteRequest(requestObj, &response)
 	if err != nil {
 		return nil, errors.Wrapf(err, "execute request")
 	}
@@ -99,8 +99,8 @@ query {
 	return response.Data.ShipRelease, nil
 }
 
-func (c *PremGraphQLClient) executeRequest(
-	requestObj shipclient.GraphQLRequest,
+func (c *PremGraphQLClient) ExecuteRequest(
+	requestObj graphql.Request,
 	deserializeTarget interface{},
 ) error {
 	debug := log.With(level.Debug(c.Logger), "type", "graphQLClient")
@@ -138,7 +138,7 @@ func (c *PremGraphQLClient) executeRequest(
 	return nil
 }
 
-func (c *PremGraphQLClient) checkErrors(errer shipclient.ShipError) error {
+func (c *PremGraphQLClient) checkErrors(errer graphql.GQLError) error {
 	if errer.GraphQLError() != nil && len(errer.GraphQLError()) > 0 {
 		var multiErr *multierror.Error
 		for _, err := range errer.GraphQLError() {

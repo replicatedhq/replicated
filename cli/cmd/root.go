@@ -24,7 +24,7 @@ const (
 var appSlugOrID string
 var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
-var shipOrigin = "https://g.replicated.com/graphql"
+var graphqlOrigin = "https://g.replicated.com/graphql"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -34,7 +34,7 @@ func init() {
 
 	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
 	if shipOriginFromEnv != "" {
-		shipOrigin = shipOriginFromEnv
+		graphqlOrigin = shipOriginFromEnv
 	}
 }
 
@@ -124,6 +124,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
 
+	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
+	runCmds.InitCollectorList(collectorsCmd)
+
 	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)
 	runCmds.InitEntitlementsDefineFields(entitlementsCmd)
 	runCmds.InitEntitlementsSetValueCommand(entitlementsCmd)
@@ -138,13 +141,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				return errors.New("Please provide your API token")
 			}
 		}
-		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
+		platformAPI := platformclient.NewHTTPClient(platformOrigin, graphqlOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
 
-		shipAPI := shipclient.NewGraphQLClient(shipOrigin, apiToken)
+		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		commonAPI := client.NewClient(platformOrigin, shipOrigin, apiToken)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken)
 		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {
