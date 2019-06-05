@@ -20,6 +20,8 @@ type AppCollectorInfo struct {
 	ActiveChannels []AppChannel `json:"ActiveChannels,omitempty"`
 	// The application ID
 	AppId string `json:"AppId,omitempty"`
+	// Collector Config
+	Config string `json:"Config,omitempty"`
 	// The spec ID
 	SpecId string `json:"SpecId,omitempty"`
 	// The time at which the release was created

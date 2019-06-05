@@ -1,6 +1,7 @@
 package platformclient
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -138,13 +139,19 @@ func (c *HTTPClient) UpdateCollector(appID string, name string, yaml string) err
 }
 
 // GetCollector returns a collector's properties.
-func (c *HTTPClient) GetCollector(appID string, name string) (*v1.AppCollector, error) {
-	path := fmt.Sprintf("/v1/app/%s/collectors/%d/properties", appID, name)
-	collector := &v1.AppCollector{}
-	if err := c.doJSON("GET", path, http.StatusOK, nil, collector); err != nil {
-		return nil, fmt.Errorf("GetCollector: %v", err)
+func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
+	allcollectors, err := c.ListCollectors(appID)
+	if err != nil {
+		return nil, err
 	}
-	return collector, nil
+
+	for _, collector := range allcollectors {
+		if collector.SpecId == id {
+			return &collector, nil
+		}
+	}
+
+	return nil, errors.New("Not found")
 }
 
 // PromoteCollector points the specified channels at a named collector.

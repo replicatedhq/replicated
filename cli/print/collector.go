@@ -16,7 +16,7 @@ CONFIG:
 
 var collectorTmpl = template.Must(template.New("Collector").Funcs(funcs).Parse(collectorTmplSrc))
 
-func Collector(w *tabwriter.Writer, collector *collectors.AppCollector) error {
+func Collector(w *tabwriter.Writer, collector *collectors.AppCollectorInfo) error {
 	if err := collectorTmpl.Execute(w, collector); err != nil {
 		return err
 	}
