@@ -14,13 +14,12 @@ import (
 	"time"
 )
 
-// AppCollectorInfo represents an app collector
-type AppCollectorInfo struct {
+// TestAppCollectorInfo represents an app collector
+type TestAppCollectorInfo struct {
 	// The active channels
-	ActiveChannels []AppChannel `json:"ActiveChannels,omitempty"`
-	// The application ID
-	AppId string `json:"AppId,omitempty"`
+	ActiveChannels []PlatformChannel `json:"PlatformChannel,omitempty"`
 	// The spec ID
+	AppId  string `json:"AppId,omitempty"`
 	SpecId string `json:"SpecId,omitempty"`
 	// The time at which the release was created
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`

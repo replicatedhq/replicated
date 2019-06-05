@@ -8,9 +8,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var collectorsTmplSrc = `NAME	CREATED	ACTIVE_CHANNELS
+var collectorsTmplSrc = `NAME	CREATED	 SPEC_ID 	ACTIVE_CHANNELS
 {{ range . -}}
-{{ .Name }}	{{ time .CreatedAt }}	{{ .ActiveChannels }}
+{{ .Name }}	{{ time .CreatedAt }}	{{ .SpecID }}	{{ .ActiveChannels }}
 {{ end }}`
 
 var collectorsTmpl = template.Must(template.New("Collectors").Funcs(funcs).Parse(collectorsTmplSrc))
@@ -26,9 +26,16 @@ func Collectors(w *tabwriter.Writer, appCollectors []types.CollectorInfo) error 
 		}
 		activeChansField := strings.Join(activeChans, ",")
 
+		// don't print edited if it's the same as created
+		// edited := r.EditedAt.Format(time.RFC3339)
+		// if r.CreatedAt.Equal(r.EditedAt) {
+		// 	edited = ""
+		// }
+
 		rs[i] = map[string]interface{}{
 			"Name":           r.Name,
 			"CreatedAt":      r.CreatedAt,
+			"SpecID":         r.SpecID,
 			"ActiveChannels": activeChansField,
 		}
 	}

@@ -13,28 +13,28 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 	}
 
 	if appType == "platform" {
-		platformReleases, err := c.PlatformClient.ListCollectors(appID)
+		platformCollectors, err := c.PlatformClient.ListCollectors(appID)
 		if err != nil {
 			return nil, err
 		}
 
 		collectorInfos := make([]types.CollectorInfo, 0, 0)
-		for _, platformRelease := range platformReleases {
+		for _, platformCollector := range platformCollectors {
 			activeChannels := make([]types.Channel, 0, 0)
-			for _, platformReleaseChannel := range platformRelease.ActiveChannels {
+			for _, platformCollectorChannel := range platformCollector.ActiveChannels {
 				activeChannel := types.Channel{
-					ID:          platformReleaseChannel.Id,
-					Name:        platformReleaseChannel.Name,
-					Description: platformReleaseChannel.Description,
+					ID:   platformCollectorChannel.Id,
+					Name: platformCollectorChannel.Name,
 				}
 
 				activeChannels = append(activeChannels, activeChannel)
 			}
 			collectorInfo := types.CollectorInfo{
-				AppID:          platformRelease.AppId,
-				CreatedAt:      platformRelease.CreatedAt,
-				Name:           platformRelease.Name,
+				AppID:          platformCollector.AppId,
+				CreatedAt:      platformCollector.CreatedAt,
+				Name:           platformCollector.Name,
 				ActiveChannels: activeChannels,
+				SpecID:         platformCollector.SpecId,
 			}
 
 			collectorInfos = append(collectorInfos, collectorInfo)

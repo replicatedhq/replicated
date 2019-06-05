@@ -6,5 +6,7 @@ type CollectorInfo struct {
 	ActiveChannels []Channel
 	AppID          string
 	CreatedAt      time.Time
+	EditedAt       time.Time
 	Name           string
+	SpecID         string
 }
