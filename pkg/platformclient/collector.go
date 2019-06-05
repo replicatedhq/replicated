@@ -20,11 +20,10 @@ type SupportBundleSpecsData struct {
 }
 
 type SupportBundleSpec struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"createdAt"`
-
-	Channels []PlatformChannel `json:"platformChannels"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt string          `json:"createdAt"`
+	Channels  []v1.AppChannel `json:"platformChannels"`
 }
 
 type PlatformChannel struct {
@@ -32,7 +31,6 @@ type PlatformChannel struct {
 	Name string `json:"name"`
 }
 
-// ListCollectors lists all collectors for an app.
 func (c *HTTPClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
@@ -85,9 +83,10 @@ query supportBundleSpecs($appId: String) {
 			return nil, err
 		}
 		collector := v1.AppCollectorInfo{
-			// ID:   spec.ID,
-			Name:      spec.Name,
-			CreatedAt: createdAt.In(location),
+			SpecId:         spec.ID,
+			Name:           spec.Name,
+			CreatedAt:      createdAt.In(location),
+			ActiveChannels: spec.Channels,
 		}
 
 		collectors = append(collectors, collector)
