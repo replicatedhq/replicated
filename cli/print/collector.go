@@ -9,7 +9,6 @@ import (
 
 var collectorTmplSrc = `NAME:	{{ .Name }}
 CREATED:	{{ time .CreatedAt }}
-ACTIVE_CHANNELS: {{ .ActiveChannels}}
 CONFIG:
 {{ .Config }}
 `
