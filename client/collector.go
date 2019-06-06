@@ -88,7 +88,7 @@ func (c *Client) UpdateCollector(appID string, name string, collectorOptions int
 	return nil
 }
 
-func (c *Client) GetCollector(appID string, name string) (interface{}, error) {
+func (c *Client) GetCollector(appID string, id string) (interface{}, error) {
 	return nil, nil
 }
 

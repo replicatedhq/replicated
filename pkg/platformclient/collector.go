@@ -25,6 +25,7 @@ type SupportBundleSpec struct {
 	Name      string          `json:"name"`
 	CreatedAt string          `json:"createdAt"`
 	Channels  []v1.AppChannel `json:"platformChannels"`
+	Config    string          `json:"spec,omitempty"`
 }
 
 type PlatformChannel struct {
@@ -88,6 +89,7 @@ query supportBundleSpecs($appId: String) {
 			Name:           spec.Name,
 			CreatedAt:      createdAt.In(location),
 			ActiveChannels: spec.Channels,
+			Config:         spec.Config,
 		}
 
 		collectors = append(collectors, collector)

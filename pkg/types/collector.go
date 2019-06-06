@@ -9,4 +9,5 @@ type CollectorInfo struct {
 	EditedAt       time.Time
 	Name           string
 	SpecID         string
+	Config         string
 }
