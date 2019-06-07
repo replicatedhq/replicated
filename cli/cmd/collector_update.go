@@ -10,7 +10,7 @@ import (
 
 func (r *runners) InitCollectorUpdate(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "update NAMEE",
+		Use:   "update SPEC_ID",
 		Short: "Updated a collectors's yaml config",
 		Long:  "Updated a collectors's yaml config",
 	}
@@ -49,16 +49,16 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) < 1 {
-		return errors.New("release sequence is required")
+		return errors.New("collector spec ID is required")
 	}
-	name := args[0]
+	specID := args[0]
 
-	if err := r.platformAPI.UpdateCollector(r.appID, name, r.args.updateCollectorYaml); err != nil {
-		return fmt.Errorf("Failure setting new yaml config for release: %v", err)
+	if err := r.platformAPI.UpdateCollector(r.appID, specID, r.args.updateCollectorYaml); err != nil {
+		return fmt.Errorf("Failure setting new yaml config for collector: %v", err)
 	}
 
 	// ignore the error since operation was successful
-	fmt.Fprintf(r.w, "Collector %s updated\n", name)
+	fmt.Fprintf(r.w, "Collector %s updated\n", specID)
 	r.w.Flush()
 
 	return nil

@@ -11,5 +11,5 @@
 package swagger
 
 type BodyPromoteCollector struct {
-	Channels []string `json:"channels"`
+	ChannelIDs []string `json:"channels"`
 }
