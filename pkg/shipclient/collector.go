@@ -210,3 +210,19 @@ func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, err
 
 	return collectorInfos, nil
 }
+
+// GetCollector returns a collector's properties.
+func (c *GraphQLClient) GetCollector(appID string, id string) (*types.CollectorInfo, error) {
+	allcollectors, err := c.ListCollectors(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, collector := range allcollectors {
+		if collector.SpecID == id {
+			return &collector, nil
+		}
+	}
+
+	return nil, errors.New("Not found")
+}
