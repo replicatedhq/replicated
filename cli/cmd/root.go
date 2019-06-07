@@ -128,7 +128,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCollectorList(collectorsCmd)
 	runCmds.InitCollectorUpdate(collectorsCmd)
 	runCmds.InitCollectorPromote(collectorsCmd)
-	runCmds.InitCollectorCreate(collectorsCmd)
+	// runCmds.InitCollectorCreate(collectorsCmd)
 	runCmds.InitCollectorInspect(collectorsCmd)
 
 	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)

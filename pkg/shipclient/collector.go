@@ -3,54 +3,54 @@ package shipclient
 import (
 	"io/ioutil"
 	"os"
-	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseListCollectors struct {
-	Data   *ShipCollectorsData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
-}
-
-type ShipCollectorsData struct {
-	ShipCollectors []*ShipCollector `json:"allCollectors"`
-}
-
-type ShipCollector struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	CreatedAt string `json:"created"`
-}
-
-type GraphQLResponseFinalizeCollector struct {
-	Data   *ShipFinalizeCreateCollectorData `json:"data,omitempty"`
-	Errors []graphql.GQLError               `json:"errors,omitempty"`
-}
-
-type ShipFinalizeCreateCollectorData struct {
-	ShipCollector *ShipCollector `json:"finalizeUploadedCollector"`
-}
-
-type GraphQLResponseUploadCollector struct {
-	Data   ShipCollectorUploadData `json:"data,omitempty"`
+	Data   *SupportBundleSpecsData `json:"data,omitempty"`
 	Errors []graphql.GQLError      `json:"errors,omitempty"`
 }
 
-type ShipCollectorUploadData struct {
-	ShipPendingCollectorData *ShipPendingCollectorData `json:"uploadCollector"`
+type SupportBundleSpecsData struct {
+	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
 }
 
-type ShipPendingCollectorData struct {
+type SupportBundleSpec struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt string          `json:"createdAt"`
+	Channels  []types.Channel `json:"channels"`
+	Config    string          `json:"spec,omitempty"`
+}
+
+type GraphQLResponseCreateCollector struct {
+	Data   *SupportBundleSpecFinalizeCreateSpecData `json:"data,omitempty"`
+	Errors []graphql.GQLError                       `json:"errors,omitempty"`
+}
+
+type SupportBundleSpecFinalizeCreateSpecData struct {
+	SupportBundleSpec *SupportBundleSpec `json:"finalizeUploadedCollector"`
+}
+
+type GraphQLResponseUploadCollector struct {
+	Data   SupportBundleSpecUploadData `json:"data,omitempty"`
+	Errors []graphql.GQLError          `json:"errors,omitempty"`
+}
+
+type SupportBundleSpecUploadData struct {
+	SupportBundleSpecPendingSpecData *SupportBundleSpecPendingSpecData `json:"uploadCollector"`
+}
+
+type SupportBundleSpecPendingSpecData struct {
 	UploadURI string `json:"uploadUri"`
 	UploadID  string `json:"id"`
 }
 
 func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error) {
-	response := GraphQLResponseUploadCollector{}
+	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{
 		Query: `
@@ -80,9 +80,9 @@ mutation uploadCollector($appId: ID!) {
 	}
 	tmpFile.Close()
 
-	if err := util.UploadFile(tmpFile.Name(), response.Data.ShipPendingCollectorData.UploadURI); err != nil {
-		return nil, err
-	}
+	// if err := util.UploadFile(tmpFile.Name(), response.Data.SupportBundleSpec); err != nil {
+	// 	return nil, err
+	// }
 
 	request = graphql.Request{
 		Query: `
@@ -96,31 +96,20 @@ mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
 }`,
 		Variables: map[string]interface{}{
 			"appId":    appID,
-			"uploadId": response.Data.ShipPendingCollectorData.UploadID,
+			"uploadId": response.Data.SupportBundleSpec,
 		},
 	}
 
 	// call finalize release
-	finalizeCollectorResponse := GraphQLResponseFinalizeCollector{}
+	finalizeCollectorResponse := GraphQLResponseListApps{}
 
 	if err := c.ExecuteRequest(request, &finalizeCollectorResponse); err != nil {
 		return nil, err
 	}
 
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return nil, err
-	}
-
-	createdAt, err := util.ParseTime(finalizeCollectorResponse.Data.ShipCollector.CreatedAt)
-	if err != nil {
-		return nil, err
-	}
-
 	collectorInfo := types.CollectorInfo{
-		AppID:     appID,
-		CreatedAt: createdAt.In(location),
-		Name:      name,
+		AppID: appID,
+		Name:  name,
 	}
 
 	return &collectorInfo, nil
@@ -163,20 +152,31 @@ func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, err
 
 	request := graphql.Request{
 		Query: `
-query allCollectors($appId: ID!) {
-  allReleases(appId: $appId) {
-    id
-    name
-    spec
-    created
-    channels {
-      id
-      name
-      currentVersion
-      numReleases
-    }
-  }
-}`,
+		query supportBundleSpecs($appId: String) {
+			supportBundleSpecs(appId: $appId) {
+			  id
+			  name
+			  spec
+			  createdAt
+			  updatedAt
+			  isArchived
+			  isImmutable
+			  githubRef {
+				owner
+				repoFullName
+				branch
+				path
+			  }
+			  channels {
+				id
+				name
+			  }
+			  platformChannels {
+				id
+				name
+			  }
+			}
+		  }`,
 		Variables: map[string]interface{}{
 			"appId": appID,
 		},
@@ -186,21 +186,23 @@ query allCollectors($appId: ID!) {
 		return nil, err
 	}
 
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return nil, err
-	}
+	// location, err := time.LoadLocation("Local")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	collectorInfos := make([]types.CollectorInfo, 0, 0)
-	for _, shipCollector := range response.Data.ShipCollectors {
-		createdAt, err := util.ParseTime(shipCollector.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
+	for _, shipCollector := range response.Data.SupportBundleSpecs {
+		// createdAt, err := util.ParseTime(shipCollector.CreatedAt)
+		// if err != nil {
+		// 	return nil, err
+		// }
 		collectorInfo := types.CollectorInfo{
-			AppID:     appID,
-			CreatedAt: createdAt.In(location),
-			Name:      shipCollector.Name,
+			AppID: appID,
+			// CreatedAt:      createdAt.In(location),
+			Name:           shipCollector.Name,
+			SpecID:         shipCollector.ID,
+			ActiveChannels: shipCollector.Channels,
 		}
 
 		collectorInfos = append(collectorInfos, collectorInfo)

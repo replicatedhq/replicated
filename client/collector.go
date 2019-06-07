@@ -43,43 +43,34 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 
 		return collectorInfos, nil
 	} else if appType == "ship" {
-		return c.ShipClient.ListCollectors(appID)
-	}
-
-	return nil, errors.New("unknown app type")
-}
-
-func (c *Client) CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
-
-	if appType == "platform" {
-		platformReleaseInfo, err := c.PlatformClient.CreateCollector(appID, name, yaml)
+		shipappCollectors, err := c.ShipClient.ListCollectors(appID)
 		if err != nil {
 			return nil, err
 		}
 
-		activeChannels := make([]types.Channel, 0, 0)
+		shipCollectorInfos := make([]types.CollectorInfo, 0, 0)
+		for _, shipappCollector := range shipappCollectors {
+			activeChannels := make([]types.Channel, 0, 0)
+			for _, shipappCollectorChannel := range shipappCollector.ActiveChannels {
+				activeChannel := types.Channel{
+					ID:   shipappCollectorChannel.ID,
+					Name: shipappCollectorChannel.Name,
+				}
 
-		for _, platformReleaseChannel := range platformReleaseInfo.ActiveChannels {
-			activeChannel := types.Channel{
-				ID:          platformReleaseChannel.Id,
-				Name:        platformReleaseChannel.Name,
-				Description: platformReleaseChannel.Description,
+				activeChannels = append(activeChannels, activeChannel)
+			}
+			shipCollectorInfo := types.CollectorInfo{
+				AppID:          shipappCollector.AppID,
+				CreatedAt:      shipappCollector.CreatedAt,
+				Name:           shipappCollector.Name,
+				ActiveChannels: activeChannels,
+				SpecID:         shipappCollector.SpecID,
 			}
 
-			activeChannels = append(activeChannels, activeChannel)
+			shipCollectorInfos = append(shipCollectorInfos, shipCollectorInfo)
 		}
-		return &types.CollectorInfo{
-			AppID:          platformReleaseInfo.AppId,
-			CreatedAt:      platformReleaseInfo.CreatedAt,
-			Name:           platformReleaseInfo.Name,
-			ActiveChannels: activeChannels,
-		}, nil
-	} else if appType == "ship" {
-		return c.ShipClient.CreateCollector(appID, name, yaml)
+
+		return shipCollectorInfos, nil
 	}
 
 	return nil, errors.New("unknown app type")
