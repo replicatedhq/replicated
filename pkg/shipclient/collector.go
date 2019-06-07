@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/util"
@@ -131,7 +130,7 @@ func (c *GraphQLClient) UpdateCollector(appID string, name string, yaml string) 
 	return nil
 }
 
-func (c *GraphQLClient) PromoteCollector(appID string, name string, channelIDs ...string) error {
+func (c *GraphQLClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
@@ -143,7 +142,7 @@ mutation promoteShipCollector($appId: ID!, $name: String!, $channelIds: [String]
 }`,
 		Variables: map[string]interface{}{
 			"appId":      appID,
-			"name":       name,
+			"id":         specID,
 			"channelIds": channelIDs,
 		},
 	}

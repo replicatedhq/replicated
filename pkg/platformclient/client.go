@@ -41,8 +41,8 @@ type Client interface {
 	ListCollectors(appID string) ([]collectors.AppCollectorInfo, error)
 	CreateCollector(appID string, id string, yaml string) (*collectors.AppCollectorInfo, error)
 	UpdateCollector(appID string, id string, yaml string) error
-	GetCollector(appID string, id string) (*collectors.AppCollectorInfo, error)
-	PromoteCollector(appID string, name string, channelIDs ...string) error
+	GetCollector(appID string, specID string) (*collectors.AppCollectorInfo, error)
+	PromoteCollector(appID string, specID string, channelIDs ...string) error
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }

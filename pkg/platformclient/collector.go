@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	v1 "github.com/replicatedhq/replicated/gen/go/v1"
@@ -118,25 +117,42 @@ func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*v
 }
 
 // UpdateCollector updates a collector's yaml.
-func (c *HTTPClient) UpdateCollector(appID string, name string, yaml string) error {
-	endpoint := fmt.Sprintf("%s/v1/app/%s/collectors/%d/raw", c.apiOrigin, appID, name)
-	req, err := http.NewRequest("PUT", endpoint, strings.NewReader(yaml))
-	if err != nil {
+func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) error {
+	return nil
+}
+
+func (c *HTTPClient) UpdateCollect(appID string, specID, yaml string) error {
+	response := GraphQLResponseListCollectors{}
+
+	request := graphql.Request{
+		Query: `
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+    updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+      id
+      spec
+      createdAt
+      updatedAt
+      isArchived
+      githubRef {
+        owner
+        repoFullName
+        branch
+        path
+      }
+    }
+  }`,
+
+		Variables: map[string]interface{}{
+			"appId": appID,
+			"id":    specID,
+			"spec":  yaml,
+		},
+	}
+
+	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", c.apiKey)
-	req.Header.Set("Content-Type", "application/yaml")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("UpdateCollector: %v", err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		if badRequestErr, err := unmarshalBadRequest(resp.Body); err == nil {
-			return badRequestErr
-		}
-		return fmt.Errorf("UpdateRelease (%s %s): status %d", req.Method, endpoint, resp.StatusCode)
-	}
+
 	return nil
 }
 
@@ -156,13 +172,14 @@ func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo
 	return nil, errors.New("Not found")
 }
 
+// or GQL?, but VenWeb not using it, soooo.....
 // PromoteCollector points the specified channels at a named collector.
-func (c *HTTPClient) PromoteCollector(appID string, name string, channelIDs ...string) error {
-	path := fmt.Sprintf("/v1/app/%s/collectors/%d/promote?dry_run=true", appID, name)
+func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
+	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
 	body := &v1.BodyPromoteCollector{
-		Channels: channelIDs,
+		ChannelIDs: channelIDs,
 	}
-	if err := c.doJSON("POST", path, http.StatusNoContent, body, nil); err != nil {
+	if err := c.doJSON("POST", path, http.StatusOK, body, nil); err != nil {
 		return fmt.Errorf("PromoteCollector: %v", err)
 	}
 	return nil

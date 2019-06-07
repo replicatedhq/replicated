@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/replicatedhq/replicated/pkg/types"
+	// collectors "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
@@ -92,16 +93,16 @@ func (c *Client) GetCollector(appID string, id string) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *Client) PromoteCollector(appID string, name string, channelIDs ...string) error {
+func (c *Client) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return err
 	}
 
 	if appType == "platform" {
-		return c.PlatformClient.PromoteCollector(appID, name, channelIDs...)
-	} else if appType == "ship" {
-		return c.ShipClient.PromoteCollector(appID, name, channelIDs...)
+		return c.PlatformClient.PromoteCollector(appID, specID, channelIDs...)
+		// } else if appType == "ship" {
+		// 	return c.ShipClient.PromoteCollector(appID, specID, channelIDs...)
 	}
 
 	return errors.New("unknown app type")
