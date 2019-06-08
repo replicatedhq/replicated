@@ -92,8 +92,8 @@ func (c *Client) PromoteCollector(appID string, specID string, channelIDs ...str
 
 	if appType == "platform" {
 		return c.PlatformClient.PromoteCollector(appID, specID, channelIDs...)
-		// } else if appType == "ship" {
-		// 	return c.ShipClient.PromoteCollector(appID, specID, channelIDs...)
+	} else if appType == "ship" {
+		return c.ShipClient.PromoteCollector(appID, specID, channelIDs...)
 	}
 
 	return errors.New("unknown app type")
