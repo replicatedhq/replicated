@@ -119,34 +119,6 @@ func (c *GraphQLClient) UpdateCollector(appID string, name string, yaml string) 
 	return nil
 }
 
-func (c *GraphQLClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: `
-mutation promoteShipCollector($appId: ID!, $name: String!, $channelIds: [String]) {
-  promoteShipCollector(appId: $appId, name: $name, channelIds: $channelIds) {
-    id
-  }
-}`,
-		Variables: map[string]interface{}{
-			"appId":      appID,
-			"id":         specID,
-			"channelIds": channelIDs,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err
-	}
-
-	if len(response.Errors) != 0 {
-		return errors.New(response.Errors[0].Message)
-	}
-
-	return nil
-}
-
 func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
@@ -225,4 +197,32 @@ func (c *GraphQLClient) GetCollector(appID string, id string) (*types.CollectorI
 	}
 
 	return nil, errors.New("Not found")
+}
+
+// PromoteCollector assigns collector to a specified channel.
+func (c *GraphQLClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
+	response := graphql.ResponseErrorOnly{}
+
+	request := graphql.Request{
+		Query: `
+mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
+	promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
+		id
+	}
+}`,
+		Variables: map[string]interface{}{
+			"channelIds": channelIDs,
+			"specId":     specID,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
+	if len(response.Errors) != 0 {
+		return errors.New(response.Errors[0].Message)
+	}
+
+	return nil
 }
