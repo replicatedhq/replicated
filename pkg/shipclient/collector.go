@@ -130,7 +130,8 @@ mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
 }
 
 func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) error {
-	response := GraphQLResponseUpdateCollector{}
+	// response := GraphQLResponseUpdateCollector{}
+	response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
 		Query: `
