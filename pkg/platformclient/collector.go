@@ -128,7 +128,8 @@ func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo
 }
 
 func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) error {
-	response := GraphQLResponseUpdateCollector{}
+	// response := GraphQLResponseUpdateCollector{}
+	response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
 		Query: `
