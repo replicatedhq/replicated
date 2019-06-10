@@ -15,6 +15,20 @@ type GraphQLResponseListCollectors struct {
 	Errors []graphql.GQLError      `json:"errors,omitempty"`
 }
 
+type GraphQLResponseUpdateCollector struct {
+	Data *SupportBundleUpdateSpecData `json:"data,omitempty"`
+	// Errors []graphql.GQLError           `json:"errors,omitempty"`
+}
+
+type SupportBundleUpdateSpecData struct {
+	UpdateSupportBundleSpec *UpdateSupportBundleSpec `json:"updateSupportBundleSpec"`
+}
+
+type UpdateSupportBundleSpec struct {
+	ID     string `json:"id"`
+	Config string `json:"spec,omitempty"`
+}
+
 type SupportBundleSpecsData struct {
 	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
 }
@@ -97,65 +111,6 @@ query supportBundleSpecs($appId: String) {
 	return collectors, nil
 }
 
-// CreateCollector adds a release to an app.
-func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error) {
-	path := fmt.Sprintf("/v1/app/%s/collector/%d", appID, name)
-	body := &v1.BodyCreateCollector{
-		Source: "latest",
-	}
-	collector := &v1.AppCollectorInfo{}
-	if err := c.doJSON("POST", path, http.StatusCreated, body, collector); err != nil {
-		return nil, fmt.Errorf("CreateCollector: %v", err)
-	}
-	// API does not accept yaml in create operation, so first create then udpate
-	if yaml != "" {
-		if err := c.UpdateCollector(appID, collector.Name, yaml); err != nil {
-			return nil, fmt.Errorf("CreateCollector with YAML: %v", err)
-		}
-	}
-	return collector, nil
-}
-
-// UpdateCollector updates a collector's yaml.
-func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) error {
-	return nil
-}
-
-func (c *HTTPClient) UpdateCollect(appID string, specID, yaml string) error {
-	response := GraphQLResponseListCollectors{}
-
-	request := graphql.Request{
-		Query: `
-mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
-    updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-      id
-      spec
-      createdAt
-      updatedAt
-      isArchived
-      githubRef {
-        owner
-        repoFullName
-        branch
-        path
-      }
-    }
-  }`,
-
-		Variables: map[string]interface{}{
-			"appId": appID,
-			"id":    specID,
-			"spec":  yaml,
-		},
-	}
-
-	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // GetCollector returns a collector's properties.
 func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
 	allcollectors, err := c.ListCollectors(appID)
@@ -172,6 +127,43 @@ func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo
 	return nil, errors.New("Not found")
 }
 
+func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) error {
+	response := GraphQLResponseUpdateCollector{}
+
+	request := graphql.Request{
+		Query: `
+		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+			updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+				id
+				spec
+				createdAt
+				updatedAt
+				isArchived
+				githubRef {
+					owner
+					repoFullName
+					branch
+					path
+				}
+			}
+		}
+	`,
+
+		Variables: map[string]interface{}{
+			// "githubRef":  null,
+			"id": specID,
+			// "isArchived": null,
+			"spec": yaml,
+		},
+	}
+
+	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // or GQL?, but VenWeb not using it, soooo.....
 // PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
@@ -183,4 +175,23 @@ func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ..
 		return fmt.Errorf("PromoteCollector: %v", err)
 	}
 	return nil
+}
+
+// TODO: CreateCollector adds a release to an app.
+func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error) {
+	path := fmt.Sprintf("/v1/app/%s/collector/%d", appID, name)
+	body := &v1.BodyCreateCollector{
+		Source: "latest",
+	}
+	collector := &v1.AppCollectorInfo{}
+	if err := c.doJSON("POST", path, http.StatusCreated, body, collector); err != nil {
+		return nil, fmt.Errorf("CreateCollector: %v", err)
+	}
+	// API does not accept yaml in create operation, so first create then udpate
+	if yaml != "" {
+		if err := c.UpdateCollector(appID, collector.Name, yaml); err != nil {
+			return nil, fmt.Errorf("CreateCollector with YAML: %v", err)
+		}
+	}
+	return collector, nil
 }

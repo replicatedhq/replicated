@@ -18,6 +18,20 @@ type SupportBundleSpecsData struct {
 	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
 }
 
+type GraphQLResponseUpdateCollector struct {
+	Data *SupportBundleUpdateSpecData `json:"data,omitempty"`
+	// Errors []graphql.GQLError           `json:"errors,omitempty"`
+}
+
+type SupportBundleUpdateSpecData struct {
+	UpdateSupportBundleSpec *UpdateSupportBundleSpec `json:"updateSupportBundleSpec"`
+}
+
+type UpdateSupportBundleSpec struct {
+	ID     string `json:"id"`
+	Config string `json:"spec,omitempty"`
+}
+
 type SupportBundleSpec struct {
 	ID        string          `json:"id"`
 	Name      string          `json:"name"`
@@ -115,7 +129,40 @@ mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
 	return &collectorInfo, nil
 }
 
-func (c *GraphQLClient) UpdateCollector(appID string, name string, yaml string) error {
+func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) error {
+	response := GraphQLResponseUpdateCollector{}
+
+	request := graphql.Request{
+		Query: `
+		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+			updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+				id
+				spec
+				createdAt
+				updatedAt
+				isArchived
+				githubRef {
+					owner
+					repoFullName
+					branch
+					path
+				}
+			}
+		}
+	`,
+
+		Variables: map[string]interface{}{
+			// "githubRef":  null,
+			"id": specID,
+			// "isArchived": null,
+			"spec": yaml,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
 	return nil
 }
 
