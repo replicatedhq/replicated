@@ -53,7 +53,8 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 	}
 	specID := args[0]
 
-	if err := r.platformAPI.UpdateCollector(r.appID, specID, r.args.updateCollectorYaml); err != nil {
+	_, err := r.api.UpdateCollector(r.appID, specID, r.args.updateCollectorYaml)
+	if err != nil {
 		return fmt.Errorf("Failure setting new yaml config for collector: %v", err)
 	}
 
