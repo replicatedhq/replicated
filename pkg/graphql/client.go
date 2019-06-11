@@ -47,12 +47,16 @@ type Error struct {
 	Code      string                   `json:"code"`
 }
 
+type GQLError interface {
+	GraphQLError() []Error
+}
+
 type ResponseErrorOnly struct {
 	Errors []Error `json:"errors,omitempty"`
 }
 
-type GQLError interface {
-	GraphQLError() []Error
+func (r ResponseErrorOnly) GraphQLError() []Error {
+	return r.Errors
 }
 
 func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{}) error {
@@ -91,6 +95,13 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 		return err
 	}
 
+	var gqlErr ResponseErrorOnly
+	_ = json.Unmarshal(responseBody, &gqlErr) // ignore error to be safe
+
+	if err := c.checkErrors(gqlErr); err != nil {
+		return err
+	}
+
 	if err := json.Unmarshal(responseBody, deserializeTarget); err != nil {
 		return err
 	}
@@ -98,12 +109,11 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 	return nil
 }
 
-func (c *Client) checkErrors(gqlError GQLError) error {
-	if gqlError.GraphQLError() != nil && len(gqlError.GraphQLError()) > 0 {
+func (c *Client) checkErrors(gqlError ResponseErrorOnly) error {
+	if len(gqlError.GraphQLError()) > 0 {
 		var multiErr *multierror.Error
 		for _, err := range gqlError.GraphQLError() {
 			multiErr = multierror.Append(multiErr, fmt.Errorf("%s: %s", err.Code, err.Message))
-
 		}
 		return multiErr.ErrorOrNil()
 	}

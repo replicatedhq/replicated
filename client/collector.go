@@ -7,7 +7,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
+func (c *Client) ListCollectors(appID string, appType string) ([]types.CollectorInfo, error) {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return nil, err
@@ -76,11 +76,17 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) UpdateCollector(appID string, specID string, yaml string) (interface{}, error) {
-	return nil, nil
+func (c *Client) UpdateCollector(appID string, appType string, specID string, yaml string) (interface{}, error) {
+	if appType == "platform" {
+		return c.PlatformClient.UpdateCollector(appID, specID, yaml)
+	} else if appType == "ship" {
+		return c.ShipClient.UpdateCollector(appID, specID, yaml)
+	}
+
+	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) CreateCollector(appID string, yaml string) (*collectors.AppCollectorInfo, error) {
+func (c *Client) CreateCollector(appID string, appType string, yaml string) (*collectors.AppCollectorInfo, error) {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return nil, err
@@ -92,14 +98,14 @@ func (c *Client) CreateCollector(appID string, yaml string) (*collectors.AppColl
 		return c.ShipClient.CreateCollector(appID, yaml)
 	}
 
+	return nil, errors.New("unknown app type")
+}
+
+func (c *Client) GetCollector(appID string, appType string, specID string) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *Client) GetCollector(appID string, specID string) (interface{}, error) {
-	return nil, nil
-}
-
-func (c *Client) PromoteCollector(appID string, specID string, channelIDs ...string) error {
+func (c *Client) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return err

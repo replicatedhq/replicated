@@ -1,6 +1,8 @@
 package client
 
 import (
+	"errors"
+
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 )
@@ -30,5 +32,5 @@ func (c *Client) GetAppType(appID string) (string, error) {
 		return "ship", nil
 	}
 
-	return "", nil
+	return "", errors.New("app not found")
 }
