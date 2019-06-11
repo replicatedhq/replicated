@@ -1,6 +1,7 @@
 package shipclient
 
 import (
+	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -18,10 +19,10 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
-	ListCollectors(appID string) ([]types.CollectorInfo, error)
-	// CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error)
-	UpdateCollector(appID string, name string, yaml string) error
-	// GetCollector(appID string, specID string) (*collectors.AppCollectorInfo, error)
+	ListCollectors(appID string) ([]v1.AppCollectorInfo, error)
+	CreateCollector(appID string, yaml string) (*v1.AppCollectorInfo, error)
+	UpdateCollector(appID string, name string, yaml string) (interface{}, error)
+	GetCollector(appID string, specID string) (*v1.AppCollectorInfo, error)
 	PromoteCollector(appID string, specID string, channelIDs ...string) error
 	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
 	SetDefaultEntitlementSpec(specID string) error

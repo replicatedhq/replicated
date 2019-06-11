@@ -1,12 +1,11 @@
 package shipclient
 
 import (
-	"io/ioutil"
-	"os"
+	"time"
 
 	"github.com/pkg/errors"
+	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
-	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type GraphQLResponseListCollectors struct {
@@ -16,6 +15,14 @@ type GraphQLResponseListCollectors struct {
 
 type SupportBundleSpecsData struct {
 	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
+}
+
+type SupportBundleSpec struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt string          `json:"createdAt"`
+	Channels  []v1.AppChannel `json:"channels"`
+	Config    string          `json:"spec,omitempty"`
 }
 
 type GraphQLResponseUpdateCollector struct {
@@ -32,106 +39,24 @@ type UpdateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
-type SupportBundleSpec struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	CreatedAt string          `json:"createdAt"`
-	Channels  []types.Channel `json:"channels"`
-	Config    string          `json:"spec,omitempty"`
-}
-
 type GraphQLResponseCreateCollector struct {
-	Data   *SupportBundleSpecFinalizeCreateSpecData `json:"data,omitempty"`
-	Errors []graphql.GQLError                       `json:"errors,omitempty"`
+	Data   *SupportBundleCreateSpec `json:"data,omitempty"`
+	Errors []graphql.GQLError       `json:"errors,omitempty"`
 }
 
-type SupportBundleSpecFinalizeCreateSpecData struct {
-	SupportBundleSpec *SupportBundleSpec `json:"finalizeUploadedCollector"`
+type SupportBundleCreateSpec struct {
+	CreateSupportBundleSpec *CreateSupportBundleSpec `json:"createSupportBundleSpec,omitempty"`
 }
 
-type GraphQLResponseUploadCollector struct {
-	Data   SupportBundleSpecUploadData `json:"data,omitempty"`
-	Errors []graphql.GQLError          `json:"errors,omitempty"`
+type CreateSupportBundleSpec struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Config string `json:"spec,omitempty"`
 }
 
-type SupportBundleSpecUploadData struct {
-	SupportBundleSpecPendingSpecData *SupportBundleSpecPendingSpecData `json:"uploadCollector"`
-}
-
-type SupportBundleSpecPendingSpecData struct {
-	UploadURI string `json:"uploadUri"`
-	UploadID  string `json:"id"`
-}
-
-func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) (*types.CollectorInfo, error) {
-	response := GraphQLResponseCreateCollector{}
-
-	request := graphql.Request{
-		Query: `
-mutation uploadCollector($appId: ID!) {
-  uploadCollector(appId: $appId) {
-    id
-    uploadUri
-  }
-}`,
-		Variables: map[string]interface{}{
-			"appId": appID,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	tmpFile, err := ioutil.TempFile(os.TempDir(), "replicated-")
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(tmpFile.Name())
-
-	if _, err := tmpFile.Write([]byte(yaml)); err != nil {
-		return nil, err
-	}
-	tmpFile.Close()
-
-	// if err := util.UploadFile(tmpFile.Name(), response.Data.SupportBundleSpec); err != nil {
-	// 	return nil, err
-	// }
-
-	request = graphql.Request{
-		Query: `
-mutation finalizeUploadedCollector($appId: ID! $uploadId: String) {
-  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
-    id
-    name
-    spec
-    created
-  }
-}`,
-		Variables: map[string]interface{}{
-			"appId":    appID,
-			"uploadId": response.Data.SupportBundleSpec,
-		},
-	}
-
-	// call finalize release
-	finalizeCollectorResponse := GraphQLResponseListApps{}
-
-	if err := c.ExecuteRequest(request, &finalizeCollectorResponse); err != nil {
-		return nil, err
-	}
-
-	collectorInfo := types.CollectorInfo{
-		AppID: appID,
-		Name:  name,
-	}
-
-	return &collectorInfo, nil
-}
-
-func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) error {
-	// response := GraphQLResponseUpdateCollector{}
-	response := graphql.ResponseErrorOnly{}
+func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
+	response := GraphQLResponseUpdateCollector{}
+	// response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
 		Query: `
@@ -161,13 +86,13 @@ func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) error
 	}
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err
+		return err, nil
 	}
 
-	return nil
+	return &response, nil
 }
 
-func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, error) {
+func (c *GraphQLClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
 	request := graphql.Request{
@@ -206,40 +131,40 @@ func (c *GraphQLClient) ListCollectors(appID string) ([]types.CollectorInfo, err
 		return nil, err
 	}
 
-	// location, err := time.LoadLocation("Local")
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	collectorInfos := make([]types.CollectorInfo, 0, 0)
-	for _, shipCollector := range response.Data.SupportBundleSpecs {
-		// createdAt, err := util.ParseTime(shipCollector.CreatedAt)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		collectorInfo := types.CollectorInfo{
-			AppID: appID,
-			// CreatedAt:      createdAt.In(location),
-			Name:           shipCollector.Name,
-			SpecID:         shipCollector.ID,
-			ActiveChannels: shipCollector.Channels,
-		}
-
-		collectorInfos = append(collectorInfos, collectorInfo)
+	location, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, err
 	}
 
-	return collectorInfos, nil
+	collectors := make([]v1.AppCollectorInfo, 0, 0)
+	for _, spec := range response.Data.SupportBundleSpecs {
+		createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		collector := v1.AppCollectorInfo{
+			SpecId:         spec.ID,
+			Name:           spec.Name,
+			CreatedAt:      createdAt.In(location),
+			ActiveChannels: spec.Channels,
+			Config:         spec.Config,
+		}
+
+		collectors = append(collectors, collector)
+	}
+
+	return collectors, nil
 }
 
 // GetCollector returns a collector's properties.
-func (c *GraphQLClient) GetCollector(appID string, id string) (*types.CollectorInfo, error) {
+func (c *GraphQLClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
 	allcollectors, err := c.ListCollectors(appID)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, collector := range allcollectors {
-		if collector.SpecID == id {
+		if collector.SpecId == id {
 			return &collector, nil
 		}
 	}
@@ -273,4 +198,76 @@ mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
 	}
 
 	return nil
+}
+
+// CreateCollector - input appID, name, yaml - return Name, Spec, Config
+func (c *GraphQLClient) CreateCollector(appID string, yaml string) (*v1.AppCollectorInfo, error) {
+	response := GraphQLResponseCreateCollector{}
+
+	request := graphql.Request{
+		Query: `
+mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $githubRef: GitHubRefInput) {
+	createSupportBundleSpec(name: $name, appId: $appId, spec: $spec, githubRef: $githubRef) {
+		id
+		name
+		spec
+		createdAt
+		updatedAt
+		githubRef {
+		owner
+		repoFullName
+		branch
+		path
+		}
+	}
+	}
+`,
+		Variables: map[string]interface{}{
+			"appId": appID,
+			"spec":  yaml,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	request = graphql.Request{
+		Query: `
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+	id
+	spec
+	createdAt
+	updatedAt
+	isArchived
+	githubRef {
+		owner
+		repoFullName
+		branch
+		path
+	}
+	}
+}
+`,
+		Variables: map[string]interface{}{
+			"id":   response.Data.CreateSupportBundleSpec.ID,
+			"spec": yaml,
+		},
+	}
+
+	finalizeSpecCreate := GraphQLResponseUpdateCollector{}
+	if err := c.ExecuteRequest(request, &finalizeSpecCreate); err != nil {
+		return nil, err
+	}
+
+	newCollectorInfo := v1.AppCollectorInfo{
+		AppId:  appID,
+		SpecId: finalizeSpecCreate.Data.UpdateSupportBundleSpec.ID,
+		Config: finalizeSpecCreate.Data.UpdateSupportBundleSpec.Config,
+		Name:   response.Data.CreateSupportBundleSpec.Name,
+	}
+
+	return &newCollectorInfo, nil
+
 }

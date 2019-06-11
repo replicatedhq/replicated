@@ -3,8 +3,8 @@ package client
 import (
 	"errors"
 
+	collectors "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
-	// collectors "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
@@ -53,18 +53,18 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 			activeChannels := make([]types.Channel, 0, 0)
 			for _, shipappCollectorChannel := range shipappCollector.ActiveChannels {
 				activeChannel := types.Channel{
-					ID:   shipappCollectorChannel.ID,
+					ID:   shipappCollectorChannel.Id,
 					Name: shipappCollectorChannel.Name,
 				}
 
 				activeChannels = append(activeChannels, activeChannel)
 			}
 			shipCollectorInfo := types.CollectorInfo{
-				AppID:          shipappCollector.AppID,
+				AppID:          shipappCollector.AppId,
 				CreatedAt:      shipappCollector.CreatedAt,
 				Name:           shipappCollector.Name,
 				ActiveChannels: activeChannels,
-				SpecID:         shipappCollector.SpecID,
+				SpecID:         shipappCollector.SpecId,
 			}
 
 			shipCollectorInfos = append(shipCollectorInfos, shipCollectorInfo)
@@ -76,11 +76,26 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) UpdateCollector(appID string, name string, collectorOptions interface{}) error {
-	return nil
+func (c *Client) UpdateCollector(appID string, specID string, yaml string) (interface{}, error) {
+	return nil, nil
 }
 
-func (c *Client) GetCollector(appID string, id string) (interface{}, error) {
+func (c *Client) CreateCollector(appID string, yaml string) (*collectors.AppCollectorInfo, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.CreateCollector(appID, yaml)
+	} else if appType == "ship" {
+		return c.ShipClient.CreateCollector(appID, yaml)
+	}
+
+	return nil, nil
+}
+
+func (c *Client) GetCollector(appID string, specID string) (interface{}, error) {
 	return nil, nil
 }
 
