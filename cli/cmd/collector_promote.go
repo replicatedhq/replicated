@@ -29,7 +29,7 @@ func (r *runners) collectorPromote(cmd *cobra.Command, args []string) error {
 	specID := args[0]
 	chanID := args[1]
 
-	err := r.api.PromoteCollector(r.appID, specID, chanID)
+	err := r.api.PromoteCollector(r.appID, r.appType, specID, chanID)
 
 	if err != nil {
 		return err

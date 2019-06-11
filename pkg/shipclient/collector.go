@@ -9,8 +9,7 @@ import (
 )
 
 type GraphQLResponseListCollectors struct {
-	Data   *SupportBundleSpecsData `json:"data,omitempty"`
-	Errors []graphql.GQLError      `json:"errors,omitempty"`
+	Data *SupportBundleSpecsData `json:"data,omitempty"`
 }
 
 type SupportBundleSpecsData struct {
@@ -27,7 +26,6 @@ type SupportBundleSpec struct {
 
 type GraphQLResponseUpdateCollector struct {
 	Data *SupportBundleUpdateSpecData `json:"data,omitempty"`
-	// Errors []graphql.GQLError           `json:"errors,omitempty"`
 }
 
 type SupportBundleUpdateSpecData struct {
@@ -40,8 +38,7 @@ type UpdateSupportBundleSpec struct {
 }
 
 type GraphQLResponseCreateCollector struct {
-	Data   *SupportBundleCreateSpec `json:"data,omitempty"`
-	Errors []graphql.GQLError       `json:"errors,omitempty"`
+	Data *SupportBundleCreateSpec `json:"data,omitempty"`
 }
 
 type SupportBundleCreateSpec struct {
@@ -54,9 +51,8 @@ type CreateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
-func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
+func (c *GraphQLClient) UpdateCollector(appID string, appType string, specID, yaml string) (interface{}, error) {
 	response := GraphQLResponseUpdateCollector{}
-	// response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
 		Query: `
@@ -86,13 +82,13 @@ func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (inte
 	}
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err, nil
+		return nil, err
 	}
 
 	return &response, nil
 }
 
-func (c *GraphQLClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]v1.AppCollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
 	request := graphql.Request{
@@ -157,7 +153,7 @@ func (c *GraphQLClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, err
 }
 
 // GetCollector returns a collector's properties.
-func (c *GraphQLClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
 	allcollectors, err := c.ListCollectors(appID)
 	if err != nil {
 		return nil, err
@@ -173,7 +169,7 @@ func (c *GraphQLClient) GetCollector(appID string, id string) (*v1.AppCollectorI
 }
 
 // PromoteCollector assigns collector to a specified channel.
-func (c *GraphQLClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
+func (c *GraphQLClient) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
 	response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
@@ -201,7 +197,7 @@ mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
 }
 
 // CreateCollector - input appID, name, yaml - return Name, Spec, Config
-func (c *GraphQLClient) CreateCollector(appID string, yaml string) (*v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{

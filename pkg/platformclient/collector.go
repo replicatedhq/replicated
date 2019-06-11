@@ -11,13 +11,11 @@ import (
 )
 
 type GraphQLResponseListCollectors struct {
-	Data   *SupportBundleSpecsData `json:"data,omitempty"`
-	Errors []graphql.GQLError      `json:"errors,omitempty"`
+	Data *SupportBundleSpecsData `json:"data,omitempty"`
 }
 
 type GraphQLResponseUpdateCollector struct {
 	Data *SupportBundleUpdateSpecData `json:"data,omitempty"`
-	// Errors []graphql.GQLError           `json:"errors,omitempty"`
 }
 
 type SupportBundleUpdateSpecData struct {
@@ -30,8 +28,7 @@ type UpdateSupportBundleSpec struct {
 }
 
 type GraphQLResponseCreateCollector struct {
-	Data   *SupportBundleCreateSpec `json:"data,omitempty"`
-	Errors []graphql.GQLError       `json:"errors,omitempty"`
+	Data *SupportBundleCreateSpec `json:"data,omitempty"`
 }
 
 type SupportBundleCreateSpec struct {
@@ -61,7 +58,7 @@ type PlatformChannel struct {
 	Name string `json:"name"`
 }
 
-func (c *HTTPClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
+func (c *HTTPClient) ListCollectors(appID string, appType string) ([]v1.AppCollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
 	request := graphql.Request{
@@ -127,7 +124,7 @@ query supportBundleSpecs($appId: String) {
 }
 
 // GetCollector returns a collector's properties.
-func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
+func (c *HTTPClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
 	allcollectors, err := c.ListCollectors(appID)
 	if err != nil {
 		return nil, err
@@ -142,9 +139,8 @@ func (c *HTTPClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo
 	return nil, errors.New("Not found")
 }
 
-func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
+func (c *HTTPClient) UpdateCollector(appID string, appType string, specID, yaml string) (interface{}, error) {
 	response := GraphQLResponseUpdateCollector{}
-	// response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
 		Query: `
@@ -181,7 +177,7 @@ func (c *HTTPClient) UpdateCollector(appID string, specID, yaml string) (interfa
 }
 
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
-func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
+func (c *HTTPClient) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
 	body := &v1.BodyPromoteCollector{
 		ChannelIDs: channelIDs,
@@ -192,37 +188,8 @@ func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ..
 	return nil
 }
 
-// // GraphQL: PromoteCollector assigns collector to a specified channel.
-// func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
-// 	response := graphql.ResponseErrorOnly{}
-
-// 	request := graphql.Request{
-// 		Query: `
-// mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
-// 	promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
-// 		id
-// 	}
-// }`,
-// 		Variables: map[string]interface{}{
-// 			"channelIds": channelIDs,
-// 			"specId":     specID,
-// 		},
-// 	}
-
-// 	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
-// 		// return err
-// 		return fmt.Errorf("PromoteCollector with YAML: %v", err)
-// 	}
-
-// 	if len(response.Errors) != 0 {
-// 		return errors.New(response.Errors[0].Message)
-// 	}
-
-// 	return nil
-// }
-
 // CreateCollector - input appID, name, yaml - return Name, Spec, Config
-func (c *HTTPClient) CreateCollector(appID string, yaml string) (*v1.AppCollectorInfo, error) {
+func (c *HTTPClient) CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{

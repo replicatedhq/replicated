@@ -49,7 +49,7 @@ func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
 		r.args.createCollectorYaml = string(bytes)
 	}
 
-	collector, err := r.api.CreateCollector(r.appID, r.args.createCollectorYaml)
+	collector, err := r.api.CreateCollector(r.appID, r.appType, r.args.createCollectorYaml)
 	if err != nil {
 		return err
 	}

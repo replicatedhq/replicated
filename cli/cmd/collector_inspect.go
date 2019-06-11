@@ -26,7 +26,7 @@ func (r *runners) collectorInspect(cmd *cobra.Command, args []string) error {
 	}
 	id := args[0]
 
-	collector, err := r.platformAPI.GetCollector(r.appID, id)
+	collector, err := r.platformAPI.GetCollector(r.appID, r.appType, id)
 	if err != nil {
 		if err == platformclient.ErrNotFound {
 			return fmt.Errorf("No such collector %d", id)
