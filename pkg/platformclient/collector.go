@@ -202,7 +202,7 @@ func (c *HTTPClient) PromoteCollector(appID string, appType string, specID strin
 }
 
 // CreateCollector - input appID, name, yaml - return Name, Spec, Config
-func (c *HTTPClient) CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error) {
+func (c *HTTPClient) CreateCollector(appID string, appType string, name string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{
@@ -221,11 +221,13 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		path
 		}
 	}
-	}
+
+}
 `,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
+			"name":  name,
 		},
 	}
 
@@ -247,7 +249,6 @@ mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRef
 		repoFullName
 		branch
 		path
-	}
 	}
 }
 `,
@@ -278,13 +279,13 @@ func (c *HTTPClient) UpdateCollectorName(appID string, appType string, specID, n
 
 	request := graphql.Request{
 		Query: `
-		mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
-		  updateSupportBundleSpecName(id: $id, name: $name) {
-			id
-			name
-		  }
-		}
-	  `,
+mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
+	updateSupportBundleSpecName(id: $id, name: $name) {
+	id
+	name
+	}
+}
+`,
 
 		Variables: map[string]interface{}{
 			"id":   specID,

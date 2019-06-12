@@ -20,7 +20,7 @@ type Client interface {
 	LintRelease(string, string) ([]types.LintMessage, error)
 
 	ListCollectors(appID string, appType string) ([]v1.AppCollectorInfo, error)
-	CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error)
+	CreateCollector(appID string, appType string, name string, yaml string) (*v1.AppCollectorInfo, error)
 	UpdateCollector(appID string, appType string, specID string, yaml string) (interface{}, error)
 	UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error)
 	GetCollector(appID string, appType string, specID string) (*v1.AppCollectorInfo, error)

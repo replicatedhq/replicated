@@ -11,8 +11,8 @@ import (
 func (r *runners) InitCollectorUpdate(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "update SPEC_ID",
-		Short: "Updated a collectors's yaml config",
-		Long:  "Updated a collectors's yaml config",
+		Short: "Update a collectors's name or yaml config",
+		Long:  "Update a collectors's name or yaml config",
 	}
 
 	parent.AddCommand(cmd)

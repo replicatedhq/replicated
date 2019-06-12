@@ -96,30 +96,29 @@ func (c *Client) UpdateCollectorName(appID string, appType string, specID string
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) CreateCollector(appID string, appType string, yaml string) (*collectors.AppCollectorInfo, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
-
+// func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
+func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
 	if appType == "platform" {
-		return c.PlatformClient.CreateCollector(appID, appType, yaml)
+		return c.PlatformClient.CreateCollector(appID, appType, name, yaml)
 	} else if appType == "ship" {
-		return c.ShipClient.CreateCollector(appID, appType, yaml)
+		return c.ShipClient.CreateCollector(appID, appType, name, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
 }
 
 func (c *Client) GetCollector(appID string, appType string, specID string) (interface{}, error) {
-	return nil, nil
+	if appType == "platform" {
+		return c.PlatformClient.GetCollector(appID, appType, specID)
+	} else if appType == "ship" {
+		return c.ShipClient.GetCollector(appID, appType, specID)
+	}
+
+	return nil, errors.New("unknown app type")
+
 }
 
 func (c *Client) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return err
-	}
 
 	if appType == "platform" {
 		return c.PlatformClient.PromoteCollector(appID, appType, specID, channelIDs...)

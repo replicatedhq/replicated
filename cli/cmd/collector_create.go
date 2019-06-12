@@ -12,19 +12,24 @@ func (r *runners) InitCollectorCreate(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new collector",
-		Long: `Create a new collector by providing YAML configuration for the next collector in
-  your sequence.`,
+		Long:  "Create a new collector by providing a name and YAML configuration",
 	}
 
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createCollectorYaml, "yaml", "", "The YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
 	cmd.Flags().StringVar(&r.args.createCollectorYamlFile, "yaml-file", "", "The file name with YAML config for this collector.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.createCollectorName, "name", "", "The name for this collector")
 
 	cmd.RunE = r.collectorCreate
 }
 
 func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
+
+	if r.args.createCollectorName == "" {
+		return fmt.Errorf("collector name is required")
+	}
+
 	if r.args.createCollectorYaml == "" && r.args.createCollectorYamlFile == "" {
 		return fmt.Errorf("yaml is required")
 	}
@@ -49,7 +54,7 @@ func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
 		r.args.createCollectorYaml = string(bytes)
 	}
 
-	collector, err := r.api.CreateCollector(r.appID, r.appType, r.args.createCollectorYaml)
+	collector, err := r.api.CreateCollector(r.appID, r.appType, r.args.createCollectorName, r.args.createCollectorYaml)
 	if err != nil {
 		return err
 	}

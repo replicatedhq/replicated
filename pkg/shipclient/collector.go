@@ -47,7 +47,7 @@ type SupportBundleUpdateSpecNameData struct {
 
 type UpdateSupportBundleSpecName struct {
 	ID   string `json:"id"`
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }
 
 type GraphQLResponseCreateCollector struct {
@@ -172,8 +172,8 @@ mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
 	return nil
 }
 
-// CreateCollector - input appID, name, yaml - return Name, Spec, Config
-func (c *GraphQLClient) CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error) {
+// CreateCollector creates a new collector based on given yaml and name
+func (c *GraphQLClient) CreateCollector(appID string, appType string, name string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{
@@ -192,10 +192,12 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		path
 		}
 	}
+}
 `,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
+			"name":  name,
 		},
 	}
 
@@ -247,13 +249,13 @@ func (c *GraphQLClient) UpdateCollectorName(appID string, appType string, specID
 
 	request := graphql.Request{
 		Query: `
-		mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
-		  updateSupportBundleSpecName(id: $id, name: $name) {
-			id
-			name
-		  }
-		}
-	  `,
+mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
+	updateSupportBundleSpecName(id: $id, name: $name) {
+	id
+	name
+	}
+}
+`,
 
 		Variables: map[string]interface{}{
 			"id":   specID,
@@ -273,22 +275,22 @@ func (c *GraphQLClient) UpdateCollector(appID string, appType string, specID, ya
 
 	request := graphql.Request{
 		Query: `
-		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
-			updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-				id
-				spec
-				createdAt
-				updatedAt
-				isArchived
-				githubRef {
-					owner
-					repoFullName
-					branch
-					path
-				}
-			}
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+		id
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
 		}
-	`,
+	}
+}
+`,
 
 		Variables: map[string]interface{}{
 			"id":   specID,
