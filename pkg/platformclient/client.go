@@ -38,11 +38,11 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
-	ListCollectors(appID string) ([]collectors.AppCollectorInfo, error)
-	CreateCollector(appID string, yaml string) (*collectors.AppCollectorInfo, error)
-	UpdateCollector(appID string, id string, yaml string) (interface{}, error)
-	GetCollector(appID string, specID string) (*collectors.AppCollectorInfo, error)
-	PromoteCollector(appID string, specID string, channelIDs ...string) error
+	ListCollectors(appID string, appType string) ([]collectors.AppCollectorInfo, error)
+	CreateCollector(appID string, appType string, yaml string) (*collectors.AppCollectorInfo, error)
+	UpdateCollector(appID string, appType string, id string, yaml string) (interface{}, error)
+	GetCollector(appID string, appType string, specID string) (*collectors.AppCollectorInfo, error)
+	PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }

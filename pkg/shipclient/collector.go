@@ -154,7 +154,7 @@ func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]v1.AppCo
 
 // GetCollector returns a collector's properties.
 func (c *GraphQLClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
-	allcollectors, err := c.ListCollectors(appID)
+	allcollectors, err := c.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
 	}
