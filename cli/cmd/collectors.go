@@ -6,9 +6,9 @@ import (
 
 func (r *runners) InitCollectorsCommand(parent *cobra.Command) *cobra.Command {
 	collectorsCmd := &cobra.Command{
-		Use:   "collectors",
+		Use:   "collector",
 		Short: "Manage customer collectors",
-		Long:  `The collectors command allows vendors to create, display, modify entitlement values for end customer licensing.`,
+		Long:  `The collector command allows vendors to create, display, modify entitlement values for end customer licensing.`,
 	}
 	parent.AddCommand(collectorsCmd)
 

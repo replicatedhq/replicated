@@ -14,7 +14,7 @@ func (c *Client) ListCollectors(appID string, appType string) ([]types.Collector
 	}
 
 	if appType == "platform" {
-		platformCollectors, err := c.PlatformClient.ListCollectors(appID)
+		platformCollectors, err := c.PlatformClient.ListCollectors(appID, appType)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func (c *Client) ListCollectors(appID string, appType string) ([]types.Collector
 
 		return collectorInfos, nil
 	} else if appType == "ship" {
-		shipappCollectors, err := c.ShipClient.ListCollectors(appID)
+		shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
 		if err != nil {
 			return nil, err
 		}
@@ -78,9 +78,9 @@ func (c *Client) ListCollectors(appID string, appType string) ([]types.Collector
 
 func (c *Client) UpdateCollector(appID string, appType string, specID string, yaml string) (interface{}, error) {
 	if appType == "platform" {
-		return c.PlatformClient.UpdateCollector(appID, specID, yaml)
+		return c.PlatformClient.UpdateCollector(appID, appType, specID, yaml)
 	} else if appType == "ship" {
-		return c.ShipClient.UpdateCollector(appID, specID, yaml)
+		return c.ShipClient.UpdateCollector(appID, appType, specID, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -93,9 +93,9 @@ func (c *Client) CreateCollector(appID string, appType string, yaml string) (*co
 	}
 
 	if appType == "platform" {
-		return c.PlatformClient.CreateCollector(appID, yaml)
+		return c.PlatformClient.CreateCollector(appID, appType, yaml)
 	} else if appType == "ship" {
-		return c.ShipClient.CreateCollector(appID, yaml)
+		return c.ShipClient.CreateCollector(appID, appType, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -112,9 +112,9 @@ func (c *Client) PromoteCollector(appID string, appType string, specID string, c
 	}
 
 	if appType == "platform" {
-		return c.PlatformClient.PromoteCollector(appID, specID, channelIDs...)
+		return c.PlatformClient.PromoteCollector(appID, appType, specID, channelIDs...)
 	} else if appType == "ship" {
-		return c.ShipClient.PromoteCollector(appID, specID, channelIDs...)
+		return c.ShipClient.PromoteCollector(appID, appType, specID, channelIDs...)
 	}
 
 	return errors.New("unknown app type")

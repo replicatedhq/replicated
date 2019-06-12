@@ -125,7 +125,7 @@ query supportBundleSpecs($appId: String) {
 
 // GetCollector returns a collector's properties.
 func (c *HTTPClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
-	allcollectors, err := c.ListCollectors(appID)
+	allcollectors, err := c.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
 	}
