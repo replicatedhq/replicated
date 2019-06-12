@@ -39,7 +39,7 @@ type Client interface {
 	LintRelease(string, string) ([]types.LintMessage, error)
 
 	ListCollectors(appID string, appType string) ([]collectors.AppCollectorInfo, error)
-	CreateCollector(appID string, appType string, yaml string) (*collectors.AppCollectorInfo, error)
+	CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error)
 	UpdateCollector(appID string, appType string, id string, yaml string) (interface{}, error)
 	GetCollector(appID string, appType string, specID string) (*collectors.AppCollectorInfo, error)
 	PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error
