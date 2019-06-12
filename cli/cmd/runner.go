@@ -35,6 +35,7 @@ type runnerArgs struct {
 	createCollectorYamlFile string
 	updateCollectorYaml     string
 	updateCollectorYamlFile string
+	updateCollectorName     string
 
 	createReleaseYaml            string
 	createReleaseYamlFile        string

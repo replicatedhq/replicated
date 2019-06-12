@@ -22,8 +22,10 @@ type Client interface {
 	ListCollectors(appID string, appType string) ([]v1.AppCollectorInfo, error)
 	CreateCollector(appID string, appType string, yaml string) (*v1.AppCollectorInfo, error)
 	UpdateCollector(appID string, appType string, specID string, yaml string) (interface{}, error)
+	UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error)
 	GetCollector(appID string, appType string, specID string) (*v1.AppCollectorInfo, error)
 	PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error
+
 	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
 	SetDefaultEntitlementSpec(specID string) error
 	SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appID string) (*types.EntitlementValue, error)

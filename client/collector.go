@@ -86,6 +86,16 @@ func (c *Client) UpdateCollector(appID string, appType string, specID string, ya
 	return nil, errors.New("unknown app type")
 }
 
+func (c *Client) UpdateCollectorName(appID string, appType string, specID string, name string) (interface{}, error) {
+	if appType == "platform" {
+		return c.PlatformClient.UpdateCollectorName(appID, appType, specID, name)
+	} else if appType == "ship" {
+		return c.ShipClient.UpdateCollectorName(appID, appType, specID, name)
+	}
+
+	return nil, errors.New("unknown app type")
+}
+
 func (c *Client) CreateCollector(appID string, appType string, yaml string) (*collectors.AppCollectorInfo, error) {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
