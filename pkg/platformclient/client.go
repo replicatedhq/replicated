@@ -43,6 +43,7 @@ type Client interface {
 	UpdateCollector(appID string, appType string, id string, yaml string) (interface{}, error)
 	GetCollector(appID string, appType string, specID string) (*collectors.AppCollectorInfo, error)
 	PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error
+	UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error)
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }

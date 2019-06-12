@@ -19,13 +19,20 @@ func (r *runners) InitCollectorUpdate(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.updateCollectorYaml, "yaml", "", "The new YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
 	cmd.Flags().StringVar(&r.args.updateCollectorYamlFile, "yaml-file", "", "The file name with YAML config for this collector.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.updateCollectorName, "name", "", "The name for this collector")
 
 	cmd.RunE = r.collectorUpdate
 }
 
 func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
-	if r.args.updateCollectorYaml == "" && r.args.updateCollectorYamlFile == "" {
-		return fmt.Errorf("yaml is required")
+
+	if len(args) < 1 {
+		return errors.New("collector spec ID is required")
+	}
+	specID := args[0]
+
+	if r.args.updateCollectorName == "" && r.args.updateCollectorYaml == "" && r.args.updateCollectorYamlFile == "" {
+		return fmt.Errorf("name or yaml is required")
 	}
 
 	if r.args.updateCollectorYaml != "" && r.args.updateCollectorYamlFile != "" {
@@ -48,14 +55,18 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 		r.args.updateCollectorYaml = string(bytes)
 	}
 
-	if len(args) < 1 {
-		return errors.New("collector spec ID is required")
+	if r.args.updateCollectorYaml != "" {
+		_, err := r.api.UpdateCollector(r.appID, r.appType, specID, r.args.updateCollectorYaml)
+		if err != nil {
+			return fmt.Errorf("Failure setting updates for collector: %v", err)
+		}
 	}
-	specID := args[0]
 
-	_, err := r.api.UpdateCollector(r.appID, r.appType, specID, r.args.updateCollectorYaml)
-	if err != nil {
-		return fmt.Errorf("Failure setting new yaml config for collector: %v", err)
+	if r.args.updateCollectorName != "" {
+		_, err := r.api.UpdateCollectorName(r.appID, r.appType, specID, r.args.updateCollectorName)
+		if err != nil {
+			return fmt.Errorf("Failure setting new yaml config for collector: %v", err)
+		}
 	}
 
 	// ignore the error since operation was successful

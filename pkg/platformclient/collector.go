@@ -27,6 +27,19 @@ type UpdateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
+type GraphQLResponseUpdateNameCollector struct {
+	Data *SupportBundleUpdateSpecNameData `json:"data,omitempty"`
+}
+
+type SupportBundleUpdateSpecNameData struct {
+	UpdateSupportBundleSpecName *UpdateSupportBundleSpecName `json:"updateSupportBundleSpecName"`
+}
+
+type UpdateSupportBundleSpecName struct {
+	ID   string `json:"id"`
+	Name string `json:"name,omitempty"`
+}
+
 type GraphQLResponseCreateCollector struct {
 	Data *SupportBundleCreateSpec `json:"data,omitempty"`
 }
@@ -258,4 +271,30 @@ mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRef
 
 	return &newCollectorInfo, nil
 
+}
+
+func (c *HTTPClient) UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error) {
+	response := GraphQLResponseUpdateNameCollector{}
+
+	request := graphql.Request{
+		Query: `
+		mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
+		  updateSupportBundleSpecName(id: $id, name: $name) {
+			id
+			name
+		  }
+		}
+	  `,
+
+		Variables: map[string]interface{}{
+			"id":   specID,
+			"name": name,
+		},
+	}
+
+	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
 }
