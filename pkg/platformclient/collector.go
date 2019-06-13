@@ -1,7 +1,6 @@
 package platformclient
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -25,6 +24,21 @@ type SupportBundleUpdateSpecData struct {
 type UpdateSupportBundleSpec struct {
 	ID     string `json:"id"`
 	Config string `json:"spec,omitempty"`
+}
+
+type GraphQLResponseGetCollector struct {
+	Data *SupportBundleGetSpecData `json:"data,omitempty"`
+}
+
+type SupportBundleGetSpecData struct {
+	GetSupportBundleSpec *GetSupportBundleSpec `json:"supportBundleSpec"`
+}
+
+type GetSupportBundleSpec struct {
+	ID        string `json:"id"`
+	Name      string `json:"name,omitempty"`
+	Config    string `json:"spec,omitempty"`
+	CreatedAt string `json:"createdAt"`
 }
 
 type GraphQLResponseUpdateNameCollector struct {
@@ -138,18 +152,46 @@ query supportBundleSpecs($appId: String) {
 
 // GetCollector returns a collector's properties.
 func (c *HTTPClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
-	allcollectors, err := c.ListCollectors(appID, appType)
-	if err != nil {
+	response := GraphQLResponseGetCollector{}
+
+	request := graphql.Request{
+		Query: `
+query supportBundleSpec($id: String!) {
+	supportBundleSpec(id: $id) {
+		id
+		name
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		isImmutable
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
+		}
+	}
+}
+`,
+
+		Variables: map[string]interface{}{
+			"id": id,
+		},
+	}
+
+	if err := c.graphqlClient.ExecuteRequest(request, &response); err != nil {
 		return nil, err
 	}
 
-	for _, collector := range allcollectors {
-		if collector.SpecId == id {
-			return &collector, nil
-		}
+	getCollectorInfo := v1.AppCollectorInfo{
+		AppId:  appID,
+		SpecId: response.Data.GetSupportBundleSpec.ID,
+		Config: response.Data.GetSupportBundleSpec.Config,
+		Name:   response.Data.GetSupportBundleSpec.Name,
 	}
 
-	return nil, errors.New("Not found")
+	return &getCollectorInfo, nil
 }
 
 func (c *HTTPClient) UpdateCollector(appID string, appType string, specID, yaml string) (interface{}, error) {

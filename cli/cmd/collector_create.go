@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
 
@@ -54,13 +53,14 @@ func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
 		r.args.createCollectorYaml = string(bytes)
 	}
 
-	collector, err := r.api.CreateCollector(r.appID, r.appType, r.args.createCollectorName, r.args.createCollectorYaml)
+	_, err := r.api.CreateCollector(r.appID, r.appType, r.args.createCollectorName, r.args.createCollectorYaml)
 	if err != nil {
 		return err
 	}
 
+	fmt.Fprintf(r.w, "Collector %s created\n", r.args.createCollectorName)
 	r.w.Flush()
 
-	return print.Collector(r.w, collector)
+	return nil
 
 }

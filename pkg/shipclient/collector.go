@@ -37,6 +37,21 @@ type UpdateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
+type GraphQLResponseGetCollector struct {
+	Data *SupportBundleGetSpecData `json:"data,omitempty"`
+}
+
+type SupportBundleGetSpecData struct {
+	GetSupportBundleSpec *GetSupportBundleSpec `json:"supportBundleSpec"`
+}
+
+type GetSupportBundleSpec struct {
+	ID        string `json:"id"`
+	Name      string `json:"name,omitempty"`
+	Config    string `json:"spec,omitempty"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type GraphQLResponseUpdateNameCollector struct {
 	Data *SupportBundleUpdateSpecNameData `json:"data,omitempty"`
 }
@@ -130,46 +145,81 @@ query supportBundleSpecs($appId: String) {
 
 // GetCollector returns a collector's properties.
 func (c *GraphQLClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
-	allcollectors, err := c.ListCollectors(appID, appType)
-	if err != nil {
+	response := GraphQLResponseGetCollector{}
+
+	request := graphql.Request{
+		Query: `
+query supportBundleSpec($id: String!) {
+	supportBundleSpec(id: $id) {
+		id
+		name
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		isImmutable
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
+		}
+	}
+}
+`,
+
+		Variables: map[string]interface{}{
+			"id": id,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return nil, err
 	}
 
-	for _, collector := range allcollectors {
-		if collector.SpecId == id {
-			return &collector, nil
-		}
+	getCollectorInfo := v1.AppCollectorInfo{
+		AppId:  appID,
+		SpecId: response.Data.GetSupportBundleSpec.ID,
+		Config: response.Data.GetSupportBundleSpec.Config,
+		Name:   response.Data.GetSupportBundleSpec.Name,
 	}
 
-	return nil, errors.New("Not found")
+	return &getCollectorInfo, nil
 }
 
 // PromoteCollector assigns collector to a specified channel.
 func (c *GraphQLClient) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
 	response := graphql.ResponseErrorOnly{}
 
-	request := graphql.Request{
-		Query: `
-mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
-	promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
-		id
-	}
-}`,
-		Variables: map[string]interface{}{
-			"channelIds": channelIDs,
-			"specId":     specID,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	allcollectors, err := c.ListCollectors(appID, appType)
+	if err != nil {
 		return err
 	}
 
-	if len(response.Errors) != 0 {
-		return errors.New(response.Errors[0].Message)
+	for _, collector := range allcollectors {
+		if collector.SpecId == specID {
+			request := graphql.Request{
+				Query: `
+		mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
+			promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
+				id
+			}
+		}`,
+				Variables: map[string]interface{}{
+					"channelIds": channelIDs,
+					"specId":     specID,
+				},
+			}
+
+			if err := c.ExecuteRequest(request, &response); err != nil {
+				return err
+			}
+
+			return nil
+		}
 	}
 
-	return nil
+	return errors.New("Collector not found")
 }
 
 // CreateCollector creates a new collector based on given yaml and name
