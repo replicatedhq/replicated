@@ -62,4 +62,5 @@ func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
 	r.w.Flush()
 
 	return print.Collector(r.w, collector)
+
 }
