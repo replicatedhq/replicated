@@ -13,7 +13,7 @@ type GraphQLResponseListCollectors struct {
 }
 
 type SupportBundleSpecsData struct {
-	SupportBundleSpecs []SupportBundleSpec `json:"supportBundleSpecs"`
+	SupportBundleSpecs []*SupportBundleSpec `json:"supportBundleSpecs"`
 }
 
 type SupportBundleSpec struct {
@@ -51,16 +51,16 @@ type UpdateSupportBundleSpecName struct {
 }
 
 type GraphQLResponseCreateCollector struct {
-	Data *SupportBundleCreateSpec `json:"data,omitempty"`
+	Data *SupportBundleCreateSpecData `json:"data,omitempty"`
 }
 
-type SupportBundleCreateSpec struct {
-	CreateSupportBundleSpec *CreateSupportBundleSpec `json:"createSupportBundleSpec,omitempty"`
+type SupportBundleCreateSpecData struct {
+	CreateSupportBundleSpec *CreateSupportBundleSpec `json:"createSupportBundleSpec"`
 }
 
 type CreateSupportBundleSpec struct {
 	ID     string `json:"id"`
-	Name   string `json:"name"`
+	Name   string `json:"name,omitempty"`
 	Config string `json:"spec,omitempty"`
 }
 
@@ -69,31 +69,31 @@ func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]v1.AppCo
 
 	request := graphql.Request{
 		Query: `
-		query supportBundleSpecs($appId: String) {
-			supportBundleSpecs(appId: $appId) {
-			  id
-			  name
-			  spec
-			  createdAt
-			  updatedAt
-			  isArchived
-			  isImmutable
-			  githubRef {
-				owner
-				repoFullName
-				branch
-				path
-			  }
-			  channels {
-				id
-				name
-			  }
-			  platformChannels {
-				id
-				name
-			  }
-			}
-		  }`,
+query supportBundleSpecs($appId: String) {
+	supportBundleSpecs(appId: $appId) {
+		id
+		name
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		isImmutable
+		githubRef {
+		owner
+		repoFullName
+		branch
+		path
+		}
+		channels {
+		id
+		name
+		}
+		platformChannels {
+		id
+		name
+		}
+	}
+}`,
 		Variables: map[string]interface{}{
 			"appId": appID,
 		},
@@ -186,14 +186,13 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		createdAt
 		updatedAt
 		githubRef {
-		owner
-		repoFullName
-		branch
-		path
+			owner
+			repoFullName
+			branch
+			path
 		}
 	}
-}
-`,
+}`,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
@@ -209,16 +208,17 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		Query: `
 mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
 	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-	id
-	spec
-	createdAt
-	updatedAt
-	isArchived
-	githubRef {
-		owner
-		repoFullName
-		branch
-		path
+		id
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
+		}
 	}
 }
 `,
@@ -251,8 +251,9 @@ func (c *GraphQLClient) UpdateCollectorName(appID string, appType string, specID
 		Query: `
 mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
 	updateSupportBundleSpecName(id: $id, name: $name) {
-	id
-	name
+		id
+		name
+		}
 	}
 }
 `,

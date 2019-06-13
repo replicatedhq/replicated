@@ -107,7 +107,7 @@ func (c *Client) CreateCollector(appID string, appType string, name string, yaml
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetCollector(appID string, appType string, specID string) (interface{}, error) {
+func (c *Client) GetCollector(appID string, appType string, specID string) (*collectors.AppCollectorInfo, error) {
 	if appType == "platform" {
 		return c.PlatformClient.GetCollector(appID, appType, specID)
 	} else if appType == "ship" {
