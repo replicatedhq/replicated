@@ -253,7 +253,7 @@ mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
 	updateSupportBundleSpecName(id: $id, name: $name) {
 		id
 		name
-		}
+
 	}
 }
 `,

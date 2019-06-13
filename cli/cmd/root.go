@@ -26,8 +26,6 @@ var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
 
-// var graphqlOrigin = "http://localhost:30013/graphql"
-
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {

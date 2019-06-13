@@ -157,22 +157,22 @@ func (c *HTTPClient) UpdateCollector(appID string, appType string, specID, yaml 
 
 	request := graphql.Request{
 		Query: `
-		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
-			updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-				id
-				spec
-				createdAt
-				updatedAt
-				isArchived
-				githubRef {
-					owner
-					repoFullName
-					branch
-					path
-				}
-			}
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
+	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+		id
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
 		}
-	`,
+	}
+}
+`,
 
 		Variables: map[string]interface{}{
 			// "githubRef":  null,
@@ -221,9 +221,7 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		path
 		}
 	}
-
-}
-`,
+}`,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
@@ -239,16 +237,17 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 		Query: `
 mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
 	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-	id
-	spec
-	createdAt
-	updatedAt
-	isArchived
-	githubRef {
-		owner
-		repoFullName
-		branch
-		path
+		id
+		spec
+		createdAt
+		updatedAt
+		isArchived
+		githubRef {
+			owner
+			repoFullName
+			branch
+			path
+		}
 	}
 }
 `,
