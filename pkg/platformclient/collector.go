@@ -1,6 +1,7 @@
 package platformclient
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -233,17 +234,28 @@ mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRef
 
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
-	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
-	body := &v1.BodyPromoteCollector{
-		ChannelIDs: channelIDs,
+	allcollectors, err := c.ListCollectors(appID, appType)
+	if err != nil {
+		return err
 	}
-	if err := c.doJSON("POST", path, http.StatusOK, body, nil); err != nil {
-		return fmt.Errorf("PromoteCollector: %v", err)
+
+	for _, collector := range allcollectors {
+		if collector.SpecId == specID {
+			path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
+			body := &v1.BodyPromoteCollector{
+				ChannelIDs: channelIDs,
+			}
+			if err := c.doJSON("POST", path, http.StatusOK, body, nil); err != nil {
+				return fmt.Errorf("PromoteCollector: %v", err)
+			}
+			return nil
+		}
 	}
-	return nil
+
+	return errors.New("Collector not found")
 }
 
-// CreateCollector - input appID, name, yaml - return Name, Spec, Config
+// CreateCollector creates a new support bundle spec with the provided name and config values
 func (c *HTTPClient) CreateCollector(appID string, appType string, name string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
