@@ -42,8 +42,8 @@ func init() {
 func GetRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "replicated",
-		Short: "Manage channels and releases",
-		Long:  `The replicated CLI allows vendors to manage their apps' channels and releases.`,
+		Short: "Manage channels, releases and collectors",
+		Long:  `The replicated CLI allows vendors to manage their apps' channels, releases and collectors.`,
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
