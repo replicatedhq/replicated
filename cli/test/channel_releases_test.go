@@ -15,7 +15,8 @@ import (
 )
 
 var _ = Describe("channel releases", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+	var graphqlOrigin = "https://g.replicated.com/graphql"
+	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), graphqlOrigin, os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	app := &apps.App{Name: mustToken(8)}
 	var appChan channels.AppChannel
