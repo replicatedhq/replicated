@@ -16,8 +16,7 @@ import (
 // This only tests with no active licenses since the vendor API does not provide
 // a way to update licenses' last_active field.
 var _ = Describe("channel adoption", func() {
-	var graphqlOrigin = "https://g.replicated.com/graphql"
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), graphqlOrigin, os.Getenv("REPLICATED_API_TOKEN"))
+	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_SHIP_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	var app = &apps.App{Name: mustToken(8)}
 	var appChan = &channels.AppChannel{}
