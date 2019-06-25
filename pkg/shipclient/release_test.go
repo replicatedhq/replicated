@@ -23,7 +23,7 @@ func Test_CreateRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		c := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
@@ -173,7 +173,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		c := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
@@ -235,10 +235,12 @@ func Test_PromoteReleaseActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		err = c.PromoteRelease("ship-app-1", 1, "versionHere", "notesHere", "ship-app-beta")
 		assert.Nil(t, err)
