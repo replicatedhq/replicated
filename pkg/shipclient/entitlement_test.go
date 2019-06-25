@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		c := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
