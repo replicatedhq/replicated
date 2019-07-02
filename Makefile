@@ -1,7 +1,36 @@
 .PHONY: docker shell deps test pacts publish-pacts get-spec-prod get-spec-local gen-models build docs package_docker_docs
 
 API_PKGS=apps channels releases
-VERSION=$(shell git describe --abbrev=0)
+
+VERSION=$(shell git describe)
+ABBREV_VERSION=$(shell git describe --abbrev=0)
+VERSION_PACKAGE = github.com/replicatedhq/replicated/pkg/version
+DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+
+GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
+ifneq "$(GIT_TREE)" ""
+define GIT_UPDATE_INDEX_CMD
+git update-index --assume-unchanged
+endef
+define GIT_SHA
+`git rev-parse HEAD`
+endef
+else
+define GIT_UPDATE_INDEX_CMD
+echo "Not a git repo, skipping git update-index"
+endef
+define GIT_SHA
+""
+endef
+endif
+
+define LDFLAGS
+-ldflags "\
+	-X ${VERSION_PACKAGE}.version=${VERSION} \
+	-X ${VERSION_PACKAGE}.gitSHA=${GIT_SHA} \
+	-X ${VERSION_PACKAGE}.buildTime=${DATE} \
+"
+endef
 
 docker:
 	docker build -t replicatedhq.replicated .
@@ -33,7 +62,7 @@ publish-pacts:
 		-X PUT \
 		-H "Content-Type: application/json" \
 		-d@pacts/replicated-cli-vendor-graphql-api.json \
-		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(VERSION)
+		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(ABBREV_VERSION)
 
 # fetch the swagger specs from the production Vendor API
 get-spec-prod:
@@ -75,7 +104,11 @@ gen-models:
 		-o /local/gen/go/v2;
 
 build:
-	go build -o replicated cli/main.go
+	go build \
+    		${LDFLAGS} \
+    		-i \
+    		-o replicated \
+    		cli/main.go
 	mv replicated ${GOPATH}/bin
 
 docs:

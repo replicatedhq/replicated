@@ -174,5 +174,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		return nil
 	}
 
+	runCmds.rootCmd.AddCommand(Version())
+
 	return runCmds.rootCmd.Execute()
 }

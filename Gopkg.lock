@@ -397,9 +397,12 @@
   revision = "c1de95864d73a5465492829d7cb2dd422b19ac96"
 
 [[projects]]
-  digest = "1:25f2747b063c0a656195ef85413cef8c9f2bbe128deab7d39563a6ca1e536070"
+  digest = "1:db1eb3ddc46067e4cda85237f4026899a8919a88fadde3c19be25e689e5e7fe2"
   name = "github.com/stretchr/testify"
-  packages = ["assert"]
+  packages = [
+    "assert",
+    "require",
+  ]
   pruneopts = "UT"
   revision = "69483b4bd14f5845b5a1e55bca19e954e827f1d0"
   version = "v1.1.4"
@@ -467,6 +470,7 @@
     "github.com/spf13/hugo/hugolib",
     "github.com/spf13/hugo/parser",
     "github.com/stretchr/testify/assert",
+    "github.com/stretchr/testify/require",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
