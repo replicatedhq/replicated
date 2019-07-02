@@ -6,11 +6,12 @@ import (
 	"os"
 
 	. "github.com/onsi/ginkgo"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 // This only tests with no active licenses since the vendor API does not provide

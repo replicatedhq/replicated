@@ -1,6 +1,7 @@
 package shipclient
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
@@ -194,6 +195,10 @@ mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
 	location, err := time.LoadLocation("Local")
 	if err != nil {
 		return nil, err
+	}
+
+	if finalizeResponse.Data == nil || finalizeResponse.Data.ShipRelease == nil {
+		return nil, fmt.Errorf("ship release not present in finalize response %+v", finalizeResponse)
 	}
 
 	createdAt, err := util.ParseTime(finalizeResponse.Data.ShipRelease.CreatedAt)
