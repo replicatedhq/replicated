@@ -9,7 +9,7 @@ var (
 	build Build
 )
 
-// Build holds details about this build of the Ship binary
+// Build holds details about this build of the replicated cli binary
 type Build struct {
 	Version      string    `json:"version,omitempty"`
 	GitSHA       string    `json:"git,omitempty"`
