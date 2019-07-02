@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"io/ioutil"
 
@@ -20,8 +21,13 @@ func main() {
 	 * Because subcommands are added to the root command inside Execute(), we
 	 * first have to call Execute() to get docs for all subcommands.
 	 */
-	cmd.RootCmd.SetOutput(ioutil.Discard)
-	cmd.Execute(ioutil.Discard)
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	rootCmd := cmd.GetRootCmd()
+
+	rootCmd.SetOutput(ioutil.Discard)
+	cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 	opts := cmdgen.CmdDocsGeneratorOptions{
 		BasePath: "/reference/vendor-cli/",
@@ -39,5 +45,5 @@ func main() {
 			},
 		},
 	}
-	cmdgen.GenerateCmdDocs(cmd.RootCmd, path, opts)
+	cmdgen.GenerateCmdDocs(rootCmd, path, opts)
 }
