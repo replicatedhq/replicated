@@ -78,11 +78,7 @@ type ShipLintLinePosition struct {
 	Column   int64 `json:"column"`
 }
 
-func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
-	response := GraphQLResponseListReleases{}
-
-	request := GraphQLRequest{
-		Query: `
+var listReleasesQuery = `
 query allReleases($appId: ID!) {
   allReleases(appId: $appId) {
     id
@@ -97,7 +93,13 @@ query allReleases($appId: ID!) {
       numReleases
     }
   }
-}`,
+}`
+
+func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
+	response := GraphQLResponseListReleases{}
+
+	request := GraphQLRequest{
+		Query: listReleasesQuery,
 		Variables: map[string]interface{}{
 			"appId": appID,
 		},
@@ -133,17 +135,30 @@ query allReleases($appId: ID!) {
 	return releaseInfos, nil
 }
 
-func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
-	response := GraphQLResponseUploadRelease{}
-
-	request := GraphQLRequest{
-		Query: `
+var uploadReleaseQuery = `
 mutation uploadRelease($appId: ID!) {
   uploadRelease(appId: $appId) {
     id
     uploadUri
   }
-}`,
+}`
+
+var finalizeUploadedReleaseQuery = `
+mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
+  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
+    id
+    sequence
+    spec
+    created
+    releaseNotes
+  }
+}`
+
+func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
+	response := GraphQLResponseUploadRelease{}
+
+	request := GraphQLRequest{
+		Query: uploadReleaseQuery,
 		Variables: map[string]interface{}{
 			"appId": appID,
 		},
@@ -169,16 +184,7 @@ mutation uploadRelease($appId: ID!) {
 	}
 
 	request = GraphQLRequest{
-		Query: `
-mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
-  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
-    id
-    sequence
-    spec
-    created
-    releaseNotes
-  }
-}`,
+		Query: finalizeUploadedReleaseQuery,
 		Variables: map[string]interface{}{
 			"appId":    appID,
 			"uploadId": response.Data.ShipPendingReleaseData.UploadID,
@@ -222,16 +228,18 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, yaml string)
 	return nil
 }
 
-func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
-	response := GraphQLResponseErrorOnly{}
-
-	request := GraphQLRequest{
-		Query: `
+var promoteShipReleaseQuery = `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {
     id
   }
-}`,
+}`
+
+func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
+	response := GraphQLResponseErrorOnly{}
+
+	request := GraphQLRequest{
+		Query: promoteShipReleaseQuery,
 		Variables: map[string]interface{}{
 			"appId":              appID,
 			"sequence":           sequence,
@@ -253,11 +261,7 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 	return nil
 }
 
-func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
-	response := GraphQLResponseLintRelease{}
-
-	request := GraphQLRequest{
-		Query: `
+var lintReleaseQuery = `
 mutation lintRelease($appId: ID!, $spec: String!) {
   lintRelease(appId: $appId, spec: $spec) {
     rule
@@ -276,7 +280,13 @@ mutation lintRelease($appId: ID!, $spec: String!) {
       }
     }
   }
-}`,
+}`
+
+func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
+	response := GraphQLResponseLintRelease{}
+
+	request := GraphQLRequest{
+		Query: lintReleaseQuery,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
