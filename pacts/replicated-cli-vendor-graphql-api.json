@@ -292,7 +292,7 @@
           "query": "\nmutation lintRelease($appId: ID!, $spec: String!) {\n  lintRelease(appId: $appId, spec: $spec) {\n    rule\n    type\n    positions {\n      path\n      start {\n        position\n        line\n        column\n      }\n      end {\n        position\n        line\n        column\n      }\n    }\n  }\n}",
           "variables": {
             "appId": "ship-app-1",
-            "spec": "\n---\nassets:\n  v1:\n    - inline:\n        contents: |\n          #!/bin/bash\n          echo \"installing nothing\"\n          echo \"config option: {{repl ConfigOption \"test_option\" }}\"\n        dest: ./scripts/install.sh\n        mode: 0777\nconfig:\n  v1:\n    - name: test_options\n      title: Test Options\n      description: testing testing 123\n      items:\n      - name: test_option\n        title: Test Option\n        default: abc123_test-option-value\n        type: text\nlifecycle:\n  v1:\n    - render: {}\n"
+            "spec": "\nassets:\n  v1:\n    - inline:\n        contents: |\n          #!/bin/bash\n          echo \"installing nothing\"\n          echo \"config option: {{repl ConfigOption \"test_option\" }}\"\n        dest: ./scripts/install.sh\n        mode: 0777\nintentional_breakage: {}\nconfig:\n  v1:\n    - name: test_options\n      title: Test Options\n      description: testing testing 123\n      items:\n      - name: test_option\n        title: Test Option\n        default: abc123_test-option-value\n        type: text\nlifecycle:\n  v1:\n    - render: {}\n"
           }
         }
       },

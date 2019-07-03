@@ -329,7 +329,6 @@ func Test_ListReleaseActual(t *testing.T) {
 
 func Test_LintReleaseActual(t *testing.T) {
 	lintYaml := `
----
 assets:
   v1:
     - inline:
@@ -339,6 +338,7 @@ assets:
           echo "config option: {{repl ConfigOption "test_option" }}"
         dest: ./scripts/install.sh
         mode: 0777
+intentional_breakage: {}
 config:
   v1:
     - name: test_options
