@@ -19,7 +19,10 @@ builds:
   - amd64
   - "386"
   main: cli/main.go
-  ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+  ldflags: -s -w
+    -X github.com/replicatedhq/ship/pkg/version.version={{.Version}}
+    -X github.com/replicatedhq/ship/pkg/version.gitSHA={{.FullCommit}}
+    -X github.com/replicatedhq/ship/pkg/version.buildTime={{.Date}}
   binary: replicated
   hooks: {}
 archive:
