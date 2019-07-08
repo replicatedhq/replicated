@@ -255,7 +255,6 @@
               {
                 "created": "Tue Nov 10 2009 23:00:00 UTC",
                 "id": "generated uuid",
-                "releaseNotes": "generated",
                 "sequence": 42
               }
             ]
@@ -266,9 +265,6 @@
             "match": "type"
           },
           "$.body.data.allReleases[0].id": {
-            "match": "type"
-          },
-          "$.body.data.allReleases[0].releaseNotes": {
             "match": "type"
           },
           "$.body.data.allReleases[0].sequence": {

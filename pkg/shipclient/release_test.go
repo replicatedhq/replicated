@@ -312,10 +312,9 @@ func Test_ListReleaseActual(t *testing.T) {
 				"data": map[string]interface{}{
 					"allReleases": []map[string]interface{}{
 						{
-							"id":           dsl.Like(dsl.String("generated uuid")),
-							"sequence":     dsl.Like(dsl.Integer()),
-							"created":      dsl.Like(dsl.String("Tue Nov 10 2009 23:00:00 UTC")),
-							"releaseNotes": dsl.Like(dsl.String("generated")),
+							"id":       dsl.Like(dsl.String("generated uuid")),
+							"sequence": dsl.Like(dsl.Integer()),
+							"created":  dsl.Like(dsl.String("Tue Nov 10 2009 23:00:00 UTC")),
 						},
 					},
 				},
