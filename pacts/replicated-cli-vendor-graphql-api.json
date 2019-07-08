@@ -94,8 +94,8 @@
       }
     },
     {
-      "description": "A request to finalize an uploaded release for ship-app-1",
-      "providerState": "finalize an uploaded release for ship-app-1",
+      "description": "A request to finalize a nonexistent uploaded release for ship-app-1",
+      "providerState": "finalize an uploaded release that does not exist for ship-app-1",
       "request": {
         "method": "POST",
         "path": "/graphql",
@@ -108,7 +108,7 @@
           "query": "\nmutation finalizeUploadedRelease($appId: ID! $uploadId: String) {\n  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {\n    id\n    sequence\n    spec\n    created\n    releaseNotes\n  }\n}",
           "variables": {
             "appId": "ship-app-1",
-            "uploadId": "upload-id-1"
+            "uploadId": "upload-id-notexist"
           }
         }
       },
@@ -118,25 +118,35 @@
         },
         "body": {
           "data": {
-            "finalizeUploadedRelease": {
-              "created": "generated",
-              "id": "generated",
-              "releaseNotes": "generated",
-              "sequence": 42
+            "finalizeUploadedRelease": null
+          },
+          "errors": [
+            {
+              "code": "internal_server_error",
+              "locations": [
+                {
+                  "column": 42,
+                  "line": 42
+                }
+              ],
+              "message": "Whoops, it looks like something is not working quite right. Please try back in a few minutes.",
+              "path": [
+                "finalizeUploadedRelease"
+              ]
             }
-          }
+          ]
         },
         "matchingRules": {
-          "$.body.data.finalizeUploadedRelease.created": {
+          "$.body.errors[0].code": {
             "match": "type"
           },
-          "$.body.data.finalizeUploadedRelease.id": {
+          "$.body.errors[0].locations[0].column": {
             "match": "type"
           },
-          "$.body.data.finalizeUploadedRelease.releaseNotes": {
+          "$.body.errors[0].locations[0].line": {
             "match": "type"
           },
-          "$.body.data.finalizeUploadedRelease.sequence": {
+          "$.body.errors[0].message": {
             "match": "type"
           }
         }

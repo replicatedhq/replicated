@@ -70,6 +70,7 @@ func Test_CreateRelease(t *testing.T) {
 	}
 }
 
+// TODO: once there is a fixture for providing s3 files add a pact that's meant to succeed
 func Test_UploadRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
@@ -78,7 +79,7 @@ func Test_UploadRelease(t *testing.T) {
 			Query: finalizeUploadedReleaseQuery,
 			Variables: map[string]interface{}{
 				"appId":    "ship-app-1",
-				"uploadId": "upload-id-1",
+				"uploadId": "upload-id-notexist",
 			},
 		}
 
@@ -94,12 +95,15 @@ func Test_UploadRelease(t *testing.T) {
 		err = c.executeRequest(request, &response)
 		assert.Nil(t, err)
 
+		// the upload does not exist, so we should expect an error
+		assert.Len(t, response.Errors, 1)
+
 		return nil
 	}
 
 	pact.AddInteraction().
-		Given("finalize an uploaded release for ship-app-1").
-		UponReceiving("A request to finalize an uploaded release for ship-app-1").
+		Given("finalize an uploaded release that does not exist for ship-app-1").
+		UponReceiving("A request to finalize a nonexistent uploaded release for ship-app-1").
 		WithRequest(dsl.Request{
 			Method: "POST",
 			Path:   dsl.String("/graphql"),
@@ -112,7 +116,7 @@ func Test_UploadRelease(t *testing.T) {
 				"query":         finalizeUploadedReleaseQuery,
 				"variables": map[string]interface{}{
 					"appId":    "ship-app-1",
-					"uploadId": "upload-id-1",
+					"uploadId": "upload-id-notexist",
 				},
 			},
 		}).
@@ -120,11 +124,21 @@ func Test_UploadRelease(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"data": map[string]interface{}{
-					"finalizeUploadedRelease": map[string]interface{}{
-						"id":           dsl.Like(dsl.String("generated")),
-						"sequence":     dsl.Like(dsl.Integer()),
-						"created":      dsl.Like(dsl.String("generated")),
-						"releaseNotes": dsl.Like(dsl.String("generated")),
+					"finalizeUploadedRelease": nil,
+				},
+				"errors": []map[string]interface{}{
+					{
+						"locations": []map[string]interface{}{
+							{
+								"line":   dsl.Like(dsl.Integer()),
+								"column": dsl.Like(dsl.Integer()),
+							},
+						},
+						"path": []string{
+							"finalizeUploadedRelease",
+						},
+						"message": dsl.Like(dsl.String("Whoops, it looks like something is not working quite right. Please try back in a few minutes.")),
+						"code":    dsl.Like(dsl.String("internal_server_error")),
 					},
 				},
 			},
