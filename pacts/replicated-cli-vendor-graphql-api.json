@@ -94,6 +94,65 @@
       }
     },
     {
+      "description": "A request to finalize a nonexistent uploaded release for ship-app-1",
+      "providerState": "finalize an uploaded release that does not exist for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation finalizeUploadedRelease($appId: ID! $uploadId: String) {\n  finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {\n    id\n    sequence\n    spec\n    created\n    releaseNotes\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1",
+            "uploadId": "upload-id-notexist"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "finalizeUploadedRelease": null
+          },
+          "errors": [
+            {
+              "code": "internal_server_error",
+              "locations": [
+                {
+                  "column": 42,
+                  "line": 42
+                }
+              ],
+              "message": "Whoops, it looks like something is not working quite right. Please try back in a few minutes.",
+              "path": [
+                "finalizeUploadedRelease"
+              ]
+            }
+          ]
+        },
+        "matchingRules": {
+          "$.body.errors[0].code": {
+            "match": "type"
+          },
+          "$.body.errors[0].locations[0].column": {
+            "match": "type"
+          },
+          "$.body.errors[0].locations[0].line": {
+            "match": "type"
+          },
+          "$.body.errors[0].message": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "A mocked minimal request to promote a new release for ship-app-1",
       "providerState": "Prepare to (mock) promote a release for ship-app-1",
       "request": {
@@ -173,6 +232,131 @@
         },
         "matchingRules": {
           "$.body.data.promoteShipRelease.id": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A real request to list releases for ship-app-1",
+      "providerState": "list releases for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nquery allReleases($appId: ID!) {\n  allReleases(appId: $appId) {\n    id\n    sequence\n    spec\n    created\n    releaseNotes\n    channels {\n      id\n      name\n      currentVersion\n      numReleases\n    }\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "allReleases": [
+              {
+                "created": "Tue Nov 10 2009 23:00:00 UTC",
+                "id": "generated uuid",
+                "sequence": 42
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.allReleases[0].created": {
+            "match": "type"
+          },
+          "$.body.data.allReleases[0].id": {
+            "match": "type"
+          },
+          "$.body.data.allReleases[0].sequence": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A real request to lint a release for ship-app-1",
+      "providerState": "lint releases for ship-app-1",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "basic-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\nmutation lintRelease($appId: ID!, $spec: String!) {\n  lintRelease(appId: $appId, spec: $spec) {\n    rule\n    type\n    positions {\n      path\n      start {\n        position\n        line\n        column\n      }\n      end {\n        position\n        line\n        column\n      }\n    }\n  }\n}",
+          "variables": {
+            "appId": "ship-app-1",
+            "spec": "\nassets:\n  v1:\n    - inline:\n        contents: |\n          #!/bin/bash\n          echo \"installing nothing\"\n          echo \"config option: {{repl ConfigOption \"test_option\" }}\"\n        dest: ./scripts/install.sh\n        mode: 0777\nintentional_breakage: {}\nconfig:\n  v1:\n    - name: test_options\n      title: Test Options\n      description: testing testing 123\n      items:\n      - name: test_option\n        title: Test Option\n        default: abc123_test-option-value\n        type: text\nlifecycle:\n  v1:\n    - render: {}\n"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "lintRelease": [
+              {
+                "positions": [
+                  {
+                    "end": {
+                      "column": 42,
+                      "line": 42,
+                      "position": 42
+                    },
+                    "path": "generated",
+                    "start": {
+                      "column": 42,
+                      "line": 42,
+                      "position": 42
+                    }
+                  }
+                ],
+                "rule": "generated",
+                "type": "generated"
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.lintRelease[0].positions[0].end.column": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].end.line": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].end.position": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].path": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].start.column": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].start.line": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].positions[0].start.position": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].rule": {
+            "match": "type"
+          },
+          "$.body.data.lintRelease[0].type": {
             "match": "type"
           }
         }
