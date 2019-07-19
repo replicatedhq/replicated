@@ -14,7 +14,7 @@ type Client struct {
 
 func NewClient(platformOrigin string, graphqlOrigin string, apiToken string) Client {
 	client := Client{
-		PlatformClient: platformclient.NewHTTPClient(platformOrigin, graphqlOrigin, apiToken),
+		PlatformClient: platformclient.NewHTTPClient(platformOrigin, apiToken),
 		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
 	}
 

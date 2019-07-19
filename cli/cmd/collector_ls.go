@@ -17,7 +17,7 @@ func (r *runners) InitCollectorList(parent *cobra.Command) {
 }
 
 func (r *runners) collectorList(cmd *cobra.Command, args []string) error {
-	collectors, err := r.api.ListCollectors(r.appID, r.appType)
+	collectors, err := r.api.ListCollectors(r.appID)
 	if err != nil {
 		return err
 	}
