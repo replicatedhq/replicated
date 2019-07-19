@@ -10,15 +10,12 @@ import (
 
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
-	collectors "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	v2 "github.com/replicatedhq/replicated/gen/go/v2"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
-const graphqlApiOrigin = "https://pg.replicated.com/graphql"
 
 // Client provides methods to manage apps, channels, and releases.
 type Client interface {
@@ -38,12 +35,7 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
-	ListCollectors(appID string, appType string) ([]collectors.AppCollectorInfo, error)
-	CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error)
-	UpdateCollector(appID string, appType string, id string, yaml string) (interface{}, error)
-	GetCollector(appID string, appType string, specID string) (*collectors.AppCollectorInfo, error)
-	PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error
-	UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error)
+	PromoteCollector(appID string, specID string, channelIDs ...string) error
 
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }
@@ -62,20 +54,17 @@ type ChannelOptions struct {
 type HTTPClient struct {
 	apiKey    string
 	apiOrigin string
-
-	graphqlClient *graphql.Client
 }
 
 // New returns a new  HTTP client.
 func New(apiKey string) Client {
-	return NewHTTPClient(apiOrigin, graphqlApiOrigin, apiKey)
+	return NewHTTPClient(apiOrigin, apiKey)
 }
 
-func NewHTTPClient(origin, graphqlOrigin, apiKey string) Client {
+func NewHTTPClient(origin, apiKey string) Client {
 	c := &HTTPClient{
-		apiKey:        apiKey,
-		apiOrigin:     origin,
-		graphqlClient: graphql.NewClient(graphqlOrigin, apiKey),
+		apiKey:    apiKey,
+		apiOrigin: origin,
 	}
 
 	return c

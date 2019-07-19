@@ -3,7 +3,6 @@ package shipclient
 import (
 	"time"
 
-	"github.com/pkg/errors"
 	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 )
@@ -79,7 +78,7 @@ type CreateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
-func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
 	response := GraphQLResponseListCollectors{}
 
 	request := graphql.Request{
@@ -144,7 +143,7 @@ query supportBundleSpecs($appId: String) {
 }
 
 // GetCollector returns a collector's properties.
-func (c *GraphQLClient) GetCollector(appID string, appType string, id string) (*v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) GetCollector(appID string, id string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseGetCollector{}
 
 	request := graphql.Request{
@@ -188,42 +187,32 @@ query supportBundleSpec($id: String!) {
 }
 
 // PromoteCollector assigns collector to a specified channel.
-func (c *GraphQLClient) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
+func (c *GraphQLClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	response := graphql.ResponseErrorOnly{}
 
-	allcollectors, err := c.ListCollectors(appID, appType)
-	if err != nil {
+	request := graphql.Request{
+		Query: `
+mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
+	promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
+		id
+	}
+}`,
+		Variables: map[string]interface{}{
+			"channelIds": channelIDs,
+			"specId":     specID,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
 		return err
 	}
 
-	for _, collector := range allcollectors {
-		if collector.SpecId == specID {
-			request := graphql.Request{
-				Query: `
-		mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
-			promoteTroubleshootSpec(channelIds: $channelIds, specId: $specId) {
-				id
-			}
-		}`,
-				Variables: map[string]interface{}{
-					"channelIds": channelIDs,
-					"specId":     specID,
-				},
-			}
+	return nil
 
-			if err := c.ExecuteRequest(request, &response); err != nil {
-				return err
-			}
-
-			return nil
-		}
-	}
-
-	return errors.New("Collector not found")
 }
 
 // CreateCollector creates a new collector based on given yaml and name
-func (c *GraphQLClient) CreateCollector(appID string, appType string, name string, yaml string) (*v1.AppCollectorInfo, error) {
+func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error) {
 	response := GraphQLResponseCreateCollector{}
 
 	request := graphql.Request{
@@ -294,7 +283,7 @@ mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRef
 
 }
 
-func (c *GraphQLClient) UpdateCollectorName(appID string, appType string, specID, name string) (interface{}, error) {
+func (c *GraphQLClient) UpdateCollectorName(appID string, specID, name string) (interface{}, error) {
 	response := GraphQLResponseUpdateNameCollector{}
 
 	request := graphql.Request{
@@ -321,7 +310,7 @@ mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
 	return &response, nil
 }
 
-func (c *GraphQLClient) UpdateCollector(appID string, appType string, specID, yaml string) (interface{}, error) {
+func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
 	response := GraphQLResponseUpdateCollector{}
 
 	request := graphql.Request{

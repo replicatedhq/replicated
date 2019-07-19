@@ -145,7 +145,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				return errors.New("Please provide your API token")
 			}
 		}
-		platformAPI := platformclient.NewHTTPClient(platformOrigin, graphqlOrigin, apiToken)
+		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
 
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
