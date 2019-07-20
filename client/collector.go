@@ -8,7 +8,13 @@ import (
 )
 
 func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
-	shipappCollectors, err := c.ShipClient.ListCollectors(appID)
+
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
 	}
@@ -18,18 +24,18 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 		activeChannels := make([]types.Channel, 0, 0)
 		for _, shipappCollectorChannel := range shipappCollector.ActiveChannels {
 			activeChannel := types.Channel{
-				ID:   shipappCollectorChannel.Id,
+				ID:   shipappCollectorChannel.ID,
 				Name: shipappCollectorChannel.Name,
 			}
 
 			activeChannels = append(activeChannels, activeChannel)
 		}
 		shipCollectorInfo := types.CollectorInfo{
-			AppID:          shipappCollector.AppId,
+			AppID:          shipappCollector.AppID,
 			CreatedAt:      shipappCollector.CreatedAt,
 			Name:           shipappCollector.Name,
 			ActiveChannels: activeChannels,
-			SpecID:         shipappCollector.SpecId,
+			SpecID:         shipappCollector.SpecID,
 		}
 
 		shipCollectorInfos = append(shipCollectorInfos, shipCollectorInfo)

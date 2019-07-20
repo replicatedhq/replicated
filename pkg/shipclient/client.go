@@ -19,7 +19,7 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
-	ListCollectors(appID string) ([]v1.AppCollectorInfo, error)
+	ListCollectors(appID string, appType string) ([]types.CollectorInfo, error)
 	CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error)
 	UpdateCollector(appID string, specID string, yaml string) (interface{}, error)
 	UpdateCollectorName(appID string, specID, name string) (interface{}, error)
