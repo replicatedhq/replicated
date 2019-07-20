@@ -5,6 +5,7 @@ import (
 
 	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type GraphQLResponseListCollectors struct {
@@ -19,7 +20,7 @@ type SupportBundleSpec struct {
 	ID        string          `json:"id"`
 	Name      string          `json:"name"`
 	CreatedAt string          `json:"createdAt"`
-	Channels  []v1.AppChannel `json:"channels"`
+	Channels  []types.Channel `json:"channels"`
 	Config    string          `json:"spec,omitempty"`
 }
 
@@ -78,11 +79,100 @@ type CreateSupportBundleSpec struct {
 	Config string `json:"spec,omitempty"`
 }
 
-func (c *GraphQLClient) ListCollectors(appID string) ([]v1.AppCollectorInfo, error) {
-	response := GraphQLResponseListCollectors{}
+// PLATFORM
+type PlatformGQLResponseListCollectors struct {
+	Data *PlatformSupportBundleSpecsData `json:"data,omitempty"`
+}
 
-	request := graphql.Request{
-		Query: `
+type PlatformSupportBundleSpecsData struct {
+	PlatformSupportBundleSpecs []*PlatformSupportBundleSpec `json:"supportBundleSpecs"`
+}
+
+type PlatformSupportBundleSpec struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt string          `json:"createdAt"`
+	Channels  []types.Channel `json:"platformChannels"`
+	Config    string          `json:"spec,omitempty"`
+}
+
+type PlatformChannel struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]types.CollectorInfo, error) {
+
+	if appType == "ship" {
+
+		response := GraphQLResponseListCollectors{}
+
+		request := graphql.Request{
+			Query: `
+		query supportBundleSpecs($appId: String) {
+			supportBundleSpecs(appId: $appId) {
+				id
+				name
+				spec
+				createdAt
+				updatedAt
+				isArchived
+				isImmutable
+				githubRef {
+				owner
+				repoFullName
+				branch
+				path
+				}
+				channels {
+				id
+				name
+				}
+				platformChannels {
+				id
+				name
+				}
+			}
+		}`,
+			Variables: map[string]interface{}{
+				"appId": appID,
+			},
+		}
+
+		if err := c.ExecuteRequest(request, &response); err != nil {
+			return nil, err
+		}
+
+		location, err := time.LoadLocation("Local")
+		if err != nil {
+			return nil, err
+		}
+
+		collectors := make([]types.CollectorInfo, 0, 0)
+		for _, spec := range response.Data.SupportBundleSpecs {
+			createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
+			if err != nil {
+				return nil, err
+			}
+			collector := types.CollectorInfo{
+				SpecID:         spec.ID,
+				Name:           spec.Name,
+				CreatedAt:      createdAt.In(location),
+				ActiveChannels: spec.Channels,
+				Config:         spec.Config,
+			}
+
+			collectors = append(collectors, collector)
+		}
+
+		return collectors, nil
+
+	} else {
+
+		response := PlatformGQLResponseListCollectors{}
+
+		request := graphql.Request{
+			Query: `
 query supportBundleSpecs($appId: String) {
 	supportBundleSpecs(appId: $appId) {
 		id
@@ -108,38 +198,40 @@ query supportBundleSpecs($appId: String) {
 		}
 	}
 }`,
-		Variables: map[string]interface{}{
-			"appId": appID,
-		},
-	}
+			Variables: map[string]interface{}{
+				"appId": appID,
+			},
+		}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
+		if err := c.ExecuteRequest(request, &response); err != nil {
+			return nil, err
+		}
 
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return nil, err
-	}
-
-	collectors := make([]v1.AppCollectorInfo, 0, 0)
-	for _, spec := range response.Data.SupportBundleSpecs {
-		createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
+		location, err := time.LoadLocation("Local")
 		if err != nil {
 			return nil, err
 		}
-		collector := v1.AppCollectorInfo{
-			SpecId:         spec.ID,
-			Name:           spec.Name,
-			CreatedAt:      createdAt.In(location),
-			ActiveChannels: spec.Channels,
-			Config:         spec.Config,
+
+		collectors := make([]types.CollectorInfo, 0, 0)
+		for _, spec := range response.Data.PlatformSupportBundleSpecs {
+			createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
+			if err != nil {
+				return nil, err
+			}
+			collector := types.CollectorInfo{
+				SpecID:         spec.ID,
+				Name:           spec.Name,
+				CreatedAt:      createdAt.In(location),
+				ActiveChannels: spec.Channels,
+				Config:         spec.Config,
+			}
+
+			collectors = append(collectors, collector)
 		}
 
-		collectors = append(collectors, collector)
+		return collectors, nil
 	}
 
-	return collectors, nil
 }
 
 // GetCollector returns a collector's properties.
