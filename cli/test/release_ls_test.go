@@ -13,7 +13,7 @@ import (
 )
 
 var _ = Describe("release ls", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_SHIP_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
 	app := &apps.App{Name: mustToken(8)}
 
