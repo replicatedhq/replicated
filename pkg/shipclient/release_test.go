@@ -23,10 +23,13 @@ func Test_CreateRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		response := GraphQLResponseUploadRelease{}
 
@@ -86,10 +89,13 @@ func Test_UploadRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		response := GraphQLResponseFinalizeRelease{}
 
@@ -173,10 +179,12 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		response := GraphQLResponseUploadRelease{}
 
@@ -293,10 +301,12 @@ func Test_ListReleaseActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		releases, err := c.ListReleases("ship-app-1")
 		assert.Nil(t, err)
@@ -375,10 +385,12 @@ lifecycle:
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		lintMessages, err := c.LintRelease("ship-app-1", lintYaml)
 		assert.Nil(t, err)
