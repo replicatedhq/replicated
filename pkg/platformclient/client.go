@@ -61,7 +61,7 @@ func New(apiKey string) Client {
 	return NewHTTPClient(apiOrigin, apiKey)
 }
 
-func NewHTTPClient(origin, apiKey string) Client {
+func NewHTTPClient(origin string, apiKey string) Client {
 	c := &HTTPClient{
 		apiKey:    apiKey,
 		apiOrigin: origin,
