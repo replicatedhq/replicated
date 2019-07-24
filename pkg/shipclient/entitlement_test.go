@@ -33,10 +33,12 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &graphql.Client{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		response := GraphQLResponseUploadRelease{}
 

@@ -14,7 +14,7 @@ func Test_CreateRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: uploadReleaseQuery,
 			Variables: map[string]interface{}{
 				"appId": "ship-app-1",
@@ -76,7 +76,7 @@ func Test_UploadRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: finalizeUploadedReleaseQuery,
 			Variables: map[string]interface{}{
 				"appId":    "ship-app-1",
@@ -86,14 +86,16 @@ func Test_UploadRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
 
+		c := &GraphQLClient{GraphQLClient: d}
+
 		response := GraphQLResponseFinalizeRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		// the upload does not exist, so we should expect an error
@@ -293,10 +295,12 @@ func Test_ListReleaseActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		releases, err := c.ListReleases("ship-app-1")
 		assert.Nil(t, err)
@@ -375,10 +379,12 @@ lifecycle:
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		lintMessages, err := c.LintRelease("ship-app-1", lintYaml)
 		assert.Nil(t, err)
