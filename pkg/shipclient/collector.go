@@ -309,19 +309,14 @@ func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) 
 
 	request := graphql.Request{
 		Query: `
-mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $githubRef: GitHubRefInput) {
-	createSupportBundleSpec(name: $name, appId: $appId, spec: $spec, githubRef: $githubRef) {
+mutation createSupportBundleSpec($name: String, $appId: String, $spec: String) {
+	createSupportBundleSpec(name: $name, appId: $appId, spec: $spec) {
 		id
 		name
 		spec
 		createdAt
 		updatedAt
-		githubRef {
-			owner
-			repoFullName
-			branch
-			path
-		}
+
 	}
 }`,
 		Variables: map[string]interface{}{
@@ -337,19 +332,14 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String, $
 
 	request = graphql.Request{
 		Query: `
-mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
-	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $isArchived: Boolean) {
+	updateSupportBundleSpec(id: $id, spec: $spec, isArchived: $isArchived) {
 		id
 		spec
 		createdAt
 		updatedAt
 		isArchived
-		githubRef {
-			owner
-			repoFullName
-			branch
-			path
-		}
+
 	}
 }
 `,
@@ -375,6 +365,35 @@ mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRef
 
 }
 
+func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
+	response := GraphQLResponseUpdateCollector{}
+
+	request := graphql.Request{
+		Query: `
+mutation updateSupportBundleSpec($id: ID!, $spec: String!, $isArchived: Boolean) {
+	updateSupportBundleSpec(id: $id, spec: $spec, isArchived: $isArchived) {
+		id
+		spec
+		createdAt
+		updatedAt
+		isArchived
+	}
+}
+`,
+
+		Variables: map[string]interface{}{
+			"id":   specID,
+			"spec": yaml,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return nil, err
+	}
+
+	return &response, nil
+}
+
 func (c *GraphQLClient) UpdateCollectorName(appID string, specID, name string) (interface{}, error) {
 	response := GraphQLResponseUpdateNameCollector{}
 
@@ -392,41 +411,6 @@ mutation updateSupportBundleSpecName($id: ID!, $name: String!) {
 		Variables: map[string]interface{}{
 			"id":   specID,
 			"name": name,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	return &response, nil
-}
-
-func (c *GraphQLClient) UpdateCollector(appID string, specID, yaml string) (interface{}, error) {
-	response := GraphQLResponseUpdateCollector{}
-
-	request := graphql.Request{
-		Query: `
-mutation updateSupportBundleSpec($id: ID!, $spec: String!, $githubRef: GitHubRefInput, $isArchived: Boolean) {
-	updateSupportBundleSpec(id: $id, spec: $spec, githubRef: $githubRef, isArchived: $isArchived) {
-		id
-		spec
-		createdAt
-		updatedAt
-		isArchived
-		githubRef {
-			owner
-			repoFullName
-			branch
-			path
-		}
-	}
-}
-`,
-
-		Variables: map[string]interface{}{
-			"id":   specID,
-			"spec": yaml,
 		},
 	}
 
