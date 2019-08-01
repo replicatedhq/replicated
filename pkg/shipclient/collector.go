@@ -309,16 +309,22 @@ func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) 
 
 	request := graphql.Request{
 		Query: `
-mutation createSupportBundleSpec($name: String, $appId: String, $spec: String) {
-	createSupportBundleSpec(name: $name, appId: $appId, spec: $spec) {
-		id
-		name
-		spec
-		createdAt
-		updatedAt
-
-	}
-}`,
+		mutation createSupportBundleSpec($name: String, $appId: String, $spec: String) {
+		  createSupportBundleSpec(name: $name, appId: $appId, spec: $spec) {
+			id
+			name
+			spec
+			createdAt
+			updatedAt
+			githubRef {
+			  owner
+			  repoFullName
+			  branch
+			  path
+			}
+		  }
+		}
+	  `,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  yaml,
@@ -332,17 +338,22 @@ mutation createSupportBundleSpec($name: String, $appId: String, $spec: String) {
 
 	request = graphql.Request{
 		Query: `
-mutation updateSupportBundleSpec($id: ID!, $spec: String!, $isArchived: Boolean) {
-	updateSupportBundleSpec(id: $id, spec: $spec, isArchived: $isArchived) {
-		id
-		spec
-		createdAt
-		updatedAt
-		isArchived
-
-	}
-}
-`,
+		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $isArchived: Boolean) {
+		  updateSupportBundleSpec(id: $id, spec: $spec, isArchived: $isArchived) {
+			id
+			spec
+			createdAt
+			updatedAt
+			isArchived
+			githubRef {
+			  owner
+			  repoFullName
+			  branch
+			  path
+			}
+		  }
+		}
+	  `,
 		Variables: map[string]interface{}{
 			"id":   response.Data.CreateSupportBundleSpec.ID,
 			"spec": yaml,
