@@ -80,14 +80,8 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
-	}
-
-	if resp == nil {
-		return err
-	}
-
-	if resp.Body == nil {
-		return err
+	} else if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
