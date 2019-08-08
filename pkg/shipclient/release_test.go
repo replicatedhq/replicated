@@ -5,6 +5,8 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
@@ -96,11 +98,11 @@ func Test_UploadRelease(t *testing.T) {
 		response := GraphQLResponseFinalizeRelease{}
 
 		err = c.ExecuteRequest(request, &response)
-		assert.Nil(t, err)
 
 		// the upload does not exist, so we should expect an error
-		assert.Len(t, response.Errors, 1)
-
+		multiErr, ok := err.(*multierror.Error)
+		assert.True(t, ok)
+		assert.Len(t, multiErr.Errors, 1)
 		return nil
 	}
 
