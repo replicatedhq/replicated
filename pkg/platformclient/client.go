@@ -35,6 +35,8 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
 
+	PromoteCollector(appID string, specID string, channelIDs ...string) error
+
 	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
 }
 
@@ -48,6 +50,7 @@ type ChannelOptions struct {
 }
 
 // An HTTPClient communicates with the Replicated Vendor HTTP API.
+// TODO: rename this to client
 type HTTPClient struct {
 	apiKey    string
 	apiOrigin string
@@ -55,12 +58,7 @@ type HTTPClient struct {
 
 // New returns a new  HTTP client.
 func New(apiKey string) Client {
-	c := &HTTPClient{
-		apiKey:    apiKey,
-		apiOrigin: apiOrigin,
-	}
-
-	return c
+	return NewHTTPClient(apiOrigin, apiKey)
 }
 
 func NewHTTPClient(origin string, apiKey string) Client {

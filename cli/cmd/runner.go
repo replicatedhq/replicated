@@ -30,6 +30,13 @@ type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string
 
+	createCollectorName     string
+	createCollectorYaml     string
+	createCollectorYamlFile string
+	updateCollectorYaml     string
+	updateCollectorYamlFile string
+	updateCollectorName     string
+
 	createReleaseYaml            string
 	createReleaseYamlFile        string
 	createReleasePromote         string
@@ -44,16 +51,16 @@ type runnerArgs struct {
 	updateReleaseYaml            string
 	updateReleaseYamlFile        string
 
-	entitlementsAPIServer string
-	entitlementsVerbose bool
-	entitlementsDefineFieldsFile string
-	entitlementsDefineFieldsName string
-	entitlementsGetReleaseCustomerID string
+	entitlementsAPIServer                string
+	entitlementsVerbose                  bool
+	entitlementsDefineFieldsFile         string
+	entitlementsDefineFieldsName         string
+	entitlementsGetReleaseCustomerID     string
 	entitlementsGetReleaseInstallationID string
-	entitlementsGetReleaseAPIServer string
-	entitlementsSetValueCustomerID string
-	entitlementsSetValueDefinitionsID string
-	entitlementsSetValueKey string
-	entitlementsSetValueValue string
-	entitlementsSetValueType string
+	entitlementsGetReleaseAPIServer      string
+	entitlementsSetValueCustomerID       string
+	entitlementsSetValueDefinitionsID    string
+	entitlementsSetValueKey              string
+	entitlementsSetValueValue            string
+	entitlementsSetValueType             string
 }

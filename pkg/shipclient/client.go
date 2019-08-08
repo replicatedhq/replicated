@@ -1,18 +1,10 @@
 package shipclient
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-
-	multierror "github.com/hashicorp/go-multierror"
+	v1 "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
-
-const apiOrigin = "https://g.replicated.com/graphql"
 
 type Client interface {
 	ListApps() ([]types.AppAndChannels, error)
@@ -26,6 +18,13 @@ type Client interface {
 	UpdateRelease(appID string, sequence int64, yaml string) error
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 	LintRelease(string, string) ([]types.LintMessage, error)
+
+	ListCollectors(appID string, appType string) ([]types.CollectorInfo, error)
+	CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error)
+	UpdateCollector(appID string, specID string, yaml string) (interface{}, error)
+	UpdateCollectorName(appID string, specID, name string) (interface{}, error)
+	GetCollector(appID string, specID string) (*v1.AppCollectorInfo, error)
+	PromoteCollector(appID string, specID string, channelIDs ...string) error
 
 	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
 	SetDefaultEntitlementSpec(specID string) error
@@ -41,99 +40,17 @@ type ChannelOptions struct {
 	Description string
 }
 
-// GraphQLClient communicates with the Replicated Vendor GraphQL API.
+// Client communicates with the Replicated Vendor GraphQL API.
 type GraphQLClient struct {
-	GQLServer *url.URL
-	Token     string
+	GraphQLClient *graphql.Client
 }
 
 func NewGraphQLClient(origin string, apiKey string) Client {
-	uri, err := url.Parse(origin)
-	if err != nil {
-		panic(err)
-	}
-
-	c := &GraphQLClient{
-		GQLServer: uri,
-		Token:     apiKey,
-	}
+	c := &GraphQLClient{GraphQLClient: graphql.NewClient(origin, apiKey)}
 
 	return c
 }
 
-// GraphQLRequest is a json-serializable request to the graphql server
-type GraphQLRequest struct {
-	Query         string                 `json:"query,omitempty"`
-	Variables     map[string]interface{} `json:"variables"`
-	OperationName string                 `json:"operationName"`
-}
-
-// GraphQLError represents an error returned by the graphql server
-type GraphQLError struct {
-	Locations []map[string]interface{} `json:"locations"`
-	Message   string                   `json:"message"`
-	Code      string                   `json:"code"`
-}
-
-type GraphQLResponseErrorOnly struct {
-	Errors []GraphQLError `json:"errors,omitempty"`
-}
-
-type ShipError interface {
-	GraphQLError() []GraphQLError
-}
-
-func (c *GraphQLClient) executeRequest(requestObj GraphQLRequest, deserializeTarget interface{}) error {
-	body, err := json.Marshal(requestObj)
-	if err != nil {
-		return err
-	}
-
-	bodyReader := bytes.NewReader(body)
-
-	req, err := http.NewRequest("POST", c.GQLServer.String(), bodyReader)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", c.Token)
-
-	client := http.DefaultClient
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	if resp == nil {
-		return err
-	}
-
-	if resp.Body == nil {
-		return err
-	}
-
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(responseBody, deserializeTarget); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *GraphQLClient) checkErrors(shipError ShipError) error {
-	if shipError.GraphQLError() != nil && len(shipError.GraphQLError()) > 0 {
-		var multiErr *multierror.Error
-		for _, err := range shipError.GraphQLError() {
-			multiErr = multierror.Append(multiErr, fmt.Errorf("%s: %s", err.Code, err.Message))
-
-		}
-		return multiErr.ErrorOrNil()
-	}
-	return nil
+func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTarget interface{}) error {
+	return c.GraphQLClient.ExecuteRequest(requestObj, deserializeTarget)
 }

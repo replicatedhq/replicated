@@ -20,7 +20,7 @@ type AppChannel struct {
 	// The ID of the channel
 	Id string `json:"Id"`
 	// IsDefault shows if channel is default or not
-	IsDefault bool `json:"IsDefault,omitempty"`
+	IsDefault     bool           `json:"IsDefault,omitempty"`
 	LicenseCounts *LicenseCounts `json:"LicenseCounts,omitempty"`
 	// The name of channel
 	Name string `json:"Name"`

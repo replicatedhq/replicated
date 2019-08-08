@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +14,7 @@ func Test_CreateEntitlementSpec(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: `
 mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) {
   createEntitlementSpec(spec: $spec, name: $name, labels:[{key:"replicated.com/app", value:$appId}]) {
@@ -32,14 +33,16 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
 
+		c := &GraphQLClient{GraphQLClient: d}
+
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil

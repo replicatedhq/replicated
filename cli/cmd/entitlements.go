@@ -4,8 +4,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-
 func (r *runners) InitEntitlementsCommand(parent *cobra.Command) *cobra.Command {
 	entitlementsCmd := &cobra.Command{
 		Use:   "entitlements",
@@ -19,4 +17,3 @@ func (r *runners) InitEntitlementsCommand(parent *cobra.Command) *cobra.Command 
 
 	return entitlementsCmd
 }
-

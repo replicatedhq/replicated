@@ -5,7 +5,10 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/hashicorp/go-multierror"
+
 	"github.com/pact-foundation/pact-go/dsl"
+	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +16,7 @@ func Test_CreateRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: uploadReleaseQuery,
 			Variables: map[string]interface{}{
 				"appId": "ship-app-1",
@@ -22,14 +25,14 @@ func Test_CreateRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		c := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil
@@ -75,7 +78,7 @@ func Test_UploadRelease(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: finalizeUploadedReleaseQuery,
 			Variables: map[string]interface{}{
 				"appId":    "ship-app-1",
@@ -85,19 +88,21 @@ func Test_UploadRelease(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
 
+		c := &GraphQLClient{GraphQLClient: d}
+
 		response := GraphQLResponseFinalizeRelease{}
 
-		err = c.executeRequest(request, &response)
-		assert.Nil(t, err)
+		err = c.ExecuteRequest(request, &response)
 
 		// the upload does not exist, so we should expect an error
-		assert.Len(t, response.Errors, 1)
-
+		multiErr, ok := err.(*multierror.Error)
+		assert.True(t, ok)
+		assert.Len(t, multiErr.Errors, 1)
 		return nil
 	}
 
@@ -153,7 +158,7 @@ func Test_PromoteReleaseMinimal(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d/graphql", pact.Server.Port)
 
-		request := GraphQLRequest{
+		request := graphql.Request{
 			Query: `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, troubleshootSpecId: $troubleshootSpecId) {
@@ -172,14 +177,14 @@ mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		c := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
 
 		response := GraphQLResponseUploadRelease{}
 
-		err = c.executeRequest(request, &response)
+		err = c.ExecuteRequest(request, &response)
 		assert.Nil(t, err)
 
 		return nil
@@ -234,10 +239,12 @@ func Test_PromoteReleaseActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		err = c.PromoteRelease("ship-app-1", 1, "versionHere", "notesHere", "ship-app-beta")
 		assert.Nil(t, err)
@@ -290,10 +297,12 @@ func Test_ListReleaseActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		releases, err := c.ListReleases("ship-app-1")
 		assert.Nil(t, err)
@@ -372,10 +381,12 @@ lifecycle:
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
-		c := &GraphQLClient{
+		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "basic-read-write-token",
 		}
+
+		c := &GraphQLClient{GraphQLClient: d}
 
 		lintMessages, err := c.LintRelease("ship-app-1", lintYaml)
 		assert.Nil(t, err)

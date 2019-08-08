@@ -24,7 +24,7 @@ const (
 var appSlugOrID string
 var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
-var shipOrigin = "https://g.replicated.com/graphql"
+var graphqlOrigin = "https://g.replicated.com/graphql"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -34,7 +34,7 @@ func init() {
 
 	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
 	if shipOriginFromEnv != "" {
-		shipOrigin = shipOriginFromEnv
+		graphqlOrigin = shipOriginFromEnv
 	}
 }
 
@@ -42,8 +42,8 @@ func init() {
 func GetRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "replicated",
-		Short: "Manage channels and releases",
-		Long:  `The replicated CLI allows vendors to manage their apps' channels and releases.`,
+		Short: "Manage channels, releases and collectors",
+		Long:  `The replicated CLI allows vendors to manage their apps' channels, releases and collectors.`,
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
@@ -124,6 +124,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
 
+	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
+	runCmds.InitCollectorList(collectorsCmd)
+	runCmds.InitCollectorUpdate(collectorsCmd)
+	runCmds.InitCollectorPromote(collectorsCmd)
+	runCmds.InitCollectorCreate(collectorsCmd)
+	runCmds.InitCollectorInspect(collectorsCmd)
+
 	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)
 	runCmds.InitEntitlementsDefineFields(entitlementsCmd)
 	runCmds.InitEntitlementsSetValueCommand(entitlementsCmd)
@@ -141,10 +148,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
 
-		shipAPI := shipclient.NewGraphQLClient(shipOrigin, apiToken)
+		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		commonAPI := client.NewClient(platformOrigin, shipOrigin, apiToken)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken)
 		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {
