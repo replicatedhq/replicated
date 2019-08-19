@@ -10,5 +10,6 @@ script:
   - make docs # we care less about the generated docs than we do about the fact that the command is not broken
 after_success:
   - test -n "$TRAVIS_TAG" && make package_docker_docs
+  - test -n "$TRAVIS_TAG" && docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
   - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash
   - test -n "$TRAVIS_TAG" && make publish-pacts

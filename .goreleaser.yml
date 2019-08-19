@@ -42,3 +42,10 @@ snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 build:
   hooks: {}
+dockers:
+  - dockerfile: deploy/Dockerfile
+    image_templates:
+      - "replicated/vendor-cli:latest"
+      - "replicated/vendor-cli:{{ .Major }}"
+      - "replicated/vendor-cli:{{ .Major }}.{{ .Minor }}"
+      - "replicated/vendor-cli:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
