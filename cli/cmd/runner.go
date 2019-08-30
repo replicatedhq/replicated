@@ -4,6 +4,8 @@ import (
 	"io"
 	"text/tabwriter"
 
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
+
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/spf13/cobra"
 
@@ -19,7 +21,9 @@ type runners struct {
 	api         client.Client
 	platformAPI platformclient.Client
 	shipAPI     shipclient.Client
+	kotsAPI     kotsclient.Client
 	stdin       io.Reader
+	dir         string
 	w           *tabwriter.Writer
 
 	rootCmd *cobra.Command
@@ -37,19 +41,27 @@ type runnerArgs struct {
 	updateCollectorYamlFile string
 	updateCollectorName     string
 
-	createReleaseYaml            string
-	createReleaseYamlFile        string
-	createReleasePromote         string
-	createReleasePromoteRequired bool
-	createReleasePromoteNotes    string
-	createReleasePromoteVersion  string
-	lintReleaseYaml              string
-	lintReleaseYamlFile          string
-	releaseOptional              bool
-	releaseNotes                 string
-	releaseVersion               string
-	updateReleaseYaml            string
-	updateReleaseYamlFile        string
+	createReleaseYaml              string
+	createReleaseYamlFile          string
+	createReleaseYamlDir           string
+	createReleaseConfigYaml        string
+	createReleaseDeploymentYaml    string
+	createReleaseServiceYaml       string
+	createReleasePreflightYaml     string
+	createReleaseSupportBundleYaml string
+	createReleasePromote           string
+	createReleasePromoteDir        string
+	createReleasePromoteRequired   bool
+	createReleasePromoteNotes      string
+	createReleasePromoteVersion    string
+	lintReleaseYaml                string
+	lintReleaseYamlFile            string
+	releaseOptional                bool
+	releaseNotes                   string
+	releaseVersion                 string
+	updateReleaseYaml              string
+	updateReleaseYamlDir           string
+	updateReleaseYamlFile          string
 
 	entitlementsAPIServer                string
 	entitlementsVerbose                  bool

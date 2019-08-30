@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -19,6 +20,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
 	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.createReleaseYamlDir, "yaml-dir", "", "The directory containing the 5 required YAML configs for a Kots release.  Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
@@ -27,8 +29,34 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd.RunE = r.releaseCreate
 }
 
+func Contains(a []string, x string) bool {
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
+}
+
+type KotsSingleReleaseYaml struct {
+	name    string
+	path    string
+	content string
+}
+
+type KotsReleaseYamls []KotsSingleReleaseYaml
+
+func makeStruct(specName string, content string) KotsSingleReleaseYaml {
+	var path string
+	path = specName
+	kotsSingleSpec := KotsSingleReleaseYaml{specName, path, content}
+
+	return kotsSingleSpec
+}
+
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" {
+
+	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.args.createReleaseYamlDir == "" {
 		return fmt.Errorf("yaml is required")
 	}
 
@@ -50,6 +78,45 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		r.args.createReleaseYaml = string(bytes)
+	}
+
+	fileList := []string{"config.yaml", "deployment.yaml", "service.yaml", "preflight.yaml", "support-bundle.yaml"}
+
+	if r.args.createReleaseYamlDir != "" {
+		files, err := ioutil.ReadDir(r.args.createReleaseYamlDir)
+		if err != nil {
+			return err
+		}
+
+		var bytes []byte
+
+		if len(files) < 5 {
+			return fmt.Errorf("Missing 1 or more required files")
+		}
+
+		type kotsSingleSpec map[string]interface{}
+		var spec kotsSingleSpec
+		var allKotsReleaseSpecs []kotsSingleSpec
+
+		for _, file := range files {
+			if Contains(fileList, file.Name()) {
+				bytes, err = ioutil.ReadFile(r.args.createReleaseYamlDir + "/" + file.Name())
+				spec = kotsSingleSpec{"name": file.Name(), "path": file.Name(), "content": string(bytes)}
+				allKotsReleaseSpecs = append(allKotsReleaseSpecs, spec)
+
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
+
+		if err != nil {
+			return err
+		}
+		r.args.createReleaseYaml = string(jsonAllYamls)
+
 	}
 
 	// if the --promote param was used make sure it identifies exactly one

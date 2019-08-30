@@ -14,6 +14,8 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 		return nil, err
 	}
 
+	// TODO: if kots message yadda yadda about updating support-bundle.yaml
+
 	shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
