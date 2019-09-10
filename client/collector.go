@@ -14,7 +14,10 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 		return nil, err
 	}
 
-	// TODO: if kots message yadda yadda about updating support-bundle.yaml
+	if appType == "kots" {
+		errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
+		return nil, err
+	}
 
 	shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
 	if err != nil {
@@ -47,11 +50,30 @@ func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 }
 
 func (c *Client) UpdateCollector(appID string, specID string, yaml string) (interface{}, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "kots" {
+		errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
+		return nil, err
+	}
 
 	return c.ShipClient.UpdateCollector(appID, specID, yaml)
 }
 
 func (c *Client) UpdateCollectorName(appID string, specID string, name string) (interface{}, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "kots" {
+		errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
+		return nil, err
+	}
+
 	return c.ShipClient.UpdateCollectorName(appID, specID, name)
 
 }
@@ -59,6 +81,14 @@ func (c *Client) UpdateCollectorName(appID string, specID string, name string) (
 // func (c *Client) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
 func (c *Client) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
 
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "kots" {
+		return nil, errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
+	}
 	return c.ShipClient.CreateCollector(appID, name, yaml)
 
 }
