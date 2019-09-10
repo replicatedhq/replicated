@@ -6,8 +6,16 @@ import (
 )
 
 type Client interface {
-	CreateRelease(appID string, spec string) (*types.ReleaseInfo, error)
+	ListApps() ([]types.AppAndChannels, error)
 	GetApp(appID string) (*types.App, error)
+
+	CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error)
+	// ListReleases(appID string) ([]types.ReleaseInfo, error)
+	// UpdateRelease(appID string, sequence int64, yaml string) error
+	// PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
+
+	ListChannels(string) ([]types.Channel, error)
+	CreateChannel(string, string, string) error
 }
 
 type AppOptions struct {

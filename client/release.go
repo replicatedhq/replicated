@@ -85,7 +85,7 @@ func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, e
 		}, nil
 	} else if appType == "ship" {
 		return c.ShipClient.CreateRelease(appID, yaml)
-	} else {
+	} else if appType == "kots" {
 		return c.KotsClient.CreateRelease(appID, yaml)
 	}
 

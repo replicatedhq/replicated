@@ -19,15 +19,15 @@ type KotsAppsData struct {
 	KotsApps []*KotsApp `json:"apps"`
 }
 
-type KotsChannelData struct {
+type KotsAppChannelData struct {
 	ID string `json:"id"`
 }
 
 type KotsApp struct {
-	ID       string             `json:"id"`
-	Name     string             `json:"name"`
-	Slug     string             `json:"slug"`
-	Channels []*KotsChannelData `json: "channels"`
+	ID       string                `json:"id"`
+	Name     string                `json:"name"`
+	Slug     string                `json:"slug"`
+	Channels []*KotsAppChannelData `json: "channels"`
 }
 
 func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
