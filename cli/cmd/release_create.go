@@ -4,9 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
+
+type kotsSingleSpec struct {
+	Name     string   `json:"name"`
+	Path     string   `json:"path"`
+	Content  string   `json:"content"`
+	Children []string `json:"children"`
+}
 
 func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd := &cobra.Command{
@@ -30,19 +41,18 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-
 	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.args.createReleaseYamlDir == "" {
-		return fmt.Errorf("yaml is required")
+		return errors.New("yaml is required")
 	}
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-		return fmt.Errorf("only one of yaml or yaml-file may be specified")
+		return errors.New("only one of yaml or yaml-file may be specified")
 	}
 
 	if r.args.createReleaseYaml == "-" {
 		bytes, err := ioutil.ReadAll(r.stdin)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "read from stdin")
 		}
 		r.args.createReleaseYaml = string(bytes)
 	}
@@ -50,40 +60,52 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if r.args.createReleaseYamlFile != "" {
 		bytes, err := ioutil.ReadFile(r.args.createReleaseYamlFile)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "read file yaml")
 		}
 		r.args.createReleaseYaml = string(bytes)
 	}
 
 	if r.args.createReleaseYamlDir != "" {
-		files, err := ioutil.ReadDir(r.args.createReleaseYamlDir)
-		if err != nil {
-			return err
-		}
-
-		var bytes []byte
-
-		type kotsSingleSpec map[string]interface{}
-		var spec kotsSingleSpec
 		var allKotsReleaseSpecs []kotsSingleSpec
-
-		for _, file := range files {
-			bytes, err = ioutil.ReadFile(r.args.createReleaseYamlDir + "/" + file.Name())
-			spec = kotsSingleSpec{"name": file.Name(), "path": file.Name(), "content": string(bytes)}
-			allKotsReleaseSpecs = append(allKotsReleaseSpecs, spec)
-
+		err := filepath.Walk(r.args.createReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "walk %s", info.Name())
 			}
+
+			if info.IsDir() {
+				return nil
+			}
+			if strings.HasPrefix(info.Name(), ".") {
+				return nil
+			}
+			ext := filepath.Ext(info.Name())
+			if ext != ".yaml" && ext != ".yml" {
+				return nil
+			}
+
+			bytes, err := ioutil.ReadFile(path)
+			if err != nil {
+				return errors.Wrapf(err, "read file %s", path)
+			}
+
+			spec := kotsSingleSpec{
+				Name:     info.Name(),
+				Path:     path,
+				Content:  string(bytes),
+				Children: []string{},
+			}
+			allKotsReleaseSpecs = append(allKotsReleaseSpecs, spec)
+			return nil
+		})
+		if err != nil {
+			return errors.Wrapf(err, "walk %s", r.args.createReleaseYamlDir)
 		}
 
 		jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
-
 		if err != nil {
-			return err
+			return errors.Wrap(err, "marshal spec")
 		}
 		r.args.createReleaseYaml = string(jsonAllYamls)
-
 	}
 
 	// if the --promote param was used make sure it identifies exactly one

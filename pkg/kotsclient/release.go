@@ -34,46 +34,47 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 
 	request := graphql.Request{
 		Query: `
-		query createKotsRelease($appId: ID!, $spec: String!) {
-		  createKotsRelease(appId: $appId, spec: $spec) {
-			sequence
-		  }
+		mutation createKotsRelease($appId: ID!, $spec: String!) {
+			createKotsRelease(appId: $appId, spec: $spec) {
+				sequence
+			}
 		}`,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  multiyaml,
 		},
 	}
+	fmt.Println("multiyaml:", multiyaml)
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
 		fmt.Println("anything?", response.Data.KotsReleaseData.Sequence)
 		return nil, err
 	}
 
-	request = graphql.Request{
-		Query: `
-		mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
-		  updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
-			sequence
-		  }
-		}
-	  `,
-		Variables: map[string]interface{}{
-			"appId":    appID,
-			"spec":     multiyaml,
-			"sequence": response.Data.KotsReleaseData.Sequence,
-		},
-	}
+	// request = graphql.Request{
+	// 	Query: `
+	// 	mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
+	// 	  updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
+	// 		sequence
+	// 	  }
+	// 	}
+	//   `,
+	// 	Variables: map[string]interface{}{
+	// 		"appId":    appID,
+	// 		"spec":     multiyaml,
+	// 		"sequence": response.Data.KotsReleaseData.Sequence,
+	// 	},
+	// }
 
-	finalizeKotsReleaseCreate := GraphQLResponseKotsUpdateRelease{}
+	// finalizeKotsReleaseCreate := GraphQLResponseKotsUpdateRelease{}
 
-	if err := c.ExecuteRequest(request, &finalizeKotsReleaseCreate); err != nil {
-		return nil, err
-	}
+	// if err := c.ExecuteRequest(request, &finalizeKotsReleaseCreate); err != nil {
+	// 	return nil, err
+	// }
 
 	releaseInfo := types.ReleaseInfo{
 		AppID:    appID,
-		Sequence: finalizeKotsReleaseCreate.Data.KotsReleaseData.Sequence,
+		Sequence: response.Data.KotsReleaseData.Sequence,
 	}
 
 	return &releaseInfo, nil
