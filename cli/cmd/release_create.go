@@ -68,6 +68,9 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if r.args.createReleaseYamlDir != "" {
 		var allKotsReleaseSpecs []kotsSingleSpec
 		err := filepath.Walk(r.args.createReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
+			// strip r.args.createReleaseYamlDir from info.Name()
+			file := strings.Trim(info.Name(), r.args.createReleaseYamlDir)
+			fmt.Println("file", file)
 			if err != nil {
 				return errors.Wrapf(err, "walk %s", info.Name())
 			}
@@ -90,7 +93,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 
 			spec := kotsSingleSpec{
 				Name:     info.Name(),
-				Path:     path,
+				Path:     file,
 				Content:  string(bytes),
 				Children: []string{},
 			}
