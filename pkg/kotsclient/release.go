@@ -48,6 +48,19 @@ type KotsRelease struct {
 	ReleaseNotes string `json:"releaseNotes"`
 }
 
+type GraphQLResponseUpdateKotsRelease struct {
+	Data *KotsReleaseUpdateData `json:"data,omitempty"`
+}
+
+type KotsReleaseUpdateData struct {
+	UpdateKotsRelease *UpdateKotsRelease `json:"updateKotsRelease"`
+}
+
+type UpdateKotsRelease struct {
+	ID     string `json:"id"`
+	Config string `json:"spec,omitempty"`
+}
+
 func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
 	response := GraphQLResponseKotsCreateRelease{}
 
@@ -76,6 +89,40 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 	}
 
 	return &releaseInfo, nil
+}
+
+var updateKotsRelease = `
+  mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
+    updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
+      sequence
+    }
+  }
+`
+
+func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml string) error {
+	response := GraphQLResponseUpdateKotsRelease{}
+
+	request := graphql.Request{
+		Query: `
+		mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
+		  updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
+			sequence
+		  }
+		}
+	  `,
+
+		Variables: map[string]interface{}{
+			"appId":    appID,
+			"spec":     multiyaml,
+			"sequence": sequence,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 var allKotsReleases = `

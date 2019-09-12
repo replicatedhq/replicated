@@ -127,8 +127,21 @@ func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, e
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) UpdateRelease(appID string, sequence int64, releaseOptions interface{}) error {
-	return nil
+func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error {
+
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.UpdateRelease(appID, sequence, yaml)
+	} else if appType == "ship" {
+		return c.ShipClient.UpdateRelease(appID, sequence, yaml)
+	} else if appType == "kots" {
+		return c.KotsClient.UpdateRelease(appID, sequence, yaml)
+	}
+	return errors.New("unknown app type")
 }
 
 func (c *Client) GetRelease(appID string, sequence int64) (interface{}, error) {
