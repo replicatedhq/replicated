@@ -42,10 +42,11 @@ type KotsReleasesData struct {
 }
 
 type KotsRelease struct {
-	ID           string `json:"id"`
-	Sequence     int64  `json:"sequence"`
-	CreatedAt    string `json:"created"`
-	ReleaseNotes string `json:"releaseNotes"`
+	ID           string         `json:"id"`
+	Sequence     int64          `json:"sequence"`
+	CreatedAt    string         `json:"created"`
+	ReleaseNotes string         `json:"releaseNotes"`
+	Channels     []*KotsChannel `json:"channels"`
 }
 
 type GraphQLResponseUpdateKotsRelease struct {
@@ -164,17 +165,28 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 
 	releaseInfos := make([]types.ReleaseInfo, 0, 0)
 	for _, kotsRelease := range response.Data.KotsReleases {
+		activeChannels := make([]types.Channel, 0, 0)
 		createdAt, err := util.ParseTime(kotsRelease.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+
+		for _, kotsReleaseChannel := range kotsRelease.Channels {
+			activeChannel := types.Channel{
+				ID:   kotsReleaseChannel.ID,
+				Name: kotsReleaseChannel.Name,
+			}
+			activeChannels = append(activeChannels, activeChannel)
+
+		}
 		releaseInfo := types.ReleaseInfo{
-			AppID:     appID,
-			CreatedAt: createdAt.In(location),
-			EditedAt:  time.Now(),
-			Editable:  false,
-			Sequence:  kotsRelease.Sequence,
-			Version:   "ba",
+			AppID:          appID,
+			CreatedAt:      createdAt.In(location),
+			EditedAt:       time.Now(),
+			Editable:       false,
+			Sequence:       kotsRelease.Sequence,
+			Version:        "ba",
+			ActiveChannels: activeChannels,
 		}
 
 		releaseInfos = append(releaseInfos, releaseInfo)

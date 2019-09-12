@@ -23,10 +23,11 @@ type ShipReleasesData struct {
 }
 
 type ShipRelease struct {
-	ID           string `json:"id"`
-	Sequence     int64  `json:"sequence"`
-	CreatedAt    string `json:"created"`
-	ReleaseNotes string `json:"releaseNotes"`
+	ID           string         `json:"id"`
+	Sequence     int64          `json:"sequence"`
+	CreatedAt    string         `json:"created"`
+	ReleaseNotes string         `json:"releaseNotes"`
+	Channels     []*ShipChannel `json:"channels"`
 }
 
 type GraphQLResponseFinalizeRelease struct {
@@ -117,17 +118,29 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 
 	releaseInfos := make([]types.ReleaseInfo, 0, 0)
 	for _, shipRelease := range response.Data.ShipReleases {
+		activeChannels := make([]types.Channel, 0, 0)
 		createdAt, err := util.ParseTime(shipRelease.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+
+		for _, shipReleaseChannel := range shipRelease.Channels {
+			activeChannel := types.Channel{
+				ID:   shipReleaseChannel.ID,
+				Name: shipReleaseChannel.Name,
+			}
+			activeChannels = append(activeChannels, activeChannel)
+
+		}
+
 		releaseInfo := types.ReleaseInfo{
-			AppID:     appID,
-			CreatedAt: createdAt.In(location),
-			EditedAt:  time.Now(),
-			Editable:  false,
-			Sequence:  shipRelease.Sequence,
-			Version:   "ba",
+			AppID:          appID,
+			CreatedAt:      createdAt.In(location),
+			EditedAt:       time.Now(),
+			Editable:       false,
+			Sequence:       shipRelease.Sequence,
+			Version:        "ba",
+			ActiveChannels: activeChannels,
 		}
 
 		releaseInfos = append(releaseInfos, releaseInfo)

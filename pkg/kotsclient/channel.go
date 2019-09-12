@@ -16,12 +16,9 @@ type KotsChannelData struct {
 }
 
 type KotsChannel struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-
-	CurrentSequence int64  `json:"currentSequence"`
-	CurrentVersion  string `json:"currentVersion"`
+	ID             string `json:"id"`
+	Name           string `json:"name"`
+	CurrentVersion string `json:"currentVersion"`
 }
 
 func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
@@ -85,11 +82,9 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	channels := make([]types.Channel, 0, 0)
 	for _, kotsChannel := range response.Data.KotsChannels {
 		channel := types.Channel{
-			ID:              kotsChannel.ID,
-			Name:            kotsChannel.Name,
-			Description:     kotsChannel.Description,
-			ReleaseSequence: kotsChannel.CurrentSequence,
-			ReleaseLabel:    kotsChannel.CurrentVersion,
+			ID:           kotsChannel.ID,
+			Name:         kotsChannel.Name,
+			ReleaseLabel: kotsChannel.CurrentVersion,
 		}
 
 		channels = append(channels, channel)

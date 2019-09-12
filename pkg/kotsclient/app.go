@@ -20,7 +20,11 @@ type KotsAppsData struct {
 }
 
 type KotsAppChannelData struct {
-	ID string `json:"id"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	CurrentSequence int64  `json:"currentSequence"`
+	CurrentVersion  string `json:"currentVersion"`
 }
 
 type KotsApp struct {
@@ -63,13 +67,22 @@ func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 
 	appsAndChannels := make([]types.AppAndChannels, 0, 0)
 	for _, kotsapp := range response.Data.Kots.KotsApps {
-
+		channels := make([]types.Channel, 0, 0)
+		for _, kotsChannel := range kotsapp.Channels {
+			channel := types.Channel{
+				ID:          kotsChannel.ID,
+				Name:        kotsChannel.Name,
+				Description: kotsChannel.Description,
+			}
+			channels = append(channels, channel)
+		}
 		appAndChannels := types.AppAndChannels{
 			App: &types.App{
 				ID:   kotsapp.ID,
 				Name: kotsapp.Name,
 				Slug: kotsapp.Slug,
 			},
+			Channels: channels,
 		}
 
 		appsAndChannels = append(appsAndChannels, appAndChannels)

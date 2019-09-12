@@ -16,10 +16,9 @@ type ShipChannelData struct {
 }
 
 type ShipChannel struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
 	CurrentSequence int64  `json:"currentSequence"`
 	CurrentVersion  string `json:"currentVersion"`
 }

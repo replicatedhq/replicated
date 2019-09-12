@@ -67,7 +67,6 @@ query {
 				Name:        shipChannel.Name,
 				Description: shipChannel.Description,
 			}
-
 			channels = append(channels, channel)
 		}
 
@@ -77,6 +76,7 @@ query {
 				Name: app.Name,
 				Slug: app.Slug,
 			},
+			Channels: channels,
 		}
 
 		appsAndChannels = append(appsAndChannels, appAndChannels)
