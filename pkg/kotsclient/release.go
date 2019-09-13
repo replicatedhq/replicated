@@ -1,7 +1,6 @@
 package kotsclient
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/pkg/errors"
@@ -77,10 +76,8 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 			"spec":  multiyaml,
 		},
 	}
-	fmt.Println("multiyaml:", multiyaml)
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		fmt.Println("anything?", response.Data.KotsReleaseData.Sequence)
 		return nil, err
 	}
 
