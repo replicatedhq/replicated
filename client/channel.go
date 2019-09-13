@@ -34,8 +34,6 @@ func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
 		return channels, nil
 	} else if appType == "ship" {
 		return c.ShipClient.ListChannels(appID)
-	} else if appType == "kots" {
-		return c.KotsClient.ListChannels(appID)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -65,12 +63,6 @@ func (c *Client) CreateChannel(appID string, name string, description string) ([
 			return nil, err
 		}
 		return c.ShipClient.ListChannels(appID)
-	} else if appType == "kots" {
-		if err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
-			return nil, err
-		}
-		return c.KotsClient.ListChannels(appID)
 	}
-
 	return nil, errors.New("unknown app type")
 }
