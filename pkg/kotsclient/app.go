@@ -1,4 +1,4 @@
-package shipclient
+package kotsclient
 
 import (
 	"github.com/pkg/errors"
@@ -7,23 +7,31 @@ import (
 )
 
 type GraphQLResponseListApps struct {
-	Data   *ShipData          `json:"data,omitempty"`
+	Data   *KotsData          `json:"data,omitempty"`
 	Errors []graphql.GQLError `json:"errors,omitempty"`
 }
 
-type ShipData struct {
-	Ship *ShipAppsData `json:"ship"`
+type KotsData struct {
+	Kots *KotsAppsData `json:"kots"`
 }
 
-type ShipAppsData struct {
-	ShipApps []*ShipApp `json:"apps"`
+type KotsAppsData struct {
+	KotsApps []*KotsApp `json:"apps"`
 }
 
-type ShipApp struct {
-	ID       string        `json:"id"`
-	Name     string        `json:"name"`
-	Slug     string        `json:"slug"`
-	Channels []ShipChannel `json:"channel"`
+type KotsAppChannelData struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	CurrentSequence int64  `json:"currentSequence"`
+	CurrentVersion  string `json:"currentVersion"`
+}
+
+type KotsApp struct {
+	ID       string                `json:"id"`
+	Name     string                `json:"name"`
+	Slug     string                `json:"slug"`
+	Channels []*KotsAppChannelData `json: "channels"`
 }
 
 func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
@@ -31,25 +39,24 @@ func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 
 	request := graphql.Request{
 		Query: `
-query {
-  ship {
-    apps {
-      id
-      name
-      icon
-      created
-      updated
-      isDefault
-      isArchived
-      slug
-      channels {
-	id,
-	name,
-	description
-      }
-    }
-  }
-}`,
+		query kots {
+			kots {
+			  apps {
+				id
+				name
+				created
+				updated
+				isDefault
+				isArchived
+				slug
+				channels {
+				  id
+				}
+				isKotsApp
+			  }
+			}
+		  }
+		`,
 
 		Variables: map[string]interface{}{},
 	}
@@ -59,22 +66,21 @@ query {
 	}
 
 	appsAndChannels := make([]types.AppAndChannels, 0, 0)
-	for _, app := range response.Data.Ship.ShipApps {
+	for _, kotsapp := range response.Data.Kots.KotsApps {
 		channels := make([]types.Channel, 0, 0)
-		for _, shipChannel := range app.Channels {
+		for _, kotsChannel := range kotsapp.Channels {
 			channel := types.Channel{
-				ID:          shipChannel.ID,
-				Name:        shipChannel.Name,
-				Description: shipChannel.Description,
+				ID:          kotsChannel.ID,
+				Name:        kotsChannel.Name,
+				Description: kotsChannel.Description,
 			}
 			channels = append(channels, channel)
 		}
-
 		appAndChannels := types.AppAndChannels{
 			App: &types.App{
-				ID:   app.ID,
-				Name: app.Name,
-				Slug: app.Slug,
+				ID:   kotsapp.ID,
+				Name: kotsapp.Name,
+				Slug: kotsapp.Slug,
 			},
 			Channels: channels,
 		}

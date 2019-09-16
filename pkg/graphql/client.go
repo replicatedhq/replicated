@@ -80,8 +80,6 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 	resp, err := client.Do(req)
 	if err != nil {
 		return err
-	} else if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
@@ -94,6 +92,10 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 
 	if err := c.checkErrors(gqlErr); err != nil {
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
 	}
 
 	if err := json.Unmarshal(responseBody, deserializeTarget); err != nil {

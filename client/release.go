@@ -44,8 +44,42 @@ func (c *Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 		}
 
 		return releaseInfos, nil
+
 	} else if appType == "ship" {
-		return c.ShipClient.ListReleases(appID)
+		shipReleases, err := c.ShipClient.ListReleases(appID)
+		if err != nil {
+			return nil, err
+		}
+
+		releaseInfos := make([]types.ReleaseInfo, 0, 0)
+		for _, shipRelease := range shipReleases {
+			activeChannels := make([]types.Channel, 0, 0)
+			for _, shipReleaseChannel := range shipRelease.ActiveChannels {
+				activeChannel := types.Channel{
+					ID:          shipReleaseChannel.ID,
+					Name:        shipReleaseChannel.Name,
+					Description: shipReleaseChannel.Description,
+				}
+
+				activeChannels = append(activeChannels, activeChannel)
+			}
+			releaseInfo := types.ReleaseInfo{
+				AppID:          shipRelease.AppID,
+				CreatedAt:      shipRelease.CreatedAt,
+				EditedAt:       shipRelease.EditedAt,
+				Editable:       shipRelease.Editable,
+				Sequence:       shipRelease.Sequence,
+				Version:        shipRelease.Version,
+				ActiveChannels: activeChannels,
+			}
+
+			releaseInfos = append(releaseInfos, releaseInfo)
+		}
+
+		return releaseInfos, nil
+
+	} else if appType == "kots" {
+		return c.KotsClient.ListReleases(appID)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -85,13 +119,28 @@ func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, e
 		}, nil
 	} else if appType == "ship" {
 		return c.ShipClient.CreateRelease(appID, yaml)
+	} else if appType == "kots" {
+		return c.KotsClient.CreateRelease(appID, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) UpdateRelease(appID string, sequence int64, releaseOptions interface{}) error {
-	return nil
+func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error {
+
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.UpdateRelease(appID, sequence, yaml)
+	} else if appType == "ship" {
+		return c.ShipClient.UpdateRelease(appID, sequence, yaml)
+	} else if appType == "kots" {
+		return c.KotsClient.UpdateRelease(appID, sequence, yaml)
+	}
+	return errors.New("unknown app type")
 }
 
 func (c *Client) GetRelease(appID string, sequence int64) (interface{}, error) {
@@ -108,8 +157,9 @@ func (c *Client) PromoteRelease(appID string, sequence int64, label string, note
 		return c.PlatformClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
 	} else if appType == "ship" {
 		return c.ShipClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
+	} else if appType == "kots" {
+		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
 	}
-
 	return errors.New("unknown app type")
 }
 
@@ -124,6 +174,8 @@ func (c *Client) LintRelease(appID string, yaml string) ([]types.LintMessage, er
 		// return c.PlatformClient.LintRelease(appID, yaml)
 	} else if appType == "ship" {
 		return c.ShipClient.LintRelease(appID, yaml)
+	} else if appType == "kots" {
+		return nil, errors.New("Linting is not yet supported for Kots applications")
 	}
 
 	return nil, errors.New("unknown app type")

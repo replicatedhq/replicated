@@ -50,6 +50,7 @@ func (c *Client) UpdateCollector(appID string, specID string, yaml string) (inte
 }
 
 func (c *Client) UpdateCollectorName(appID string, specID string, name string) (interface{}, error) {
+
 	return c.ShipClient.UpdateCollectorName(appID, specID, name)
 
 }

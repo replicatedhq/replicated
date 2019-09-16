@@ -64,6 +64,5 @@ func (c *Client) CreateChannel(appID string, name string, description string) ([
 		}
 		return c.ShipClient.ListChannels(appID)
 	}
-
 	return nil, errors.New("unknown app type")
 }

@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 
 	"github.com/replicatedhq/replicated/client"
@@ -151,6 +152,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
+		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken)
+		runCmds.kotsAPI = kotsAPI
+
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken)
 		runCmds.api = commonAPI
 
@@ -172,6 +176,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			runCmds.appID = app.Id
 		} else if appType == "ship" {
 			app, err := shipAPI.GetApp(appSlugOrID)
+			if err != nil {
+				return err
+			}
+			runCmds.appID = app.ID
+		} else if appType == "kots" {
+			app, err := kotsAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
