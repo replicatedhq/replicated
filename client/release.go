@@ -45,7 +45,6 @@ func (c *Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 
 		return releaseInfos, nil
 
-		// TODO: need to fix active channels output for ship and kots apps
 	} else if appType == "ship" {
 		shipReleases, err := c.ShipClient.ListReleases(appID)
 		if err != nil {
