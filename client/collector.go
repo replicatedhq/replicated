@@ -9,6 +9,11 @@ import (
 
 func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
 
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
 	shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
