@@ -180,7 +180,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				return err
 			}
 			runCmds.appID = app.ID
-		} else {
+		} else if appType == "kots" {
 			app, err := kotsAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err

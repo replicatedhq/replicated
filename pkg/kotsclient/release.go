@@ -101,13 +101,7 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml st
 	response := GraphQLResponseUpdateKotsRelease{}
 
 	request := graphql.Request{
-		Query: `
-		mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
-		  updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
-			sequence
-		  }
-		}
-	  `,
+		Query: updateKotsRelease,
 
 		Variables: map[string]interface{}{
 			"appId":    appID,

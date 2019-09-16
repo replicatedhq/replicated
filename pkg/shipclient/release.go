@@ -130,7 +130,6 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 				Name: shipReleaseChannel.Name,
 			}
 			activeChannels = append(activeChannels, activeChannel)
-
 		}
 
 		releaseInfo := types.ReleaseInfo{
