@@ -1,7 +1,6 @@
 package kotsclient
 
 import (
-	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -122,10 +121,6 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
 		return err
-	}
-
-	if len(response.Errors) != 0 {
-		return errors.New(response.Errors[0].Message)
 	}
 
 	return nil
