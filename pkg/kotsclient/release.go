@@ -121,7 +121,6 @@ var allKotsReleases = `
   query allKotsReleases($appId: ID!, $pageSize: Int, $currentPage: Int) {
     allKotsReleases(appId: $appId, pageSize: $pageSize, currentPage: $currentPage) {
       sequence
-      spec
       created
       releaseNotes
       channels {

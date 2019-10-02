@@ -32,7 +32,6 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 		name
 		currentVersion
 		currentReleaseDate
-		currentSpec
 		numReleases
 		description
 		channelIcon
