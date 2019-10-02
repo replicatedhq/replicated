@@ -66,7 +66,7 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 
 	request := graphql.Request{
 		Query: `
-		mutation createKotsRelease($appId: ID!, $spec: String!) {
+		mutation createKotsRelease($appId: ID!, $spec: String) {
 			createKotsRelease(appId: $appId, spec: $spec) {
 				sequence
 			}
