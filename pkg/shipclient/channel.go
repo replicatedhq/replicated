@@ -12,8 +12,8 @@ type GraphQLResponseListChannels struct {
 }
 
 type GraphQLResponseGetChannel struct {
-	Data   *ShipChannelData   `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
+	Data   *ShipGetChannelData `json:"data,omitempty"`
+	Errors []graphql.GQLError  `json:"errors,omitempty"`
 }
 
 type ShipGetChannelData struct {
@@ -194,12 +194,19 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 	request := graphql.Request{
 		Query: getShipChannel,
 		Variables: map[string]interface{}{
-			"appID":    appID,
-			"chanelID": channelID,
+			"appID":     appID,
+			"channelId": channelID,
 		},
 	}
 	if err := c.ExecuteRequest(request, &response); err != nil {
 		return nil, nil, err
 	}
-	return nil, nil, nil
+
+	channelDetail := channels.AppChannel{
+		Id:           response.Data.ShipChannel.ID,
+		Name:         response.Data.ShipChannel.Name,
+		Description:  response.Data.ShipChannel.Description,
+		ReleaseLabel: response.Data.ShipChannel.CurrentVersion,
+	}
+	return &channelDetail, nil, nil
 }

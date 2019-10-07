@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -41,7 +42,7 @@ func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetChannel(appID string, channelID string) (interface{}, interface{}, error) {
+func (c *Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 	appType, err := c.GetAppType(appID)
 	if err != nil {
 		return nil, nil, err
