@@ -1,6 +1,7 @@
 package shipclient
 
 import (
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -8,6 +9,15 @@ import (
 type GraphQLResponseListChannels struct {
 	Data   *ShipChannelData   `json:"data,omitempty"`
 	Errors []graphql.GQLError `json:"errors,omitempty"`
+}
+
+type GraphQLResponseGetChannel struct {
+	Data   *ShipChannelData   `json:"data,omitempty"`
+	Errors []graphql.GQLError `json:"errors,omitempty"`
+}
+
+type ShipGetChannelData struct {
+	ShipChannel *ShipChannel `json:"getChannel"`
 }
 
 type ShipChannelData struct {
@@ -121,6 +131,75 @@ func ArchiveChannel(appID string, channelID string) error {
 	return nil
 }
 
-func GetChannel(appID string, channelID string) (interface{}, []interface{}, error) {
+var getShipChannel = `
+  query getChannel($channelId: ID!) {
+    getChannel(channelId: $channelId) {
+      id
+      appId
+      name
+      description
+      channelIcon
+      currentVersion
+      currentReleaseDate
+      installInstructions
+      currentSpec
+      numReleases
+      adoptionRate {
+        releaseId
+        semver
+        count
+        percent
+        totalOnChannel
+      }
+      customers {
+        id
+        name
+        avatar
+        actions {
+          shipApplyDocker
+        }
+        installationId
+        shipInstallStatus {
+          status
+          updatedAt
+        }
+      }
+      githubRef {
+        owner
+        repoFullName
+        branch
+        path
+      }
+      extraLintRules
+      created
+      updated
+      isDefault
+      isArchived
+      releases {
+        id
+        semver
+        spec
+        releaseNotes
+        created
+        updated
+        sequence
+      }
+    }
+  }
+`
+
+func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+	response := GraphQLResponseGetChannel{}
+
+	request := graphql.Request{
+		Query: getShipChannel,
+		Variables: map[string]interface{}{
+			"appID":    appID,
+			"chanelID": channelID,
+		},
+	}
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return nil, nil, err
+	}
 	return nil, nil, nil
 }

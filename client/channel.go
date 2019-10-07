@@ -42,11 +42,40 @@ func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
 }
 
 func (c *Client) GetChannel(appID string, channelID string) (interface{}, interface{}, error) {
-	return nil, nil, nil
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.GetChannel(appID, channelID)
+	} else if appType == "ship" {
+		return c.ShipClient.GetChannel(appID, channelID)
+	} else if appType == "kots" {
+		// return c.KotsClient.GetChannel(appID, channelID)
+		return nil, nil, nil
+	}
+	return nil, nil, errors.New("unknown app type")
+
 }
 
 func (c *Client) ArchiveChannel(appID string, channelID string) error {
-	return nil
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.ArchiveChannel(appID, channelID)
+	} else if appType == "ship" {
+		// return c.ShipClient.ArchiveChannel(appID, channelID)
+		return nil
+	} else if appType == "kots" {
+		// return c.KotsClient.ArchiveChannel(appID, channelID)
+		return nil
+	}
+	return errors.New("unknown app type")
+
 }
 
 func (c *Client) CreateChannel(appID string, name string, description string) ([]types.Channel, error) {

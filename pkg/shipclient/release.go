@@ -237,8 +237,31 @@ func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.Release
 	return &releaseInfo, nil
 }
 
+var updateShipRelease = `
+mutation updateRelease($appId: ID!, $spec: String!, $sequence: Int) {
+    updateRelease(appId: $appId, spec: $spec, sequence: $sequence) {
+      id
+    }
+  }`
+
 func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, yaml string) error {
+	response := graphql.ResponseErrorOnly{}
+
+	request := graphql.Request{
+		Query: updateShipRelease,
+		Variables: map[string]interface{}{
+			"appID":    appID,
+			"sequence": sequence,
+			"spec":     yaml,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
 	return nil
+
 }
 
 var promoteShipReleaseQuery = `
