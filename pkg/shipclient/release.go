@@ -250,7 +250,7 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, yaml string)
 	request := graphql.Request{
 		Query: updateShipRelease,
 		Variables: map[string]interface{}{
-			"appID":    appID,
+			"appId":    appID,
 			"sequence": sequence,
 			"spec":     yaml,
 		},
