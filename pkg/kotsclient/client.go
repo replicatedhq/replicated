@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -16,6 +17,7 @@ type Client interface {
 
 	ListChannels(string) ([]types.Channel, error)
 	CreateChannel(string, string, string) error
+	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
 }
 
 type AppOptions struct {
