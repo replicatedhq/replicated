@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -10,14 +11,23 @@ type GraphQLResponseListChannels struct {
 	Errors []graphql.GQLError `json:"errors,omitempty"`
 }
 
+type GraphQLResponseGetChannel struct {
+	Data   *KotsGetChannelData `json:"data,omitempty"`
+	Errors []graphql.GQLError  `json:"errors,omitempty"`
+}
+type KotsGetChannelData struct {
+	KotsChannel *KotsChannel `json:"getKotsChannel"`
+}
 type KotsChannelData struct {
 	KotsChannels []*KotsChannel `json:"getKotsAppChannels"`
 }
 
 type KotsChannel struct {
-	ID             string `json:"id"`
-	Name           string `json:"name"`
-	CurrentVersion string `json:"currentVersion"`
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	CurrentSequence int64  `json:"currentSequence"`
+	CurrentVersion  string `json:"currentVersion"`
 }
 
 func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
@@ -130,6 +140,80 @@ func ArchiveChannel(appID string, channelID string) error {
 	return nil
 }
 
-func GetChannel(appID string, channelID string) (interface{}, []interface{}, error) {
-	return nil, nil, nil
+var getKotsChannel = `
+query getKotsChannel($channelId: ID!) {
+  getKotsChannel(channelId: $channelId) {
+    id
+    appId
+    name
+    description
+    channelIcon
+    currentVersion
+    currentReleaseDate
+    installInstructions
+    numReleases
+    adoptionRate {
+      releaseSequence
+      semver
+      count
+      percent
+      totalOnChannel
+    }
+    customers {
+      id
+      name
+      avatar
+      actions {
+	shipApplyDocker
+      }
+      installationId
+      shipInstallStatus {
+	status
+	updatedAt
+      }
+    }
+    githubRef {
+      owner
+      repoFullName
+      branch
+      path
+    }
+    extraLintRules
+    created
+    updated
+    isDefault
+    isArchived
+    releases {
+      semver
+      releaseNotes
+      created
+      updated
+      sequence
+      airgapBuildStatus
+    }
+  }
+}
+`
+
+func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+	response := GraphQLResponseGetChannel{}
+
+	request := graphql.Request{
+		Query: getKotsChannel,
+		Variables: map[string]interface{}{
+			"appID":     appID,
+			"channelId": channelID,
+		},
+	}
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return nil, nil, err
+	}
+
+	channelDetail := channels.AppChannel{
+		Id:           response.Data.KotsChannel.ID,
+		Name:         response.Data.KotsChannel.Name,
+		Description:  response.Data.KotsChannel.Description,
+		ReleaseLabel: response.Data.KotsChannel.CurrentVersion,
+	}
+	return &channelDetail, nil, nil
 }

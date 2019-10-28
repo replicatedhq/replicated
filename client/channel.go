@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 
+	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -41,12 +42,38 @@ func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetChannel(appID string, channelID string) (interface{}, interface{}, error) {
-	return nil, nil, nil
+func (c *Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.GetChannel(appID, channelID)
+	} else if appType == "ship" {
+		return c.ShipClient.GetChannel(appID, channelID)
+	} else if appType == "kots" {
+		return c.KotsClient.GetChannel(appID, channelID)
+	}
+	return nil, nil, errors.New("unknown app type")
+
 }
 
 func (c *Client) ArchiveChannel(appID string, channelID string) error {
-	return nil
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.ArchiveChannel(appID, channelID)
+	} else if appType == "ship" {
+		return errors.New("This feature is not currently supported for Ship applications.")
+	} else if appType == "kots" {
+		return errors.New("This feature is not currently supported for Kots applications.")
+	}
+	return errors.New("unknown app type")
+
 }
 
 func (c *Client) CreateChannel(appID string, name string, description string) ([]types.Channel, error) {

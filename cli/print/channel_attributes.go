@@ -10,7 +10,7 @@ import (
 var channelAttrsTmplSrc = `ID:	{{ .Id }}
 NAME:	{{ .Name }}
 DESCRIPTION:	{{ .Description }}
-RELEASE:	{{ .ReleaseSequence }}
+RELEASE:	{{ if ge .ReleaseSequence 1 }}{{ .ReleaseSequence }}{{else}}	{{end}}
 VERSION:	{{ .ReleaseLabel }}
 `
 
