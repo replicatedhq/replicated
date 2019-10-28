@@ -24,7 +24,7 @@ func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[0]
 
-	if err := r.platformAPI.ArchiveChannel(r.appID, chanID); err != nil {
+	if err := r.api.ArchiveChannel(r.appID, chanID); err != nil {
 		return err
 	}
 
