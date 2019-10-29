@@ -30,7 +30,7 @@ func (r *runners) channelAdoption(cmd *cobra.Command, args []string) error {
 	}
 
 	if appType == "platform" {
-		appChan, _, err := r.api.GetChannel(r.appID, chanID)
+		appChan, _, err := r.platformAPI.GetChannel(r.appID, chanID)
 		if err != nil {
 			return err
 		}
