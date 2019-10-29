@@ -24,13 +24,24 @@ func (r *runners) channelCounts(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[0]
 
-	appChan, _, err := r.platformAPI.GetChannel(r.appID, chanID)
+	appType, err := r.api.GetAppType(r.appID)
 	if err != nil {
 		return err
 	}
 
-	if err = print.LicenseCounts(r.w, appChan.LicenseCounts); err != nil {
-		return err
+	if appType == "platform" {
+		appChan, _, err := r.api.GetChannel(r.appID, chanID)
+		if err != nil {
+			return err
+		}
+
+		if err = print.LicenseCounts(r.w, appChan.LicenseCounts); err != nil {
+			return err
+		}
+	} else if appType == "ship" {
+		return errors.New("This feature is not supported for Ship applications.")
+	} else if appType == "kots" {
+		return errors.New("This feature is not supported for Kots applications.")
 	}
 
 	return nil

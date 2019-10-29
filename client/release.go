@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -143,8 +144,20 @@ func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error 
 	return errors.New("unknown app type")
 }
 
-func (c *Client) GetRelease(appID string, sequence int64) (interface{}, error) {
-	return nil, nil
+func (c *Client) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
+	appType, err := c.GetAppType(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	if appType == "platform" {
+		return c.PlatformClient.GetRelease(appID, sequence)
+	} else if appType == "ship" {
+		return nil, errors.New("This feature is not supported for Ship applications.")
+	} else if appType == "kots" {
+		return nil, errors.New("This feature is not supported for Kots applications.")
+	}
+	return nil, errors.New("unknown app type")
 }
 
 func (c *Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
