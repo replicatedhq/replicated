@@ -30,7 +30,7 @@ func (r *runners) releaseInspect(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
 	}
 
-	release, err := r.api.GetRelease(r.appID, seq)
+	release, err := r.api.GetRelease(r.appID, r.appType, seq)
 	if err != nil {
 		if err == platformclient.ErrNotFound {
 			return fmt.Errorf("No such release %d", seq)

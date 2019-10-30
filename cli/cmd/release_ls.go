@@ -17,7 +17,7 @@ func (r *runners) IniReleaseList(parent *cobra.Command) {
 }
 
 func (r *runners) releaseList(cmd *cobra.Command, args []string) error {
-	releases, err := r.api.ListReleases(r.appID)
+	releases, err := r.api.ListReleases(r.appID, r.appType)
 	if err != nil {
 		return err
 	}

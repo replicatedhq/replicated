@@ -115,7 +115,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	// channel before proceeding
 	var promoteChanID string
 	if r.args.createReleasePromote != "" {
-		channels, err := r.api.ListChannels(r.appID)
+		channels, err := r.api.ListChannels(r.appID, r.appType)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		promoteChanID = promoteChannelIDs[0]
 	}
 
-	release, err := r.api.CreateRelease(r.appID, r.args.createReleaseYaml)
+	release, err := r.api.CreateRelease(r.appID, r.appType, r.args.createReleaseYaml)
 	if err != nil {
 		return err
 	}
@@ -149,6 +149,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if promoteChanID != "" {
 		if err := r.api.PromoteRelease(
 			r.appID,
+			r.appType,
 			release.Sequence,
 			r.args.createReleasePromoteVersion,
 			r.args.createReleasePromoteNotes,

@@ -48,7 +48,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		r.args.lintReleaseYamlFile = string(bytes)
 	}
 
-	lintResult, err := r.api.LintRelease(r.appID, r.args.lintReleaseYaml)
+	lintResult, err := r.api.LintRelease(r.appID, r.appType, r.args.lintReleaseYaml)
 	if err != nil {
 		return err
 	}

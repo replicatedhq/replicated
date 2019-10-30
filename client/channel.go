@@ -7,11 +7,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) ListChannels(appID string, appType string) ([]types.Channel, error) {
 
 	if appType == "platform" {
 		platformChannels, err := c.PlatformClient.ListChannels(appID)
@@ -42,11 +38,7 @@ func (c *Client) ListChannels(appID string) ([]types.Channel, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, nil, err
-	}
+func (c *Client) GetChannel(appID string, appType string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 
 	if appType == "platform" {
 		return c.PlatformClient.GetChannel(appID, channelID)
@@ -59,11 +51,7 @@ func (c *Client) GetChannel(appID string, channelID string) (*channels.AppChanne
 
 }
 
-func (c *Client) ArchiveChannel(appID string, channelID string) error {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return err
-	}
+func (c *Client) ArchiveChannel(appID string, appType string, channelID string) error {
 
 	if appType == "platform" {
 		return c.PlatformClient.ArchiveChannel(appID, channelID)
@@ -76,17 +64,13 @@ func (c *Client) ArchiveChannel(appID string, channelID string) error {
 
 }
 
-func (c *Client) CreateChannel(appID string, name string, description string) ([]types.Channel, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) CreateChannel(appID string, appType string, name string, description string) ([]types.Channel, error) {
 
 	if appType == "platform" {
 		if err := c.PlatformClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
-		return c.ListChannels(appID)
+		return c.ListChannels(appID, appType)
 	} else if appType == "ship" {
 		if err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
