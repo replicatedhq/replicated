@@ -24,14 +24,9 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[0]
 
-	appType, err := r.api.GetAppType(r.appID)
-	if err != nil {
-		return err
-	}
+	if r.appType == "platform" {
 
-	if appType == "platform" {
-
-		_, releases, err := r.api.GetChannel(r.appID, chanID)
+		_, releases, err := r.api.GetChannel(r.appID, r.appType, chanID)
 		if err != nil {
 			return err
 		}
@@ -39,9 +34,9 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 		if err = print.ChannelReleases(r.w, releases); err != nil {
 			return err
 		}
-	} else if appType == "ship" {
+	} else if r.appType == "ship" {
 		return errors.New("This feature is not supported for Ship applications.")
-	} else if appType == "kots" {
+	} else if r.appType == "kots" {
 		return errors.New("This feature is not supported for Kots applications.")
 	}
 

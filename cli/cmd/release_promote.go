@@ -37,7 +37,7 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	}
 	chanID := args[1]
 
-	if err := r.api.PromoteRelease(r.appID, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, chanID); err != nil {
+	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, chanID); err != nil {
 		return err
 	}
 

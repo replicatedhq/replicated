@@ -6,12 +6,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListCollectors(appID string) ([]types.CollectorInfo, error) {
-
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) ListCollectors(appID string, appType string) ([]types.CollectorInfo, error) {
 
 	if appType == "kots" {
 		return nil, errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
@@ -59,12 +54,7 @@ func (c *Client) UpdateCollectorName(appID string, specID string, name string) (
 }
 
 // func (c *Client) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
-func (c *Client) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
-
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
 
 	if appType == "kots" {
 		return nil, errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
@@ -78,16 +68,11 @@ func (c *Client) GetCollector(appID string, specID string) (*collectors.AppColle
 
 }
 
-func (c *Client) PromoteCollector(appID string, specID string, channelIDs ...string) error {
-
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return err
-	}
+func (c *Client) PromoteCollector(appID string, appType string, specID string, channelIDs ...string) error {
 
 	if appType == "platform" {
 		return c.PlatformClient.PromoteCollector(appID, specID, channelIDs...)
-	} else {
+	} else if appType == "ship" {
 		return c.ShipClient.PromoteCollector(appID, specID, channelIDs...)
 	}
 

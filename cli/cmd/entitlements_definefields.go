@@ -31,7 +31,7 @@ func (r *runners) entitlementsDefineFields(cmd *cobra.Command, args []string) er
 		return err
 	}
 
-	definitions, err := r.api.CreateEntitlementSpec(r.args.entitlementsDefineFieldsName, string(spec), r.appID)
+	definitions, err := r.api.CreateEntitlementSpec(r.args.entitlementsDefineFieldsName, string(spec), r.appID, r.appType)
 	if err != nil {
 		return errors.Wrap(err, "create definitions")
 	}

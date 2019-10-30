@@ -6,11 +6,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) CreateEntitlementSpec(name string, spec string, appID string) (*types.EntitlementSpec, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) CreateEntitlementSpec(name string, appType string, spec string, appID string) (*types.EntitlementSpec, error) {
 
 	if appType == "platform" {
 		return nil, errors.New("This feature is not supported for platform applications.")

@@ -7,11 +7,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo, error) {
 
 	if appType == "platform" {
 		platformReleases, err := c.PlatformClient.ListReleases(appID)
@@ -86,11 +82,7 @@ func (c *Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) CreateRelease(appID string, appType string, yaml string) (*types.ReleaseInfo, error) {
 
 	if appType == "platform" {
 		platformReleaseInfo, err := c.PlatformClient.CreateRelease(appID, yaml)
@@ -127,12 +119,7 @@ func (c *Client) CreateRelease(appID string, yaml string) (*types.ReleaseInfo, e
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error {
-
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return err
-	}
+func (c *Client) UpdateRelease(appID string, appType string, sequence int64, yaml string) error {
 
 	if appType == "platform" {
 		return c.PlatformClient.UpdateRelease(appID, sequence, yaml)
@@ -144,11 +131,7 @@ func (c *Client) UpdateRelease(appID string, sequence int64, yaml string) error 
 	return errors.New("unknown app type")
 }
 
-func (c *Client) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) GetRelease(appID string, appType string, sequence int64) (*releases.AppRelease, error) {
 
 	if appType == "platform" {
 		return c.PlatformClient.GetRelease(appID, sequence)
@@ -160,11 +143,7 @@ func (c *Client) GetRelease(appID string, sequence int64) (*releases.AppRelease,
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return err
-	}
+func (c *Client) PromoteRelease(appID string, appType string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
 
 	if appType == "platform" {
 		return c.PlatformClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
@@ -176,11 +155,7 @@ func (c *Client) PromoteRelease(appID string, sequence int64, label string, note
 	return errors.New("unknown app type")
 }
 
-func (c *Client) LintRelease(appID string, yaml string) ([]types.LintMessage, error) {
-	appType, err := c.GetAppType(appID)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) LintRelease(appID string, appType string, yaml string) ([]types.LintMessage, error) {
 
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported for Platform applications")
