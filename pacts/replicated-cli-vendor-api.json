@@ -7,23 +7,6 @@
   },
   "interactions": [
     {
-      "description": "A request to delete an app for cli-delete-app-id",
-      "providerState": "Delete an app cli-delete-app-id",
-      "request": {
-        "method": "DELETE",
-        "path": "/v1/app/cli-delete-app-id",
-        "headers": {
-          "Authorization": "cli-delete-app-auth"
-        }
-      },
-      "response": {
-        "status": 204,
-        "headers": {
-        },
-        "body": ""
-      }
-    },
-    {
       "description": "A request to create a new release for cli-create-release-app-id",
       "providerState": "Create a release for cli-create-release-app-id",
       "request": {
