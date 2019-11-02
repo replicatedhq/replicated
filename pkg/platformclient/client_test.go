@@ -1,30 +1,41 @@
 package platformclient
 
 import (
-	"fmt"
-	"log"
 	"os"
+	"path"
+	"testing"
+
+	"github.com/pact-foundation/pact-go/dsl"
 )
 
-func ExampleNew() {
-	token := os.Getenv("REPLICATED_API_TOKEN")
-	appSlugOrID := os.Getenv("REPLICATED_APP")
+var (
+	pact dsl.Pact
+)
 
-	api := New(token)
+func TestMain(m *testing.M) {
+	pact = createPact()
 
-	app, err := api.GetApp(appSlugOrID)
-	if err != nil {
-		log.Fatal(err)
-	}
+	pact.Setup(true)
 
-	channels, err := api.ListChannels(app.Id)
-	if err != nil {
-		log.Fatal(err)
+	code := m.Run()
+
+	pact.WritePact()
+	pact.Teardown()
+
+	os.Exit(code)
+}
+
+func createPact() dsl.Pact {
+	dir, _ := os.Getwd()
+
+	pactDir := path.Join(dir, "..", "..", "pacts")
+	logDir := path.Join(dir, "..", "..", "logs")
+
+	return dsl.Pact{
+		Consumer: "replicated-cli",
+		Provider: "vendor-api",
+		LogDir:   logDir,
+		PactDir:  pactDir,
+		LogLevel: "debug",
 	}
-	for _, c := range channels {
-		if c.Name == "Stable" {
-			fmt.Println("We have a Stable channel")
-		}
-	}
-	// Output: We have a Stable channel
 }

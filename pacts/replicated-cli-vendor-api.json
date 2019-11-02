@@ -1,0 +1,108 @@
+{
+  "consumer": {
+    "name": "replicated-cli"
+  },
+  "provider": {
+    "name": "vendor-api"
+  },
+  "interactions": [
+    {
+      "description": "A request to delete an app for cli-delete-app-id",
+      "providerState": "Delete an app cli-delete-app-id",
+      "request": {
+        "method": "DELETE",
+        "path": "/v1/app/cli-delete-app-id",
+        "headers": {
+          "Authorization": "cli-delete-app-auth"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+        },
+        "body": ""
+      }
+    },
+    {
+      "description": "A request to create a new release for cli-create-release-app-id",
+      "providerState": "Create a release for cli-create-release-app-id",
+      "request": {
+        "method": "POST",
+        "path": "/v1/app/cli-create-release-app-id/release",
+        "headers": {
+          "Authorization": "cli-create-release-auth",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "source": "latest",
+          "sourcedata": 0
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "Config": "",
+          "CreatedAt": "2006-01-02T15:04:05Z",
+          "Editable": true,
+          "EditedAt": "2006-01-02T15:04:05Z",
+          "Sequence": 10
+        },
+        "matchingRules": {
+          "$.body.Config": {
+            "match": "type"
+          },
+          "$.body.CreatedAt": {
+            "match": "type"
+          },
+          "$.body.EditedAt": {
+            "match": "type"
+          },
+          "$.body.Sequence": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to get an existing release for cli-create-release-app-id",
+      "providerState": "Get a release for cli-create-release-app-id",
+      "request": {
+        "method": "GET",
+        "path": "/v1/app/cli-create-release-app-id/2/properties",
+        "headers": {
+          "Authorization": "cli-create-release-auth"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "Config": "there might be a config here",
+          "CreatedAt": "2006-01-02T15:04:05Z",
+          "Editable": true,
+          "EditedAt": "2006-01-02T15:04:05Z",
+          "Sequence": 2
+        },
+        "matchingRules": {
+          "$.body.Config": {
+            "match": "type"
+          },
+          "$.body.CreatedAt": {
+            "match": "type"
+          },
+          "$.body.EditedAt": {
+            "match": "type"
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}
