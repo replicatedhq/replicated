@@ -1,11 +1,16 @@
 package platformclient
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
 	"github.com/stretchr/testify/assert"
+
+	swagger "github.com/replicatedhq/replicated/gen/go/v1"
 )
 
 func Test_CreateRelease(t *testing.T) {
@@ -36,6 +41,53 @@ func Test_CreateRelease(t *testing.T) {
 				"source":     "latest",
 				"sourcedata": 0,
 			},
+		}).
+		WillRespondWith(dsl.Response{
+			Status: 201,
+			Body: map[string]interface{}{
+				"Sequence":  dsl.Like(10),
+				"Config":    dsl.Like(""),
+				"Editable":  true,
+				"CreatedAt": dsl.Like("2006-01-02T15:04:05Z"),
+				"EditedAt":  dsl.Like("2006-01-02T15:04:05Z"),
+			},
+		})
+
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
+func Test_CreateReleaseEmpty(t *testing.T) {
+	var test = func() (err error) {
+		appId := "cli-create-release-app-id"
+		token := "cli-create-release-auth"
+		u := fmt.Sprintf("http://localhost:%d/v1/app/%s/release", pact.Server.Port, appId)
+
+		req, err := http.NewRequest("POST", u, bytes.NewReader(nil))
+		assert.Nil(t, err)
+
+		req.Header.Set("Authorization", token)
+		resp, err := http.DefaultClient.Do(req)
+		assert.Nil(t, err)
+
+		release := &swagger.AppReleaseInfo{}
+		err = json.NewDecoder(resp.Body).Decode(release)
+		assert.Nil(t, err)
+		assert.Equal(t, true, release.Editable)
+		return nil
+	}
+
+	pact.AddInteraction().
+		Given("Empty create a release for cli-create-release-app-id").
+		UponReceiving("An empty request to create a new release for cli-create-release-app-id").
+		WithRequest(dsl.Request{
+			Method: "POST",
+			Path:   dsl.String("/v1/app/cli-create-release-app-id/release"),
+			Headers: dsl.MapMatcher{
+				"Authorization": dsl.String("cli-create-release-auth"),
+			},
+			Body: nil,
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 201,

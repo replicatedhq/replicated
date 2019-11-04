@@ -49,6 +49,43 @@
       }
     },
     {
+      "description": "An empty request to create a new release for cli-create-release-app-id",
+      "providerState": "Empty create a release for cli-create-release-app-id",
+      "request": {
+        "method": "POST",
+        "path": "/v1/app/cli-create-release-app-id/release",
+        "headers": {
+          "Authorization": "cli-create-release-auth"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "Config": "",
+          "CreatedAt": "2006-01-02T15:04:05Z",
+          "Editable": true,
+          "EditedAt": "2006-01-02T15:04:05Z",
+          "Sequence": 10
+        },
+        "matchingRules": {
+          "$.body.Config": {
+            "match": "type"
+          },
+          "$.body.CreatedAt": {
+            "match": "type"
+          },
+          "$.body.EditedAt": {
+            "match": "type"
+          },
+          "$.body.Sequence": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "A request to get an existing release for cli-create-release-app-id",
       "providerState": "Get a release for cli-create-release-app-id",
       "request": {
