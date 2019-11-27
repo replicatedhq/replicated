@@ -18,11 +18,15 @@ builds:
   goarch:
   - amd64
   - "386"
+  env:
+   - CGO_ENABLED=0
   main: cli/main.go
   ldflags: -s -w
     -X github.com/replicatedhq/replicated/pkg/version.version={{.Version}}
     -X github.com/replicatedhq/replicated/pkg/version.gitSHA={{.FullCommit}}
     -X github.com/replicatedhq/replicated/pkg/version.buildTime={{.Date}}
+    -extldflags "-static"
+  flags: -tags netgo -installsuffix netgo
   binary: replicated
   hooks: {}
 archive:
