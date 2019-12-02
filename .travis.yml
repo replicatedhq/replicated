@@ -2,7 +2,7 @@ sudo: required
 services:
   - docker
 language: go
-go: "1.12"
+go: "1.12.x"
 script:
   - make pacts
   - make test
