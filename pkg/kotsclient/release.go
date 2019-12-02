@@ -28,7 +28,7 @@ type GraphQLResponseKotsUpdateRelease struct {
 }
 
 type KotsUpdateReleaseData struct {
-	KotsReleaseData KotsReleaseSequence `json:"createKotsRelease"`
+	KotsReleaseData KotsReleaseSequence `json:"updateKotsRelease"`
 }
 
 type GraphQLResponseListReleases struct {
@@ -121,7 +121,10 @@ var allKotsReleases = `
   query allKotsReleases($appId: ID!, $pageSize: Int, $currentPage: Int) {
     allKotsReleases(appId: $appId, pageSize: $pageSize, currentPage: $currentPage) {
       sequence
+      channelSequence
       created
+      updated
+      releasedAt
       releaseNotes
       channels {
         id
@@ -172,10 +175,10 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 		releaseInfo := types.ReleaseInfo{
 			AppID:          appID,
 			CreatedAt:      createdAt.In(location),
-			EditedAt:       time.Now(),
+			EditedAt:       time.Time{}, // not supported
 			Editable:       false,
 			Sequence:       kotsRelease.Sequence,
-			Version:        "ba",
+			Version:        "n/a",
 			ActiveChannels: activeChannels,
 		}
 
