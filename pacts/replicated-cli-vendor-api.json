@@ -46,7 +46,8 @@
             "match": "type"
           }
         }
-      }
+      },
+      "metadata": null
     },
     {
       "description": "An empty request to create a new release for cli-create-release-app-id",
@@ -83,7 +84,8 @@
             "match": "type"
           }
         }
-      }
+      },
+      "metadata": null
     },
     {
       "description": "A request to get an existing release for cli-create-release-app-id",
@@ -117,7 +119,8 @@
             "match": "type"
           }
         }
-      }
+      },
+      "metadata": null
     }
   ],
   "metadata": {
