@@ -26,7 +26,8 @@ type KotsChannel struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	Description     string `json:"description"`
-	CurrentSequence int64  `json:"currentSequence"`
+	ChannelSequence int64  `json:"channelSequence"`
+	ReleaseSequence int64  `json:"releaseSequence"`
 	CurrentVersion  string `json:"currentVersion"`
 }
 
@@ -41,6 +42,8 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 		appId
 		name
 		currentVersion
+		channelSequence
+		releaseSequence
 		currentReleaseDate
 		numReleases
 		description
@@ -71,8 +74,14 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 			path
 		}
 		releases {
-			sequence
 			semver
+			releaseNotes
+			created
+			updated
+			releasedAt
+			sequence
+			channelSequence
+			airgapBuildStatus
 		}
 		}
 	}
@@ -90,9 +99,10 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	channels := make([]types.Channel, 0, 0)
 	for _, kotsChannel := range response.Data.KotsChannels {
 		channel := types.Channel{
-			ID:           kotsChannel.ID,
-			Name:         kotsChannel.Name,
-			ReleaseLabel: kotsChannel.CurrentVersion,
+			ID:              kotsChannel.ID,
+			Name:            kotsChannel.Name,
+			ReleaseLabel:    kotsChannel.CurrentVersion,
+			ReleaseSequence: kotsChannel.ReleaseSequence,
 		}
 
 		channels = append(channels, channel)
@@ -148,6 +158,8 @@ query getKotsChannel($channelId: ID!) {
     name
     description
     channelIcon
+    channelSequence
+    releaseSequence
     currentVersion
     currentReleaseDate
     installInstructions
@@ -188,7 +200,9 @@ query getKotsChannel($channelId: ID!) {
       releaseNotes
       created
       updated
+      releasedAt
       sequence
+      channelSequence
       airgapBuildStatus
     }
   }
@@ -210,10 +224,11 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 	}
 
 	channelDetail := channels.AppChannel{
-		Id:           response.Data.KotsChannel.ID,
-		Name:         response.Data.KotsChannel.Name,
-		Description:  response.Data.KotsChannel.Description,
-		ReleaseLabel: response.Data.KotsChannel.CurrentVersion,
+		Id:              response.Data.KotsChannel.ID,
+		Name:            response.Data.KotsChannel.Name,
+		Description:     response.Data.KotsChannel.Description,
+		ReleaseLabel:    response.Data.KotsChannel.CurrentVersion,
+		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
 	}
 	return &channelDetail, nil, nil
 }
