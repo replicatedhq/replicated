@@ -36,17 +36,28 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
+	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 
 	cmd.RunE = r.releaseCreate
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.args.createReleaseYamlDir == "" {
-		return errors.New("yaml is required")
+		return errors.New("one of --yaml, --yaml-file, --yaml-dir is required")
+	}
+
+	// can't ensure a channel if you didn't pass one
+	if r.args.createReleasePromoteEnsureChannel && r.args.createReleasePromote == "" {
+		return errors.New("cannot use the flag --ensure-channel without also using --promote <channel> ")
+	}
+
+	// we check this again below, but lets be explicit and fail fast
+	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
+		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
 	}
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-		return errors.New("only one of yaml or yaml-file may be specified")
+		return errors.New("only one of --yaml or --yaml-file may be specified")
 	}
 
 	if r.args.createReleaseYaml == "-" {
@@ -115,25 +126,11 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	// channel before proceeding
 	var promoteChanID string
 	if r.args.createReleasePromote != "" {
-		channels, err := r.api.ListChannels(r.appID, r.appType)
+		var err error
+		promoteChanID, err = r.getOrCreateChannelForPromotion()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "get or create channel %q for promotion", promoteChanID)
 		}
-
-		promoteChannelIDs := make([]string, 0)
-		for _, c := range channels {
-			if c.ID == r.args.createReleasePromote || c.Name == r.args.createReleasePromote {
-				promoteChannelIDs = append(promoteChannelIDs, c.ID)
-			}
-		}
-
-		if len(promoteChannelIDs) == 0 {
-			return fmt.Errorf("Channel %q not found", r.args.createReleasePromote)
-		}
-		if len(promoteChannelIDs) > 1 {
-			return fmt.Errorf("Channel %q is ambiguous. Please use channel ID", r.args.createReleasePromote)
-		}
-		promoteChanID = promoteChannelIDs[0]
 	}
 
 	release, err := r.api.CreateRelease(r.appID, r.appType, r.args.createReleaseYaml)
@@ -165,4 +162,43 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// todo:dex
+// this has some kots-only logic that is leaking through the Client interface
+// abstraction. Need to clean this up, probably a GetOrCreateChannel method on
+// all the Client impls
+func (r *runners) getOrCreateChannelForPromotion() (string, error) {
+	channels, err := r.api.ListChannels(r.appID, r.appType)
+	if err != nil {
+		return "", err
+	}
+
+	promoteChannelIDs := make([]string, 0)
+	for _, c := range channels {
+		if c.ID == r.args.createReleasePromote || c.Name == r.args.createReleasePromote {
+			promoteChannelIDs = append(promoteChannelIDs, c.ID)
+		}
+	}
+
+	if len(promoteChannelIDs) == 0 {
+
+		// get-or-create only supported for KOTS apps at the moment
+		shouldCreateChannel := r.args.createReleasePromoteEnsureChannel && r.appType == "kots"
+
+		if shouldCreateChannel {
+			channelID, err := r.kotsAPI.CreateChannel(r.appID, r.args.createReleasePromote, "")
+			if err != nil {
+				return "", errors.Wrapf(err, "create channel %q ", channelID)
+			}
+			return channelID, nil
+		}
+
+		return "", fmt.Errorf("Channel %q not found", r.args.createReleasePromote)
+	}
+
+	if len(promoteChannelIDs) > 1 {
+		return "", fmt.Errorf("Channel %q is ambiguous. Please use channel ID", r.args.createReleasePromote)
+	}
+	return promoteChannelIDs[0], nil
 }

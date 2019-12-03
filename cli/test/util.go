@@ -105,7 +105,7 @@ func cleanupApps() {
 		t.Fatal(err)
 	}
 
-	req, err := http.NewRequest("POST", idOrigin + "/v1/login", buf)
+	req, err := http.NewRequest("POST", idOrigin+"/v1/login", buf)
 	if err != nil {
 		t.Fatal(err)
 	}

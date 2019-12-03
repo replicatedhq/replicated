@@ -15,8 +15,14 @@ type GraphQLResponseGetChannel struct {
 	Data   *KotsGetChannelData `json:"data,omitempty"`
 	Errors []graphql.GQLError  `json:"errors,omitempty"`
 }
+
+type GraphQLResponseCreateChannel struct {
+	Data   *KotsGetChannelData `json:"data,omitempty"`
+	Errors []graphql.GQLError  `json:"errors,omitempty"`
+}
+
 type KotsGetChannelData struct {
-	KotsChannel *KotsChannel `json:"getKotsChannel"`
+	KotsChannel *KotsChannel `json:"createKotsChannel"`
 }
 type KotsChannelData struct {
 	KotsChannels []*KotsChannel `json:"getKotsAppChannels"`
@@ -111,8 +117,8 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	return channels, nil
 }
 
-func (c *GraphQLClient) CreateChannel(appID string, name string, description string) error {
-	response := graphql.ResponseErrorOnly{}
+func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (string, error) {
+	response := GraphQLResponseCreateChannel{}
 
 	request := graphql.Request{
 		Query: `
@@ -139,10 +145,10 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 	}
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return response.Data.KotsChannel.ID, nil
 
 }
 

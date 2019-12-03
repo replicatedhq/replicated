@@ -77,7 +77,7 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 		}
 		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
-		if err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
+		if _, err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
 		return c.KotsClient.ListChannels(appID)
