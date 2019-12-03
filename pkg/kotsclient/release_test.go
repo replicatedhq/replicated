@@ -18,33 +18,33 @@ func Test_ListKotsReleasesActual(t *testing.T) {
 		assert.Nil(t, err)
 		d := &graphql.Client{
 			GQLServer: uri,
-			Token:     "kots-app-read-write-token",
+			Token:     "all-kots-releases-read-write-token",
 		}
 
 		c := &GraphQLClient{GraphQLClient: d}
 
-		releases, err := c.ListReleases("kots-app")
+		releases, err := c.ListReleases("all-kots-releases")
 		assert.Nil(t, err)
-		assert.Len(t, releases, 1)
+		assert.Len(t, releases, 2)
 
 		return nil
 	}
 
 	pact.AddInteraction().
-		Given("list releases for kots-app").
-		UponReceiving("A real request to list releases for kots-app").
+		Given("list releases for all-kots-releases").
+		UponReceiving("A real request to list releases for all-kots-releases").
 		WithRequest(dsl.Request{
 			Method: "POST",
 			Path:   dsl.String("/graphql"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("kots-app-read-write-token"),
+				"Authorization": dsl.String("all-kots-releases-read-write-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
 				"operationName": "",
 				"query":         allKotsReleases,
 				"variables": map[string]interface{}{
-					"appId": "kots-app",
+					"appId": "all-kots-releases",
 				},
 			},
 		}).
@@ -52,15 +52,38 @@ func Test_ListKotsReleasesActual(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"data": map[string]interface{}{
-					"allKotsReleases": dsl.EachLike(map[string]interface{}{
-						"sequence": dsl.Like(dsl.Integer()),
-						"created":  dsl.Like(dsl.String("Tue Nov 10 2009 23:00:00 UTC")),
-						"channels": dsl.EachLike(map[string]interface{}{
-							"id":             dsl.Like(dsl.String("id")),
-							"name":           dsl.Like(dsl.String("channel name")),
-							"currentVersion": dsl.Like(dsl.String("1.2.3")),
-						}, 0),
-					}, 1),
+					"allKotsReleases": []map[string]interface{}{
+						{
+							"sequence": 2,
+							"created":  dsl.Like(dsl.String("Tue Nov 10 2009 23:00:00 UTC")),
+							"channels": []map[string]interface{}{
+								{
+									"id":             "all-kots-releases-beta",
+									"name":           "Beta",
+									"currentVersion": "1.0.1",
+									"numReleases":    1,
+								},
+								{
+									"id":             "all-kots-releases-nightly",
+									"name":           "Nightly",
+									"currentVersion": "1.0.1",
+									"numReleases":    2,
+								},
+							},
+						},
+						{
+							"sequence": 1,
+							"created":  dsl.Like(dsl.String("Tue Nov 10 2009 23:00:00 UTC")),
+							"channels": []map[string]interface{}{
+								{
+									"id":             "all-kots-releases-test",
+									"name":           "Test",
+									"currentVersion": "1.0.0",
+									"numReleases":    1,
+								},
+							},
+						},
+					},
 				},
 			},
 		})
