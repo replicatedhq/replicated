@@ -191,6 +191,8 @@ func (r *runners) getOrCreateChannelForPromotion() (string, error) {
 			if err != nil {
 				return "", errors.Wrapf(err, "create channel %q ", channelID)
 			}
+			fmt.Fprintf(r.w, "Created channel %q with ID %q", r.args.createReleasePromote, channelID)
+
 			return channelID, nil
 		}
 
