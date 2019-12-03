@@ -1,37 +1,8 @@
 package shipclient
 
 import (
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
-	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
-	"github.com/replicatedhq/replicated/pkg/types"
 )
-
-type Client interface {
-	ListApps() ([]types.AppAndChannels, error)
-	GetApp(appID string) (*types.App, error)
-
-	ListChannels(string) ([]types.Channel, error)
-	CreateChannel(string, string, string) error
-	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
-
-	ListReleases(appID string) ([]types.ReleaseInfo, error)
-	CreateRelease(appID string, yaml string) (*types.ReleaseInfo, error)
-	UpdateRelease(appID string, sequence int64, yaml string) error
-	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
-	LintRelease(string, string) ([]types.LintMessage, error)
-
-	ListCollectors(appID string, appType string) ([]types.CollectorInfo, error)
-	CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error)
-	UpdateCollector(appID string, specID string, yaml string) (interface{}, error)
-	UpdateCollectorName(appID string, specID, name string) (interface{}, error)
-	GetCollector(appID string, specID string) (*v1.AppCollectorInfo, error)
-	PromoteCollector(appID string, specID string, channelIDs ...string) error
-
-	CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error)
-	SetDefaultEntitlementSpec(specID string) error
-	SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appID string) (*types.EntitlementValue, error)
-}
 
 type AppOptions struct {
 	Name string
@@ -47,7 +18,7 @@ type GraphQLClient struct {
 	GraphQLClient *graphql.Client
 }
 
-func NewGraphQLClient(origin string, apiKey string) Client {
+func NewGraphQLClient(origin string, apiKey string) *GraphQLClient {
 	c := &GraphQLClient{GraphQLClient: graphql.NewClient(origin, apiKey)}
 
 	return c

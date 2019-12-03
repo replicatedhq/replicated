@@ -21,7 +21,7 @@ func (r *runners) InitReleaseInspect(parent *cobra.Command) {
 	cmd.RunE = r.releaseInspect
 }
 
-func (r *runners) releaseInspect(cmd *cobra.Command, args []string) error {
+func (r *runners) releaseInspect(_ *cobra.Command, args []string) error {
 	if len(args) != 1 {
 		return errors.New("release sequence is required")
 	}

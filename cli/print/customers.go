@@ -7,9 +7,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var customersTmplSrc = `ID	NAME	CHANNELS
+var customersTmplSrc = `ID	NAME	CHANNELS	EXPIRES	TYPE
 {{ range . -}}
-{{ .ID }}	{{ .Name }}	{{range .Channels}}{{.Name}}{{end}}
+{{ .ID }}	{{ .Name }}	{{range .Channels}}{{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}
 {{ end }}`
 
 var customersTmpl = template.Must(template.New("channels").Parse(customersTmplSrc))

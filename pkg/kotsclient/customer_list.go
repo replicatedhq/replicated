@@ -11,7 +11,7 @@ const kotsListCustomers = `
 		customers(appId: $appId, appType: $appType) {
             customers {
 		        id
-		        name 
+		        name
 		        channels {
 		            id
 		            name
@@ -36,9 +36,11 @@ type CustomerData struct {
 }
 
 type Customer struct {
-	ID       string         `json:"id"`
-	Name     string         `json:"name"`
-	Channels []*KotsChannel `json:"channels"`
+	ID        string         `json:"id"`
+	Name      string         `json:"name"`
+	Channels  []*KotsChannel `json:"channels"`
+	Type      string         `json:"type"`
+	ExpiresAt string         `json:"expiresAt"`
 }
 
 func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
@@ -48,7 +50,7 @@ func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
 		Query: kotsListCustomers,
 
 		Variables: map[string]interface{}{
-			"appId": appID,
+			"appId":   appID,
 			"appType": "kots",
 		},
 	}
@@ -70,11 +72,19 @@ func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
 			}
 			kotsChannels = append(kotsChannels, channel)
 		}
-		customers = append(customers, types.Customer{
+		customer, err := types.Customer{
 			ID:       kotsCustomer.ID,
 			Name:     kotsCustomer.Name,
+			Type:     kotsCustomer.Type,
 			Channels: kotsChannels,
-		})
+		}.WithExpiryTime(kotsCustomer.ExpiresAt)
+
+		if err != nil {
+			return nil, errors.Wrapf(err, "set expiry time for customer %q", kotsCustomer.ID)
+		}
+
+
+		customers = append(customers, customer)
 	}
 
 	return customers, nil

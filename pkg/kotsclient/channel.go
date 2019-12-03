@@ -1,6 +1,8 @@
 package kotsclient
 
 import (
+	"fmt"
+	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -140,7 +142,7 @@ mutation createKotsChannel($appId: String!, $channelName: String!, $description:
 }
 `
 
-func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (string, error) {
+func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (*types.Channel, error) {
 	response := GraphQLResponseCreateChannel{}
 
 	request := graphql.Request{
@@ -153,10 +155,16 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 	}
 
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return response.Data.KotsChannel.ID, nil
+	return &types.Channel{
+		ID:              response.Data.KotsChannel.ID,
+		Name:            response.Data.KotsChannel.Name,
+		Description:     response.Data.KotsChannel.Description,
+		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
+		ReleaseLabel:    response.Data.KotsChannel.CurrentVersion,
+	}, nil
 
 }
 
@@ -245,4 +253,41 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
 	}
 	return &channelDetail, nil, nil
+}
+
+func (c *GraphQLClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
+	allChannels, err := c.ListChannels(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	matchingChannels := make([]*types.Channel, 0)
+	for _, channel := range allChannels {
+		if channel.ID == name || channel.Name == name {
+			matchingChannels = append(matchingChannels, &types.Channel{
+				ID:              channel.ID,
+				Name:            channel.Name,
+				Description:     channel.Description,
+				ReleaseSequence: channel.ReleaseSequence,
+				ReleaseLabel:    channel.ReleaseLabel,
+			})
+		}
+	}
+
+	if len(matchingChannels) == 0 {
+		if create {
+			channel, err := c.CreateChannel(appID, name, description)
+			if err != nil {
+				return nil, errors.Wrapf(err, "create channel %q ", name)
+			}
+			return channel, nil
+		}
+
+		return nil, fmt.Errorf("could not find channel %q", name)
+	}
+
+	if len(matchingChannels) > 1 {
+		return nil, fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
+	}
+	return matchingChannels[0], nil
 }
