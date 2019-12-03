@@ -17,11 +17,15 @@ type GraphQLResponseGetChannel struct {
 }
 
 type GraphQLResponseCreateChannel struct {
-	Data   *KotsGetChannelData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
+	Data   *KotsCreateChannelData `json:"data,omitempty"`
+	Errors []graphql.GQLError     `json:"errors,omitempty"`
 }
 
 type KotsGetChannelData struct {
+	KotsChannel *KotsChannel `json:"getKotsChannel"`
+}
+
+type KotsCreateChannelData struct {
 	KotsChannel *KotsChannel `json:"createKotsChannel"`
 }
 type KotsChannelData struct {
