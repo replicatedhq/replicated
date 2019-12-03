@@ -1,0 +1,82 @@
+{
+  "consumer": {
+    "name": "replicated-cli-kots"
+  },
+  "provider": {
+    "name": "vendor-graphql-api"
+  },
+  "interactions": [
+    {
+      "description": "A real request to list releases for kots-app",
+      "providerState": "list releases for kots-app",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "kots-app-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\n  query allKotsReleases($appId: ID!, $pageSize: Int, $currentPage: Int) {\n    allKotsReleases(appId: $appId, pageSize: $pageSize, currentPage: $currentPage) {\n      sequence\n      channelSequence\n      created\n      updated\n      releasedAt\n      releaseNotes\n      channels {\n        id\n        name\n        currentVersion\n        numReleases\n      }\n      isReleaseNotEditable\n    }\n  }\n",
+          "variables": {
+            "appId": "kots-app"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "allKotsReleases": [
+              {
+                "channels": [
+
+                ],
+                "created": "Tue Nov 10 2009 23:00:00 UTC",
+                "sequence": 42
+              }
+            ]
+          }
+        },
+        "matchingRules": {
+          "$.body.data.allKotsReleases": {
+            "min": 1
+          },
+          "$.body.data.allKotsReleases[*].*": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].channels": {
+            "min": 0
+          },
+          "$.body.data.allKotsReleases[*].channels[*].*": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].channels[*].currentVersion": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].channels[*].id": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].channels[*].name": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].created": {
+            "match": "type"
+          },
+          "$.body.data.allKotsReleases[*].sequence": {
+            "match": "type"
+          }
+        }
+      },
+      "metadata": null
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "2.0.0"
+    }
+  }
+}

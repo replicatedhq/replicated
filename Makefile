@@ -69,6 +69,13 @@ publish-pacts:
 		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
 		-X PUT \
 		-H "Content-Type: application/json" \
+		-d@pacts/replicated-cli-kots-vendor-graphql-api.json \
+		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli-kots/version/$(ABBREV_VERSION)
+	curl \
+		--silent --output /dev/null --show-error --fail \
+		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
+		-X PUT \
+		-H "Content-Type: application/json" \
 		-d@pacts/replicated-cli-vendor-api.json \
 		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-api/consumer/replicated-cli/version/$(ABBREV_VERSION)
 
