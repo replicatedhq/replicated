@@ -41,27 +41,28 @@ type runnerArgs struct {
 	updateCollectorYamlFile string
 	updateCollectorName     string
 
-	createReleaseYaml              string
-	createReleaseYamlFile          string
-	createReleaseYamlDir           string
-	createReleaseConfigYaml        string
-	createReleaseDeploymentYaml    string
-	createReleaseServiceYaml       string
-	createReleasePreflightYaml     string
-	createReleaseSupportBundleYaml string
-	createReleasePromote           string
-	createReleasePromoteDir        string
-	createReleasePromoteRequired   bool
-	createReleasePromoteNotes      string
-	createReleasePromoteVersion    string
-	lintReleaseYaml                string
-	lintReleaseYamlFile            string
-	releaseOptional                bool
-	releaseNotes                   string
-	releaseVersion                 string
-	updateReleaseYaml              string
-	updateReleaseYamlDir           string
-	updateReleaseYamlFile          string
+	createReleaseYaml                 string
+	createReleaseYamlFile             string
+	createReleaseYamlDir              string
+	createReleaseConfigYaml           string
+	createReleaseDeploymentYaml       string
+	createReleaseServiceYaml          string
+	createReleasePreflightYaml        string
+	createReleaseSupportBundleYaml    string
+	createReleasePromote              string
+	createReleasePromoteDir           string
+	createReleasePromoteRequired      bool
+	createReleasePromoteNotes         string
+	createReleasePromoteVersion       string
+	createReleasePromoteEnsureChannel bool
+	lintReleaseYaml                   string
+	lintReleaseYamlFile               string
+	releaseOptional                   bool
+	releaseNotes                      string
+	releaseVersion                    string
+	updateReleaseYaml                 string
+	updateReleaseYamlDir              string
+	updateReleaseYamlFile             string
 
 	entitlementsAPIServer                string
 	entitlementsVerbose                  bool

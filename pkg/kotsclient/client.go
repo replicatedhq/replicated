@@ -16,7 +16,7 @@ type Client interface {
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 
 	ListChannels(string) ([]types.Channel, error)
-	CreateChannel(string, string, string) error
+	CreateChannel(appID string, name string, description string) (string, error)
 	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
 }
 

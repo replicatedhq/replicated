@@ -13,20 +13,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
-func (r * runners) InitEntitlementsGetCustomerReleaseCommand(parent *cobra.Command) {
+func (r *runners) InitEntitlementsGetCustomerReleaseCommand(parent *cobra.Command) {
 	var entitlementsGetCustomerRelease = &cobra.Command{
 		Use:   "get-customer-release",
 		Short: "Preview the end customer release view",
-		Long: `Preview the end customer release view for a given customer ID + installation ID`,
-		RunE: r.entitlementsGetCustomerRelease,
+		Long:  `Preview the end customer release view for a given customer ID + installation ID`,
+		RunE:  r.entitlementsGetCustomerRelease,
 	}
 
-
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseCustomerID,"customer-id", "", "customer id")
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseInstallationID,"installation-id", "", "installation id")
+	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseCustomerID, "customer-id", "", "customer id")
+	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseInstallationID, "installation-id", "", "installation id")
 	// change the default from g.replicated.com to pg.replicated.com
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseAPIServer,"replicated-api-server", "https://pg.replicated.com/graphql", "Upstream api server")
+	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseAPIServer, "replicated-api-server", "https://pg.replicated.com/graphql", "Upstream api server")
 
 	parent.AddCommand(entitlementsGetCustomerRelease)
 }
@@ -55,10 +53,10 @@ func (r *runners) entitlementsGetCustomerRelease(cmd *cobra.Command, args []stri
 	}
 
 	client := &entitlements.PremGraphQLClient{
-		GQLServer: upstream,
-		CustomerID: r.args.entitlementsGetReleaseCustomerID,
+		GQLServer:      upstream,
+		CustomerID:     r.args.entitlementsGetReleaseCustomerID,
 		InstallationID: r.args.entitlementsGetReleaseInstallationID,
-		Logger:    stdoutLogger,
+		Logger:         stdoutLogger,
 	}
 
 	espec, err := client.FetchCustomerRelease()
