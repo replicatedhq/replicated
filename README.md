@@ -47,26 +47,19 @@ set -e
 
 VERSION=$1
 INSTALL_SCRIPT=https://raw.githubusercontent.com/replicatedhq/replicated/master/install.sh
+CHANNEL=Unstable
 
 if [ -z "$VERSION" ]; then
 echo "No version; skipping replicated release"
   exit
 fi
 
-unstable_channel_id() {
-  replicated channel ls | grep Unstable | awk '{print $1}'
-}
-
-new_sequence() {
-  replicated release create --yaml "$(< replicated.yaml)" | grep 'SEQUENCE:' | grep -Eo '[0-9]+'
-}
-
 # install replicated
 curl -sSL "$INSTALL_SCRIPT" > install.sh
 sudo bash ./install.sh
 
-replicated release promote $(new_sequence) $(unstable_channel_id) --version "$VERSION"
-# Channel ee9d99e87b4a5acc2863f68cb2a0c390 successfully promoted to release 15
+cat replicated.yaml | replicated release create --yaml - --promote=Unstable --version "$VERSION"
+# Channel ee9d99e87b4a5acc2863f68cb2a0c390 successfully set to release 15
 ```
 
 Now you can automate tagged releases in TravisCI or CircleCI:
