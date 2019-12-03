@@ -15,9 +15,11 @@ type Client interface {
 	UpdateRelease(appID string, sequence int64, yaml string) error
 	PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error
 
-	ListChannels(string) ([]types.Channel, error)
+	ListChannels(appID string) ([]types.Channel, error)
 	CreateChannel(appID string, name string, description string) (string, error)
 	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
+
+	ListCustomers(appID string) ([]types.Customer, error)
 }
 
 type AppOptions struct {
@@ -33,6 +35,7 @@ type ChannelOptions struct {
 type GraphQLClient struct {
 	GraphQLClient *graphql.Client
 }
+
 
 func NewGraphQLClient(origin string, apiKey string) Client {
 	c := &GraphQLClient{GraphQLClient: graphql.NewClient(origin, apiKey)}

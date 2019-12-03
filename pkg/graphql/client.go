@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	multierror "github.com/hashicorp/go-multierror"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
-	multierror "github.com/hashicorp/go-multierror"
 )
 
 const APIOrigin = "https://g.replicated.com/graphql"
