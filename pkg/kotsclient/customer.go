@@ -6,6 +6,22 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
+const kotsListCustomers = `
+	query customers($appId: String!, $appType: String!) {
+		customers(appId: $appId, appType: $appType) {
+            customers {
+		        id
+		        name 
+		        channels {
+		            id
+		            name
+		            currentVersion
+		        }
+            }
+        }
+	}
+	`
+
 type GraphQLResponseListCustomers struct {
 	Data   *CustomerDataWrapper `json:"data,omitempty"`
 	Errors []graphql.GQLError   `json:"errors,omitempty"`
@@ -29,21 +45,7 @@ func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
 	response := GraphQLResponseListCustomers{}
 
 	request := graphql.Request{
-		Query: `
-	query customers($appId: String!, $appType: String!) {
-		customers(appId: $appId, appType: $appType) {
-            customers {
-		        id
-		        name 
-		        channels {
-		            id
-		            name
-		            currentVersion
-		        }
-            }
-        }
-	}
-	`,
+		Query: kotsListCustomers,
 
 		Variables: map[string]interface{}{
 			"appId": appID,
