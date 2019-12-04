@@ -32,11 +32,7 @@ type ShipChannel struct {
 	CurrentVersion  string `json:"currentVersion"`
 }
 
-func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
-	response := GraphQLResponseListChannels{}
-
-	request := graphql.Request{
-		Query: `
+const listChannelsQuery = `
 query getAppChannels($appId: ID!) {
   getAppChannels(appId: $appId) {
     id,
@@ -65,7 +61,13 @@ query getAppChannels($appId: ID!) {
       semver
     }
   }
-}`,
+}`
+
+func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
+	response := GraphQLResponseListChannels{}
+
+	request := graphql.Request{
+		Query: listChannelsQuery,
 
 		Variables: map[string]interface{}{
 			"appId": appID,
@@ -92,11 +94,7 @@ query getAppChannels($appId: ID!) {
 	return channels, nil
 }
 
-func (c *GraphQLClient) CreateChannel(appID string, name string, description string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: `
+const createChannelQuery = `
 mutation createChannel($appId: String!, $channelName: String!, $description: String) {
   createChannel(appId: $appId, channelName: $channelName, description: $description) {
     id,
@@ -111,7 +109,13 @@ mutation createChannel($appId: String!, $channelName: String!, $description: Str
     isDefault,
     isArchived
   }
-}`,
+}`
+
+func (c *GraphQLClient) CreateChannel(appID string, name string, description string) error {
+	response := graphql.ResponseErrorOnly{}
+
+	request := graphql.Request{
+		Query: createChannelQuery,
 		Variables: map[string]interface{}{
 			"appId":       appID,
 			"channelName": name,

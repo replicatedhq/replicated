@@ -80,7 +80,7 @@ type ShipLintLinePosition struct {
 	Column   int64 `json:"column"`
 }
 
-var listReleasesQuery = `
+const listReleasesQuery = `
 query allReleases($appId: ID!) {
   allReleases(appId: $appId) {
     id
@@ -148,7 +148,7 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 	return releaseInfos, nil
 }
 
-var uploadReleaseQuery = `
+const uploadReleaseQuery = `
 mutation uploadRelease($appId: ID!) {
   uploadRelease(appId: $appId) {
     id
@@ -156,7 +156,7 @@ mutation uploadRelease($appId: ID!) {
   }
 }`
 
-var finalizeUploadedReleaseQuery = `
+const finalizeUploadedReleaseQuery = `
 mutation finalizeUploadedRelease($appId: ID! $uploadId: String) {
   finalizeUploadedRelease(appId: $appId, uploadId: $uploadId) {
     id
@@ -237,7 +237,7 @@ func (c *GraphQLClient) CreateRelease(appID string, yaml string) (*types.Release
 	return &releaseInfo, nil
 }
 
-var updateShipRelease = `
+const updateShipRelease = `
 mutation updateRelease($appId: ID!, $spec: String!, $sequence: Int) {
     updateRelease(appId: $appId, spec: $spec, sequence: $sequence) {
       id
@@ -264,7 +264,7 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, yaml string)
 
 }
 
-var promoteShipReleaseQuery = `
+const promoteShipReleaseQuery = `
 mutation promoteShipRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String, $troubleshootSpecId: ID!) {
   promoteShipRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes, troubleshootSpecId: $troubleshootSpecId) {
     id
@@ -297,7 +297,7 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 	return nil
 }
 
-var lintReleaseQuery = `
+const lintReleaseQuery = `
 mutation lintRelease($appId: ID!, $spec: String!) {
   lintRelease(appId: $appId, spec: $spec) {
     rule

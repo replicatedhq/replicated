@@ -28,10 +28,7 @@ type CreateEntitlementValueResponse struct {
 	CreateEntitlementValue *types.EntitlementValue `json:"createEntitlementValue,omitempty"`
 }
 
-func (c *GraphQLClient) CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error) {
-	response := GraphQLResponseCreateEntitlementSpec{}
-	request := graphql.Request{
-		Query: `
+const createEntitlementSpecQuery = `
 mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) {
   createEntitlementSpec(spec: $spec, name: $name, labels:[{key:"replicated.com/app", value:$appId}]) {
     id
@@ -39,7 +36,12 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
     name
     createdAt
   }
-}`,
+}`
+
+func (c *GraphQLClient) CreateEntitlementSpec(appID string, name string, spec string) (*types.EntitlementSpec, error) {
+	response := GraphQLResponseCreateEntitlementSpec{}
+	request := graphql.Request{
+		Query: createEntitlementSpecQuery,
 		Variables: map[string]interface{}{
 			"spec":  spec,
 			"name":  name,
@@ -54,13 +56,15 @@ mutation createEntitlementSpec($spec: String!, $name: String!, $appId: String!) 
 	return response.Data.CreateEntitlementSpec, nil
 }
 
+const setDefaultEntitlementSpecQuery = `
+mutation setDefaultEntitlementSpec($specId: ID!) {
+  setDefaultEntitlementSpec(id: $specId)
+}`
+
 func (c *GraphQLClient) SetDefaultEntitlementSpec(specID string) error {
 	response := GraphQLResponseSetDefault{}
 	request := graphql.Request{
-		Query: `
-mutation setDefaultEntitlementSpec($specId: ID!) {
-  setDefaultEntitlementSpec(id: $specId)
-}`,
+		Query: setDefaultEntitlementSpecQuery,
 		Variables: map[string]interface{}{
 			"specId": specID,
 		},
@@ -73,10 +77,7 @@ mutation setDefaultEntitlementSpec($specId: ID!) {
 	return nil
 }
 
-func (c *GraphQLClient) SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appId string) (*types.EntitlementValue, error) {
-	response := GraphQLResponseCreateEntitlementValue{}
-	request := graphql.Request{
-		Query: `
+const setEntitlementValueQuery = `
 mutation($customerId: String!, $specId: String!, $key: String!, $value: String!, $type: String!, $appId: String!) {
   createEntitlementValue(customerId: $customerId, specId: $specId, key: $key, value: $value, labels: [{key: "type", value: $type},{key:"replicated.com/app", value:$appId}]) {
     id
@@ -87,7 +88,12 @@ mutation($customerId: String!, $specId: String!, $key: String!, $value: String!,
       value
     }
   }
-}`,
+}`
+
+func (c *GraphQLClient) SetEntitlementValue(customerID string, specID string, key string, value string, datatype string, appId string) (*types.EntitlementValue, error) {
+	response := GraphQLResponseCreateEntitlementValue{}
+	request := graphql.Request{
+		Query: setEntitlementValueQuery,
 		Variables: map[string]interface{}{
 			"customerId": customerID,
 			"specId":     specID,
