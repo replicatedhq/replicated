@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/replicatedhq/replicated/pkg/graphql"
 )
 
 func Test_ListKotsCustomersActual(t *testing.T) {
@@ -23,7 +24,7 @@ func Test_ListKotsCustomersActual(t *testing.T) {
 
 		c := &GraphQLClient{GraphQLClient: d}
 
-		releases, err := c.ListReleases("list-kots-customers-write-token")
+		releases, err := c.ListCustomers("list-kots-customers")
 		assert.Nil(t, err)
 		assert.Len(t, releases, 2)
 
@@ -44,7 +45,7 @@ func Test_ListKotsCustomersActual(t *testing.T) {
 				"operationName": "",
 				"query":         kotsListCustomers,
 				"variables": map[string]interface{}{
-					"appId": "list-kots-customers",
+					"appId":   "list-kots-customers",
 					"appType": "kots",
 				},
 			},
@@ -57,6 +58,9 @@ func Test_ListKotsCustomersActual(t *testing.T) {
 						"customers": []map[string]interface{}{
 							{
 								"id": "im-fake",
+							},
+							{
+								"id": "im-also-fake",
 							},
 						},
 					},
