@@ -38,6 +38,8 @@ $ replicated entitlements define-fields --file=./entitlements.yaml --name=testin
 
 Set a value for a customer (get customer ID from Ship install script or console.replicated.com url segment). Use the spec ID from above.
 
+** Note ** Setting values per-customer can now be done via the UI in https://vendor.replicated.com, so you can skip the `set-value` call and do it over there if you're so inclined.
+
 ```
 $ replicated entitlements set-value --definitions-id=xxx --customer-id=xxxx--key=my_field --value=50 
 {
