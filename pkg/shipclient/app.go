@@ -26,11 +26,7 @@ type ShipApp struct {
 	Channels []ShipChannel `json:"channel"`
 }
 
-func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
-	response := GraphQLResponseListApps{}
-
-	request := graphql.Request{
-		Query: `
+const listAppsQuery = `
 query {
   ship {
     apps {
@@ -49,7 +45,13 @@ query {
       }
     }
   }
-}`,
+}`
+
+func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
+	response := GraphQLResponseListApps{}
+
+	request := graphql.Request{
+		Query: listAppsQuery,
 
 		Variables: map[string]interface{}{},
 	}

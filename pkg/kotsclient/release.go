@@ -61,16 +61,18 @@ type UpdateKotsRelease struct {
 	Config string `json:"spec,omitempty"`
 }
 
+const createReleaseQuery = `
+mutation createKotsRelease($appId: ID!, $spec: String) {
+	createKotsRelease(appId: $appId, spec: $spec) {
+		sequence
+	}
+}`
+
 func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
 	response := GraphQLResponseKotsCreateRelease{}
 
 	request := graphql.Request{
-		Query: `
-		mutation createKotsRelease($appId: ID!, $spec: String) {
-			createKotsRelease(appId: $appId, spec: $spec) {
-				sequence
-			}
-		}`,
+		Query: createReleaseQuery,
 		Variables: map[string]interface{}{
 			"appId": appID,
 			"spec":  multiyaml,
@@ -89,7 +91,7 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 	return &releaseInfo, nil
 }
 
-var updateKotsRelease = `
+const updateKotsRelease = `
   mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
     updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
       sequence
@@ -117,7 +119,7 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml st
 	return nil
 }
 
-var allKotsReleases = `
+const allKotsReleases = `
   query allKotsReleases($appId: ID!, $pageSize: Int, $currentPage: Int) {
     allKotsReleases(appId: $appId, pageSize: $pageSize, currentPage: $currentPage) {
       sequence
@@ -188,7 +190,7 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 	return releaseInfos, nil
 }
 
-var promoteKotsRelease = `
+const promoteKotsRelease = `
 mutation promoteKotsRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String) {
     promoteKotsRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes) {
       sequence

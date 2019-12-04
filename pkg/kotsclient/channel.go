@@ -41,61 +41,63 @@ type KotsChannel struct {
 	CurrentVersion  string `json:"currentVersion"`
 }
 
+const listChannelsQuery = `
+query getKotsAppChannels($appId: ID!) {
+	getKotsAppChannels(appId: $appId) {
+	id
+	appId
+	name
+	currentVersion
+	channelSequence
+	releaseSequence
+	currentReleaseDate
+	numReleases
+	description
+	channelIcon
+	created
+	updated
+	isDefault
+	isArchived
+	adoptionRate {
+		releaseSequence
+		semver
+		count
+		percent
+		totalOnChannel
+	}
+	customers {
+		id
+		name
+		avatar
+		shipInstallStatus {
+		status
+		}
+	}
+	githubRef {
+		owner
+		repoFullName
+		branch
+		path
+	}
+	releases {
+		semver
+		releaseNotes
+		created
+		updated
+		releasedAt
+		sequence
+		channelSequence
+		airgapBuildStatus
+	}
+	}
+}
+`
+
 func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	response := GraphQLResponseListChannels{}
 
 	request := graphql.Request{
-		Query: `
-	query getKotsAppChannels($appId: ID!) {
-		getKotsAppChannels(appId: $appId) {
-		id
-		appId
-		name
-		currentVersion
-		channelSequence
-		releaseSequence
-		currentReleaseDate
-		numReleases
-		description
-		channelIcon
-		created
-		updated
-		isDefault
-		isArchived
-		adoptionRate {
-			releaseSequence
-			semver
-			count
-			percent
-			totalOnChannel
-		}
-		customers {
-			id
-			name
-			avatar
-			shipInstallStatus {
-			status
-			}
-		}
-		githubRef {
-			owner
-			repoFullName
-			branch
-			path
-		}
-		releases {
-			semver
-			releaseNotes
-			created
-			updated
-			releasedAt
-			sequence
-			channelSequence
-			airgapBuildStatus
-		}
-		}
-	}
-	`,
+		Query: listChannelsQuery,
 
 		Variables: map[string]interface{}{
 			"appId": appID,
@@ -121,26 +123,28 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 	return channels, nil
 }
 
+const createChannelQuery = `
+mutation createKotsChannel($appId: String!, $channelName: String!, $description: String) {
+	createKotsChannel(appId: $appId, channelName: $channelName, description: $description) {
+	id
+	name
+	description
+	currentVersion
+	currentReleaseDate
+	numReleases
+	created
+	updated
+	isDefault
+	isArchived
+	}
+}
+`
+
 func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (string, error) {
 	response := GraphQLResponseCreateChannel{}
 
 	request := graphql.Request{
-		Query: `
-	mutation createKotsChannel($appId: String!, $channelName: String!, $description: String) {
-		createKotsChannel(appId: $appId, channelName: $channelName, description: $description) {
-		id
-		name
-		description
-		currentVersion
-		currentReleaseDate
-		numReleases
-		created
-		updated
-		isDefault
-		isArchived
-		}
-	}
-	`,
+		Query: createChannelQuery,
 		Variables: map[string]interface{}{
 			"appId":       appID,
 			"channelName": name,
@@ -160,7 +164,7 @@ func ArchiveChannel(appID string, channelID string) error {
 	return nil
 }
 
-var getKotsChannel = `
+const getKotsChannel = `
 query getKotsChannel($channelId: ID!) {
   getKotsChannel(channelId: $channelId) {
     id

@@ -34,29 +34,31 @@ type KotsApp struct {
 	Channels []*KotsAppChannelData `json: "channels"`
 }
 
+const listAppsQuery = `
+query kots {
+	kots {
+	  apps {
+		id
+		name
+		created
+		updated
+		isDefault
+		isArchived
+		slug
+		channels {
+		  id
+		}
+		isKotsApp
+	  }
+	}
+  }
+`
+
 func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 	response := GraphQLResponseListApps{}
 
 	request := graphql.Request{
-		Query: `
-		query kots {
-			kots {
-			  apps {
-				id
-				name
-				created
-				updated
-				isDefault
-				isArchived
-				slug
-				channels {
-				  id
-				}
-				isKotsApp
-			  }
-			}
-		  }
-		`,
+		Query: listAppsQuery,
 
 		Variables: map[string]interface{}{},
 	}
