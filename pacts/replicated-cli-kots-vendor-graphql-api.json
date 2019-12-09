@@ -7,6 +7,49 @@
   },
   "interactions": [
     {
+<<<<<<< HEAD
+=======
+      "description": "A real request to list customers for list-kots-customers",
+      "providerState": "list customers for list-kots-customers",
+      "request": {
+        "method": "POST",
+        "path": "/graphql",
+        "headers": {
+          "Authorization": "list-kots-customers-read-write-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "operationName": "",
+          "query": "\n\tquery customers($appId: String!, $appType: String!) {\n\t\tcustomers(appId: $appId, appType: $appType) {\n            customers {\n\t\t        id\n\t\t        name \n\t\t        channels {\n\t\t            id\n\t\t            name\n\t\t            currentVersion\n\t\t        }\n            }\n        }\n\t}\n\t",
+          "variables": {
+            "appId": "list-kots-customers",
+            "appType": "kots"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "data": {
+            "customers": {
+              "customers": [
+                {
+                  "id": "im-fake"
+                },
+                {
+                  "id": "im-also-fake"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "metadata": null
+    },
+    {
+>>>>>>> wip on test
       "description": "A real request to list releases for all-kots-releases",
       "providerState": "list releases for all-kots-releases",
       "request": {
