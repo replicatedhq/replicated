@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -79,36 +80,13 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	if r.args.createReleaseYamlDir != "" {
 		var allKotsReleaseSpecs []kotsSingleSpec
 		err := filepath.Walk(r.args.createReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
-
-			singlefile := strings.TrimPrefix(path, r.args.createReleaseYamlDir)
-
+			spec, err := encodeKotsFile(r.args.createReleaseYamlDir, path, info, err)
 			if err != nil {
-				return errors.Wrapf(err, "walk %s", info.Name())
-			}
-
-			if info.IsDir() {
+				return err
+			} else if spec == nil {
 				return nil
 			}
-			if strings.HasPrefix(info.Name(), ".") {
-				return nil
-			}
-			ext := filepath.Ext(info.Name())
-			if ext != ".yaml" && ext != ".yml" {
-				return nil
-			}
-
-			bytes, err := ioutil.ReadFile(path)
-			if err != nil {
-				return errors.Wrapf(err, "read file %s", path)
-			}
-
-			spec := kotsSingleSpec{
-				Name:     info.Name(),
-				Path:     singlefile,
-				Content:  string(bytes),
-				Children: []string{},
-			}
-			allKotsReleaseSpecs = append(allKotsReleaseSpecs, spec)
+			allKotsReleaseSpecs = append(allKotsReleaseSpecs, *spec)
 			return nil
 		})
 		if err != nil {
@@ -203,4 +181,46 @@ func (r *runners) getOrCreateChannelForPromotion() (string, error) {
 		return "", fmt.Errorf("Channel %q is ambiguous. Please use channel ID", r.args.createReleasePromote)
 	}
 	return promoteChannelIDs[0], nil
+}
+
+func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSingleSpec, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	singlefile := strings.TrimPrefix(path, prefix)
+
+	if info.IsDir() {
+		return nil, nil
+	}
+	if strings.HasPrefix(info.Name(), ".") {
+		return nil, nil
+	}
+	ext := filepath.Ext(info.Name())
+	switch ext {
+	case ".tgz", ".gz", ".yaml", ".yml":
+		// continue
+	default:
+		return nil, nil
+	}
+
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, errors.Wrapf(err, "read file %s", path)
+	}
+
+	var str string
+	switch ext {
+	case ".tgz", ".gz":
+		str = base64.StdEncoding.EncodeToString(bytes)
+	default:
+		str = string(bytes)
+	}
+
+	return &kotsSingleSpec{
+		Name:     info.Name(),
+		Path:     singlefile,
+		Content:  str,
+		Children: []string{},
+	}, nil
 }

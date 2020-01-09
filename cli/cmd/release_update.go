@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -65,36 +64,13 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	if r.args.updateReleaseYamlDir != "" {
 		var allKotsReleaseSpecs []kotsSingleSpec
 		err := filepath.Walk(r.args.updateReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
-
-			singlefile := strings.TrimPrefix(path, r.args.updateReleaseYamlDir)
-
+			spec, err := encodeKotsFile(r.args.createReleaseYamlDir, path, info, err)
 			if err != nil {
-				return errors.Wrapf(err, "walk %s", info.Name())
-			}
-
-			if info.IsDir() {
+				return err
+			} else if spec == nil {
 				return nil
 			}
-			if strings.HasPrefix(info.Name(), ".") {
-				return nil
-			}
-			ext := filepath.Ext(info.Name())
-			if ext != ".yaml" && ext != ".yml" {
-				return nil
-			}
-
-			bytes, err := ioutil.ReadFile(path)
-			if err != nil {
-				return errors.Wrapf(err, "read file %s", path)
-			}
-
-			spec := kotsSingleSpec{
-				Name:     info.Name(),
-				Path:     singlefile,
-				Content:  string(bytes),
-				Children: []string{},
-			}
-			allKotsReleaseSpecs = append(allKotsReleaseSpecs, spec)
+			allKotsReleaseSpecs = append(allKotsReleaseSpecs, *spec)
 			return nil
 		})
 		if err != nil {
