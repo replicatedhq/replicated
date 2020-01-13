@@ -11,5 +11,5 @@ script:
 after_success:
   - test -n "$TRAVIS_TAG" && make package_docker_docs
   - test -n "$TRAVIS_TAG" && docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
-  - test -n "$TRAVIS_TAG" && curl -sL https://install.goreleaser.com/github.com/goreleaser/goreleaser.sh | sh -s v0.123.3
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
   - test -n "$TRAVIS_TAG" && make publish-pacts
