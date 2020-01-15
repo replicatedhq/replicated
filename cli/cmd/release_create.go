@@ -188,7 +188,7 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSing
 		return nil, err
 	}
 
-	singlefile := strings.TrimPrefix(path, prefix)
+	singlefile := strings.TrimPrefix(filepath.Clean(path), filepath.Clean(prefix)+"/")
 
 	if info.IsDir() {
 		return nil, nil
