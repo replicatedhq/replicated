@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"text/tabwriter"
+	"time"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 
@@ -19,9 +20,9 @@ type runners struct {
 	appID       string
 	appType     string
 	api         client.Client
-	platformAPI platformclient.Client
-	shipAPI     shipclient.Client
-	kotsAPI     kotsclient.Client
+	platformAPI *platformclient.HTTPClient
+	shipAPI     *shipclient.GraphQLClient
+	kotsAPI     *kotsclient.GraphQLClient
 	stdin       io.Reader
 	dir         string
 	w           *tabwriter.Writer
@@ -76,4 +77,9 @@ type runnerArgs struct {
 	entitlementsSetValueKey              string
 	entitlementsSetValueValue            string
 	entitlementsSetValueType             string
+
+	customerCreateName          string
+	customerCreateChannel       string
+	customerCreateEnsureChannel bool
+	customerCreateExpiryDuration time.Duration
 }

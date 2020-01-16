@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -78,19 +79,20 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "do request")
 	}
 
 	responseBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "read response body")
 	}
+
 
 	var gqlErr ResponseErrorOnly
 	_ = json.Unmarshal(responseBody, &gqlErr) // ignore error to be safe
 
 	if err := c.checkErrors(gqlErr); err != nil {
-		return err
+		return errors.Wrap(err, "check GQL response for errors")
 	}
 
 	if resp.StatusCode != http.StatusOK {

@@ -7,38 +7,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	apps "github.com/replicatedhq/replicated/gen/go/v1"
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
-	v2 "github.com/replicatedhq/replicated/gen/go/v2"
-	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
-
-// Client provides methods to manage apps, channels, and releases.
-type Client interface {
-	ListApps() ([]apps.AppAndChannels, error)
-	GetApp(string) (*apps.App, error)
-	CreateApp(opts *AppOptions) (*apps.App, error)
-
-	ListChannels(string) ([]channels.AppChannel, error)
-	CreateChannel(string, string, string) error
-	ArchiveChannel(appID, channelID string) error
-	GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error)
-
-	ListReleases(appID string) ([]releases.AppReleaseInfo, error)
-	CreateRelease(appID string, yaml string) (*releases.AppReleaseInfo, error)
-	UpdateRelease(appID string, sequence int64, yaml string) error
-	GetRelease(appID string, sequence int64) (*releases.AppRelease, error)
-	PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error
-	LintRelease(string, string) ([]types.LintMessage, error)
-
-	PromoteCollector(appID string, specID string, channelIDs ...string) error
-
-	CreateLicense(*v2.LicenseV2) (*v2.LicenseV2, error)
-}
 
 type AppOptions struct {
 	Name string
@@ -57,11 +28,11 @@ type HTTPClient struct {
 }
 
 // New returns a new  HTTP client.
-func New(apiKey string) Client {
+func New(apiKey string) *HTTPClient {
 	return NewHTTPClient(apiOrigin, apiKey)
 }
 
-func NewHTTPClient(origin string, apiKey string) Client {
+func NewHTTPClient(origin string, apiKey string) *HTTPClient {
 	c := &HTTPClient{
 		apiKey:    apiKey,
 		apiOrigin: origin,

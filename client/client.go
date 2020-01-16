@@ -7,9 +7,9 @@ import (
 )
 
 type Client struct {
-	PlatformClient platformclient.Client
-	ShipClient     shipclient.Client
-	KotsClient     kotsclient.Client
+	PlatformClient *platformclient.HTTPClient
+	ShipClient     *shipclient.GraphQLClient
+	KotsClient     *kotsclient.GraphQLClient
 }
 
 func NewClient(platformOrigin string, graphqlOrigin string, apiToken string) Client {
@@ -40,3 +40,4 @@ func (c *Client) GetAppType(appID string) (string, error) {
 
 	return "", err
 }
+

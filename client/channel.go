@@ -85,3 +85,16 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 
 	return nil, errors.New("unknown app type")
 }
+
+func (c *Client) GetChannelByName(appID string, appType string, name string, description string, createIfAbsent bool) (*types.Channel, error) {
+
+	if appType == "platform" {
+		return nil, errors.New("ensure-channel operations are not supported for platform applications")
+	} else if appType == "ship" {
+		return nil, errors.New("ensure-channel operations are not supported for ship applications")
+	} else if appType == "kots" {
+		return c.KotsClient.GetChannelByName(appID, name, description, createIfAbsent)
+	}
+
+	return nil, errors.New("unknown app type")
+}
