@@ -137,6 +137,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEntitlementsSetValueCommand(entitlementsCmd)
 	runCmds.InitEntitlementsGetCustomerReleaseCommand(entitlementsCmd)
 
+	customersCmd := runCmds.InitCustomersCommand(runCmds.rootCmd)
+	runCmds.InitCustomersLSCommand(customersCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	runCmds.rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {

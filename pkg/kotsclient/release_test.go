@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/replicatedhq/replicated/pkg/graphql"
 )
 
 func Test_ListKotsReleasesActual(t *testing.T) {
