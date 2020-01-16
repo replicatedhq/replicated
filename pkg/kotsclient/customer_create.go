@@ -9,7 +9,7 @@ import (
 
 const kotsCreateCustomer = `
 	mutation createKotsCustomer($name: String!, $channelId: String!, $expiresAt: String) {
-		createKotsCustomer(name: $name, channelId: $channelId, isKots: true, airgap: false, type: "dev", entitlements: [], expiresAt: $expiresAt) {
+		createKotsCustomer(name: $name, channelId: $channelId, isKots: true, airgap: false, type: "dev", entitlements: [], expiresAt: $expiresAt, isGitopsSupported: false) {
 			id
 			name 
 			type
