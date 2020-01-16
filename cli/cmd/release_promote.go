@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -29,13 +29,22 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	// parse sequence and channel ID positional arguments
 	if len(args) != 2 {
-		return errors.New("releasese sequence and channel ID are required")
+		return errors.New("release sequence and channel ID are required")
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
 		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
 	}
 	chanID := args[1]
+
+	if r.appType != "ship" {
+		// try to turn chanID into an actual id if it was a channel name
+		newID, err := r.api.GetChannelByName(r.appID, r.appType, chanID, "", false)
+		if err != nil {
+			return errors.Wrapf(err, "unable to get channel ID from name")
+		}
+		chanID = newID.ID
+	}
 
 	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, chanID); err != nil {
 		return err
