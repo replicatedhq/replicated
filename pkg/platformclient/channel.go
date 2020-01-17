@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"sort"
 
+	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 // AppChannels sorts []channels.AppChannel by Channel.Position
@@ -98,4 +100,42 @@ func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, 
 	}
 	sort.Sort(ChannelReleases(respBody.Releases))
 	return respBody.Channel, respBody.Releases, nil
+}
+
+func (c *HTTPClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
+	allChannels, err := c.ListChannels(appID)
+	if err != nil {
+		return nil, err
+	}
+
+	matchingChannels := make([]*types.Channel, 0)
+	for _, channel := range allChannels {
+		if channel.Id == name || channel.Name == name {
+			matchingChannels = append(matchingChannels, &types.Channel{
+				ID:              channel.Id,
+				Name:            channel.Name,
+				Description:     channel.Description,
+				ReleaseSequence: channel.ReleaseSequence,
+				ReleaseLabel:    channel.ReleaseLabel,
+			})
+		}
+	}
+
+	if len(matchingChannels) == 0 {
+		if create {
+			err := c.CreateChannel(appID, name, description)
+			if err != nil {
+				return nil, errors.Wrapf(err, "create channel %q ", name)
+			}
+			// CreateChannel does not return the created channel, so we need to search for it
+			return c.GetChannelByName(appID, name, description, false)
+		}
+
+		return nil, fmt.Errorf("could not find channel %q", name)
+	}
+
+	if len(matchingChannels) > 1 {
+		return nil, fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
+	}
+	return matchingChannels[0], nil
 }
