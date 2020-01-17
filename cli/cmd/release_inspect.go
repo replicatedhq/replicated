@@ -16,7 +16,7 @@ func (r *runners) InitReleaseInspect(parent *cobra.Command) {
 		Short: "Print the YAML config for a release",
 		Long:  "Print the YAML config for a release",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
 	parent.AddCommand(cmd)
 	cmd.RunE = r.releaseInspect
 }

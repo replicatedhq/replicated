@@ -5,15 +5,16 @@ import (
 )
 
 func (r *runners) InitCollectorsCommand(parent *cobra.Command) *cobra.Command {
-	collectorsCmd := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "collector",
 		Short: "Manage customer collectors",
 		Long:  `The collector command allows vendors to create, display, modify entitlement values for end customer licensing.`,
 	}
-	parent.AddCommand(collectorsCmd)
+	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
+	parent.AddCommand(cmd)
 
 	var tmp bool
-	collectorsCmd.Flags().BoolVar(&tmp, "active", false, "Only show active collectors")
+	cmd.Flags().BoolVar(&tmp, "active", false, "Only show active collectors")
 
-	return collectorsCmd
+	return cmd
 }

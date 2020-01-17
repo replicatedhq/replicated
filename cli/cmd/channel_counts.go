@@ -13,7 +13,7 @@ func (r *runners) InitChannelCounts(parent *cobra.Command) {
 		Short: "Print channel license counts",
 		Long:  "Print channel license counts",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelCounts
 }

@@ -99,13 +99,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	channelCmd := &cobra.Command{
 		Use:   "channel",
-		Short: "Manage and review channels",
-		Long:  "Manage and review channels",
+		Short: "List channels",
+		Long:  "List channels",
 	}
 	var releaseCmd = &cobra.Command{
 		Use:   "release",
 		Short: "Manage app releases",
-		Long:  `The release command allows vendors to create, display, modify, and archive their releases.`,
+		Long:  `The release command allows vendors to create, display, and promote their releases.`,
 	}
 
 	runCmds.rootCmd.AddCommand(channelCmd)

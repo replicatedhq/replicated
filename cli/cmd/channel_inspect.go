@@ -14,7 +14,7 @@ func (r *runners) InitChannelInspect(parent *cobra.Command) {
 		Short: "Show full details for a channel",
 		Long:  "Show full details for a channel",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelInspect
 }

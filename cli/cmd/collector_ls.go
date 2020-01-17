@@ -11,7 +11,7 @@ func (r *runners) InitCollectorList(parent *cobra.Command) {
 		Short: "List all of an app's collectors",
 		Long:  "List all of an app's collectors",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
 	parent.AddCommand(cmd)
 	cmd.RunE = r.collectorList
 }
