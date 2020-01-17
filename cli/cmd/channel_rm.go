@@ -13,7 +13,7 @@ func (r *runners) InitChannelRemove(parent *cobra.Command) {
 		Short: "Remove (archive) a channel",
 		Long:  "Remove (archive) a channel",
 	}
-	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelRemove
 }

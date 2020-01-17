@@ -14,7 +14,7 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 		Short: "Lint a YAML",
 		Long:  "Lint a YAML",
 	}
-	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.lintReleaseYaml, "yaml", "", "The YAML config to lint. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")

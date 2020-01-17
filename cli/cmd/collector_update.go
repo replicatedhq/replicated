@@ -14,7 +14,7 @@ func (r *runners) InitCollectorUpdate(parent *cobra.Command) {
 		Short: "Update a collector's name or yaml config",
 		Long:  "Update a collector's name or yaml config",
 	}
-	cmd.Hidden=true; // Not supported in KOTS (ch #22646)
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.updateCollectorYaml, "yaml", "", "The new YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
