@@ -143,7 +143,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
-	runCmds.rootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	prerunCommand := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			apiToken = os.Getenv("REPLICATED_API_TOKEN")
 			if apiToken == "" {
@@ -194,6 +194,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		return nil
 	}
+
+	channelCmd.PersistentPreRunE = prerunCommand
+	releaseCmd.PersistentPreRunE = prerunCommand
+	collectorsCmd.PersistentPreRunE = prerunCommand
+	entitlementsCmd.PersistentPreRunE = prerunCommand
+	customersCmd.PersistentPreRunE = prerunCommand
 
 	runCmds.rootCmd.AddCommand(Version())
 
