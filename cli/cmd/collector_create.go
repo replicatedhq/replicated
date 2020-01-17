@@ -13,7 +13,7 @@ func (r *runners) InitCollectorCreate(parent *cobra.Command) {
 		Short: "Create a new collector",
 		Long:  "Create a new collector by providing a name and YAML configuration",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createCollectorYaml, "yaml", "", "The YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")

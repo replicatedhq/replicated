@@ -13,7 +13,7 @@ func (r *runners) InitChannelReleases(parent *cobra.Command) {
 		Short: "List all releases in a channel",
 		Long:  "List all releases in a channel",
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelReleases
 }

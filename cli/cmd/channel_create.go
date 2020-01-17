@@ -14,7 +14,7 @@ func (r *runners) InitChannelCreate(parent *cobra.Command) {
   Example:
   replicated channel create --name Beta --description 'New features subject to change'`,
 	}
-
+	cmd.Hidden=true; // Not supported in KOTS 
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.channelCreateName, "name", "", "The name of this channel")

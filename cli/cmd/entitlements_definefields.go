@@ -11,7 +11,7 @@ import (
 )
 
 func (r *runners) InitEntitlementsDefineFields(parent *cobra.Command) {
-	entitlementsDefineFields := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "define-fields",
 		Short: "Define entitlements fields",
 		Long: `Define the fields that can be assigned on a per customer
@@ -19,10 +19,10 @@ basis and delivered securely to your on-prem application`,
 		RunE: r.entitlementsDefineFields,
 	}
 
-	entitlementsDefineFields.Flags().StringVar(&r.args.entitlementsDefineFieldsFile, "file", "entitlements.yaml", "definitions file to promote")
-	entitlementsDefineFields.Flags().StringVar(&r.args.entitlementsDefineFieldsName, "name", "", "name for this definition")
-
-	parent.AddCommand(entitlementsDefineFields)
+	cmd.Flags().StringVar(&r.args.entitlementsDefineFieldsFile, "file", "entitlements.yaml", "definitions file to promote")
+	cmd.Flags().StringVar(&r.args.entitlementsDefineFieldsName, "name", "", "name for this definition")
+	cmd.Hidden=true; // Not supported in KOTS 
+	parent.AddCommand(cmd)
 }
 
 func (r *runners) entitlementsDefineFields(cmd *cobra.Command, args []string) error {

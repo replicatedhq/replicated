@@ -14,19 +14,19 @@ import (
 )
 
 func (r *runners) InitEntitlementsGetCustomerReleaseCommand(parent *cobra.Command) {
-	var entitlementsGetCustomerRelease = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "get-customer-release",
 		Short: "Preview the end customer release view",
 		Long:  `Preview the end customer release view for a given customer ID + installation ID`,
 		RunE:  r.entitlementsGetCustomerRelease,
 	}
 
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseCustomerID, "customer-id", "", "customer id")
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseInstallationID, "installation-id", "", "installation id")
+	cmd.Flags().StringVar(&r.args.entitlementsGetReleaseCustomerID, "customer-id", "", "customer id")
+	cmd.Flags().StringVar(&r.args.entitlementsGetReleaseInstallationID, "installation-id", "", "installation id")
 	// change the default from g.replicated.com to pg.replicated.com
-	entitlementsGetCustomerRelease.Flags().StringVar(&r.args.entitlementsGetReleaseAPIServer, "replicated-api-server", "https://pg.replicated.com/graphql", "Upstream api server")
-
-	parent.AddCommand(entitlementsGetCustomerRelease)
+	cmd.Flags().StringVar(&r.args.entitlementsGetReleaseAPIServer, "replicated-api-server", "https://pg.replicated.com/graphql", "Upstream api server")
+	cmd.Hidden=true; // Not supported in KOTS 
+	parent.AddCommand(cmd)
 }
 
 func (r *runners) entitlementsGetCustomerRelease(cmd *cobra.Command, args []string) error {
