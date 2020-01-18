@@ -47,7 +47,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		r.args.lintReleaseYamlFile = string(bytes)
+		r.args.lintReleaseYaml = string(bytes)
 	}
 
 	if r.args.lintReleaseYamlDir != "" {
