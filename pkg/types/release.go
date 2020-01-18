@@ -21,8 +21,8 @@ type LintMessage struct {
 
 type LintPosition struct {
 	Path  string            `json:"path"`
-	Start *LintLinePosition `json:"start"`
-	End   *LintLinePosition `json:"end"`
+	Start LintLinePosition `json:"start"`
+	End   LintLinePosition `json:"end"`
 }
 
 type LintLinePosition struct {
