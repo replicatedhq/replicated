@@ -7,9 +7,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var lintTmplSrc = `RULE	TYPE	START LINE	END LINE
+var lintTmplSrc = `RULE	TYPE	START LINE	MESSAGE	
 {{ range . -}}
-{{ .Rule }}	{{ .Type }}	{{ (index .Positions 0).Start.Line }} 	{{ (index .Positions 0).End.Line }}
+{{ .Rule }}	{{ .Type }}	{{with .Positions}}{{with (index . 0)}}{{ .Start.Line }}{{end}}{{end}}	{{ .Message}}
 {{ end }}`
 
 var lintTmpl = template.Must(template.New("lint").Parse(lintTmplSrc))

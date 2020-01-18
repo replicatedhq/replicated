@@ -43,7 +43,9 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.args.createReleaseYamlDir == "" {
+	if r.args.createReleaseYaml == "" &&
+		r.args.createReleaseYamlFile == "" &&
+		r.args.createReleaseYamlDir == "" {
 		return errors.New("one of --yaml, --yaml-file, --yaml-dir is required")
 	}
 
@@ -78,26 +80,11 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	if r.args.createReleaseYamlDir != "" {
-		var allKotsReleaseSpecs []kotsSingleSpec
-		err := filepath.Walk(r.args.createReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
-			spec, err := encodeKotsFile(r.args.createReleaseYamlDir, path, info, err)
-			if err != nil {
-				return err
-			} else if spec == nil {
-				return nil
-			}
-			allKotsReleaseSpecs = append(allKotsReleaseSpecs, *spec)
-			return nil
-		})
+		var err error
+		r.args.createReleaseYaml, err = readYAMLDir(r.args.createReleaseYamlDir)
 		if err != nil {
-			return errors.Wrapf(err, "walk %s", r.args.createReleaseYamlDir)
+			return errors.Wrap(err, "read yaml dir")
 		}
-
-		jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
-		if err != nil {
-			return errors.Wrap(err, "marshal spec")
-		}
-		r.args.createReleaseYaml = string(jsonAllYamls)
 	}
 
 	// if the --promote param was used make sure it identifies exactly one
@@ -199,4 +186,28 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSing
 		Content:  str,
 		Children: []string{},
 	}, nil
+}
+
+func readYAMLDir(yamlDir string) (string, error) {
+
+	var allKotsReleaseSpecs []kotsSingleSpec
+	err := filepath.Walk(yamlDir, func(path string, info os.FileInfo, err error) error {
+		spec, err := encodeKotsFile(yamlDir, path, info, err)
+		if err != nil {
+			return err
+		} else if spec == nil {
+			return nil
+		}
+		allKotsReleaseSpecs = append(allKotsReleaseSpecs, *spec)
+		return nil
+	})
+	if err != nil {
+		return "", errors.Wrapf(err, "walk %s", yamlDir)
+	}
+
+	jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
+	if err != nil {
+		return "", errors.Wrap(err, "marshal spec")
+	}
+	return string(jsonAllYamls), nil
 }

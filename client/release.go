@@ -155,15 +155,17 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	return errors.New("unknown app type")
 }
 
-func (c *Client) LintRelease(appID string, appType string, yaml string) ([]types.LintMessage, error) {
+// yamlOrJSON is either a single ship yaml file, or a serialized JSON object describing a yaml-dir, created by readYAMLDir()
+// this Client abstraction continue to spring more leaks :)
+func (c *Client) LintRelease(appID string, appType string, yamlOrJSON string) ([]types.LintMessage, error) {
 
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported for Platform applications")
-		// return c.PlatformClient.LintRelease(appID, yaml)
+		// return c.PlatformClient.LintRelease(appID, yamlOrJSON)
 	} else if appType == "ship" {
-		return c.ShipClient.LintRelease(appID, yaml)
+		return c.ShipClient.LintRelease(appID, yamlOrJSON)
 	} else if appType == "kots" {
-		return nil, errors.New("Linting is not yet supported for Kots applications")
+		return c.KotsClient.LintRelease(appID, yamlOrJSON)
 	}
 
 	return nil, errors.New("unknown app type")
