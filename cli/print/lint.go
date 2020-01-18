@@ -9,7 +9,7 @@ import (
 
 var lintTmplSrc = `RULE	TYPE	LINE	MESSAGE	
 {{ range . -}}
-{{ .Rule }}	{{ .Type }}	{{with .Positions}}{{with (index . 0)}}{{ .Start.Line }}	{{else}}None	{{end}}{{else}}None	{{end}}{{ .Message}}
+{{ .Rule }}	{{ .Type }}	{{with .Positions}}{{ (index . 0).Start.Line }}{{else}}	{{end}}	{{ .Message}}
 {{ end }}`
 
 var lintTmpl = template.Must(template.New("lint").Parse(lintTmplSrc))
