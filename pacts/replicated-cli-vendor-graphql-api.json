@@ -51,8 +51,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A request to upload a new release for ship-app-1",
@@ -92,8 +91,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A request to finalize a nonexistent uploaded release for ship-app-1",
@@ -152,8 +150,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A mocked minimal request to promote a new release for ship-app-1",
@@ -195,8 +192,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A real request to promote a new release for ship-app-1",
@@ -239,8 +235,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A real request to list releases for ship-app-1",
@@ -286,8 +281,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     },
     {
       "description": "A real request to lint a release for ship-app-1",
@@ -366,8 +360,7 @@
             "match": "type"
           }
         }
-      },
-      "metadata": null
+      }
     }
   ],
   "metadata": {
