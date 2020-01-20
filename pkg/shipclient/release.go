@@ -59,26 +59,9 @@ type GraphQLResponseLintRelease struct {
 }
 
 type ShipReleaseLintData struct {
-	Messages []*ShipLintMessage `json:"lintRelease"`
+	Messages []types.LintMessage `json:"lintRelease"`
 }
 
-type ShipLintMessage struct {
-	Rule      string              `json:"rule"`
-	Type      string              `json:"type"`
-	Positions []*ShipLintPosition `json:"positions"`
-}
-
-type ShipLintPosition struct {
-	Path  string                `json:"path"`
-	Start *ShipLintLinePosition `json:"start"`
-	End   *ShipLintLinePosition `json:"end"`
-}
-
-type ShipLintLinePosition struct {
-	Position int64 `json:"position"`
-	Line     int64 `json:"line"`
-	Column   int64 `json:"column"`
-}
 
 const listReleasesQuery = `
 query allReleases($appId: ID!) {
@@ -333,35 +316,5 @@ func (c *GraphQLClient) LintRelease(appID string, yaml string) ([]types.LintMess
 		return nil, err
 	}
 
-	lintMessages := make([]types.LintMessage, 0, 0)
-	for _, message := range response.Data.Messages {
-		positions := make([]*types.LintPosition, 0, 0)
-		for _, lintPosition := range message.Positions {
-			position := types.LintPosition{
-				Path: lintPosition.Path,
-				Start: &types.LintLinePosition{
-					Position: lintPosition.Start.Position,
-					Column:   lintPosition.Start.Column,
-					Line:     lintPosition.Start.Line,
-				},
-				End: &types.LintLinePosition{
-					Position: lintPosition.End.Position,
-					Column:   lintPosition.End.Column,
-					Line:     lintPosition.End.Line,
-				},
-			}
-
-			positions = append(positions, &position)
-		}
-
-		lintMessage := types.LintMessage{
-			Rule:      message.Rule,
-			Type:      message.Type,
-			Positions: positions,
-		}
-
-		lintMessages = append(lintMessages, lintMessage)
-	}
-
-	return lintMessages, nil
+	return response.Data.Messages, nil
 }
