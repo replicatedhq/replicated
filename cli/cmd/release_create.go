@@ -55,8 +55,8 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	// we check this again below, but lets be explicit and fail fast
-	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
-		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
+	if r.args.createReleasePromoteEnsureChannel && !(r.appType == "ship" || r.appType == "kots") {
+		return errors.Errorf("the flag --ensure-channel is only supported for KOTS and Ship applications, app %q is of type %q", r.appID, r.appType)
 	}
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
@@ -92,7 +92,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	var promoteChanID string
 	if r.args.createReleasePromote != "" {
 		var err error
-		promoteChanID, err = r.getOrCreateChannelForPromotion()
+		promoteChanID, err = r.getOrCreateChannelForPromotion(r.args.createReleasePromoteEnsureChannel)
 		if err != nil {
 			return errors.Wrapf(err, "get or create channel %q for promotion", promoteChanID)
 		}
@@ -129,7 +129,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (r *runners) getOrCreateChannelForPromotion() (string, error) {
+func (r *runners) getOrCreateChannelForPromotion(createIfAbsent bool) (string, error) {
 
 	description := "" // todo: do we want a flag for the desired channel description
 
@@ -138,7 +138,7 @@ func (r *runners) getOrCreateChannelForPromotion() (string, error) {
 		r.appType,
 		r.args.createReleasePromote,
 		description,
-		true,
+		createIfAbsent,
 	); if err != nil {
 		return "", errors.Wrapf(err, "get-or-create channel %q", r.args.createReleasePromote)
 	}
