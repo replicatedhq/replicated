@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -62,26 +59,10 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if r.args.updateReleaseYamlDir != "" {
-		var allKotsReleaseSpecs []kotsSingleSpec
-		err := filepath.Walk(r.args.updateReleaseYamlDir, func(path string, info os.FileInfo, err error) error {
-			spec, err := encodeKotsFile(r.args.createReleaseYamlDir, path, info, err)
-			if err != nil {
-				return err
-			} else if spec == nil {
-				return nil
-			}
-			allKotsReleaseSpecs = append(allKotsReleaseSpecs, *spec)
-			return nil
-		})
+		r.args.updateReleaseYaml, err = readYAMLDir(r.args.createReleaseYamlDir)
 		if err != nil {
-			return errors.Wrapf(err, "walk %s", r.args.updateReleaseYamlDir)
+			return errors.Wrap(err, "read yaml dir")
 		}
-
-		jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
-		if err != nil {
-			return errors.Wrap(err, "marshal spec")
-		}
-		r.args.updateReleaseYaml = string(jsonAllYamls)
 	}
 	if err := r.api.UpdateRelease(r.appID, r.appType, seq, r.args.updateReleaseYaml); err != nil {
 		return fmt.Errorf("Failure setting new yaml config for release: %v", err)
