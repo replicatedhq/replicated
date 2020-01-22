@@ -72,7 +72,7 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 		}
 		return c.ListChannels(appID, appType)
 	} else if appType == "ship" {
-		if err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
+		if _, err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
 		return c.ShipClient.ListChannels(appID)
@@ -91,7 +91,7 @@ func (c *Client) GetChannelByName(appID string, appType string, name string, des
 	if appType == "platform" {
 		return c.PlatformClient.GetChannelByName(appID, name, description, createIfAbsent)
 	} else if appType == "ship" {
-		return nil, errors.New("ensure-channel operations are not supported for ship applications")
+		return c.ShipClient.GetChannelByName(appID, name, description, createIfAbsent)
 	} else if appType == "kots" {
 		return c.KotsClient.GetChannelByName(appID, name, description, createIfAbsent)
 	}
