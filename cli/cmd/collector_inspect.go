@@ -34,5 +34,5 @@ func (r *runners) collectorInspect(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Collector(r.w, collector)
+	return print.Collector(r.stdoutWriter, collector)
 }

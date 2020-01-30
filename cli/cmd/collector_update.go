@@ -70,8 +70,8 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// ignore the error since operation was successful
-	fmt.Fprintf(r.w, "Collector %s updated\n", specID)
-	r.w.Flush()
+	fmt.Fprintf(r.stdoutWriter, "Collector %s updated\n", specID)
+	r.stdoutWriter.Flush()
 
 	return nil
 }

@@ -68,7 +68,7 @@ mutation createKotsRelease($appId: ID!, $spec: String) {
 	}
 }`
 
-func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
+func (c *HybridClient) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
 	response := GraphQLResponseKotsCreateRelease{}
 
 	request := graphql.Request{
@@ -79,7 +79,7 @@ func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.Re
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +99,7 @@ const updateKotsRelease = `
   }
 `
 
-func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml string) error {
+func (c *HybridClient) UpdateRelease(appID string, sequence int64, multiyaml string) error {
 	response := GraphQLResponseUpdateKotsRelease{}
 
 	request := graphql.Request{
@@ -112,7 +112,7 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml st
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return err
 	}
 
@@ -139,7 +139,7 @@ const allKotsReleases = `
   }
 `
 
-func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
+func (c *HybridClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	response := GraphQLResponseListReleases{}
 
 	request := graphql.Request{
@@ -149,7 +149,7 @@ func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) 
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -198,7 +198,7 @@ mutation promoteKotsRelease($appId: ID!, $sequence: Int, $channelIds: [String], 
   }
 `
 
-func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
+func (c *HybridClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
 	response := graphql.ResponseErrorOnly{}
 
 	request := graphql.Request{
@@ -213,7 +213,7 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return err
 	}
 

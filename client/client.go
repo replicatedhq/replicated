@@ -9,14 +9,14 @@ import (
 type Client struct {
 	PlatformClient *platformclient.HTTPClient
 	ShipClient     *shipclient.GraphQLClient
-	KotsClient     *kotsclient.GraphQLClient
+	KotsClient     *kotsclient.HybridClient
 }
 
-func NewClient(platformOrigin string, graphqlOrigin string, apiToken string) Client {
+func NewClient(platformOrigin string, graphqlOrigin string, graphqlHTTPOrigin string, apiToken string) Client {
 	client := Client{
 		PlatformClient: platformclient.NewHTTPClient(platformOrigin, apiToken),
 		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
-		KotsClient:     kotsclient.NewGraphQLClient(graphqlOrigin, apiToken),
+		KotsClient:     kotsclient.NewHybridClient(graphqlOrigin, apiToken, graphqlHTTPOrigin),
 	}
 
 	return client
@@ -40,4 +40,5 @@ func (c *Client) GetAppType(appID string) (string, error) {
 
 	return "", err
 }
+
 

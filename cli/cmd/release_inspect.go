@@ -38,5 +38,5 @@ func (r *runners) releaseInspect(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Release(r.w, release)
+	return print.Release(r.stdoutWriter, release)
 }

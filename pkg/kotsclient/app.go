@@ -54,7 +54,7 @@ query kots {
   }
 `
 
-func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
+func (c *HybridClient) ListApps() ([]types.AppAndChannels, error) {
 	response := GraphQLResponseListApps{}
 
 	request := graphql.Request{
@@ -63,7 +63,7 @@ func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 		Variables: map[string]interface{}{},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 	return appsAndChannels, nil
 }
 
-func (c *GraphQLClient) GetApp(appID string) (*types.App, error) {
+func (c *HybridClient) GetApp(appID string) (*types.App, error) {
 	apps, err := c.ListApps()
 	if err != nil {
 		return nil, err

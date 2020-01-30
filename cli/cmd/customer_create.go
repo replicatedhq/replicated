@@ -44,5 +44,5 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 	// CreateCustomer query doesn't pull back the Channels, so bolt it on afterward for the printing
 	customer.Channels = append(customer.Channels, *channel)
 
-	return print.Customers(r.w, []types.Customer{*customer})
+	return print.Customers(r.stdoutWriter, []types.Customer{*customer})
 }

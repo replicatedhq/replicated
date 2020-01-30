@@ -77,3 +77,4 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 
 	return nil
 }
+

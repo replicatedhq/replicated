@@ -52,7 +52,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := print.LintErrors(r.w, lintResult); err != nil {
+	if err := print.LintErrors(r.stdoutWriter, lintResult); err != nil {
 		return err
 	}
 

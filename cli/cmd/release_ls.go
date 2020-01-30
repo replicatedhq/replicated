@@ -22,5 +22,5 @@ func (r *runners) releaseList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Releases(r.w, releases)
+	return print.Releases(r.stdoutWriter, releases)
 }

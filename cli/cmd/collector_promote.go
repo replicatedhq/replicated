@@ -36,9 +36,9 @@ func (r *runners) collectorPromote(cmd *cobra.Command, args []string) error {
 	}
 
 	// ignore error since operation was successful
-	fmt.Fprintf(r.w, "Collector %s successfully promoted to channel %s\n", specID, chanID)
+	fmt.Fprintf(r.stdoutWriter, "Collector %s successfully promoted to channel %s\n", specID, chanID)
 
-	r.w.Flush()
+	r.stdoutWriter.Flush()
 
 	return nil
 

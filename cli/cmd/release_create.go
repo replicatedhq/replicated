@@ -103,10 +103,10 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if _, err := fmt.Fprintf(r.w, "SEQUENCE: %d\n", release.Sequence); err != nil {
+	if _, err := fmt.Fprintf(r.stdoutWriter, "SEQUENCE: %d\n", release.Sequence); err != nil {
 		return err
 	}
-	r.w.Flush()
+	r.stdoutWriter.Flush()
 
 	if promoteChanID != "" {
 		if err := r.api.PromoteRelease(
@@ -122,8 +122,8 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 		}
 
 		// ignore error since operation was successful
-		fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", promoteChanID, release.Sequence)
-		r.w.Flush()
+		fmt.Fprintf(r.stdoutWriter, "Channel %s successfully set to release %d\n", promoteChanID, release.Sequence)
+		r.stdoutWriter.Flush()
 	}
 
 	return nil

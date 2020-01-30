@@ -22,7 +22,7 @@ func Test_ListKotsReleasesActual(t *testing.T) {
 			Token:     "all-kots-releases-read-write-token",
 		}
 
-		c := &GraphQLClient{GraphQLClient: d}
+		c := &HybridClient{GraphQLClient: d}
 
 		releases, err := c.ListReleases("all-kots-releases")
 		assert.Nil(t, err)

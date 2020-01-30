@@ -25,5 +25,5 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "list customers")
 	}
 
-	return print.Customers(r.w, customers)
+	return print.Customers(r.stdoutWriter, customers)
 }

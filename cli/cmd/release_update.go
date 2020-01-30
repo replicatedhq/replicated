@@ -69,8 +69,8 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	// ignore the error since operation was successful
-	fmt.Fprintf(r.w, "Release %d updated\n", seq)
-	r.w.Flush()
+	fmt.Fprintf(r.stdoutWriter, "Release %d updated\n", seq)
+	r.stdoutWriter.Flush()
 
 	return nil
 }

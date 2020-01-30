@@ -31,7 +31,7 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if err = print.ChannelReleases(r.w, releases); err != nil {
+		if err = print.ChannelReleases(r.stdoutWriter, releases); err != nil {
 			return err
 		}
 	} else if r.appType == "ship" {

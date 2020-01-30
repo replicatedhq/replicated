@@ -58,8 +58,8 @@ func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Fprintf(r.w, "Collector %s created\n", r.args.createCollectorName)
-	r.w.Flush()
+	fmt.Fprintf(r.stdoutWriter, "Collector %s created\n", r.args.createCollectorName)
+	r.stdoutWriter.Flush()
 
 	return nil
 

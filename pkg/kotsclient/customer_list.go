@@ -43,7 +43,7 @@ type Customer struct {
 	ExpiresAt string         `json:"expiresAt"`
 }
 
-func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
+func (c *HybridClient) ListCustomers(appID string) ([]types.Customer, error) {
 	response := GraphQLResponseListCustomers{}
 
 	request := graphql.Request{
@@ -55,7 +55,7 @@ func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, errors.Wrap(err, "execute gql request")
 	}
 

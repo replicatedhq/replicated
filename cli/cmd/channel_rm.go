@@ -29,8 +29,8 @@ func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	// ignore the error since operation was successful
-	fmt.Fprintf(r.w, "Channel %s successfully archived\n", chanID)
-	r.w.Flush()
+	fmt.Fprintf(r.stdoutWriter, "Channel %s successfully archived\n", chanID)
+	r.stdoutWriter.Flush()
 
 	return nil
 }

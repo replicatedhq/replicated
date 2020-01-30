@@ -51,8 +51,8 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	}
 
 	// ignore error since operation was successful
-	fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", chanID, seq)
-	r.w.Flush()
+	fmt.Fprintf(r.stdoutWriter, "Channel %s successfully set to release %d\n", chanID, seq)
+	r.stdoutWriter.Flush()
 
 	return nil
 }

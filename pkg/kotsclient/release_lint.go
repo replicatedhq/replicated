@@ -31,7 +31,7 @@ query lintKotsSpec($appId: ID!, $spec: String!) {
 }
 `
 
-func (c *GraphQLClient) LintRelease(appID, allKotsYamlsAsJson string) ([]types.LintMessage, error) {
+func (c *HybridClient) LintRelease(appID, allKotsYamlsAsJson string) ([]types.LintMessage, error) {
 
 	response := GraphQLResponseLintRelease{}
 
@@ -44,7 +44,7 @@ func (c *GraphQLClient) LintRelease(appID, allKotsYamlsAsJson string) ([]types.L
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, errors.Wrap(err, "execute request")
 	}
 

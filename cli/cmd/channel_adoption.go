@@ -30,7 +30,7 @@ func (r *runners) channelAdoption(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if err = print.ChannelAdoption(r.w, appChan.Adoption); err != nil {
+		if err = print.ChannelAdoption(r.stdoutWriter, appChan.Adoption); err != nil {
 			return err
 		}
 

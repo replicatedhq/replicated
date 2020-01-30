@@ -22,5 +22,5 @@ func (r *runners) channelList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Channels(r.w, channels)
+	return print.Channels(r.stdoutWriter, channels)
 }

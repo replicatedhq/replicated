@@ -26,6 +26,7 @@ var appSlugOrID string
 var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
+var graphqlRestOrigin = "https://g.replicated.com/api/v1"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -82,13 +83,16 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
-	w := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
+	stdoutWriter := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
+	stderrWriter := tabwriter.NewWriter(stderr, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
 
 	// get api client and app ID after flags are parsed
 	runCmds := &runners{
-		rootCmd: rootCmd,
-		stdin:   stdin,
-		w:       w,
+		rootCmd:      rootCmd,
+		stdin:        stdin,
+		stdoutWriter: stdoutWriter,
+		stderrWriter: stderrWriter,
+		stdout:       stdout,
 	}
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
@@ -141,6 +145,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersLSCommand(customersCmd)
 	runCmds.InitCustomersCreateCommand(customersCmd)
 
+	customerLicenseCmd := runCmds.InitCustomerLicenseCommand(customersCmd)
+	runCmds.InitCustomersLicenseInspectCommand(customerLicenseCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	prerunCommand := func(cmd *cobra.Command, args []string) error {
@@ -156,10 +163,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken)
+		kotsAPI := kotsclient.NewHybridClient(graphqlOrigin, apiToken, graphqlOrigin)
 		runCmds.kotsAPI = kotsAPI
 
-		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, graphqlRestOrigin)
 		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {

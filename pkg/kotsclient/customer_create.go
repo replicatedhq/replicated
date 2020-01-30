@@ -27,7 +27,7 @@ type CreateCustomerData struct {
 	Customer *Customer `json:"createKotsCustomer"`
 }
 
-func (c *GraphQLClient) CreateCustomer(name, channel string, expiresIn time.Duration) (*types.Customer, error) {
+func (c *HybridClient) CreateCustomer(name, channel string, expiresIn time.Duration) (*types.Customer, error) {
 
 	response := GraphQLResponseCreateCustomer{}
 
@@ -42,7 +42,7 @@ func (c *GraphQLClient) CreateCustomer(name, channel string, expiresIn time.Dura
 		request.Variables["expiresAt"] = (time.Now().Add(expiresIn)).Format(time.RFC3339)
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, errors.Wrap(err, "execute gql request")
 	}
 

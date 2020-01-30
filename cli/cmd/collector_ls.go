@@ -22,5 +22,5 @@ func (r *runners) collectorList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Collectors(r.w, collectors)
+	return print.Collectors(r.stdoutWriter, collectors)
 }

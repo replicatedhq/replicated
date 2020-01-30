@@ -29,5 +29,5 @@ func (r *runners) channelCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Channels(r.w, allChannels)
+	return print.Channels(r.stdoutWriter, allChannels)
 }

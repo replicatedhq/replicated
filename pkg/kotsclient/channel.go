@@ -95,7 +95,7 @@ query getKotsAppChannels($appId: ID!) {
 }
 `
 
-func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
+func (c *HybridClient) ListChannels(appID string) ([]types.Channel, error) {
 	response := GraphQLResponseListChannels{}
 
 	request := graphql.Request{
@@ -106,7 +106,7 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -142,7 +142,7 @@ mutation createKotsChannel($appId: String!, $channelName: String!, $description:
 }
 `
 
-func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (*types.Channel, error) {
+func (c *HybridClient) CreateChannel(appID string, name string, description string) (*types.Channel, error) {
 	response := GraphQLResponseCreateChannel{}
 
 	request := graphql.Request{
@@ -154,7 +154,7 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 		},
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, err
 	}
 
@@ -231,7 +231,7 @@ query getKotsChannel($channelId: ID!) {
 }
 `
 
-func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+func (c *HybridClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 	response := GraphQLResponseGetChannel{}
 
 	request := graphql.Request{
@@ -241,7 +241,7 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 			"channelId": channelID,
 		},
 	}
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	if err := c.ExecuteGraphQLRequest(request, &response); err != nil {
 		return nil, nil, err
 	}
 
@@ -255,7 +255,7 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 	return &channelDetail, nil, nil
 }
 
-func (c *GraphQLClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
+func (c *HybridClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
 	allChannels, err := c.ListChannels(appID)
 	if err != nil {
 		return nil, err

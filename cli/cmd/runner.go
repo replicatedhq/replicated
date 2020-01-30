@@ -17,15 +17,18 @@ import (
 // Runner holds the I/O dependencies and configurations used by individual
 // commands, which are defined as methods on this type.
 type runners struct {
-	appID       string
-	appType     string
-	api         client.Client
-	platformAPI *platformclient.HTTPClient
-	shipAPI     *shipclient.GraphQLClient
-	kotsAPI     *kotsclient.GraphQLClient
-	stdin       io.Reader
-	dir         string
-	w           *tabwriter.Writer
+	appID        string
+	appType      string
+	appSlug      string
+	api          client.Client
+	platformAPI  *platformclient.HTTPClient
+	shipAPI      *shipclient.GraphQLClient
+	kotsAPI      *kotsclient.HybridClient
+	stdin        io.Reader
+	dir          string
+	stdoutWriter *tabwriter.Writer
+	stderrWriter *tabwriter.Writer
+	stdout       io.Writer
 
 	rootCmd *cobra.Command
 	args    runnerArgs
@@ -57,7 +60,7 @@ type runnerArgs struct {
 	createReleasePromoteVersion       string
 	createReleasePromoteEnsureChannel bool
 	lintReleaseYamlDir                string
-	lintReleaseFailOn            string
+	lintReleaseFailOn                 string
 	releaseOptional                   bool
 	releaseNotes                      string
 	releaseVersion                    string
@@ -82,4 +85,7 @@ type runnerArgs struct {
 	customerCreateChannel        string
 	customerCreateEnsureChannel  bool
 	customerCreateExpiryDuration time.Duration
+
+	customerLicenseInspectCustomer string
+	customerLicenseInspectOutput   string
 }
