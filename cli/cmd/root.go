@@ -166,7 +166,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		kotsAPI := kotsclient.NewHybridClient(graphqlOrigin, apiToken, graphqlOrigin)
 		runCmds.kotsAPI = kotsAPI
 
-		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, graphqlRestOrigin)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, graphqlRestOrigin, apiToken)
 		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {

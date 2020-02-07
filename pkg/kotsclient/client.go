@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"io/ioutil"
 	"net/http"
 )
+
+var ErrNotFound = errors.New("Not found")
 
 type AppOptions struct {
 	Name string

@@ -40,5 +40,3 @@ func (c *Client) GetAppType(appID string) (string, error) {
 
 	return "", err
 }
-
-
