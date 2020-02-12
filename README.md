@@ -58,7 +58,7 @@ fi
 curl -sSL "$INSTALL_SCRIPT" > install.sh
 sudo bash ./install.sh
 
-cat replicated.yaml | replicated release create --yaml - --promote=Unstable --version "$VERSION"
+cat replicated.yaml | replicated release create --yaml - --promote Unstable --version "$VERSION"
 # Channel ee9d99e87b4a5acc2863f68cb2a0c390 successfully set to release 15
 ```
 
