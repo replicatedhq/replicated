@@ -15,12 +15,13 @@ type ReleaseInfo struct {
 type LintMessage struct {
 	Rule      string          `json:"rule"`
 	Type      string          `json:"type"`
+	Path      string          `json:"path"`
 	Message   string          `json:"message"`
 	Positions []*LintPosition `json:"positions"`
 }
 
 type LintPosition struct {
-	Path  string            `json:"path"`
+	Path  string           `json:"path"`
 	Start LintLinePosition `json:"start"`
 	End   LintLinePosition `json:"end"`
 }
