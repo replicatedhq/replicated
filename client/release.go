@@ -160,7 +160,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 func (c *Client) LintRelease(appID string, appType string, yamlOrJSON string) ([]types.LintMessage, error) {
 
 	if appType == "platform" {
-		return nil, errors.New("Linting is not yet supported for Platform applications")
+		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
 		// return c.PlatformClient.LintRelease(appID, yamlOrJSON)
 	} else if appType == "ship" {
 		return c.ShipClient.LintRelease(appID, yamlOrJSON)
