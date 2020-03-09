@@ -141,6 +141,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersLSCommand(customersCmd)
 	runCmds.InitCustomersCreateCommand(customersCmd)
 
+	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
+	runCmds.InitInstallerCreate(installerCmd)
+	runCmds.InitInstallerList(installerCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	prerunCommand := func(cmd *cobra.Command, args []string) error {
@@ -200,6 +204,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	collectorsCmd.PersistentPreRunE = prerunCommand
 	entitlementsCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
+	installerCmd.PersistentPreRunE = prerunCommand
 
 	runCmds.rootCmd.AddCommand(Version())
 

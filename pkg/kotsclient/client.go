@@ -27,4 +27,3 @@ func NewGraphQLClient(origin string, apiKey string) *GraphQLClient {
 func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTarget interface{}) error {
 	return c.GraphQLClient.ExecuteRequest(requestObj, deserializeTarget)
 }
-

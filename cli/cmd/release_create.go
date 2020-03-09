@@ -42,7 +42,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd.RunE = r.releaseCreate
 }
 
-func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
+func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 	if r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" {
@@ -92,7 +92,10 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	var promoteChanID string
 	if r.args.createReleasePromote != "" {
 		var err error
-		promoteChanID, err = r.getOrCreateChannelForPromotion(r.args.createReleasePromoteEnsureChannel)
+		promoteChanID, err = r.getOrCreateChannelForPromotion(
+			r.args.createReleasePromote,
+			r.args.createReleasePromoteEnsureChannel,
+		)
 		if err != nil {
 			return errors.Wrapf(err, "get or create channel %q for promotion", promoteChanID)
 		}
@@ -129,18 +132,19 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (r *runners) getOrCreateChannelForPromotion(createIfAbsent bool) (string, error) {
+func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbsent bool) (string, error) {
 
 	description := "" // todo: do we want a flag for the desired channel description
 
 	channel, err := r.api.GetChannelByName(
 		r.appID,
 		r.appType,
-		r.args.createReleasePromote,
+		channelName,
 		description,
 		createIfAbsent,
-	); if err != nil {
-		return "", errors.Wrapf(err, "get-or-create channel %q", r.args.createReleasePromote)
+	)
+	if err != nil {
+		return "", errors.Wrapf(err, "get-or-create channel %q", channelName)
 	}
 
 	return channel.ID, nil
