@@ -59,7 +59,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	}
 
 	if r.args.updateReleaseYamlDir != "" {
-		r.args.updateReleaseYaml, err = readYAMLDir(r.args.createReleaseYamlDir)
+		r.args.updateReleaseYaml, err = readYAMLDir(r.args.updateReleaseYamlDir)
 		if err != nil {
 			return errors.Wrap(err, "read yaml dir")
 		}
