@@ -12,11 +12,11 @@ type Client struct {
 	KotsClient     *kotsclient.GraphQLClient
 }
 
-func NewClient(platformOrigin string, graphqlOrigin string, apiToken string) Client {
+func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kurlOrigin string) Client {
 	client := Client{
 		PlatformClient: platformclient.NewHTTPClient(platformOrigin, apiToken),
 		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
-		KotsClient:     kotsclient.NewGraphQLClient(graphqlOrigin, apiToken),
+		KotsClient:     kotsclient.NewGraphQLClient(graphqlOrigin, apiToken, kurlOrigin),
 	}
 
 	return client
@@ -40,4 +40,3 @@ func (c *Client) GetAppType(appID string) (string, error) {
 
 	return "", err
 }
-
