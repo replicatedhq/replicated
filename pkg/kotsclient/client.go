@@ -15,11 +15,15 @@ type ChannelOptions struct {
 
 // Client communicates with the Replicated Vendor GraphQL API.
 type GraphQLClient struct {
-	GraphQLClient *graphql.Client
+	GraphQLClient    *graphql.Client
+	KurlDotSHAddress string
 }
 
-func NewGraphQLClient(origin string, apiKey string) *GraphQLClient {
-	c := &GraphQLClient{GraphQLClient: graphql.NewClient(origin, apiKey)}
+func NewGraphQLClient(origin string, apiKey string, kurlDotSHAddress string) *GraphQLClient {
+	c := &GraphQLClient{
+		GraphQLClient:    graphql.NewClient(origin, apiKey),
+		KurlDotSHAddress: kurlDotSHAddress,
+	}
 
 	return c
 }
