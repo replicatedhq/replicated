@@ -93,11 +93,11 @@ get-spec-local:
 		replicatedhq.replicated /bin/bash -c ' \
 			for PKG in ${API_PKGS}; do \
 				swagger generate spec \
-					-b ../../replicatedcom/vendor-api/handlers/replv1/$$PKG \
+					../../replicatedcom/vendor-api/handlers/replv1/$$PKG \
 					-o gen/spec/$$PKG.json; \
 			done \
 			&& swagger generate spec \
-				-b ../../replicatedcom/vendor-api/handlers/replv2 \
+				../../replicatedcom/vendor-api/handlers/replv2 \
 				-o gen/spec/v2.json'
 
 # generate from the specs in gen/spec, which come from either get-spec-prod or get-spec-local
