@@ -2,6 +2,7 @@ package shipclient
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
@@ -20,7 +21,7 @@ type GraphQLResponseGetChannel struct {
 
 type GraphQLResponseCreateChannel struct {
 	Data   *ShipCreateChannelData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
+	Errors []graphql.GQLError     `json:"errors,omitempty"`
 }
 
 type ShipCreateChannelData struct {
@@ -46,31 +47,20 @@ type ShipChannel struct {
 const listChannelsQuery = `
 query getAppChannels($appId: ID!) {
   getAppChannels(appId: $appId) {
-    id,
-    appId,
-    name,
-    currentVersion,
-    currentReleaseDate,
-    currentSpec,
-    releaseId,
-    numReleases,
-    description,
+    id
+    appId
+    name
+    currentVersion
+    currentReleaseDate
+    currentSpec
+    releaseId
+    numReleases
+    description
     channelIcon
-    created,
-    updated,
-    isDefault,
-    isArchived,
-    adoptionRate {
-      releaseId
-      semver
-      count
-      percent
-      totalOnChannel
-    }
-    releases {
-      id
-      semver
-    }
+    created
+    updated
+    isDefault
+    isArchived
   }
 }`
 
@@ -108,16 +98,16 @@ func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
 const createChannelQuery = `
 mutation createChannel($appId: String!, $channelName: String!, $description: String) {
   createChannel(appId: $appId, channelName: $channelName, description: $description) {
-    id,
-    name,
-    description,
-    channelIcon,
-    currentVersion,
-    currentReleaseDate,
-    numReleases,
-    created,
-    updated,
-    isDefault,
+    id
+    name
+    description
+    channelIcon
+    currentVersion
+    currentReleaseDate
+    numReleases
+    created
+    updated
+    isDefault
     isArchived
   }
 }`
@@ -196,46 +186,11 @@ var getShipChannel = `
       installInstructions
       currentSpec
       numReleases
-      adoptionRate {
-        releaseId
-        semver
-        count
-        percent
-        totalOnChannel
-      }
-      customers {
-        id
-        name
-        avatar
-        actions {
-          shipApplyDocker
-        }
-        installationId
-        shipInstallStatus {
-          status
-          updatedAt
-        }
-      }
-      githubRef {
-        owner
-        repoFullName
-        branch
-        path
-      }
       extraLintRules
       created
       updated
       isDefault
       isArchived
-      releases {
-        id
-        semver
-        spec
-        releaseNotes
-        created
-        updated
-        sequence
-      }
     }
   }
 `
