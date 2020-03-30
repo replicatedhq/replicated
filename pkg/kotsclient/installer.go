@@ -87,8 +87,8 @@ func (c *GraphQLClient) CreateVendorInstaller(appID string, yaml string) (*types
 		Query: kotsCreateInstaller,
 
 		Variables: map[string]interface{}{
-			"appId":           appID,
-			"yaml":            yaml,
+			"appId": appID,
+			"yaml":  yaml,
 		},
 	}
 
