@@ -15,9 +15,9 @@ import (
 )
 
 type AppRelease struct {
-	Config string `json:"Config,omitempty"`
+	Config    string    `json:"Config,omitempty"`
 	CreatedAt time.Time `json:"CreatedAt,omitempty"`
-	Editable bool `json:"Editable,omitempty"`
-	EditedAt time.Time `json:"EditedAt,omitempty"`
-	Sequence int64 `json:"Sequence,omitempty"`
+	Editable  bool      `json:"Editable,omitempty"`
+	EditedAt  time.Time `json:"EditedAt,omitempty"`
+	Sequence  int64     `json:"Sequence,omitempty"`
 }

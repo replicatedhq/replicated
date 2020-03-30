@@ -13,7 +13,7 @@ func (r *runners) InitChannelAdoption(parent *cobra.Command) {
 		Short: "Print channel adoption statistics by license type",
 		Long:  "Print channel adoption statistics by license type",
 	}
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelAdoption
 }

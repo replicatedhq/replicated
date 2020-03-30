@@ -12,11 +12,11 @@ package swagger
 
 type Body12 struct {
 	// If activation is required this is the email the code will be sent to.
-	ActivationEmail string `json:"activation_email"`
-	AirgapDownloadEnabled bool `json:"airgap_download_enabled"`
+	ActivationEmail       string `json:"activation_email"`
+	AirgapDownloadEnabled bool   `json:"airgap_download_enabled"`
 	// License Label name, ie name of customer who is using license.
-	Assignee string `json:"assignee"`
-	AssistedSetupEnabled bool `json:"assisted_setup_enabled"`
+	Assignee             string `json:"assignee"`
+	AssistedSetupEnabled bool   `json:"assisted_setup_enabled"`
 	// Channel id that the license will be associated with.
 	ChannelId string `json:"channel_id"`
 	// Date that the license will expire, can be null for no expiration or formated by year-month-day ex. 2016-02-02.

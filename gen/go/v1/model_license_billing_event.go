@@ -15,11 +15,11 @@ import (
 )
 
 type LicenseBillingEvent struct {
-	Amount int64 `json:"amount,omitempty"`
-	Description string `json:"description,omitempty"`
-	EventDate time.Time `json:"event_date,omitempty"`
-	Id string `json:"id,omitempty"`
-	VendorDueFromCustomerDate time.Time `json:"vendor_due_from_customer_date,omitempty"`
+	Amount                      int64     `json:"amount,omitempty"`
+	Description                 string    `json:"description,omitempty"`
+	EventDate                   time.Time `json:"event_date,omitempty"`
+	Id                          string    `json:"id,omitempty"`
+	VendorDueFromCustomerDate   time.Time `json:"vendor_due_from_customer_date,omitempty"`
 	VendorInvoiceToCustomerDate time.Time `json:"vendor_invoice_to_customer_date,omitempty"`
-	VendorPaidByCustomerDate time.Time `json:"vendor_paid_by_customer_date,omitempty"`
+	VendorPaidByCustomerDate    time.Time `json:"vendor_paid_by_customer_date,omitempty"`
 }

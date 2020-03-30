@@ -12,8 +12,8 @@ package swagger
 
 // LicenseCounts is a struct to hold license count information
 type LicenseCounts struct {
-	Active map[string]int64 `json:"active,omitempty"`
-	Airgap map[string]int64 `json:"airgap,omitempty"`
+	Active   map[string]int64 `json:"active,omitempty"`
+	Airgap   map[string]int64 `json:"airgap,omitempty"`
 	Inactive map[string]int64 `json:"inactive,omitempty"`
-	Total map[string]int64 `json:"total,omitempty"`
+	Total    map[string]int64 `json:"total,omitempty"`
 }

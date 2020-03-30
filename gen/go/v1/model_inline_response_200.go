@@ -12,5 +12,5 @@ package swagger
 
 type InlineResponse200 struct {
 	Branding map[string]Branding `json:"branding,omitempty"`
-	Channels []AppChannel `json:"channels,omitempty"`
+	Channels []AppChannel        `json:"channels,omitempty"`
 }

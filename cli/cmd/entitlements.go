@@ -10,7 +10,7 @@ func (r *runners) InitEntitlementsCommand(parent *cobra.Command) *cobra.Command 
 		Short: "Manage customer entitlements",
 		Long:  `The entitlements command allows vendors to create, display, modify entitlement values for end customer licensing.`,
 	}
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 
 	cmd.PersistentFlags().StringVar(&r.args.entitlementsAPIServer, "replicated-api-server", "https://g.replicated.com/graphql", "upstream g. address")

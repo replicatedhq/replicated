@@ -15,10 +15,10 @@ import (
 )
 
 type LicenseInstanceVersionHistory struct {
-	InstanceId string `json:"InstanceId,omitempty"`
-	Start time.Time `json:"Start,omitempty"`
-	Stop time.Time `json:"Stop,omitempty"`
-	VersionChannel string `json:"VersionChannel,omitempty"`
-	VersionLabel string `json:"VersionLabel,omitempty"`
-	VersionSequence int64 `json:"VersionSequence,omitempty"`
+	InstanceId      string    `json:"InstanceId,omitempty"`
+	Start           time.Time `json:"Start,omitempty"`
+	Stop            time.Time `json:"Stop,omitempty"`
+	VersionChannel  string    `json:"VersionChannel,omitempty"`
+	VersionLabel    string    `json:"VersionLabel,omitempty"`
+	VersionSequence int64     `json:"VersionSequence,omitempty"`
 }

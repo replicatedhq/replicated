@@ -11,7 +11,7 @@
 package swagger
 
 type BodyCreateChannel struct {
-	AirgapEnabled bool `json:"airgap_enabled,omitempty"`
-	Description string `json:"description,omitempty"`
-	Name string `json:"name"`
+	AirgapEnabled bool   `json:"airgap_enabled,omitempty"`
+	Description   string `json:"description,omitempty"`
+	Name          string `json:"name"`
 }

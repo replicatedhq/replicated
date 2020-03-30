@@ -65,10 +65,9 @@ mutation createKotsAppInstaller($appId: ID!, $kurlInstallerId: ID!, $yaml: Strin
 	}
 }`
 
-
 type GraphQLResponseCreateInstaller struct {
 	Data   *CreateInstallerDataWrapper `json:"data,omitempty"`
-	Errors []graphql.GQLError     `json:"errors,omitempty"`
+	Errors []graphql.GQLError          `json:"errors,omitempty"`
 }
 
 type CreateInstallerDataWrapper struct {
@@ -162,9 +161,9 @@ func (c *GraphQLClient) PromoteInstaller(appID string, sequence int64, channelID
 		Query: kotsPromoteInstaller,
 
 		Variables: map[string]interface{}{
-			"appId":           appID,
-			"sequence": sequence,
-			"channelIds": []string{channelID},
+			"appId":        appID,
+			"sequence":     sequence,
+			"channelIds":   []string{channelID},
 			"versionLabel": versionLabel,
 		},
 	}

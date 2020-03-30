@@ -15,14 +15,14 @@ import (
 )
 
 type ChannelRelease struct {
-	AirgapBuildError string `json:"airgap_build_error,omitempty"`
-	AirgapBuildStatus string `json:"airgap_build_status,omitempty"`
-	ChannelId string `json:"channel_id,omitempty"`
-	ChannelSequence int64 `json:"channel_sequence,omitempty"`
-	Created time.Time `json:"created,omitempty"`
-	ReleaseNotes string `json:"release_notes,omitempty"`
-	ReleaseSequence int64 `json:"release_sequence,omitempty"`
-	Required bool `json:"required,omitempty"`
-	Updated time.Time `json:"updated,omitempty"`
-	Version string `json:"version,omitempty"`
+	AirgapBuildError  string    `json:"airgap_build_error,omitempty"`
+	AirgapBuildStatus string    `json:"airgap_build_status,omitempty"`
+	ChannelId         string    `json:"channel_id,omitempty"`
+	ChannelSequence   int64     `json:"channel_sequence,omitempty"`
+	Created           time.Time `json:"created,omitempty"`
+	ReleaseNotes      string    `json:"release_notes,omitempty"`
+	ReleaseSequence   int64     `json:"release_sequence,omitempty"`
+	Required          bool      `json:"required,omitempty"`
+	Updated           time.Time `json:"updated,omitempty"`
+	Version           string    `json:"version,omitempty"`
 }

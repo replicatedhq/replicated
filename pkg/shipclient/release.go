@@ -62,7 +62,6 @@ type ShipReleaseLintData struct {
 	Messages []types.LintMessage `json:"lintRelease"`
 }
 
-
 const listReleasesQuery = `
 query allReleases($appId: ID!) {
   allReleases(appId: $appId) {
