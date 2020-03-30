@@ -11,7 +11,7 @@ func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
 		Use:   "ls",
 		Short: "list customers",
 		Long:  `list customers`,
-		RunE: r.listCustomers,
+		RunE:  r.listCustomers,
 	}
 	parent.AddCommand(customersCmd)
 

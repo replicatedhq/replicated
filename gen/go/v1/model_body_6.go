@@ -12,9 +12,9 @@ package swagger
 
 type Body6 struct {
 	Default_ string `json:"default"`
-	Hidden bool `json:"hidden"`
-	Name string `json:"name"`
-	Required bool `json:"required"`
-	Title string `json:"title"`
-	Type_ string `json:"type"`
+	Hidden   bool   `json:"hidden"`
+	Name     string `json:"name"`
+	Required bool   `json:"required"`
+	Title    string `json:"title"`
+	Type_    string `json:"type"`
 }

@@ -15,8 +15,8 @@ import (
 )
 
 type InstalledAppVersion struct {
-	Label string `json:"Label,omitempty"`
-	LastCheck time.Time `json:"LastCheck,omitempty"`
-	Sequence int64 `json:"Sequence,omitempty"`
-	UpdateAvailable bool `json:"UpdateAvailable,omitempty"`
+	Label           string    `json:"Label,omitempty"`
+	LastCheck       time.Time `json:"LastCheck,omitempty"`
+	Sequence        int64     `json:"Sequence,omitempty"`
+	UpdateAvailable bool      `json:"UpdateAvailable,omitempty"`
 }

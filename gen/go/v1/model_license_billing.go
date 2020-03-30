@@ -15,8 +15,8 @@ import (
 )
 
 type LicenseBilling struct {
-	Begin time.Time `json:"begin,omitempty"`
-	End time.Time `json:"end,omitempty"`
-	Frequency string `json:"frequency,omitempty"`
-	Revenue string `json:"revenue,omitempty"`
+	Begin     time.Time `json:"begin,omitempty"`
+	End       time.Time `json:"end,omitempty"`
+	Frequency string    `json:"frequency,omitempty"`
+	Revenue   string    `json:"revenue,omitempty"`
 }

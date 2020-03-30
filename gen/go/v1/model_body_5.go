@@ -12,6 +12,6 @@ package swagger
 
 type Body5 struct {
 	ReleaseNotes string `json:"release_notes"`
-	Required bool `json:"required"`
-	Version string `json:"version"`
+	Required     bool   `json:"required"`
+	Version      string `json:"version"`
 }

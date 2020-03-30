@@ -87,7 +87,6 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 		return errors.Wrap(err, "read response body")
 	}
 
-
 	var gqlErr ResponseErrorOnly
 	_ = json.Unmarshal(responseBody, &gqlErr) // ignore error to be safe
 

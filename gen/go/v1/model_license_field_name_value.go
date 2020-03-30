@@ -11,6 +11,6 @@
 package swagger
 
 type LicenseFieldNameValue struct {
-	Field string `json:"field,omitempty"`
+	Field string       `json:"field,omitempty"`
 	Value *interface{} `json:"value,omitempty"`
 }

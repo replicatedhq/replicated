@@ -12,5 +12,5 @@ package swagger
 
 type LicenseVersions struct {
 	InstalledAppVersion *InstalledAppVersion `json:"InstalledAppVersion,omitempty"`
-	ReplicatedVersions map[string][]string `json:"ReplicatedVersions,omitempty"`
+	ReplicatedVersions  map[string][]string  `json:"ReplicatedVersions,omitempty"`
 }

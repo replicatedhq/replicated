@@ -11,9 +11,9 @@
 package swagger
 
 type Body14 struct {
-	Amount int64 `json:"amount"`
-	Description string `json:"description"`
-	VendorDueFromCustomerDate string `json:"vendor_due_from_customer_date"`
+	Amount                      int64  `json:"amount"`
+	Description                 string `json:"description"`
+	VendorDueFromCustomerDate   string `json:"vendor_due_from_customer_date"`
 	VendorInvoiceToCustomerDate string `json:"vendor_invoice_to_customer_date"`
-	VendorPaidByCustomerDate string `json:"vendor_paid_by_customer_date"`
+	VendorPaidByCustomerDate    string `json:"vendor_paid_by_customer_date"`
 }

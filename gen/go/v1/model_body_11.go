@@ -12,8 +12,8 @@ package swagger
 
 type Body11 struct {
 	// If activation is required this is the email the code will be sent to.
-	ActivationEmail string `json:"activation_email"`
-	AirgapDownloadEnabled bool `json:"airgap_download_enabled"`
+	ActivationEmail       string `json:"activation_email"`
+	AirgapDownloadEnabled bool   `json:"airgap_download_enabled"`
 	// App Id that this license will be associated with.
 	AppId string `json:"app_id"`
 	// License Label name, ie name of customer who is using license.

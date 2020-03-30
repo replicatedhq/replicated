@@ -14,7 +14,7 @@ func (r *runners) InitEntitlementsSetValueCommand(parent *cobra.Command) {
 		Long:  `Set a customer value for an entitlement field defined via 'replicated entitlements define-fields'`,
 		RunE:  r.entitlementsSetValue,
 	}
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.entitlementsSetValueDefinitionsID, "definitions-id", "", "definitions id created with define-fields command")

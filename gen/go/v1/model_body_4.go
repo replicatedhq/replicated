@@ -11,8 +11,8 @@
 package swagger
 
 type Body4 struct {
-	AirgapEnabled bool `json:"airgap_enabled,omitempty"`
-	Description string `json:"description,omitempty"`
-	IsDefault bool `json:"is_default,omitempty"`
-	Name string `json:"name"`
+	AirgapEnabled bool   `json:"airgap_enabled,omitempty"`
+	Description   string `json:"description,omitempty"`
+	IsDefault     bool   `json:"is_default,omitempty"`
+	Name          string `json:"name"`
 }

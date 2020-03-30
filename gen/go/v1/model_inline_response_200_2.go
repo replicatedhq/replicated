@@ -11,6 +11,6 @@
 package swagger
 
 type GetChannelInlineResponse200 struct {
-	Channel *AppChannel `json:"channel"`
+	Channel  *AppChannel      `json:"channel"`
 	Releases []ChannelRelease `json:"releases"`
 }

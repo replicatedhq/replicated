@@ -25,7 +25,7 @@ func (r *runners) InitEntitlementsGetCustomerReleaseCommand(parent *cobra.Comman
 	cmd.Flags().StringVar(&r.args.entitlementsGetReleaseInstallationID, "installation-id", "", "installation id")
 	// change the default from g.replicated.com to pg.replicated.com
 	cmd.Flags().StringVar(&r.args.entitlementsGetReleaseAPIServer, "replicated-api-server", "https://pg.replicated.com/graphql", "Upstream api server")
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 }
 

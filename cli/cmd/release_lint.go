@@ -7,14 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-
 var (
 	validFailOnValues = map[string]interface{}{
 		"error": nil,
-		"warn": nil,
-		"info": nil,
-		"none": nil,
-		"": nil,
+		"warn":  nil,
+		"info":  nil,
+		"none":  nil,
+		"":      nil,
 	}
 )
 
@@ -38,7 +37,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("yaml is required")
 	}
 
-	if _, ok :=  validFailOnValues[r.args.lintReleaseFailOn]; !ok {
+	if _, ok := validFailOnValues[r.args.lintReleaseFailOn]; !ok {
 		return errors.Errorf("fail-on value %q not supported, supported values are [info, warn, error, none]", r.args.lintReleaseFailOn)
 	}
 

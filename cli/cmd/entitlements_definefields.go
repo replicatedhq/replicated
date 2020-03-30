@@ -21,7 +21,7 @@ basis and delivered securely to your on-prem application`,
 
 	cmd.Flags().StringVar(&r.args.entitlementsDefineFieldsFile, "file", "entitlements.yaml", "definitions file to promote")
 	cmd.Flags().StringVar(&r.args.entitlementsDefineFieldsName, "name", "", "name for this definition")
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 }
 

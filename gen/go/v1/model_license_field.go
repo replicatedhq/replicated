@@ -12,9 +12,9 @@ package swagger
 
 type LicenseField struct {
 	Default_ string `json:"default,omitempty"`
-	Hidden bool `json:"hidden,omitempty"`
-	Name string `json:"name,omitempty"`
-	Required bool `json:"required,omitempty"`
-	Title string `json:"title,omitempty"`
-	Type_ string `json:"type,omitempty"`
+	Hidden   bool   `json:"hidden,omitempty"`
+	Name     string `json:"name,omitempty"`
+	Required bool   `json:"required,omitempty"`
+	Title    string `json:"title,omitempty"`
+	Type_    string `json:"type,omitempty"`
 }

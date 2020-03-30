@@ -15,7 +15,7 @@ func (r *runners) InitCollectorInspect(parent *cobra.Command) {
 		Short: "Print the YAML config for a collector",
 		Long:  "Print the YAML config for a collector",
 	}
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 	cmd.RunE = r.collectorInspect
 }

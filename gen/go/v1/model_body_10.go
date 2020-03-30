@@ -11,8 +11,8 @@
 package swagger
 
 type BodyPromoteRelease struct {
-	Channels []string `json:"channels"`
-	Label string `json:"label"`
-	ReleaseNotes string `json:"release_notes"`
-	Required bool `json:"required"`
+	Channels     []string `json:"channels"`
+	Label        string   `json:"label"`
+	ReleaseNotes string   `json:"release_notes"`
+	Required     bool     `json:"required"`
 }

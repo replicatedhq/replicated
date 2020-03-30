@@ -11,10 +11,10 @@
 package swagger
 
 type PreflightCheck struct {
-	Category string `json:"Category,omitempty"`
-	CheckName string `json:"CheckName,omitempty"`
+	Category   string `json:"Category,omitempty"`
+	CheckName  string `json:"CheckName,omitempty"`
 	CheckValue string `json:"CheckValue,omitempty"`
-	IsRequired bool `json:"IsRequired,omitempty"`
-	Scheduler string `json:"Scheduler,omitempty"`
-	Score string `json:"Score,omitempty"`
+	IsRequired bool   `json:"IsRequired,omitempty"`
+	Scheduler  string `json:"Scheduler,omitempty"`
+	Score      string `json:"Score,omitempty"`
 }

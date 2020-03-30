@@ -83,7 +83,6 @@ func (c *GraphQLClient) ListCustomers(appID string) ([]types.Customer, error) {
 			return nil, errors.Wrapf(err, "set expiry time for customer %q", kotsCustomer.ID)
 		}
 
-
 		customers = append(customers, customer)
 	}
 

@@ -9,7 +9,7 @@ func (c *Client) CreateInstaller(appId string, appType string, yaml string) (*ty
 	if appType == "platform" {
 		return nil, errors.Errorf("Kubernetes Installers are not supported for platform applications")
 	} else if appType == "ship" {
-		return nil, errors.Errorf("Kubernetes Installers are not supported for platfrom applications")
+		return nil, errors.Errorf("Kubernetes Installers are not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.CreateInstaller(appId, yaml)
 	}
@@ -22,7 +22,7 @@ func (c *Client) ListInstallers(appId string, appType string) ([]types.Installer
 	if appType == "platform" {
 		return nil, errors.Errorf("Kubernetes Installers are not supported for platform applications")
 	} else if appType == "ship" {
-		return nil, errors.Errorf("Kubernetes Installers are not supported for platform applications")
+		return nil, errors.Errorf("Kubernetes Installers are not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.ListInstallers(appId)
 	}

@@ -13,7 +13,6 @@ type Customer struct {
 	Expires  *time.Time
 }
 
-
 func (c Customer) WithExpiryTime(expiryTime string) (Customer, error) {
 	if expiryTime != "" {
 		parsed, err := time.Parse(time.RFC3339, expiryTime)

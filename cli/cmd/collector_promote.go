@@ -15,7 +15,7 @@ func (r *runners) InitCollectorPromote(parent *cobra.Command) {
 
   Example: replicated collectors promote skd204095829040 fe4901690971757689f022f7a460f9b2`,
 	}
-	cmd.Hidden=true; // Not supported in KOTS 
+	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 
 	cmd.RunE = r.collectorPromote

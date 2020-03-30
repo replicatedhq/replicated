@@ -15,8 +15,8 @@ import (
 )
 
 type Branding struct {
-	Created time.Time `json:"created,omitempty"`
-	Css string `json:"css,omitempty"`
-	Default_ bool `json:"default,omitempty"`
-	Updated time.Time `json:"updated,omitempty"`
+	Created  time.Time `json:"created,omitempty"`
+	Css      string    `json:"css,omitempty"`
+	Default_ bool      `json:"default,omitempty"`
+	Updated  time.Time `json:"updated,omitempty"`
 }
