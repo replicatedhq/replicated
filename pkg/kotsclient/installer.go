@@ -1,13 +1,9 @@
 package kotsclient
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 const kotsListInstallers = `
@@ -56,8 +52,8 @@ func (c *GraphQLClient) ListInstallers(appID string) ([]types.InstallerSpec, err
 }
 
 const kotsCreateInstaller = `
-mutation createKotsAppInstaller($appId: ID!, $kurlInstallerId: ID!, $yaml: String!) {
-	createKotsAppInstaller(appId: $appId, kurlInstallerId: $kurlInstallerId, yaml: $yaml) {
+mutation createKotsAppInstaller($appId: ID!, $yaml: String!) {
+	createKotsAppInstaller(appId: $appId, yaml: $yaml) {
 		appId
 		kurlInstallerId
 		sequence
@@ -76,58 +72,15 @@ type CreateInstallerDataWrapper struct {
 
 func (c *GraphQLClient) CreateInstaller(appId string, yaml string) (*types.InstallerSpec, error) {
 
-	// post yaml to kurl.sh
-	installerURL, err := c.CreateKurldotSHInstaller(yaml)
+	installer, err := c.CreateVendorInstaller(appId, yaml)
 	if err != nil {
-		return nil, errors.Wrap(err, "create kurl installer")
-	}
-
-	trimmed := strings.TrimLeft(installerURL, "htps:/")
-	parts := strings.Split(trimmed, "/")
-	if len(parts) != 2 {
-		return nil, errors.Errorf("expected exactly two parts of %q, found %d", trimmed, len(parts))
-	}
-
-	installerKurlHash := parts[1]
-	installer, err := c.CreateVendorInstaller(appId, yaml, installerKurlHash)
-	if err != nil {
-		return nil, errors.Wrapf(err, "create vendor installer for kurl hash %q", installerKurlHash)
+		return nil, errors.Wrap(err, "create vendor installer")
 	}
 
 	return installer, nil
 }
 
-func (c *GraphQLClient) CreateKurldotSHInstaller(yaml string) (string, error) {
-	bodyReader := strings.NewReader(yaml)
-
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/installer", c.KurlDotSHAddress), bodyReader)
-	if err != nil {
-		return "", errors.Wrap(err, "create request")
-	}
-
-	req.Header.Set("Content-Type", "text/yaml")
-
-	client := http.DefaultClient
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "do request")
-
-	}
-
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "read response body")
-	}
-
-	if resp.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("unexpected status code %d, body was %s", resp.StatusCode, responseBody)
-	}
-
-	return string(responseBody), nil
-}
-
-func (c *GraphQLClient) CreateVendorInstaller(appID string, yaml string, kurlInstallerID string) (*types.InstallerSpec, error) {
+func (c *GraphQLClient) CreateVendorInstaller(appID string, yaml string) (*types.InstallerSpec, error) {
 	response := GraphQLResponseCreateInstaller{}
 
 	request := graphql.Request{
@@ -136,7 +89,6 @@ func (c *GraphQLClient) CreateVendorInstaller(appID string, yaml string, kurlIns
 		Variables: map[string]interface{}{
 			"appId":           appID,
 			"yaml":            yaml,
-			"kurlInstallerId": kurlInstallerID,
 		},
 	}
 

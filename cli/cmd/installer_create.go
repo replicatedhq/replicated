@@ -16,7 +16,7 @@ func (r *runners) InitInstallerCreate(parent *cobra.Command) {
 
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createInstallerYaml, "yaml", "", "The YAML config for this installer. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
+	cmd.Flags().StringVar(&r.args.createInstallerYaml, "yaml", "", "The YAML config for this installer. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
 	cmd.Flags().StringVar(&r.args.createInstallerYamlFile, "yaml-file", "", "The file name with YAML config for this installer.  Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.createInstallerPromote, "promote", "", "Channel name or id to promote this installer to")
 	cmd.Flags().BoolVar(&r.args.createInstallerPromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
