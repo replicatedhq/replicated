@@ -26,6 +26,7 @@ var appSlugOrID string
 var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
+var kurlDotSHOrigin = "https://kurl.sh"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -141,6 +142,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersLSCommand(customersCmd)
 	runCmds.InitCustomersCreateCommand(customersCmd)
 
+	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
+	runCmds.InitInstallerCreate(installerCmd)
+	runCmds.InitInstallerList(installerCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	prerunCommand := func(cmd *cobra.Command, args []string) error {
@@ -150,16 +155,22 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				return errors.New("Please provide your API token")
 			}
 		}
+
+		// allow override
+		if os.Getenv("KURL_SH_ORIGIN") != "" {
+			kurlDotSHOrigin = os.Getenv("KURL_SH_ORIGIN")
+		}
+
 		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
 
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken)
+		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.kotsAPI = kotsAPI
 
-		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
 		if appSlugOrID == "" {
@@ -200,6 +211,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	collectorsCmd.PersistentPreRunE = prerunCommand
 	entitlementsCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
+	installerCmd.PersistentPreRunE = prerunCommand
 
 	runCmds.rootCmd.AddCommand(Version())
 

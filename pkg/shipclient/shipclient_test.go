@@ -13,6 +13,10 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	if os.Getenv("SKIP_PACT_TESTING") != "" {
+		return
+	}
+
 	pact = createPact()
 
 	pact.Setup(true)

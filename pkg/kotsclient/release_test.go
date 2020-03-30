@@ -17,12 +17,16 @@ func Test_ListKotsReleasesActual(t *testing.T) {
 
 		uri, err := url.Parse(u)
 		assert.Nil(t, err)
+
 		d := &graphql.Client{
 			GQLServer: uri,
 			Token:     "all-kots-releases-read-write-token",
 		}
 
-		c := &GraphQLClient{GraphQLClient: d}
+		c := &GraphQLClient{
+			GraphQLClient:    d,
+			KurlDotSHAddress: "",
+		}
 
 		releases, err := c.ListReleases("all-kots-releases")
 		assert.Nil(t, err)

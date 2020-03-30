@@ -57,7 +57,7 @@ type runnerArgs struct {
 	createReleasePromoteVersion       string
 	createReleasePromoteEnsureChannel bool
 	lintReleaseYamlDir                string
-	lintReleaseFailOn            string
+	lintReleaseFailOn                 string
 	releaseOptional                   bool
 	releaseNotes                      string
 	releaseVersion                    string
@@ -82,4 +82,9 @@ type runnerArgs struct {
 	customerCreateChannel        string
 	customerCreateEnsureChannel  bool
 	customerCreateExpiryDuration time.Duration
+
+	createInstallerYaml                 string
+	createInstallerYamlFile             string
+	createInstallerPromote              string
+	createInstallerPromoteEnsureChannel bool
 }

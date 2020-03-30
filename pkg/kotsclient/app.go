@@ -31,7 +31,7 @@ type KotsApp struct {
 	ID       string                `json:"id"`
 	Name     string                `json:"name"`
 	Slug     string                `json:"slug"`
-	Channels []*KotsAppChannelData `json: "channels"`
+	Channels []*KotsAppChannelData `json:"channels"`
 }
 
 const listAppsQuery = `

@@ -29,7 +29,7 @@ func (r *runners) collectorInspect(cmd *cobra.Command, args []string) error {
 	collector, err := r.api.GetCollector(r.appID, id)
 	if err != nil {
 		if err == platformclient.ErrNotFound {
-			return fmt.Errorf("No such collector %d", id)
+			return fmt.Errorf("no such collector %s", id)
 		}
 		return err
 	}
