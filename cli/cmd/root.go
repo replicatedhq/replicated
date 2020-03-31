@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"text/tabwriter"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -24,9 +25,11 @@ const (
 
 var appSlugOrID string
 var apiToken string
+var enterprisePrivateKeyPath = filepath.Join(homeDir(), ".replicated", "enterprise", "key")
 var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
 var kurlDotSHOrigin = "https://kurl.sh"
+var enterpriseOrigin = "https://api.replicated.com/enterprise"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -37,6 +40,11 @@ func init() {
 	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
 	if shipOriginFromEnv != "" {
 		graphqlOrigin = shipOriginFromEnv
+	}
+
+	enterpriseOriginFromEnv := os.Getenv("REPLICATED_ENTERPRISE_ORIGIN")
+	if enterpriseOriginFromEnv != "" {
+		enterpriseOrigin = enterpriseOriginFromEnv
 	}
 }
 
@@ -145,6 +153,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
 	runCmds.InitInstallerCreate(installerCmd)
 	runCmds.InitInstallerList(installerCmd)
+
+	enterpriseCmd := runCmds.InitEnterpriseCommand(runCmds.rootCmd)
+	enterpriseAuthCmd := runCmds.InitEnterpriseAuth(enterpriseCmd)
+	runCmds.InitEnterpriseAuthInit(enterpriseAuthCmd)
+	enterpriseChannelCmd := runCmds.InitEnterpriseChannel(enterpriseCmd)
+	runCmds.InitEnterpriseChannelLS(enterpriseChannelCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

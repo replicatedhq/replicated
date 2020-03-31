@@ -12,20 +12,23 @@ import (
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+
+	"github.com/replicatedhq/replicated/pkg/enterpriseclient"
 )
 
 // Runner holds the I/O dependencies and configurations used by individual
 // commands, which are defined as methods on this type.
 type runners struct {
-	appID       string
-	appType     string
-	api         client.Client
-	platformAPI *platformclient.HTTPClient
-	shipAPI     *shipclient.GraphQLClient
-	kotsAPI     *kotsclient.GraphQLClient
-	stdin       io.Reader
-	dir         string
-	w           *tabwriter.Writer
+	appID            string
+	appType          string
+	api              client.Client
+	enterpriseClient *enterpriseclient.HTTPClient
+	platformAPI      *platformclient.HTTPClient
+	shipAPI          *shipclient.GraphQLClient
+	kotsAPI          *kotsclient.GraphQLClient
+	stdin            io.Reader
+	dir              string
+	w                *tabwriter.Writer
 
 	rootCmd *cobra.Command
 	args    runnerArgs

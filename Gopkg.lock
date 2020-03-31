@@ -416,6 +416,24 @@
   version = "v0.0.5"
 
 [[projects]]
+  branch = "master"
+  digest = "1:c976483228fe366a9a612e2f60287bfcdf8e64084bcfc3ec7cbcb8e5a82ebabc"
+  name = "golang.org/x/crypto"
+  packages = [
+    "blowfish",
+    "chacha20",
+    "curve25519",
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "internal/subtle",
+    "poly1305",
+    "ssh",
+    "ssh/internal/bcrypt_pbkdf",
+  ]
+  pruneopts = "UT"
+  revision = "0ec3e9974c59449edd84298612e9f16fa13368e8"
+
+[[projects]]
   digest = "1:6cbb63d434dacced8309e1a2a7c0fa6bc629f0522b5cb91bc0a3feee55c5e3b4"
   name = "golang.org/x/net"
   packages = ["idna"]
@@ -423,11 +441,15 @@
   revision = "455220fa52c866a8aa14ff5e8cc68cde16b8395e"
 
 [[projects]]
-  digest = "1:15f3bd7ec88a9093cc01c63933f9860ee8d371f1169aeacb58ab0473ebd0bb69"
+  branch = "master"
+  digest = "1:b926f90c86a64691c569da6a8c4569b82cc5113d759a7ec99b39b80a3363b135"
   name = "golang.org/x/sys"
-  packages = ["unix"]
+  packages = [
+    "cpu",
+    "unix",
+  ]
   pruneopts = "UT"
-  revision = "abf9c25f54453410d0c6668e519582a9e1115027"
+  revision = "c3d80250170dec19bf61949c81233cede5ddaf61"
 
 [[projects]]
   digest = "1:1f975e18356170a33c0e8b7dda3d02bd28126463f0c024edc9b99b7eb9337c62"
@@ -471,6 +493,7 @@
     "github.com/spf13/hugo/parser",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/require",
+    "golang.org/x/crypto/ssh",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

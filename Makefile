@@ -6,6 +6,7 @@ VERSION=$(shell git describe)
 ABBREV_VERSION=$(shell git describe --abbrev=0)
 VERSION_PACKAGE = github.com/replicatedhq/replicated/pkg/version
 DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+export GO111MODULE=auto
 
 GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
 ifneq "$(GIT_TREE)" ""
