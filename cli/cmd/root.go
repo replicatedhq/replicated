@@ -159,6 +159,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterpriseAuthInit(enterpriseAuthCmd)
 	enterpriseChannelCmd := runCmds.InitEnterpriseChannel(enterpriseCmd)
 	runCmds.InitEnterpriseChannelLS(enterpriseChannelCmd)
+	runCmds.InitEnterpriseChannelCreate(enterpriseChannelCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

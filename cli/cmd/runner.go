@@ -90,4 +90,7 @@ type runnerArgs struct {
 	createInstallerYamlFile             string
 	createInstallerPromote              string
 	createInstallerPromoteEnsureChannel bool
+
+	enterpriseChannelCreateName        string
+	enterpriseChannelCreateDescription string
 }
