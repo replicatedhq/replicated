@@ -1,14 +1,14 @@
 package enterpriseclient
 
 import (
-	"os"
-	"fmt"
-	"path/filepath"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 )
@@ -25,7 +25,7 @@ func (c HTTPClient) AuthInit() error {
 		}
 	}
 	pubKeyPath := filepath.Join(homeDir(), ".replicated", "enterprise", "key.pub")
-	privKeyPath :=filepath.Join(homeDir(), ".replicated", "enterprise", "key")
+	privKeyPath := filepath.Join(homeDir(), ".replicated", "enterprise", "key")
 
 	_, pubKeyErr := os.Stat(pubKeyPath)
 	_, privKeyErr := os.Stat(privKeyPath)
@@ -73,7 +73,7 @@ func (c HTTPClient) AuthInit() error {
 		return errors.Wrap(err, "failed to init auth with server")
 	}
 
-	fmt.Printf("\nYour authentication request has been submitted. Please contact Replicated to complete this request with the following code: %s\n\n", authInitResponse.Code)
+	fmt.Printf("\nYour authentication request has been submitted. Please contact Replicated at support@replicated.com to complete this request with the following code: %s\n\n", authInitResponse.Code)
 	return nil
 }
 
@@ -118,7 +118,6 @@ func encodePublicKeyToPEM(publicKey *rsa.PublicKey) []byte {
 
 	return pubPEM
 }
-
 
 func homeDir() string {
 	if h := os.Getenv("HOME"); h != "" {

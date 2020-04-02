@@ -60,7 +60,7 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody inte
 
 		privateKey, ok := parsedKey.(*rsa.PrivateKey)
 		if !ok {
-			return errors.Wrap(err, "failed to cast key")
+			return errors.New("failed to cast key")
 		}
 
 		// the key id is the sha256 sum of the public key
@@ -79,7 +79,7 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody inte
 	req.Header.Set("Accept", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to do request")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
