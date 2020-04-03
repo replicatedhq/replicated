@@ -8,7 +8,7 @@ func (r *runners) InitEnterpriseChannel(parent *cobra.Command) *cobra.Command {
 	enterpriseChannelCommand := &cobra.Command{
 		Use:   "channel",
 		Short: "Manage enterprise channels",
-		Long:  `The channel command allows approved enterprise to create custom release channels and assign policies for vendors`,
+		Long:  `The channel command allows approved enterprise to create custom release channels`,
 	}
 	parent.AddCommand(enterpriseChannelCommand)
 
