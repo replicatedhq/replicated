@@ -164,6 +164,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterprisePolicyLS(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyCreate(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyRM(enterprisePolicyCmd)
+	runCmds.InitEnterprisePolicyAssign(enterprisePolicyCmd)
+	runCmds.InitEnterprisePolicyUnassign(enterprisePolicyCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

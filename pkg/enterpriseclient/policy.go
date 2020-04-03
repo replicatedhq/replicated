@@ -47,3 +47,21 @@ func (c HTTPClient) RemovePolicy(id string) error {
 
 	return nil
 }
+
+func (c HTTPClient) AssignPolicy(policyID string, channelID string) error {
+	err := c.doJSON("POST", fmt.Sprintf("/v1/channelpolicy/%s/%s", policyID, channelID), 204, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to assign policy")
+	}
+
+	return nil
+}
+
+func (c HTTPClient) UnassignPolicy(policyID string, channelID string) error {
+	err := c.doJSON("DELETE", fmt.Sprintf("/v1/channelpolicy/%s/%s", policyID, channelID), 204, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to unassign policy")
+	}
+
+	return nil
+}
