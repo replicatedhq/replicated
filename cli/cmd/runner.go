@@ -99,4 +99,10 @@ type runnerArgs struct {
 	enterprisePolicyCreateFile        string
 
 	enterprisePolicyRmId string
+
+	enterprisePolicyAssignPolicyID  string
+	enterprisePolicyAssignChannelID string
+
+	enterprisePolicyUnassignPolicyID  string
+	enterprisePolicyUnassignChannelID string
 }
