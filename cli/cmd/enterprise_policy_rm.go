@@ -14,7 +14,7 @@ func (r *runners) InitEnterprisePolicyRM(parent *cobra.Command) {
 		Long: `Remove a new policy.
 
   Example:
-  replicated enteprise channel rm --name MyPolicy`,
+  replicated enteprise policy rm --id MyPolicyID`,
 	}
 	parent.AddCommand(cmd)
 
