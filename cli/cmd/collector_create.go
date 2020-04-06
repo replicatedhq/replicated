@@ -16,7 +16,7 @@ func (r *runners) InitCollectorCreate(parent *cobra.Command) {
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createCollectorYaml, "yaml", "", "The YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` falg.")
+	cmd.Flags().StringVar(&r.args.createCollectorYaml, "yaml", "", "The YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
 	cmd.Flags().StringVar(&r.args.createCollectorYamlFile, "yaml-file", "", "The file name with YAML config for this collector.  Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.createCollectorName, "name", "", "The name for this collector")
 
