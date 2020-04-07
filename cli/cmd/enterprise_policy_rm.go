@@ -10,8 +10,8 @@ func (r *runners) InitEnterprisePolicyRM(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "rm",
 		SilenceUsage: true,
-		Short:        "Remove a new policy",
-		Long: `Remove a new policy.
+		Short:        "Remove a policy",
+		Long: `Remove a policy.
 
   Example:
   replicated enteprise policy rm --id MyPolicyID`,

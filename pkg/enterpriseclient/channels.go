@@ -48,11 +48,19 @@ func (c HTTPClient) UpdateChannel(id string, name string, description string) (*
 
 	enterpriseChannel := enterprisetypes.Channel{}
 
-	urlPath := fmt.Sprintf("/v1/channel/%s", id)
-	err := c.doJSON("POST", urlPath, 200, updateChannelRequest, &enterpriseChannel)
+	err := c.doJSON("POST", fmt.Sprintf("/v1/channel/%s", id), 200, updateChannelRequest, &enterpriseChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update channel")
 	}
 
 	return &enterpriseChannel, nil
+}
+
+func (c HTTPClient) RemoveChannel(id string) error {
+	err := c.doJSON("DELETE", fmt.Sprintf("/v1/channel/%s", id), 204, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to delete channel")
+	}
+
+	return nil
 }

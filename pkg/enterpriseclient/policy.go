@@ -39,7 +39,6 @@ func (c HTTPClient) CreatePolicy(name string, description string, policy string)
 }
 
 func (c HTTPClient) RemovePolicy(id string) error {
-	fmt.Printf("id = %s\n", id)
 	err := c.doJSON("DELETE", fmt.Sprintf("/v1/policy/%s", id), 204, nil, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to delete policy")
