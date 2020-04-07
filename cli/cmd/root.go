@@ -160,6 +160,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	enterpriseChannelCmd := runCmds.InitEnterpriseChannel(enterpriseCmd)
 	runCmds.InitEnterpriseChannelLS(enterpriseChannelCmd)
 	runCmds.InitEnterpriseChannelCreate(enterpriseChannelCmd)
+	runCmds.InitEnterpriseChannelUpdate(enterpriseChannelCmd)
 	enterprisePolicyCmd := runCmds.InitEnterprisePolicy(enterpriseCmd)
 	runCmds.InitEnterprisePolicyLS(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyCreate(enterprisePolicyCmd)

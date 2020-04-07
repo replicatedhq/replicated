@@ -94,6 +94,10 @@ type runnerArgs struct {
 	enterpriseChannelCreateName        string
 	enterpriseChannelCreateDescription string
 
+	enterpriseChannelUpdateID          string
+	enterpriseChannelUpdateName        string
+	enterpriseChannelUpdateDescription string
+
 	enterprisePolicyCreateName        string
 	enterprisePolicyCreateDescription string
 	enterprisePolicyCreateFile        string
