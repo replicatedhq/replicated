@@ -165,6 +165,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	enterprisePolicyCmd := runCmds.InitEnterprisePolicy(enterpriseCmd)
 	runCmds.InitEnterprisePolicyLS(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyCreate(enterprisePolicyCmd)
+	runCmds.InitEnterprisePolicyUpdate(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyRM(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyAssign(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyUnassign(enterprisePolicyCmd)

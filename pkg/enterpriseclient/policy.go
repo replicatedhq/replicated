@@ -38,6 +38,28 @@ func (c HTTPClient) CreatePolicy(name string, description string, policy string)
 	return &enterprisePolicy, nil
 }
 
+func (c HTTPClient) UpdatePolicy(id string, name string, description string, policy string) (*enterprisetypes.Policy, error) {
+	type UpdatePolicyRequest struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Policy      string `json:"policy"`
+	}
+	updatePolicyRequest := UpdatePolicyRequest{
+		Name:        name,
+		Description: description,
+		Policy:      policy,
+	}
+
+	enterprisePolicy := enterprisetypes.Policy{}
+
+	err := c.doJSON("PUT", fmt.Sprintf("/v1/policy/%s", id), 200, updatePolicyRequest, &enterprisePolicy)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to update policy")
+	}
+
+	return &enterprisePolicy, nil
+}
+
 func (c HTTPClient) RemovePolicy(id string) error {
 	err := c.doJSON("DELETE", fmt.Sprintf("/v1/policy/%s", id), 204, nil, nil)
 	if err != nil {

@@ -48,7 +48,7 @@ func (c HTTPClient) UpdateChannel(id string, name string, description string) (*
 
 	enterpriseChannel := enterprisetypes.Channel{}
 
-	err := c.doJSON("POST", fmt.Sprintf("/v1/channel/%s", id), 200, updateChannelRequest, &enterpriseChannel)
+	err := c.doJSON("PUT", fmt.Sprintf("/v1/channel/%s", id), 200, updateChannelRequest, &enterpriseChannel)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update channel")
 	}
