@@ -51,7 +51,7 @@ func (c HTTPClient) UpdateChannel(id string, name string, description string) (*
 	urlPath := fmt.Sprintf("/v1/channel/%s", id)
 	err := c.doJSON("POST", urlPath, 200, updateChannelRequest, &enterpriseChannel)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create channel")
+		return nil, errors.Wrap(err, "failed to update channel")
 	}
 
 	return &enterpriseChannel, nil
