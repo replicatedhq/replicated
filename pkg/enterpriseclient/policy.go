@@ -52,7 +52,7 @@ func (c HTTPClient) UpdatePolicy(id string, name string, description string, pol
 
 	enterprisePolicy := enterprisetypes.Policy{}
 
-	err := c.doJSON("POST", fmt.Sprintf("/v1/policy/%s", id), 200, updatePolicyRequest, &enterprisePolicy)
+	err := c.doJSON("PUT", fmt.Sprintf("/v1/policy/%s", id), 200, updatePolicyRequest, &enterprisePolicy)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to update policy")
 	}
