@@ -169,6 +169,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterprisePolicyRM(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyAssign(enterprisePolicyCmd)
 	runCmds.InitEnterprisePolicyUnassign(enterprisePolicyCmd)
+	enterpriseInstallerCmd := runCmds.InitEnterpriseInstaller(enterpriseCmd)
+	runCmds.InitEnterpriseInstallerLS(enterpriseInstallerCmd)
+	runCmds.InitEnterpriseInstallerCreate(enterpriseInstallerCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
