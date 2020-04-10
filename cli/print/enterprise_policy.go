@@ -8,9 +8,8 @@ import (
 )
 
 var enterprisePolicyTmplSrc = `ID	NAME	# CHANNELS
-{{ range . -}}
 {{ .ID }}	{{ .Name }}
-{{ end }}`
+`
 
 var enterprisePolicyTmpl = template.Must(template.New("entrerprisepolicy").Parse(enterprisePolicyTmplSrc))
 
