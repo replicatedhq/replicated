@@ -10,8 +10,8 @@ func (r *runners) InitEnterprisePolicyAssign(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "assign",
 		SilenceUsage: true,
-		Short:        "Assigns a policy from a channel",
-		Long: `Adds a new policy from a channel.
+		Short:        "Assigns a policy to a channel",
+		Long: `Assigns a policy to a channel.
 
   Example:
   replicated enteprise policy assign --policy-id 123 --channel-id abc`,
