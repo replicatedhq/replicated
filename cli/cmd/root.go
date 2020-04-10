@@ -172,6 +172,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	enterpriseInstallerCmd := runCmds.InitEnterpriseInstaller(enterpriseCmd)
 	runCmds.InitEnterpriseInstallerLS(enterpriseInstallerCmd)
 	runCmds.InitEnterpriseInstallerCreate(enterpriseInstallerCmd)
+	runCmds.InitEnterpriseInstallerUpdate(enterpriseInstallerCmd)
+	runCmds.InitEnterpriseInstallerRM(enterpriseInstallerCmd)
+	runCmds.InitEnterpriseInstallerAssign(enterpriseInstallerCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

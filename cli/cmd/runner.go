@@ -118,4 +118,12 @@ type runnerArgs struct {
 	enterprisePolicyUnassignChannelID string
 
 	enterpriseInstallerCreateFile string
+
+	enterpriseInstallerUpdateID   string
+	enterpriseInstallerUpdateFile string
+
+	enterpriseInstallerRmId string
+
+	enterpriseInstallerAssignInstallerID string
+	enterpriseInstallerAssignChannelID   string
 }
