@@ -3,3 +3,5 @@ dist/
 gen/docs
 logs/
 .DS_Store
+bin/
+vendor/
