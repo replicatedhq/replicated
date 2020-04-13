@@ -122,9 +122,8 @@ gen-models:
 build:
 	go build \
     		${LDFLAGS} \
-    		-o replicated \
+    		-o bin/replicated \
     		cli/main.go
-	mv replicated ${GOPATH}/bin
 
 docs:
 	go run docs/generate.go --path ./gen/docs
