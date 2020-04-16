@@ -170,3 +170,11 @@ func (c *Client) LintRelease(appID string, appType string, yamlOrJSON string) ([
 
 	return nil, errors.New("unknown app type")
 }
+
+func (c *Client) LintReleaseBeta(appType string, data []byte) ([]types.LintMessage, error) {
+	if appType != "kots" {
+		return nil, errors.New("Beta linter only supports kots")
+	}
+
+	return c.KotsClient.LintReleaseBeta(data)
+}
