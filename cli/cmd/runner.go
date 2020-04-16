@@ -61,6 +61,7 @@ type runnerArgs struct {
 	createReleasePromoteEnsureChannel bool
 	lintReleaseYamlDir                string
 	lintReleaseFailOn                 string
+	lintBetaLinter                    bool
 	releaseOptional                   bool
 	releaseNotes                      string
 	releaseVersion                    string
