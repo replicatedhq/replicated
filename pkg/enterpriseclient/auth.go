@@ -77,6 +77,23 @@ func (c HTTPClient) AuthInit() error {
 	return nil
 }
 
+func (c HTTPClient) AuthApprove(fingerprint string) error {
+	type AuthApproveRequest struct {
+		Fingerprint string `json:"fingerprint"`
+	}
+	authApproveRequest := AuthApproveRequest{
+		Fingerprint: fingerprint,
+	}
+
+	err := c.doJSON("PUT", "/v1/auth/approve", 204, authApproveRequest, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to approve auth request")
+	}
+
+	fmt.Print("\nAuthentication request approved successfully\n\n")
+	return nil
+}
+
 func generatePrivateKey() (*rsa.PrivateKey, error) {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
