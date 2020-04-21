@@ -157,6 +157,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	enterpriseCmd := runCmds.InitEnterpriseCommand(runCmds.rootCmd)
 	enterpriseAuthCmd := runCmds.InitEnterpriseAuth(enterpriseCmd)
 	runCmds.InitEnterpriseAuthInit(enterpriseAuthCmd)
+	runCmds.InitEnterpriseAuthApprove(enterpriseAuthCmd)
 	enterpriseChannelCmd := runCmds.InitEnterpriseChannel(enterpriseCmd)
 	runCmds.InitEnterpriseChannelLS(enterpriseChannelCmd)
 	runCmds.InitEnterpriseChannelCreate(enterpriseChannelCmd)
