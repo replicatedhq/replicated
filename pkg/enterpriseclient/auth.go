@@ -13,7 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (c HTTPClient) AuthInit() error {
+func (c HTTPClient) AuthInit(organizationName string) error {
 	// by default, we store the key in ~/.replicated/enterprise
 	_, err := os.Stat(filepath.Join(homeDir(), ".replicated", "enterprise"))
 	if err != nil && !os.IsNotExist(err) {
@@ -56,24 +56,52 @@ func (c HTTPClient) AuthInit() error {
 		return errors.Wrap(err, "failed to write public key to file")
 	}
 
-	// send the PUBLIC key to the replicated server and return the key id
-	type AuthRequest struct {
-		PublicKeyBytes []byte `json:"publicKey"`
-	}
-	authRequest := AuthRequest{
-		PublicKeyBytes: encodePublicKeyToPEM(&privateKey.PublicKey),
+	if organizationName != "" {
+		// --create-org flag is provided, create the organization
+		// send the PUBLIC key and the organization name to the replicated server and return the organization id
+		type CreateOrgRequest struct {
+			PublicKeyBytes   []byte `json:"publicKey"`
+			OrganizationName string `json:"organizationName"`
+		}
+		createOrgRequest := CreateOrgRequest{
+			PublicKeyBytes:   encodePublicKeyToPEM(&privateKey.PublicKey),
+			OrganizationName: organizationName,
+		}
+
+		type CreateOrgResponse struct {
+			OrganizationID string `json:"organizationId"`
+		}
+		createOrgResponse := CreateOrgResponse{}
+
+		err = c.doJSON("POST", "/v1/organization", 201, createOrgRequest, &createOrgResponse)
+		if err != nil {
+			return errors.Wrap(err, "failed to create organization")
+		}
+
+		fmt.Printf("\nOrganization has been created successfully with the following ID: %s\n\n", createOrgResponse.OrganizationID)
+	} else {
+		// --create-org flag is NOT provided, begin authentication process
+		// send the PUBLIC key to the replicated server and return the key id
+		type AuthRequest struct {
+			PublicKeyBytes []byte `json:"publicKey"`
+		}
+		authRequest := AuthRequest{
+			PublicKeyBytes: encodePublicKeyToPEM(&privateKey.PublicKey),
+		}
+
+		type AuthInitResponse struct {
+			Code string `json:"code"`
+		}
+		authInitResponse := AuthInitResponse{}
+
+		err = c.doJSON("POST", "/v1/auth", 201, authRequest, &authInitResponse)
+		if err != nil {
+			return errors.Wrap(err, "failed to init auth with server")
+		}
+
+		fmt.Printf("\nYour authentication request has been submitted. Please contact Replicated at support@replicated.com to complete this request with the following code: %s\n\n", authInitResponse.Code)
 	}
 
-	type AuthInitResponse struct {
-		Code string `json:"code"`
-	}
-	authInitResponse := AuthInitResponse{}
-	err = c.doJSON("POST", "/v1/auth", 201, authRequest, &authInitResponse)
-	if err != nil {
-		return errors.Wrap(err, "failed to init auth with server")
-	}
-
-	fmt.Printf("\nYour authentication request has been submitted. Please contact Replicated at support@replicated.com to complete this request with the following code: %s\n\n", authInitResponse.Code)
 	return nil
 }
 
