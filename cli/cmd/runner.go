@@ -35,6 +35,8 @@ type runners struct {
 }
 
 type runnerArgs struct {
+	enterpriseAuthCreateOrg string
+
 	enterpriseAuthFingerprint string
 
 	channelCreateName        string

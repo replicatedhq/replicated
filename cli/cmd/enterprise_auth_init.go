@@ -4,24 +4,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitEnterpriseAuthInit(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitEnterpriseAuthInit(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "init",
 		Short:        "initialize authentication",
 		Long:         `Create a keypair to begin authentication`,
-		RunE:         r.enterpriseAuthInit,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
-	return cmd
+	cmd.Flags().StringVar(&r.args.enterpriseAuthCreateOrg, "create-org", "", "If this flag is provided, a new organization will be created with the specified name. If not, the auth request will have to be approved by Replicated or your already authenticated organization")
+
+	cmd.RunE = r.enterpriseAuthInit
 }
 
 func (r *runners) enterpriseAuthInit(cmd *cobra.Command, args []string) error {
-	err := r.enterpriseClient.AuthInit()
+	err := r.enterpriseClient.AuthInit(r.args.enterpriseAuthCreateOrg)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
