@@ -16,13 +16,13 @@ func (r *runners) InitEnterpriseAuthApprove(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.enterpriseAuthFingerprint, "fingerprint", "", "The fingerprint provided on auth init")
+	cmd.Flags().StringVar(&r.args.enterpriseAuthApproveFingerprint, "fingerprint", "", "The fingerprint provided on auth init")
 
 	cmd.RunE = r.enterpriseAuthApprove
 }
 
 func (r *runners) enterpriseAuthApprove(cmd *cobra.Command, args []string) error {
-	err := r.enterpriseClient.AuthApprove(r.args.enterpriseAuthFingerprint)
+	err := r.enterpriseClient.AuthApprove(r.args.enterpriseAuthApproveFingerprint)
 	if err != nil {
 		return err
 	}

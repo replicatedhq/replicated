@@ -35,10 +35,6 @@ type runners struct {
 }
 
 type runnerArgs struct {
-	enterpriseAuthCreateOrg string
-
-	enterpriseAuthFingerprint string
-
 	channelCreateName        string
 	channelCreateDescription string
 
@@ -95,6 +91,10 @@ type runnerArgs struct {
 	createInstallerYamlFile             string
 	createInstallerPromote              string
 	createInstallerPromoteEnsureChannel bool
+
+	enterpriseAuthInitCreateOrg string
+
+	enterpriseAuthApproveFingerprint string
 
 	enterpriseChannelCreateName        string
 	enterpriseChannelCreateDescription string

@@ -13,13 +13,13 @@ func (r *runners) InitEnterpriseAuthInit(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.enterpriseAuthCreateOrg, "create-org", "", "If this flag is provided, a new organization will be created with the specified name. If not, the auth request will have to be approved by Replicated or your already authenticated organization")
+	cmd.Flags().StringVar(&r.args.enterpriseAuthInitCreateOrg, "create-org", "", "If this flag is provided, a new organization will be created with the specified name. If not, the auth request will have to be approved by Replicated or your already authenticated organization")
 
 	cmd.RunE = r.enterpriseAuthInit
 }
 
 func (r *runners) enterpriseAuthInit(cmd *cobra.Command, args []string) error {
-	err := r.enterpriseClient.AuthInit(r.args.enterpriseAuthCreateOrg)
+	err := r.enterpriseClient.AuthInit(r.args.enterpriseAuthInitCreateOrg)
 	if err != nil {
 		return err
 	}
