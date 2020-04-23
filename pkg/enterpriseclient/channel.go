@@ -64,3 +64,12 @@ func (c HTTPClient) RemoveChannel(id string) error {
 
 	return nil
 }
+
+func (c HTTPClient) AssignChannel(channelID string, vendorID string) error {
+	err := c.doJSON("POST", fmt.Sprintf("/v1/channelvendor/%s/%s", channelID, vendorID), 204, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to assign channel")
+	}
+
+	return nil
+}
