@@ -106,7 +106,7 @@ type runnerArgs struct {
 	enterpriseChannelRmId string
 
 	enterpriseChannelAssignChannelID string
-	enterpriseChannelAssignVendorID  string
+	enterpriseChannelAssignTeamID    string
 
 	enterprisePolicyCreateName        string
 	enterprisePolicyCreateDescription string
