@@ -7,7 +7,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/enterprisetypes"
 )
 
-var enterpriseChannelTmplSrc = `ID	NAME	# VENDORS	# POLICIES
+var enterpriseChannelTmplSrc = `ID	NAME
 {{ .ID }}	{{ .Name }}
 `
 
