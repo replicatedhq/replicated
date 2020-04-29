@@ -2,11 +2,7 @@ package enterpriseclient
 
 import (
 	"bytes"
-	"crypto"
 	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/sha512"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -58,19 +54,11 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody inte
 	}
 
 	if c.privateKey != nil {
-		// hash the body and sign the hash
-		contentSha := sha512.Sum512(bodyBytes)
-		signature, err := c.privateKey.Sign(rand.Reader, contentSha[:], crypto.SHA512)
+		sig, fingerprint, err := sigAndFingerprint(c.privateKey, bodyBytes)
 		if err != nil {
-			return errors.Wrap(err, "failed to sign content sha")
+			return err
 		}
-		req.Header.Set("Signature", base64.StdEncoding.EncodeToString(signature))
-
-		// include the public key fingerprint as a hint to the server
-		fingerprint, err := getFingerprint(&c.privateKey.PublicKey)
-		if err != nil {
-			return errors.Wrap(err, "failed to get public key fingerprint")
-		}
+		req.Header.Set("Signature", sig)
 		req.Header.Set("Authorization", fingerprint)
 	}
 

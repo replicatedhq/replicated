@@ -4,10 +4,13 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha512"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"path/filepath"
 
@@ -186,4 +189,28 @@ func homeDir() string {
 		return h
 	}
 	return os.Getenv("USERPROFILE")
+}
+
+// gets the (base64 encoded) signature and fingerprint for a given key and data
+func sigAndFingerprint(privateKey *ecdsa.PrivateKey, data []byte) (string, string, error) {
+	// hash the body and sign the hash
+	// store the signature in an ecSig struct and marshal it with the ssh wire format
+	contentSha := sha512.Sum512(data)
+	var ecSig struct {
+		R *big.Int
+		S *big.Int
+	}
+	var err error
+	ecSig.R, ecSig.S, err = ecdsa.Sign(rand.Reader, privateKey, contentSha[:])
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to sign content sha")
+	}
+	signatureString := base64.StdEncoding.EncodeToString(ssh.Marshal(ecSig))
+
+	// include the public key fingerprint as a hint to the server
+	fingerprint, err := getFingerprint(&privateKey.PublicKey)
+	if err != nil {
+		return "", "", errors.Wrap(err, "failed to get public key fingerprint")
+	}
+	return signatureString, fingerprint, nil
 }
