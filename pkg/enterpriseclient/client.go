@@ -25,13 +25,15 @@ func New(privateKeyContents []byte) *HTTPClient {
 }
 
 func NewHTTPClient(origin string, privateKeyContents []byte) *HTTPClient {
-	privateKey, err := decodePrivateKeyPEM(privateKeyContents)
-	if err != nil {
-		privateKey = nil
-	}
 	c := &HTTPClient{
-		privateKey: privateKey,
-		apiOrigin:  origin,
+		apiOrigin: origin,
+	}
+	if privateKeyContents != nil {
+		privateKey, err := decodePrivateKeyPEM(privateKeyContents)
+		if err != nil {
+			privateKey = nil
+		}
+		c.privateKey = privateKey
 	}
 
 	return c
