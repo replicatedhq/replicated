@@ -2,11 +2,12 @@ package enterpriseclient
 
 import (
 	"bytes"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha512"
+	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -18,8 +19,8 @@ const apiOrigin = "https://api.replicated.com/enterprise"
 
 // An HTTPClient communicates with the Replicated Enterprise HTTP API.
 type HTTPClient struct {
-	privateKeyContents []byte
-	apiOrigin          string
+	privateKey *ecdsa.PrivateKey
+	apiOrigin  string
 }
 
 // New returns a new  HTTP client.
@@ -28,9 +29,13 @@ func New(privateKeyContents []byte) *HTTPClient {
 }
 
 func NewHTTPClient(origin string, privateKeyContents []byte) *HTTPClient {
+	privateKey, err := decodePrivateKeyPEM(privateKeyContents)
+	if err != nil {
+		privateKey = nil
+	}
 	c := &HTTPClient{
-		privateKeyContents: privateKeyContents,
-		apiOrigin:          origin,
+		privateKey: privateKey,
+		apiOrigin:  origin,
 	}
 
 	return c
@@ -38,41 +43,35 @@ func NewHTTPClient(origin string, privateKeyContents []byte) *HTTPClient {
 
 func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
-	var buf bytes.Buffer
+	var bodyBytes []byte
 	if reqBody != nil {
-		if err := json.NewEncoder(&buf).Encode(reqBody); err != nil {
+		var err error
+		bodyBytes, err = json.Marshal(reqBody)
+		if err != nil {
 			return err
 		}
 	}
 
-	req, err := http.NewRequest(method, endpoint, &buf)
+	req, err := http.NewRequest(method, endpoint, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
 
-	if c.privateKeyContents != nil {
-		// get the private key id as a hint to the server
-		var parsedKey interface{}
-		decodedPEM, _ := pem.Decode(c.privateKeyContents)
-		if parsedKey, err = x509.ParsePKCS1PrivateKey(decodedPEM.Bytes); err != nil {
-			return errors.Wrap(err, "failed to parse private key")
+	if c.privateKey != nil {
+		// hash the body and sign the hash
+		contentSha := sha512.Sum512(bodyBytes)
+		signature, err := c.privateKey.Sign(rand.Reader, contentSha[:], crypto.SHA512)
+		if err != nil {
+			return errors.Wrap(err, "failed to sign content sha")
 		}
+		req.Header.Set("Signature", base64.StdEncoding.EncodeToString(signature))
 
-		privateKey, ok := parsedKey.(*rsa.PrivateKey)
-		if !ok {
-			return errors.New("failed to cast key")
+		// include the public key fingerprint as a hint to the server
+		fingerprint, err := getFingerprint(&c.privateKey.PublicKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to get public key fingerprint")
 		}
-
-		// the key id is the sha256 sum of the public key
-		pubDER := x509.MarshalPKCS1PublicKey(&privateKey.PublicKey)
-		pubBlock := pem.Block{
-			Type:    "RSA PUBLIC KEY",
-			Headers: nil,
-			Bytes:   pubDER,
-		}
-		pubPEM := pem.EncodeToMemory(&pubBlock)
-
-		req.Header.Set("Authorization", fmt.Sprintf("%x", sha256.Sum256(pubPEM)))
+		req.Header.Set("Authorization", fingerprint)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
