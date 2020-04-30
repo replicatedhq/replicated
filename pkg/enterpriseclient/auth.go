@@ -104,7 +104,7 @@ func (c HTTPClient) AuthInit(organizationName string) error {
 			return errors.Wrap(err, "failed to init auth with server")
 		}
 
-		fmt.Printf("\nYour authentication request has been submitted. Please contact Replicated at support@replicated.com to complete this request with the following code: %s\n\n", authInitResponse.Code)
+		fmt.Printf("\nYour authentication request has been submitted. Please contact your organization or Replicated at support@replicated.com to complete this request with the following code: %s\n\n", authInitResponse.Code)
 	}
 
 	return nil
