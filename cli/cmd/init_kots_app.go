@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"path/filepath"
+	kotskinds "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 func (r *runners) InitInitKotsApp(parent *cobra.Command) {
@@ -30,6 +31,14 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	chartYaml := ChartYaml{}
 
+	kotsHelmCrd := kotskinds.HelmChart{
+		Spec: kotskinds.HelmChartSpec{
+			Chart: kotskinds.ChartIdentifier{
+				ChartVersion: chartYaml.Version
+			},
+		},
+	}
+
 	bytes, err := ioutil.ReadFile(chartYamlPath)
 
 	fmt.Printf("%s\n", bytes)
@@ -41,6 +50,8 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	fmt.Printf("%v\n", chartYaml)
 
 	// create helm chart kots kind
+
+
 
 	return err
 }
