@@ -35,6 +35,7 @@ require (
 	github.com/pelletier/go-toml v1.0.1-0.20170628012637-69d355db5304
 	github.com/pkg/errors v0.8.2-0.20190227000051-27936f6d90f9
 	github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0
+	github.com/replicatedhq/yaml/v3 v3.0.0-beta5-replicatedhq
 	github.com/russross/blackfriday v0.0.0-20170610170232-067529f716f4
 	github.com/shurcooL/sanitized_anchor_name v0.0.0-20170515013256-541ff5ee47f1
 	github.com/spf13/afero v0.0.0-20170217164146-9be650865eab

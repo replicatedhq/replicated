@@ -38,6 +38,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
+	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureUser, "ensure-user", false, "Hello world.")
 
 	cmd.RunE = r.releaseCreate
 }

@@ -178,6 +178,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterpriseInstallerRM(enterpriseInstallerCmd)
 	runCmds.InitEnterpriseInstallerAssign(enterpriseInstallerCmd)
 
+	runCmds.InitInitKotsApp(runCmds.rootCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	prerunCommand := func(cmd *cobra.Command, args []string) error {
