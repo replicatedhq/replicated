@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	yaml "github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
@@ -29,29 +30,40 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	chartYamlPath := filepath.Join(args[0], "Chart.yaml")
 
-	chartYaml := ChartYaml{}
 
-	kotsHelmCrd := kotskinds.HelmChart{
-		Spec: kotskinds.HelmChartSpec{
-			Chart: kotskinds.ChartIdentifier{
-				ChartVersion: chartYaml.Version
-			},
-		},
-	}
 
 	bytes, err := ioutil.ReadFile(chartYamlPath)
+	if err != nil {
+		return err
+	}
 
-	fmt.Printf("%s\n", bytes)
+	//fmt.Printf("%s\n", bytes)
 
-	fmt.Printf("%v\n", args[0])
+	//fmt.Printf("%v\n", args[0])
 
+	chartYaml := ChartYaml{}
 	yaml.Unmarshal(bytes, &chartYaml)
 
 	fmt.Printf("%v\n", chartYaml)
 
 	// create helm chart kots kind
 
+	//fmt.Printf("%v\n", kotsHelmCrd)
 
+	kotsHelmCrd := kotskinds.HelmChart{
+		Spec: kotskinds.HelmChartSpec{
+			Chart: kotskinds.ChartIdentifier{
+				ChartVersion: chartYaml.Version,
+			},
+		},
+	}
 
-	return err
+	bytes, err = json.MarshalIndent(kotsHelmCrd, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s\n", bytes)
+
+	return nil
 }
