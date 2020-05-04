@@ -33,23 +33,14 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.lintReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
-	cmd.Flags().BoolVar(&r.args.lintBetaLinter, "beta-linter", false, "set to enable the beta linter service")
 
 	cmd.RunE = r.releaseLint
 }
 
-func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
-	if r.args.lintBetaLinter {
-		return r.releaseLintBeta(cmd, args)
-	}
-
-	return r.releaseLintStable(cmd, args)
-}
-
-// releaseLintBeta uses the replicatedhq/kots-lint service. This currently uses
+// releaseLint uses the replicatedhq/kots-lint service. This currently uses
 // the hosted version (lint.replicated.com). There are not changes and no auth required or sent.
 // This could be vendored in and run locally (respecting the size of the polcy files)
-func (r *runners) releaseLintBeta(cmd *cobra.Command, args []string) error {
+func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 	if r.args.lintReleaseYamlDir == "" {
 		return errors.Errorf("yaml is required")
 	}
@@ -58,40 +49,19 @@ func (r *runners) releaseLintBeta(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("fail-on value %q not supported, supported values are [info, warn, error, none]", r.args.lintReleaseFailOn)
 	}
 
-	lintReleaseYAML, err := tarYAMLDir(r.args.lintReleaseYamlDir)
-	if err != nil {
-		return errors.Wrap(err, "failed to read yaml dir")
-	}
-
-	lintResult, err := r.api.LintReleaseBeta(r.appType, lintReleaseYAML)
-	if err != nil {
-		return errors.Wrap(err, "failed to beta lint")
-	}
-
-	if err := print.LintErrors(r.w, lintResult); err != nil {
-		return err
-	}
-
-	if hasError := shouldFail(lintResult, r.args.lintReleaseFailOn); hasError {
-		return errors.Errorf("One or more errors of severity %q or higher were found", r.args.lintReleaseFailOn)
-	}
-
-	return nil
-}
-
-// releaseLintStable uses the original KOTS linter that's on the Replicated GraphQL service
-func (r *runners) releaseLintStable(cmd *cobra.Command, args []string) error {
-	if r.args.lintReleaseYamlDir == "" {
-		return errors.Errorf("yaml is required")
-	}
-
-	if _, ok := validFailOnValues[r.args.lintReleaseFailOn]; !ok {
-		return errors.Errorf("fail-on value %q not supported, supported values are [info, warn, error, none]", r.args.lintReleaseFailOn)
-	}
-
-	lintReleaseYAML, err := readYAMLDir(r.args.lintReleaseYamlDir)
-	if err != nil {
-		return errors.Wrap(err, "read yaml dir")
+	var lintReleaseYAML []byte
+	if r.appType == "kots" {
+		b, err := tarYAMLDir(r.args.lintReleaseYamlDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to read yaml dir")
+		}
+		lintReleaseYAML = b
+	} else {
+		b, err := readYAMLDir(r.args.lintReleaseYamlDir)
+		if err != nil {
+			return errors.Wrap(err, "failed read yaml dir")
+		}
+		lintReleaseYAML = []byte(b)
 	}
 
 	lintResult, err := r.api.LintRelease(r.appID, r.appType, lintReleaseYAML)

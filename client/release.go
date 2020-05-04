@@ -155,26 +155,18 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	return errors.New("unknown app type")
 }
 
-// yamlOrJSON is either a single ship yaml file, or a serialized JSON object describing a yaml-dir, created by readYAMLDir()
+// data is either a single ship yaml file, or a serialized JSON object describing a yaml-dir, created by readYAMLDir()
 // this Client abstraction continue to spring more leaks :)
-func (c *Client) LintRelease(appID string, appType string, yamlOrJSON string) ([]types.LintMessage, error) {
+func (c *Client) LintRelease(appID string, appType string, data []byte) ([]types.LintMessage, error) {
 
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
-		// return c.PlatformClient.LintRelease(appID, yamlOrJSON)
+		// return c.PlatformClient.LintRelease(appID, data)
 	} else if appType == "ship" {
-		return c.ShipClient.LintRelease(appID, yamlOrJSON)
+		return c.ShipClient.LintRelease(appID, string(data))
 	} else if appType == "kots" {
-		return c.KotsClient.LintRelease(appID, yamlOrJSON)
+		return c.KotsClient.LintRelease(data)
 	}
 
 	return nil, errors.New("unknown app type")
-}
-
-func (c *Client) LintReleaseBeta(appType string, data []byte) ([]types.LintMessage, error) {
-	if appType != "kots" {
-		return nil, errors.New("Beta linter only supports kots")
-	}
-
-	return c.KotsClient.LintReleaseBeta(data)
 }
