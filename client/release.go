@@ -161,6 +161,8 @@ func (c *Client) LintRelease(appType string, data []byte) ([]types.LintMessage, 
 
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
+	} else if appType == "ship" {
+		return nil, errors.New("Linting is not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.LintRelease(data)
 	}
