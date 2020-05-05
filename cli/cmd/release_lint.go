@@ -49,22 +49,12 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("fail-on value %q not supported, supported values are [info, warn, error, none]", r.args.lintReleaseFailOn)
 	}
 
-	var lintReleaseYAML []byte
-	if r.appType == "kots" {
-		b, err := tarYAMLDir(r.args.lintReleaseYamlDir)
-		if err != nil {
-			return errors.Wrap(err, "failed to read yaml dir")
-		}
-		lintReleaseYAML = b
-	} else {
-		b, err := readYAMLDir(r.args.lintReleaseYamlDir)
-		if err != nil {
-			return errors.Wrap(err, "failed read yaml dir")
-		}
-		lintReleaseYAML = []byte(b)
+	lintReleaseYAML, err := tarYAMLDir(r.args.lintReleaseYamlDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to read yaml dir")
 	}
 
-	lintResult, err := r.api.LintRelease(r.appID, r.appType, lintReleaseYAML)
+	lintResult, err := r.api.LintRelease(r.appType, lintReleaseYAML)
 	if err != nil {
 		return err
 	}
