@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/replicatedhq/replicated/pkg/types"
 	yaml "github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"path/filepath"
-	kotskinds "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
 )
 
 func (r *runners) InitInitKotsApp(parent *cobra.Command) {
@@ -50,20 +49,32 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	//fmt.Printf("%v\n", kotsHelmCrd)
 
-	kotsHelmCrd := kotskinds.HelmChart{
-		Spec: kotskinds.HelmChartSpec{
-			Chart: kotskinds.ChartIdentifier{
+	kotsHelmCrd := types.HelmChart{
+		Spec: types.HelmChartSpec{
+			Chart: types.ChartIdentifier{
 				ChartVersion: chartYaml.Version,
+				Name: chartYaml.Name,
 			},
 		},
 	}
 
+	/*
 	bytes, err = json.MarshalIndent(kotsHelmCrd, "", "  ")
+	if err != nil {
+		return err
+	}
+	*/
+	bytes, err = yaml.Marshal(kotsHelmCrd)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("%s\n", bytes)
+
+	err = ioutil.WriteFile("/tmp/helmchart.json", bytes, 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
