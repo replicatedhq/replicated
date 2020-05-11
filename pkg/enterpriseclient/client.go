@@ -56,12 +56,13 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody inte
 	}
 
 	if c.privateKey != nil {
-		sig, fingerprint, err := sigAndFingerprint(c.privateKey, bodyBytes)
+		sigWithNonce, sig, fingerprint, err := sigAndFingerprint(c.privateKey, bodyBytes)
 		if err != nil {
 			return err
 		}
 		req.Header.Set("Signature", sig)
 		req.Header.Set("Authorization", fingerprint)
+		req.Header.Set("SignatureNonce", sigWithNonce)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
