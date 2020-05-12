@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	kotskinds "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	troubleshoot "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
 	yaml "github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
 	"io/ioutil"
@@ -121,20 +122,26 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-
-	//fmt.Printf("%s\n", bytes)
-
-	//fmt.Printf("%v\n", args[0])
-
 	chartYaml := ChartYaml{}
 	yaml.Unmarshal(bytes, &chartYaml)
 
-	//fmt.Printf("%v\n", chartYaml)
+	// prepare kots directory
+	kotsDirectoryPath := filepath.Join(baseDirectory, "kots")
+
+	err = os.MkdirAll(kotsDirectoryPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	// add makefile
+	helmChartMakeFilePath := filepath.Join(kotsDirectoryPath, "Makefile")
+
+	err = ioutil.WriteFile(helmChartMakeFilePath, []byte(makeFileContents), 0644)
+	if err != nil {
+		return err
+	}
 
 	// create helm chart kots kind
-
-	//fmt.Printf("%v\n", kotsHelmCrd)
-
 	kotsHelmCrd := kotskinds.HelmChart{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "HelmChart",
@@ -149,26 +156,6 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 				Name:         chartYaml.Name,
 			},
 		},
-	}
-
-	kotsAppCrd := kotskinds.Application{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Application",
-			APIVersion: "kots.io/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
-		},
-		Spec: kotskinds.ApplicationSpec{
-			Title: chartYaml.Name,
-		},
-	}
-
-	kotsDirectoryPath := filepath.Join(baseDirectory, "kots")
-
-	err = os.MkdirAll(kotsDirectoryPath, 0755)
-	if err != nil {
-		return err
 	}
 
 
@@ -186,6 +173,20 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	}
 
 
+	// make app CRD
+	kotsAppCrd := kotskinds.Application{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Application",
+			APIVersion: "kots.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYaml.Name,
+		},
+		Spec: kotskinds.ApplicationSpec{
+			Title: chartYaml.Name,
+		},
+	}
+
 	appFilePath := filepath.Join(kotsDirectoryPath, "replicated-app.yaml")
 
 	bytes, err = yaml.Marshal(kotsAppCrd)
@@ -199,12 +200,47 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	}
 
 
-	helmChartMakeFilePath := filepath.Join(kotsDirectoryPath, "Makefile")
+	// make preflight
+	kotsPreflightCRD := troubleshoot.Preflight{
+		TypeMeta: metav1.TypeMeta{
+		Kind:       "Preflight",
+		APIVersion: "troubleshoot.replicated.com/v1beta1",
+	},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYaml.Name,
+		},
+		Spec: troubleshoot.PreflightSpec{
+			Analyzers: []*troubleshoot.Analyze{
+				{
+					ClusterVersion: &troubleshoot.ClusterVersion{
+						Outcomes: []*troubleshoot.Outcome{
+							{
+								Fail: &troubleshoot.SingleOutcome{
+									When:    "< 1.13.0",
+									Message: "This app requires at last Kubernetes 1.13.0",
+									URI:     "https://www.kubernetes.io",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 
-	err = ioutil.WriteFile(helmChartMakeFilePath, []byte(makeFileContents), 0644)
+	preflightFilePath := filepath.Join(kotsDirectoryPath, "preflight.yaml")
+
+	bytes, err = yaml.Marshal(kotsPreflightCRD)
 	if err != nil {
 		return err
 	}
+
+	err = ioutil.WriteFile(preflightFilePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+
 
 	return nil
 }
