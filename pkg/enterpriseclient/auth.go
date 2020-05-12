@@ -260,8 +260,8 @@ func combineTsNonceData(ts, nonce, data []byte) []byte {
 	return tsBytes
 }
 
-// ValidatePayload checks that the payload was signed by the provided public key
-// if fingerprintSigString is not empty, sigString is ignored and it is used instead, and the nonce will be returned if valid
+// ValidatePayload checks that the payload was signed by the private key associated with the provided public key
+// if fingerprintSigString is not empty, sigString is ignored and it is used instead, and the nonce will be returned if the signature was valid
 func ValidatePayload(pubkey ssh.PublicKey, sigString, fingerprintSigString string, data []byte) (bool, []byte, error) {
 	if !strings.HasPrefix(pubkey.Type(), "ecdsa-sha2-") {
 		return false, nil, fmt.Errorf("%q is not an accepted public key type", pubkey.Type())
