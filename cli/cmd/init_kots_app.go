@@ -213,17 +213,55 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 			Analyzers: []*troubleshoot.Analyze{
 				{
 					ClusterVersion: &troubleshoot.ClusterVersion{
+						AnalyzeMeta: troubleshoot.AnalyzeMeta{
+							CheckName: "Kubernetes Version",
+						},
 						Outcomes: []*troubleshoot.Outcome{
 							{
 								Fail: &troubleshoot.SingleOutcome{
-									When:    "< 1.13.0",
-									Message: "This app requires at last Kubernetes 1.13.0",
+									When:    "< 1.15.0",
+									Message: "This app requires at least Kubernetes 1.15.0",
+									URI:     "https://www.kubernetes.io",
+								},
+							},
+							{
+								Pass: &troubleshoot.SingleOutcome{
+									When:    ">= 1.15.0",
+									Message: "This app has at least Kubernetes 1.15.0",
 									URI:     "https://www.kubernetes.io",
 								},
 							},
 						},
 					},
 				},
+
+
+
+				{
+					NodeResources: &troubleshoot.NodeResources{
+						AnalyzeMeta:  troubleshoot.AnalyzeMeta {
+							CheckName: "Total CPU Capacity",
+						},
+						Outcomes: []*troubleshoot.Outcome{
+							{
+								Fail: &troubleshoot.SingleOutcome{
+									When:    "sum(cpuCapacity) < 4",
+									Message: "This app requires a cluster with at least 4 cores.",
+									URI:     "https://kurl.sh/docs/install-with-kurl/system-requirements",
+								},
+							},
+							{
+								Pass: &troubleshoot.SingleOutcome{
+									Message: "This cluster has at least 4 cores.",
+								},
+							},
+						},
+					},
+				},
+
+
+
+
 			},
 		},
 	}
