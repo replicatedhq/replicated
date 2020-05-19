@@ -158,7 +158,6 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		},
 	}
 
-
 	helmChartFileName := fmt.Sprintf("%s.yaml", chartYaml.Name)
 	helmChartFilePath := filepath.Join(kotsDirectoryPath, helmChartFileName)
 
@@ -171,7 +170,6 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-
 
 	// make app CRD
 	kotsAppCrd := kotskinds.Application{
@@ -199,13 +197,12 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-
 	// make preflight
 	kotsPreflightCRD := troubleshoot.Preflight{
 		TypeMeta: metav1.TypeMeta{
-		Kind:       "Preflight",
-		APIVersion: "troubleshoot.replicated.com/v1beta1",
-	},
+			Kind:       "Preflight",
+			APIVersion: "troubleshoot.replicated.com/v1beta1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: chartYaml.Name,
 		},
@@ -235,11 +232,9 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 					},
 				},
 
-
-
 				{
 					NodeResources: &troubleshoot.NodeResources{
-						AnalyzeMeta:  troubleshoot.AnalyzeMeta {
+						AnalyzeMeta: troubleshoot.AnalyzeMeta{
 							CheckName: "Total CPU Capacity",
 						},
 						Outcomes: []*troubleshoot.Outcome{
@@ -258,10 +253,6 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 						},
 					},
 				},
-
-
-
-
 			},
 		},
 	}
@@ -278,7 +269,36 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 
+	// create helm chart kots kind
+	kotsConfigCrd := kotskinds.Config{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Config",
+			APIVersion: "kots.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYaml.Name,
+		},
+		Spec: kotskinds.ConfigSpec{
+			Groups: []kotskinds.ConfigGroup{
+				{
+					Name:  chartYaml.Version,
+					Title: chartYaml.Name,
+				},
+			},
+		},
+	}
 
+	configFilePath := filepath.Join(kotsDirectoryPath, "config.yaml")
+
+	bytes, err = yaml.Marshal(kotsConfigCrd)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(configFilePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
