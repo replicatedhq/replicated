@@ -126,15 +126,16 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	yaml.Unmarshal(bytes, &chartYaml)
 
 	// prepare kots directory
-	kotsDirectoryPath := filepath.Join(baseDirectory, "kots")
+	kotsBasePath := filepath.Join(baseDirectory, "kots")
+	kotsManifestsPath := filepath.Join(kotsBasePath, "manifests")
 
-	err = os.MkdirAll(kotsDirectoryPath, 0755)
+	err = os.MkdirAll(kotsManifestsPath, 0755)
 	if err != nil {
 		return err
 	}
 
 	// add makefile
-	helmChartMakeFilePath := filepath.Join(kotsDirectoryPath, "Makefile")
+	helmChartMakeFilePath := filepath.Join(kotsBasePath, "Makefile")
 
 	err = ioutil.WriteFile(helmChartMakeFilePath, []byte(makeFileContents), 0644)
 	if err != nil {
@@ -159,7 +160,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	}
 
 	helmChartFileName := fmt.Sprintf("%s.yaml", chartYaml.Name)
-	helmChartFilePath := filepath.Join(kotsDirectoryPath, helmChartFileName)
+	helmChartFilePath := filepath.Join(kotsManifestsPath, helmChartFileName)
 
 	bytes, err = yaml.Marshal(kotsHelmCrd)
 	if err != nil {
@@ -185,7 +186,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		},
 	}
 
-	appFilePath := filepath.Join(kotsDirectoryPath, "replicated-app.yaml")
+	appFilePath := filepath.Join(kotsManifestsPath, "replicated-app.yaml")
 
 	bytes, err = yaml.Marshal(kotsAppCrd)
 	if err != nil {
@@ -257,7 +258,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		},
 	}
 
-	preflightFilePath := filepath.Join(kotsDirectoryPath, "preflight.yaml")
+	preflightFilePath := filepath.Join(kotsManifestsPath, "preflight.yaml")
 
 	bytes, err = yaml.Marshal(kotsPreflightCRD)
 	if err != nil {
@@ -283,12 +284,21 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 				{
 					Name:  chartYaml.Version,
 					Title: chartYaml.Name,
+					Description: "A default example of how to collect configuration from an end user. This can be mapped to helm values",
+					Items: []kotskinds.ConfigItem{
+						{
+							Name: "username",
+							Title: "Username",
+							Type: "text",
+							HelpText: "Enter the default admin username",
+						},
+					},
 				},
 			},
 		},
 	}
 
-	configFilePath := filepath.Join(kotsDirectoryPath, "config.yaml")
+	configFilePath := filepath.Join(kotsManifestsPath, "config.yaml")
 
 	bytes, err = yaml.Marshal(kotsConfigCrd)
 	if err != nil {
