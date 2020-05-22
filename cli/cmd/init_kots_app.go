@@ -78,7 +78,7 @@ helm-package: deps-vendor-cli
 	helm package ../. -d manifests/
 
 .PHONY: release
-release: check-api-token check-app deps-vendor-cli lint
+release: check-api-token check-app deps-vendor-cli helm-package lint
 	deps/replicated release create \
 		--app $(app_slug) \
 		--yaml-dir manifests \
@@ -270,7 +270,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	// create helm chart kots kind
+	// create Config kots kind
 	kotsConfigCrd := kotskinds.Config{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Config",
@@ -282,8 +282,8 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		Spec: kotskinds.ConfigSpec{
 			Groups: []kotskinds.ConfigGroup{
 				{
-					Name:  chartYaml.Version,
-					Title: chartYaml.Name,
+					Name:  "Config",
+					Title: "Config Options",
 					Description: "A default example of how to collect configuration from an end user. This can be mapped to helm values",
 					Items: []kotskinds.ConfigItem{
 						{
@@ -309,6 +309,43 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+
+
+
+
+
+
+	// Support Bundle kots kind
+	kotsCollectorCRD := troubleshoot.Collector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Collector",
+			APIVersion: "troubleshoot.replicated.com/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "collector",
+		},
+		Spec: troubleshoot.CollectorSpec{
+			Collectors: []*troubleshoot.Collect{
+				{
+					ClusterInfo: &troubleshoot.ClusterInfo{},
+				},
+			},
+		},
+	}
+
+	supportBundleFilePath := filepath.Join(kotsManifestsPath, "support-bundle.yaml")
+
+	bytes, err = yaml.Marshal(kotsCollectorCRD)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(supportBundleFilePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+
 
 	return nil
 }
