@@ -162,12 +162,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	helmChartFileName := fmt.Sprintf("%s.yaml", chartYaml.Name)
 	helmChartFilePath := filepath.Join(kotsManifestsPath, helmChartFileName)
 
-	bytes, err = yaml.Marshal(kotsHelmCrd)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(helmChartFilePath, bytes, 0644)
+	err = writeKotsYAML(kotsHelmCrd, helmChartFilePath)
 	if err != nil {
 		return err
 	}
@@ -188,12 +183,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	appFilePath := filepath.Join(kotsManifestsPath, "replicated-app.yaml")
 
-	bytes, err = yaml.Marshal(kotsAppCrd)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(appFilePath, bytes, 0644)
+	err = writeKotsYAML(kotsAppCrd, appFilePath)
 	if err != nil {
 		return err
 	}
@@ -260,12 +250,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	preflightFilePath := filepath.Join(kotsManifestsPath, "preflight.yaml")
 
-	bytes, err = yaml.Marshal(kotsPreflightCRD)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(preflightFilePath, bytes, 0644)
+	err = writeKotsYAML(kotsPreflightCRD, preflightFilePath)
 	if err != nil {
 		return err
 	}
@@ -300,12 +285,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	configFilePath := filepath.Join(kotsManifestsPath, "config.yaml")
 
-	bytes, err = yaml.Marshal(kotsConfigCrd)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(configFilePath, bytes, 0644)
+	err = writeKotsYAML(kotsConfigCrd, configFilePath)
 	if err != nil {
 		return err
 	}
@@ -341,9 +321,9 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func writeKotsYAML(collector troubleshoot.Collector, filePath string) error {
+func writeKotsYAML(kotsCrds interface{}, filePath string) error {
 
-	bytes, err := yaml.Marshal(collector)
+	bytes, err := yaml.Marshal(kotsCrds)
 	if err != nil {
 		return err
 	}
