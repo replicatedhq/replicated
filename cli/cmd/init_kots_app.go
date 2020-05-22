@@ -282,14 +282,14 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		Spec: kotskinds.ConfigSpec{
 			Groups: []kotskinds.ConfigGroup{
 				{
-					Name:  "Config",
-					Title: "Config Options",
+					Name:        "Config",
+					Title:       "Config Options",
 					Description: "A default example of how to collect configuration from an end user. This can be mapped to helm values",
 					Items: []kotskinds.ConfigItem{
 						{
-							Name: "username",
-							Title: "Username",
-							Type: "text",
+							Name:     "username",
+							Title:    "Username",
+							Type:     "text",
 							HelpText: "Enter the default admin username",
 						},
 					},
@@ -310,11 +310,6 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-
-
-
-
-
 	// Support Bundle kots kind
 	kotsCollectorCRD := troubleshoot.Collector{
 		TypeMeta: metav1.TypeMeta{
@@ -329,23 +324,34 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 				{
 					ClusterInfo: &troubleshoot.ClusterInfo{},
 				},
+				{
+					ClusterResources: &troubleshoot.ClusterResources{},
+				},
 			},
 		},
 	}
 
 	supportBundleFilePath := filepath.Join(kotsManifestsPath, "support-bundle.yaml")
 
-	bytes, err = yaml.Marshal(kotsCollectorCRD)
+	err = writeKotsYAML(kotsCollectorCRD, supportBundleFilePath)
 	if err != nil {
 		return err
 	}
 
-	err = ioutil.WriteFile(supportBundleFilePath, bytes, 0644)
+	return nil
+}
+
+func writeKotsYAML(collector troubleshoot.Collector, filePath string) error {
+
+	bytes, err := yaml.Marshal(collector)
 	if err != nil {
 		return err
 	}
 
-
+	err = ioutil.WriteFile(filePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
