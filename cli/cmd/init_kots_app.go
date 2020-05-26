@@ -12,7 +12,293 @@ import (
 	"path/filepath"
 )
 
-const makeFileContents = `
+func (r *runners) InitInitKotsApp(parent *cobra.Command) {
+	cmd := &cobra.Command{
+		Use:   "init-kots-app DIRECTORY",
+		Short: "Print the YAML config for a release",
+		Long:  "Print the YAML config for a release",
+	}
+	cmd.Hidden = true // Not supported in KOTS
+	parent.AddCommand(cmd)
+	cmd.RunE = r.initKotsApp
+}
+
+type ChartYaml struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+}
+
+func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
+
+	baseDirectory := args[0]
+	chartYamlPath := filepath.Join(baseDirectory, "Chart.yaml")
+
+	bytes, err := ioutil.ReadFile(chartYamlPath)
+	if err != nil {
+		return err
+	}
+
+	chartYaml := ChartYaml{}
+	yaml.Unmarshal(bytes, &chartYaml)
+
+	// prepare kots directory
+	kotsBasePath := filepath.Join(baseDirectory, "kots")
+	kotsManifestsPath := filepath.Join(kotsBasePath, "manifests")
+
+	err = os.MkdirAll(kotsManifestsPath, 0755)
+	if err != nil {
+		return err
+	}
+
+	// Makefile
+	err = makeFile(kotsBasePath)
+	if err != nil {
+		return err
+	}
+
+	// Helm Chart CRD
+	err = helmChartFile(chartYaml.Name, chartYaml.Version, kotsManifestsPath)
+	if err != nil {
+		return err
+	}
+
+	// App CRD
+	err = appFile(chartYaml.Name, kotsManifestsPath)
+	if err != nil {
+		return err
+	}
+
+	// Preflight CRD
+	err = preflightFile(chartYaml.Name, kotsManifestsPath)
+	if err != nil {
+		return err
+	}
+
+	// Config CRD
+	err = configFile(chartYaml.Name, kotsManifestsPath)
+	if err != nil {
+		return err
+	}
+
+	// Support Bundle CRD
+	err = supportBundleFile(kotsManifestsPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsPath string) error {
+	kotsHelmCrd := kotskinds.HelmChart{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "HelmChart",
+			APIVersion: "kots.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYamlName,
+		},
+		Spec: kotskinds.HelmChartSpec{
+			Chart: kotskinds.ChartIdentifier{
+				ChartVersion: chartYamlVersion,
+				Name:         chartYamlName,
+			},
+		},
+	}
+
+	helmChartFileName := fmt.Sprintf("%s.yaml", chartYamlName)
+	helmChartFilePath := filepath.Join(kotsManifestsPath, helmChartFileName)
+
+	err := writeKotsYAML(kotsHelmCrd, helmChartFilePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func appFile(chartYamlName string, kotsManifestsPath string) error {
+
+	kotsAppCrd := kotskinds.Application{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Application",
+			APIVersion: "kots.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYamlName,
+		},
+		Spec: kotskinds.ApplicationSpec{
+			Title: chartYamlName,
+		},
+	}
+
+	appFilePath := filepath.Join(kotsManifestsPath, "replicated-app.yaml")
+
+	err := writeKotsYAML(kotsAppCrd, appFilePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func preflightFile(chartYamlName string, kotsManifestsPath string) error {
+
+	kotsPreflightCRD := troubleshoot.Preflight{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Preflight",
+			APIVersion: "troubleshoot.replicated.com/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYamlName,
+		},
+		Spec: troubleshoot.PreflightSpec{
+			Analyzers: []*troubleshoot.Analyze{
+				{
+					ClusterVersion: &troubleshoot.ClusterVersion{
+						AnalyzeMeta: troubleshoot.AnalyzeMeta{
+							CheckName: "Kubernetes Version",
+						},
+						Outcomes: []*troubleshoot.Outcome{
+							{
+								Fail: &troubleshoot.SingleOutcome{
+									When:    "< 1.15.0",
+									Message: "This app requires at least Kubernetes 1.15.0",
+									URI:     "https://www.kubernetes.io",
+								},
+							},
+							{
+								Pass: &troubleshoot.SingleOutcome{
+									When:    ">= 1.15.0",
+									Message: "This app has at least Kubernetes 1.15.0",
+									URI:     "https://www.kubernetes.io",
+								},
+							},
+						},
+					},
+				},
+
+				{
+					NodeResources: &troubleshoot.NodeResources{
+						AnalyzeMeta: troubleshoot.AnalyzeMeta{
+							CheckName: "Total CPU Capacity",
+						},
+						Outcomes: []*troubleshoot.Outcome{
+							{
+								Fail: &troubleshoot.SingleOutcome{
+									When:    "sum(cpuCapacity) < 4",
+									Message: "This app requires a cluster with at least 4 cores.",
+									URI:     "https://kurl.sh/docs/install-with-kurl/system-requirements",
+								},
+							},
+							{
+								Pass: &troubleshoot.SingleOutcome{
+									Message: "This cluster has at least 4 cores.",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	preflightFilePath := filepath.Join(kotsManifestsPath, "preflight.yaml")
+
+	err := writeKotsYAML(kotsPreflightCRD, preflightFilePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func configFile(chartYamlName string, kotsManifestsPath string) error {
+	kotsConfigCrd := kotskinds.Config{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Config",
+			APIVersion: "kots.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: chartYamlName,
+		},
+		Spec: kotskinds.ConfigSpec{
+			Groups: []kotskinds.ConfigGroup{
+				{
+					Name:        "Config",
+					Title:       "Config Options",
+					Description: "A default example of how to collect configuration from an end user. This can be mapped to helm values",
+					Items: []kotskinds.ConfigItem{
+						{
+							Name:     "username",
+							Title:    "Username",
+							Type:     "text",
+							HelpText: "Enter the default admin username",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	configFilePath := filepath.Join(kotsManifestsPath, "config.yaml")
+
+	err := writeKotsYAML(kotsConfigCrd, configFilePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func supportBundleFile(kotsManifestsPath string) error {
+
+	kotsCollectorCRD := troubleshoot.Collector{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Collector",
+			APIVersion: "troubleshoot.replicated.com/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "collector",
+		},
+		Spec: troubleshoot.CollectorSpec{
+			Collectors: []*troubleshoot.Collect{
+				{
+					ClusterInfo: &troubleshoot.ClusterInfo{},
+				},
+				{
+					ClusterResources: &troubleshoot.ClusterResources{},
+				},
+			},
+		},
+	}
+
+	supportBundleFilePath := filepath.Join(kotsManifestsPath, "support-bundle.yaml")
+
+	err := writeKotsYAML(kotsCollectorCRD, supportBundleFilePath)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func writeKotsYAML(kotsCrds interface{}, filePath string) error {
+
+	bytes, err := yaml.Marshal(kotsCrds)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(filePath, bytes, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func makeFile(kotsBasePath string) error {
+	makeFileContents := `
 SHELL := /bin/bash -o pipefail
 
 app_slug := "${REPLICATED_APP}"
@@ -95,240 +381,9 @@ release-kurl-installer: check-api-token check-app deps-vendor-cli
 		--promote $(channel) \
 		--ensure-channel
 `
+	makeFilePath := filepath.Join(kotsBasePath, "Makefile")
 
-func (r *runners) InitInitKotsApp(parent *cobra.Command) {
-	cmd := &cobra.Command{
-		Use:   "init-kots-app DIRECTORY",
-		Short: "Print the YAML config for a release",
-		Long:  "Print the YAML config for a release",
-	}
-	cmd.Hidden = true // Not supported in KOTS
-	parent.AddCommand(cmd)
-	cmd.RunE = r.initKotsApp
-}
-
-type ChartYaml struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
-}
-
-func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
-
-	baseDirectory := args[0]
-	chartYamlPath := filepath.Join(baseDirectory, "Chart.yaml")
-
-	bytes, err := ioutil.ReadFile(chartYamlPath)
-	if err != nil {
-		return err
-	}
-
-	chartYaml := ChartYaml{}
-	yaml.Unmarshal(bytes, &chartYaml)
-
-	// prepare kots directory
-	kotsBasePath := filepath.Join(baseDirectory, "kots")
-	kotsManifestsPath := filepath.Join(kotsBasePath, "manifests")
-
-	err = os.MkdirAll(kotsManifestsPath, 0755)
-	if err != nil {
-		return err
-	}
-
-	// add makefile
-	helmChartMakeFilePath := filepath.Join(kotsBasePath, "Makefile")
-
-	err = ioutil.WriteFile(helmChartMakeFilePath, []byte(makeFileContents), 0644)
-	if err != nil {
-		return err
-	}
-
-	// create helm chart kots kind
-	kotsHelmCrd := kotskinds.HelmChart{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "HelmChart",
-			APIVersion: "kots.io/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
-		},
-		Spec: kotskinds.HelmChartSpec{
-			Chart: kotskinds.ChartIdentifier{
-				ChartVersion: chartYaml.Version,
-				Name:         chartYaml.Name,
-			},
-		},
-	}
-
-	helmChartFileName := fmt.Sprintf("%s.yaml", chartYaml.Name)
-	helmChartFilePath := filepath.Join(kotsManifestsPath, helmChartFileName)
-
-	err = writeKotsYAML(kotsHelmCrd, helmChartFilePath)
-	if err != nil {
-		return err
-	}
-
-	// make app CRD
-	kotsAppCrd := kotskinds.Application{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Application",
-			APIVersion: "kots.io/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
-		},
-		Spec: kotskinds.ApplicationSpec{
-			Title: chartYaml.Name,
-		},
-	}
-
-	appFilePath := filepath.Join(kotsManifestsPath, "replicated-app.yaml")
-
-	err = writeKotsYAML(kotsAppCrd, appFilePath)
-	if err != nil {
-		return err
-	}
-
-	// make preflight
-	kotsPreflightCRD := troubleshoot.Preflight{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Preflight",
-			APIVersion: "troubleshoot.replicated.com/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
-		},
-		Spec: troubleshoot.PreflightSpec{
-			Analyzers: []*troubleshoot.Analyze{
-				{
-					ClusterVersion: &troubleshoot.ClusterVersion{
-						AnalyzeMeta: troubleshoot.AnalyzeMeta{
-							CheckName: "Kubernetes Version",
-						},
-						Outcomes: []*troubleshoot.Outcome{
-							{
-								Fail: &troubleshoot.SingleOutcome{
-									When:    "< 1.15.0",
-									Message: "This app requires at least Kubernetes 1.15.0",
-									URI:     "https://www.kubernetes.io",
-								},
-							},
-							{
-								Pass: &troubleshoot.SingleOutcome{
-									When:    ">= 1.15.0",
-									Message: "This app has at least Kubernetes 1.15.0",
-									URI:     "https://www.kubernetes.io",
-								},
-							},
-						},
-					},
-				},
-
-				{
-					NodeResources: &troubleshoot.NodeResources{
-						AnalyzeMeta: troubleshoot.AnalyzeMeta{
-							CheckName: "Total CPU Capacity",
-						},
-						Outcomes: []*troubleshoot.Outcome{
-							{
-								Fail: &troubleshoot.SingleOutcome{
-									When:    "sum(cpuCapacity) < 4",
-									Message: "This app requires a cluster with at least 4 cores.",
-									URI:     "https://kurl.sh/docs/install-with-kurl/system-requirements",
-								},
-							},
-							{
-								Pass: &troubleshoot.SingleOutcome{
-									Message: "This cluster has at least 4 cores.",
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	preflightFilePath := filepath.Join(kotsManifestsPath, "preflight.yaml")
-
-	err = writeKotsYAML(kotsPreflightCRD, preflightFilePath)
-	if err != nil {
-		return err
-	}
-
-	// create Config kots kind
-	kotsConfigCrd := kotskinds.Config{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Config",
-			APIVersion: "kots.io/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
-		},
-		Spec: kotskinds.ConfigSpec{
-			Groups: []kotskinds.ConfigGroup{
-				{
-					Name:        "Config",
-					Title:       "Config Options",
-					Description: "A default example of how to collect configuration from an end user. This can be mapped to helm values",
-					Items: []kotskinds.ConfigItem{
-						{
-							Name:     "username",
-							Title:    "Username",
-							Type:     "text",
-							HelpText: "Enter the default admin username",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	configFilePath := filepath.Join(kotsManifestsPath, "config.yaml")
-
-	err = writeKotsYAML(kotsConfigCrd, configFilePath)
-	if err != nil {
-		return err
-	}
-
-	// Support Bundle kots kind
-	kotsCollectorCRD := troubleshoot.Collector{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Collector",
-			APIVersion: "troubleshoot.replicated.com/v1beta1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "collector",
-		},
-		Spec: troubleshoot.CollectorSpec{
-			Collectors: []*troubleshoot.Collect{
-				{
-					ClusterInfo: &troubleshoot.ClusterInfo{},
-				},
-				{
-					ClusterResources: &troubleshoot.ClusterResources{},
-				},
-			},
-		},
-	}
-
-	supportBundleFilePath := filepath.Join(kotsManifestsPath, "support-bundle.yaml")
-
-	err = writeKotsYAML(kotsCollectorCRD, supportBundleFilePath)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func writeKotsYAML(kotsCrds interface{}, filePath string) error {
-
-	bytes, err := yaml.Marshal(kotsCrds)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(filePath, bytes, 0644)
+	err := ioutil.WriteFile(makeFilePath, []byte(makeFileContents), 0644)
 	if err != nil {
 		return err
 	}
