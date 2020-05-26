@@ -2,14 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/manifoldco/promptui"
+	"github.com/pkg/errors"
 	kotskinds "github.com/replicatedhq/kots/kotskinds/apis/kots/v1beta1"
+	"github.com/replicatedhq/kots/pkg/logger"
 	troubleshoot "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta1"
-	yaml "github.com/replicatedhq/yaml/v3"
+	"github.com/replicatedhq/yaml/v3"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 func (r *runners) InitInitKotsApp(parent *cobra.Command) {
@@ -17,8 +21,8 @@ func (r *runners) InitInitKotsApp(parent *cobra.Command) {
 		Use:   "init-kots-app DIRECTORY",
 		Short: "Print the YAML config for a release",
 		Long:  "Print the YAML config for a release",
+		Hidden: true,
 	}
-	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 	cmd.RunE = r.initKotsApp
 }
@@ -34,15 +38,25 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	baseDirectory := args[0]
 	chartYamlPath := filepath.Join(baseDirectory, "Chart.yaml")
 
-	fmt.Printf("Reading %s", chartYamlPath)
+	log := logger.NewLogger()
+
+	log.ActionWithSpinner("Reading %s", chartYamlPath)
 
 	bytes, err := ioutil.ReadFile(chartYamlPath)
 	if err != nil {
 		return err
 	}
+	time.Sleep(1 * time.Second)
+	log.FinishSpinner()
 
 	chartYaml := ChartYaml{}
 	yaml.Unmarshal(bytes, &chartYaml)
+
+	appName, err := promptForAppName(chartYaml.Name)
+	if err != nil {
+		return err
+	}
+
 
 	// prepare kots directory
 	kotsBasePath := filepath.Join(baseDirectory, "kots")
@@ -52,42 +66,57 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	log.ActionWithoutSpinner("Writing Files to %s", kotsBasePath)
+	log.ChildActionWithSpinner("Writing Makefile")
 
 	// Makefile
 	err = makeFile(kotsBasePath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
+
+
+	log.ChildActionWithSpinner("Writing %s.yaml", chartYaml.Name)
 
 	// Helm Chart CRD
 	err = helmChartFile(chartYaml.Name, chartYaml.Version, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
 
+	log.ChildActionWithSpinner("Writing replicated-app.yaml")
 	// App CRD
-	err = appFile(chartYaml, kotsManifestsPath)
+	err = appFile(chartYaml, appName, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
 
+	log.ChildActionWithSpinner("Writing preflight.yaml")
 	// Preflight CRD
 	err = preflightFile(chartYaml.Name, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
 
+	log.ChildActionWithSpinner("Writing config.yaml")
 	// Config CRD
 	err = configFile(chartYaml.Name, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
 
+	log.ChildActionWithSpinner("Writing support-bundle.yaml")
 	// Support Bundle CRD
 	err = supportBundleFile(kotsManifestsPath)
 	if err != nil {
 		return err
 	}
+	log.FinishChildSpinner()
 
 	return nil
 }
@@ -125,7 +154,7 @@ func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsP
 	return nil
 }
 
-func appFile(chartYaml ChartYaml, kotsManifestsPath string) error {
+func appFile(chartYaml ChartYaml, appName string, kotsManifestsPath string) error {
 
 	kotsAppCrd := kotskinds.Application{
 		TypeMeta: metav1.TypeMeta{
@@ -133,10 +162,10 @@ func appFile(chartYaml ChartYaml, kotsManifestsPath string) error {
 			APIVersion: "kots.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYaml.Name,
+			Name: appName,
 		},
 		Spec: kotskinds.ApplicationSpec{
-			Title: chartYaml.Name,
+			Title: appName,
 			Icon:  chartYaml.Icon,
 		},
 	}
@@ -398,4 +427,39 @@ release-kurl-installer: check-api-token check-app deps-vendor-cli
 	}
 
 	return nil
+}
+
+func promptForAppName(chartName string) (string, error) {
+
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Enter the app chartName to use",
+		Templates: templates,
+		Default:   chartName,
+		Validate: func(input string) error {
+			if len(input) == 0 {
+				return errors.New("invalid app name")
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
 }
