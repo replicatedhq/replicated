@@ -26,12 +26,15 @@ func (r *runners) InitInitKotsApp(parent *cobra.Command) {
 type ChartYaml struct {
 	Name    string `yaml:"name"`
 	Version string `yaml:"version"`
+	Icon    string `yaml:"icon"`
 }
 
 func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	baseDirectory := args[0]
 	chartYamlPath := filepath.Join(baseDirectory, "Chart.yaml")
+
+	fmt.Printf("Reading %s", chartYamlPath)
 
 	bytes, err := ioutil.ReadFile(chartYamlPath)
 	if err != nil {
@@ -63,7 +66,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	}
 
 	// App CRD
-	err = appFile(chartYaml.Name, kotsManifestsPath)
+	err = appFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
@@ -103,6 +106,11 @@ func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsP
 				ChartVersion: chartYamlVersion,
 				Name:         chartYamlName,
 			},
+			Values: map[string]kotskinds.MappedChartValue{
+				"foo": {},
+				"bar": {},
+				"baz": {},
+			},
 		},
 	}
 
@@ -117,7 +125,7 @@ func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsP
 	return nil
 }
 
-func appFile(chartYamlName string, kotsManifestsPath string) error {
+func appFile(chartYaml ChartYaml, kotsManifestsPath string) error {
 
 	kotsAppCrd := kotskinds.Application{
 		TypeMeta: metav1.TypeMeta{
@@ -125,10 +133,11 @@ func appFile(chartYamlName string, kotsManifestsPath string) error {
 			APIVersion: "kots.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYamlName,
+			Name: chartYaml.Name,
 		},
 		Spec: kotskinds.ApplicationSpec{
-			Title: chartYamlName,
+			Title: chartYaml.Name,
+			Icon:  chartYaml.Icon,
 		},
 	}
 
