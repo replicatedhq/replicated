@@ -80,7 +80,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	log.ChildActionWithSpinner("Writing %s.yaml", chartYaml.Name)
 
 	// Helm Chart CRD
-	err = helmChartFile(chartYaml.Name, chartYaml.Version, kotsManifestsPath)
+	err = helmChartFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	log.ChildActionWithSpinner("Writing preflight.yaml")
 	// Preflight CRD
-	err = preflightFile(chartYaml.Name, kotsManifestsPath)
+	err = preflightFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	log.ChildActionWithSpinner("Writing config.yaml")
 	// Config CRD
-	err = configFile(chartYaml.Name, kotsManifestsPath)
+	err = configFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
@@ -121,19 +121,19 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	return nil
 }
 
-func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsPath string) error {
+func helmChartFile(chartYaml ChartYaml, kotsManifestsPath string) error {
 	kotsHelmCrd := kotskinds.HelmChart{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "HelmChart",
 			APIVersion: "kots.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYamlName,
+			Name: chartYaml.Name,
 		},
 		Spec: kotskinds.HelmChartSpec{
 			Chart: kotskinds.ChartIdentifier{
-				ChartVersion: chartYamlVersion,
-				Name:         chartYamlName,
+				ChartVersion: chartYaml.Version,
+				Name:         chartYaml.Name,
 			},
 			Values: map[string]kotskinds.MappedChartValue{
 				"foo": {},
@@ -143,7 +143,7 @@ func helmChartFile(chartYamlName string, chartYamlVersion string, kotsManifestsP
 		},
 	}
 
-	helmChartFileName := fmt.Sprintf("%s.yaml", chartYamlName)
+	helmChartFileName := fmt.Sprintf("%s.yaml", chartYaml.Name)
 	helmChartFilePath := filepath.Join(kotsManifestsPath, helmChartFileName)
 
 	err := writeKotsYAML(kotsHelmCrd, helmChartFilePath)
@@ -180,7 +180,7 @@ func appFile(chartYaml ChartYaml, appName string, kotsManifestsPath string) erro
 	return nil
 }
 
-func preflightFile(chartYamlName string, kotsManifestsPath string) error {
+func preflightFile(chartYaml ChartYaml, kotsManifestsPath string) error {
 
 	kotsPreflightCRD := troubleshoot.Preflight{
 		TypeMeta: metav1.TypeMeta{
@@ -188,7 +188,7 @@ func preflightFile(chartYamlName string, kotsManifestsPath string) error {
 			APIVersion: "troubleshoot.replicated.com/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYamlName,
+			Name: chartYaml.Name,
 		},
 		Spec: troubleshoot.PreflightSpec{
 			Analyzers: []*troubleshoot.Analyze{
@@ -250,14 +250,14 @@ func preflightFile(chartYamlName string, kotsManifestsPath string) error {
 
 	return nil
 }
-func configFile(chartYamlName string, kotsManifestsPath string) error {
+func configFile(chartYaml ChartYaml, kotsManifestsPath string) error {
 	kotsConfigCrd := kotskinds.Config{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Config",
 			APIVersion: "kots.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: chartYamlName,
+			Name: chartYaml.Name,
 		},
 		Spec: kotskinds.ConfigSpec{
 			Groups: []kotskinds.ConfigGroup{
