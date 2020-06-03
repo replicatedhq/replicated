@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -22,6 +23,7 @@ func (r *runners) InitInitKotsApp(parent *cobra.Command) {
 		Short: "Print the YAML config for a release",
 		Long:  "Print the YAML config for a release",
 		Hidden: true,
+		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.RunE = r.initKotsApp
@@ -67,56 +69,75 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 		return err
 	}
 	log.ActionWithoutSpinner("Writing Files to %s", kotsBasePath)
-	log.ChildActionWithSpinner("Writing Makefile")
+	log.ActionWithSpinner("Writing Makefile")
 
 	// Makefile
 	err = makeFile(kotsBasePath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
+
+	log.ActionWithSpinner("Writing .gitignore")
+
+	// .gitignore
+	err = gitignore(kotsBasePath)
+	if err != nil {
+		return err
+	}
+	log.FinishSpinner()
+
+	log.ActionWithSpinner("Writing .helmignore")
+
+	// .helmignore
+	err = helmignore(baseDirectory)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return err
+	}
+	log.FinishSpinner()
 
 
-	log.ChildActionWithSpinner("Writing %s.yaml", chartYaml.Name)
+	log.ActionWithSpinner("Writing %s.yaml", chartYaml.Name)
 
 	// Helm Chart CRD
 	err = helmChartFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
 
-	log.ChildActionWithSpinner("Writing replicated-app.yaml")
+	log.ActionWithSpinner("Writing replicated-app.yaml")
 	// App CRD
 	err = appFile(chartYaml, appName, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
 
-	log.ChildActionWithSpinner("Writing preflight.yaml")
+	log.ActionWithSpinner("Writing preflight.yaml")
 	// Preflight CRD
 	err = preflightFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
 
-	log.ChildActionWithSpinner("Writing config.yaml")
+	log.ActionWithSpinner("Writing config.yaml")
 	// Config CRD
 	err = configFile(chartYaml, kotsManifestsPath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
 
-	log.ChildActionWithSpinner("Writing support-bundle.yaml")
+	log.ActionWithSpinner("Writing support-bundle.yaml")
 	// Support Bundle CRD
 	err = supportBundleFile(kotsManifestsPath)
 	if err != nil {
 		return err
 	}
-	log.FinishChildSpinner()
+	log.FinishSpinner()
 
 	return nil
 }
@@ -424,6 +445,49 @@ release-kurl-installer: check-api-token check-app deps-vendor-cli
 	err := ioutil.WriteFile(makeFilePath, []byte(makeFileContents), 0644)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func gitignore(kotsBasePath string) error {
+	gitignoreContents := `
+deps/
+manifests/*.tgz
+`
+	gitignorePath := filepath.Join(kotsBasePath, ".gitignore")
+
+	err := ioutil.WriteFile(gitignorePath, []byte(gitignoreContents), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func helmignore(baseDirectory string) error {
+	helmignoreContents := `
+kots/`
+	helmignorePath := filepath.Join(baseDirectory, ".helmignore")
+
+	f, err := os.OpenFile(helmignorePath, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+
+	defer f.Close()
+
+	bytes, err := ioutil.ReadAll(f)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s", bytes)
+
+	if !strings.Contains(string(bytes), "kots/") {
+		if _, err = f.WriteString(helmignoreContents); err != nil {
+			return err
+		}
 	}
 
 	return nil
