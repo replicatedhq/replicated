@@ -46,7 +46,8 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	bytes, err := ioutil.ReadFile(chartYamlPath)
 	if err != nil {
-		return err
+		log.FinishSpinnerWithError()
+		return errors.Wrap(err, "read Chart.yaml file")
 	}
 	time.Sleep(1 * time.Second)
 	log.FinishSpinner()
@@ -56,7 +57,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	appName, err := promptForAppName(chartYaml.Name)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "prompt for app name")
 	}
 
 
@@ -66,7 +67,7 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 
 	err = os.MkdirAll(kotsManifestsPath, 0755)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "create kots manifests directory")
 	}
 	log.ActionWithoutSpinner("Writing Files to %s", kotsBasePath)
 	log.ActionWithSpinner("Writing Makefile")
