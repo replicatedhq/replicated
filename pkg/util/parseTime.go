@@ -1,9 +1,10 @@
 package util
 
 import (
-	"github.com/pkg/errors"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 func ParseTime(ts string) (time.Time, error) {
@@ -13,6 +14,12 @@ func ParseTime(ts string) (time.Time, error) {
 	}
 
 	ts = strings.TrimSuffix(ts, "+0000 (UTC)")
+	parsed, err = time.Parse("Mon Jan 02 2006 15:04:05 MST", ts)
+	if err == nil {
+		return parsed, nil
+	}
+
+	ts = strings.TrimSuffix(ts, "+0000 (Coordinated Universal Time)")
 	return time.Parse("Mon Jan 02 2006 15:04:05 MST", ts)
 }
 
