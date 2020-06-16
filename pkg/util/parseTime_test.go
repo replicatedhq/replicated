@@ -24,6 +24,12 @@ func TestParseTime(t *testing.T) {
 			want:    testTime,
 			wantErr: false,
 		},
+		{
+			name:    "triple timestamp",
+			ts:      "Wed May 22 2019 23:01:51 GMT+0000 (Coordinated Universal Time)",
+			want:    testTime,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

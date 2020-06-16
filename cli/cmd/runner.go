@@ -62,7 +62,6 @@ type runnerArgs struct {
 	createReleasePromoteEnsureUser    bool
 	lintReleaseYamlDir                string
 	lintReleaseFailOn                 string
-	lintBetaLinter                    bool
 	releaseOptional                   bool
 	releaseNotes                      string
 	releaseVersion                    string
@@ -107,7 +106,7 @@ type runnerArgs struct {
 	enterpriseChannelRmId string
 
 	enterpriseChannelAssignChannelID string
-	enterpriseChannelAssignVendorID  string
+	enterpriseChannelAssignTeamID    string
 
 	enterprisePolicyCreateName        string
 	enterprisePolicyCreateDescription string

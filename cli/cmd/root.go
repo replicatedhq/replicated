@@ -25,7 +25,7 @@ const (
 
 var appSlugOrID string
 var apiToken string
-var enterprisePrivateKeyPath = filepath.Join(homeDir(), ".replicated", "enterprise", "key")
+var enterprisePrivateKeyPath = filepath.Join(homeDir(), ".replicated", "enterprise", "ecdsa")
 var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
 var kurlDotSHOrigin = "https://kurl.sh"

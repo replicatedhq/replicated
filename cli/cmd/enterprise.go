@@ -12,7 +12,7 @@ import (
 func (r *runners) InitEnterpriseCommand(parent *cobra.Command) *cobra.Command {
 	enterpriseCommand := &cobra.Command{
 		Use:          "enterprise",
-		Short:        "Manage enterprise channels and installers",
+		Short:        "Manage enterprise channels, policies and installers",
 		SilenceUsage: true,
 		Long:         `The enterprise command allows approved enterprise to create custom installers, release channels and policies for vendors`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
@@ -50,7 +50,7 @@ func (r *runners) InitEnterpriseCommand(parent *cobra.Command) *cobra.Command {
 
 	// TODO remove the app and token persistent flags
 
-	enterpriseCommand.PersistentFlags().StringVar(&enterprisePrivateKeyPath, "private-key", enterprisePrivateKeyPath, "Path to the private key uses to sign requests")
+	enterpriseCommand.PersistentFlags().StringVar(&enterprisePrivateKeyPath, "private-key", enterprisePrivateKeyPath, "Path to the private key used to sign requests")
 
 	return enterpriseCommand
 }

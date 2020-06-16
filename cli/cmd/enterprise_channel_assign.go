@@ -10,22 +10,22 @@ func (r *runners) InitEnterpriseChannelAssign(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "assign",
 		SilenceUsage: true,
-		Short:        "assign a channel to a vendor",
-		Long: `Assign a channel to a vendor team.
+		Short:        "assign a channel to a team",
+		Long: `Assign a channel to a team.
 
   Example:
-  replicated enteprise channel assign --channel-id ChannelID --vendor-id VendorID`,
+  replicated enteprise channel assign --channel-id ChannelID --team-id TeamID`,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.enterpriseChannelAssignChannelID, "channel-id", "", "The id of the channel to be assigned")
-	cmd.Flags().StringVar(&r.args.enterpriseChannelAssignVendorID, "vendor-id", "", "The id of the vendor to assign the channel to")
+	cmd.Flags().StringVar(&r.args.enterpriseChannelAssignTeamID, "team-id", "", "The id of the team to assign the channel to")
 
 	cmd.RunE = r.enterpriseChannelAssign
 }
 
 func (r *runners) enterpriseChannelAssign(cmd *cobra.Command, args []string) error {
-	err := r.enterpriseClient.AssignChannel(r.args.enterpriseChannelAssignChannelID, r.args.enterpriseChannelAssignVendorID)
+	err := r.enterpriseClient.AssignChannel(r.args.enterpriseChannelAssignChannelID, r.args.enterpriseChannelAssignTeamID)
 	if err != nil {
 		return err
 	}
