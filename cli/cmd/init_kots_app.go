@@ -135,6 +135,19 @@ func (r *runners) initKotsApp(_ *cobra.Command, args []string) error {
 	}
 	log.FinishSpinner()
 
+	log.Info(`
+KOTS Manifests have been written to %s
+
+If you've already set up the REPLICATED_APP and REPLICATED_API_TOKEN environment variables, you can
+
+    cd %s
+    make -C kots release
+
+to publish a new release from your repo.
+
+For more information on integrating a KOTS app with CI/CD check out the guide at https://kots.io/vendor/guides/ci-cd-integration/#helm-chart
+`, kotsBasePath, baseDirectory)
+
 	return nil
 }
 
