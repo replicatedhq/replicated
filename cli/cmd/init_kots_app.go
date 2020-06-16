@@ -16,8 +16,8 @@ import (
 func (r *runners) InitInitKotsApp(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "init-kots-app DIRECTORY",
-		Short:        "Print the YAML config for a release",
-		Long:         "Print the YAML config for a release",
+		Short:        "Initializes an existing Helm Chart with KOTS manifests and a Makefile for CI/CD.",
+		Long:         "Initializes an existing Helm Chart with KOTS manifests and a Makefile for CI/CD.",
 		Hidden:       true,
 		SilenceUsage: true,
 	}
