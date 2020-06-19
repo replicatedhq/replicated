@@ -50,6 +50,10 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 		return errors.New("one of --yaml, --yaml-file, --yaml-dir is required")
 	}
 
+	if r.args.createReleaseYamlDir == "" {
+
+	}
+
 	// can't ensure a channel if you didn't pass one
 	if r.args.createReleasePromoteEnsureChannel && r.args.createReleasePromote == "" {
 		return errors.New("cannot use the flag --ensure-channel without also using --promote <channel> ")

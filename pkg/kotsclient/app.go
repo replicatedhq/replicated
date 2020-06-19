@@ -105,5 +105,5 @@ func (c *GraphQLClient) GetApp(appID string) (*types.App, error) {
 		}
 	}
 
-	return nil, errors.New("App not found")
+	return nil, errors.Errorf("App %q not found, please verify your app ID on vendor.replicated.com", appID)
 }

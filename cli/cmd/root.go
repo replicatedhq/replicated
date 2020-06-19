@@ -188,6 +188,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			}
 		}
 
+		if appSlugOrID == "" {
+			appSlugOrID = os.Getenv("REPLICATED_APP")
+			if appSlugOrID == "" {
+				return errors.New("please provide your vendor.replicated.com app ID or Slug via REPLICATED_APP or the --app flag")
+			}
+		}
+
 		// allow override
 		if os.Getenv("KURL_SH_ORIGIN") != "" {
 			kurlDotSHOrigin = os.Getenv("KURL_SH_ORIGIN")
