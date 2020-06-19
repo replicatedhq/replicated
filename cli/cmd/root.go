@@ -212,10 +212,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
-		if appSlugOrID == "" {
-			appSlugOrID = os.Getenv("REPLICATED_APP")
-		}
-
 		appType, err := commonAPI.GetAppType(appSlugOrID)
 		if err != nil {
 			return err
