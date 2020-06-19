@@ -184,7 +184,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		if apiToken == "" {
 			apiToken = os.Getenv("REPLICATED_API_TOKEN")
 			if apiToken == "" {
-				return errors.New("Please provide your API token")
+				return errors.New("please provide your vendor.replicated.com API token via REPLICATED_API_TOKEN or the --token flag")
 			}
 		}
 

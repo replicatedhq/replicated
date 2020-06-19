@@ -26,6 +26,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 		Short: "Create a new release",
 		Long: `Create a new release by providing YAML configuration for the next release in
   your sequence.`,
+		SilenceUsage: true,
 	}
 
 	parent.AddCommand(cmd)
