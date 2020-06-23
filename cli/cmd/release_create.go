@@ -48,11 +48,42 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 	if r.args.createReleaseYamlDir == "" {
 		kotsManifestsDir, err := promptForAppYAMLDir("manifests")
 		if err != nil {
-			return errors.Wrap(err, "prompt for app name")
+			return errors.Wrap(err, "prompt for yaml dir")
 		}
 
 		r.args.createReleaseYamlDir = kotsManifestsDir
 	}
+
+	if r.args.createReleasePromote == "" {
+		promoteChannel, err := promptForPromoteChannel("Unstable")
+		if err != nil {
+			return errors.Wrap(err, "prompt for channel")
+		}
+
+		r.args.createReleasePromote = promoteChannel
+	}
+
+	// if the --promote param was used make sure it identifies exactly one
+	// channel before proceeding
+	var promoteChanID string
+	if r.args.createReleasePromote != "" {
+		var err error
+		promoteChanID, err = r.getOrCreateChannelForPromotion(
+			r.args.createReleasePromote,
+			false,
+		)
+		if err != nil {
+			//return errors.Wrapf(err, "get or create channel %q for promotion", r.args.createReleasePromote)
+			createChannel, err := promptForShouldCreateChannel("y")
+			if err != nil {
+				return errors.Wrap(err, "prompt for create channel channel")
+			}
+			if createChannel == "y" {
+				r.args.createReleasePromoteEnsureChannel = true
+			}
+		}
+	}
+
 
 	if r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
@@ -100,7 +131,6 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 
 	// if the --promote param was used make sure it identifies exactly one
 	// channel before proceeding
-	var promoteChanID string
 	if r.args.createReleasePromote != "" {
 		var err error
 		promoteChanID, err = r.getOrCreateChannelForPromotion(
@@ -108,7 +138,7 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 			r.args.createReleasePromoteEnsureChannel,
 		)
 		if err != nil {
-			return errors.Wrapf(err, "get or create channel %q for promotion", promoteChanID)
+			return errors.Wrapf(err, "get or create channel %q for promotion", r.args.createReleasePromote)
 		}
 	}
 
@@ -243,6 +273,76 @@ func promptForAppYAMLDir(chartName string) (string, error) {
 		Validate: func(input string) error {
 			if len(input) == 0 {
 				return errors.New("invalid app name")
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
+}
+
+func promptForPromoteChannel(defaultChannel string) (string, error) {
+
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Enter the Channel to promote to:",
+		Templates: templates,
+		Default:   defaultChannel,
+		Validate: func(input string) error {
+			if len(input) == 0 {
+				return errors.New("invalid channel name")
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
+}
+
+func promptForShouldCreateChannel(defaultValue string) (string, error) {
+
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Channel was not found, would you like to create it?",
+		Templates: templates,
+		Default:   defaultValue,
+		Validate: func(input string) error {
+			if input != "y" && input != "n" {
+				return errors.New("please enter y or n")
 			}
 
 			return nil
