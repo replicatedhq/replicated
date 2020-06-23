@@ -26,6 +26,7 @@ require (
 	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515
 	github.com/kyokomi/emoji v0.0.3-0.20170519011427-ddd4753eac3f
 	github.com/magiconair/properties v1.7.3
+	github.com/manifoldco/promptui v0.7.0
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/miekg/mmark v1.3.6
 	github.com/mitchellh/mapstructure v0.0.0-20170523030023-d0303fe80992

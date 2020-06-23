@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/manifoldco/promptui"
 )
 
 type kotsSingleSpec struct {
@@ -44,14 +45,19 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 }
 
 func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
+	if r.args.createReleaseYamlDir == "" {
+		kotsManifestsDir, err := promptForAppName("manifests")
+		if err != nil {
+			return errors.Wrap(err, "prompt for app name")
+		}
+
+		r.args.createReleaseYamlDir = kotsManifestsDir
+	}
+
 	if r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" {
 		return errors.New("one of --yaml, --yaml-file, --yaml-dir is required")
-	}
-
-	if r.args.createReleaseYamlDir == "" {
-
 	}
 
 	// can't ensure a channel if you didn't pass one
@@ -219,4 +225,39 @@ func readYAMLDir(yamlDir string) (string, error) {
 		return "", errors.Wrap(err, "marshal spec")
 	}
 	return string(jsonAllYamls), nil
+}
+
+func promptForAppName(chartName string) (string, error) {
+
+	templates := &promptui.PromptTemplates{
+		Prompt:  "{{ . | bold }} ",
+		Valid:   "{{ . | green }} ",
+		Invalid: "{{ . | red }} ",
+		Success: "{{ . | bold }} ",
+	}
+
+	prompt := promptui.Prompt{
+		Label:     "Enter the app chartName to use",
+		Templates: templates,
+		Default:   chartName,
+		Validate: func(input string) error {
+			if len(input) == 0 {
+				return errors.New("invalid app name")
+			}
+
+			return nil
+		},
+	}
+
+	for {
+		result, err := prompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				os.Exit(-1)
+			}
+			continue
+		}
+
+		return result, nil
+	}
 }
