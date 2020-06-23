@@ -46,7 +46,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 
 func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 	if r.args.createReleaseYamlDir == "" {
-		kotsManifestsDir, err := promptForAppName("manifests")
+		kotsManifestsDir, err := promptForAppYAMLDir("manifests")
 		if err != nil {
 			return errors.Wrap(err, "prompt for app name")
 		}
@@ -227,7 +227,7 @@ func readYAMLDir(yamlDir string) (string, error) {
 	return string(jsonAllYamls), nil
 }
 
-func promptForAppName(chartName string) (string, error) {
+func promptForAppYAMLDir(chartName string) (string, error) {
 
 	templates := &promptui.PromptTemplates{
 		Prompt:  "{{ . | bold }} ",
