@@ -237,7 +237,7 @@ func promptForAppName(chartName string) (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Enter the app chartName to use",
+		Label:     "Enter the app YAML dir to use:",
 		Templates: templates,
 		Default:   chartName,
 		Validate: func(input string) error {
