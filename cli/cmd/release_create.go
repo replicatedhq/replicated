@@ -39,6 +39,11 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) {
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 
+	// not supported for KOTS
+	cmd.Flags().MarkHidden("required")
+	cmd.Flags().MarkHidden("yaml-file")
+	cmd.Flags().MarkHidden("yaml")
+
 	cmd.RunE = r.releaseCreate
 }
 
@@ -61,6 +66,18 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
 		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if r.args.createReleasePromoteRequired && r.appType == "kots" {
+		return errors.Errorf("the --required flag is not supported for KOTS applications")
+	}
+
+	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
+		return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
+	}
+
+	if r.args.createReleaseYaml != "" && r.appType == "kots" {
+		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 	}
 
 	if r.args.createReleaseYaml == "-" {
