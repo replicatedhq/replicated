@@ -21,7 +21,7 @@ type ChannelOptions struct {
 	Description string
 }
 
-// An PlatformClient communicates with the Replicated Vendor HTTP API.
+// An HTTPClient communicates with the Replicated Vendor HTTP API.
 // TODO: rename this to client
 type HTTPClient struct {
 	apiKey    string
@@ -42,7 +42,7 @@ func NewHTTPClient(origin string, apiKey string) *HTTPClient {
 	return c
 }
 
-func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
+func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {
@@ -71,7 +71,11 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 		return fmt.Errorf("%s %s %d: %s", method, endpoint, resp.StatusCode, body)
 	}
 	if respBody != nil {
-		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "read body")
+		}
+		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
 			return fmt.Errorf("%s %s response decoding: %v", method, endpoint, err)
 		}
 	}
@@ -79,26 +83,3 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 	return nil
 }
 
-func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
-	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
-	var buf bytes.Buffer
-	req, err := http.NewRequest("GET", endpoint, &buf)
-	if err != nil {
-		return nil, errors.Wrap(err, "prepare request")
-	}
-
-	req.Header.Set("Authorization", c.apiKey)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, errors.Wrap(err, "execute request")
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusNotFound {
-		return nil, ErrNotFound
-	}
-	if resp.StatusCode != successStatus {
-		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("GET %s %d: %s", endpoint, resp.StatusCode, body)
-	}
-	return ioutil.ReadAll(resp.Body)
-}
