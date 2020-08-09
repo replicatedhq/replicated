@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func (c HTTPClient) DownloadLicense(appID string, customerID string) ([]byte, error) {
+func (c *HTTPClient) DownloadLicense(appID string, customerID string) ([]byte, error) {
 	path := fmt.Sprintf("/v3/app/%s/customer/%s/license-download", appID, customerID)
 	licenseBytes, err := c.HTTPGet(path, http.StatusOK)
 	if err != nil {

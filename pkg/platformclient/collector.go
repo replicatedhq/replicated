@@ -13,7 +13,7 @@ func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ..
 	body := &v1.BodyPromoteCollector{
 		ChannelIDs: channelIDs,
 	}
-	if err := c.doJSON("POST", path, http.StatusOK, body, nil); err != nil {
+	if err := c.DoJSON("POST", path, http.StatusOK, body, nil); err != nil {
 		return fmt.Errorf("PromoteCollector: %v", err)
 	}
 	return nil

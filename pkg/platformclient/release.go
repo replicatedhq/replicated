@@ -14,7 +14,7 @@ import (
 func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/releases", appID)
 	releases := make([]releases.AppReleaseInfo, 0)
-	if err := c.doJSON("GET", path, http.StatusOK, nil, &releases); err != nil {
+	if err := c.DoJSON("GET", path, http.StatusOK, nil, &releases); err != nil {
 		return nil, fmt.Errorf("ListReleases: %v", err)
 	}
 	return releases, nil
@@ -27,7 +27,7 @@ func (c *HTTPClient) CreateRelease(appID string, yaml string) (*releases.AppRele
 		Source: "latest",
 	}
 	release := &releases.AppReleaseInfo{}
-	if err := c.doJSON("POST", path, http.StatusCreated, body, release); err != nil {
+	if err := c.DoJSON("POST", path, http.StatusCreated, body, release); err != nil {
 		return nil, fmt.Errorf("CreateRelease: %v", err)
 	}
 	// API does not accept yaml in create operation, so first create then udpate
@@ -66,7 +66,7 @@ func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) er
 func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
 	path := fmt.Sprintf("/v1/app/%s/%d/properties", appID, sequence)
 	release := &releases.AppRelease{}
-	if err := c.doJSON("GET", path, http.StatusOK, nil, release); err != nil {
+	if err := c.DoJSON("GET", path, http.StatusOK, nil, release); err != nil {
 		return nil, fmt.Errorf("GetRelease: %v", err)
 	}
 	return release, nil
@@ -81,7 +81,7 @@ func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes s
 		Required:     required,
 		Channels:     channelIDs,
 	}
-	if err := c.doJSON("POST", path, http.StatusNoContent, body, nil); err != nil {
+	if err := c.DoJSON("POST", path, http.StatusNoContent, body, nil); err != nil {
 		return fmt.Errorf("PromoteRelease: %v", err)
 	}
 	return nil
