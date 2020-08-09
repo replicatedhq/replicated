@@ -133,4 +133,5 @@ type runnerArgs struct {
 
 	enterpriseInstallerAssignInstallerID string
 	enterpriseInstallerAssignChannelID   string
+	initKotsAppSkipPrompt                bool
 }
