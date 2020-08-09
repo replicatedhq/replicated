@@ -13,7 +13,7 @@ import (
 
 const apiOrigin = "https://api.replicated.com/enterprise"
 
-// An HTTPClient communicates with the Replicated Enterprise HTTP API.
+// An PlatformClient communicates with the Replicated Enterprise HTTP API.
 type HTTPClient struct {
 	privateKey *ecdsa.PrivateKey
 	apiOrigin  string

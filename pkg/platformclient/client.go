@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 )
@@ -20,7 +21,7 @@ type ChannelOptions struct {
 	Description string
 }
 
-// An HTTPClient communicates with the Replicated Vendor HTTP API.
+// An PlatformClient communicates with the Replicated Vendor HTTP API.
 // TODO: rename this to client
 type HTTPClient struct {
 	apiKey    string
@@ -76,4 +77,28 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 	}
 
 	return nil
+}
+
+func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
+	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
+	var buf bytes.Buffer
+	req, err := http.NewRequest("GET", endpoint, &buf)
+	if err != nil {
+		return nil, errors.Wrap(err, "prepare request")
+	}
+
+	req.Header.Set("Authorization", c.apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "execute request")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrNotFound
+	}
+	if resp.StatusCode != successStatus {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("GET %s %d: %s", endpoint, resp.StatusCode, body)
+	}
+	return ioutil.ReadAll(resp.Body)
 }

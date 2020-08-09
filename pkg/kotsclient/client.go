@@ -2,6 +2,7 @@ package kotsclient
 
 import (
 	"github.com/replicatedhq/replicated/pkg/graphql"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 )
 
 type AppOptions struct {
@@ -19,6 +20,10 @@ type GraphQLClient struct {
 	KurlDotSHAddress string
 }
 
+type HTTPClient struct {
+	platformclient.HTTPClient
+}
+
 func NewGraphQLClient(origin string, apiKey string, kurlDotSHAddress string) *GraphQLClient {
 	c := &GraphQLClient{
 		GraphQLClient:    graphql.NewClient(origin, apiKey),
@@ -31,3 +36,4 @@ func NewGraphQLClient(origin string, apiKey string, kurlDotSHAddress string) *Gr
 func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTarget interface{}) error {
 	return c.GraphQLClient.ExecuteRequest(requestObj, deserializeTarget)
 }
+

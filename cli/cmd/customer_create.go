@@ -13,6 +13,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 		Short: "create a customer",
 		Long:  `create a customer`,
 		RunE:  r.createCustomer,
+		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "The Customer Name")
