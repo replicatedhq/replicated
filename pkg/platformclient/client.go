@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 )
@@ -41,7 +42,7 @@ func NewHTTPClient(origin string, apiKey string) *HTTPClient {
 	return c
 }
 
-func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
+func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {
@@ -70,10 +71,15 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody, res
 		return fmt.Errorf("%s %s %d: %s", method, endpoint, resp.StatusCode, body)
 	}
 	if respBody != nil {
-		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "read body")
+		}
+		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
 			return fmt.Errorf("%s %s response decoding: %v", method, endpoint, err)
 		}
 	}
 
 	return nil
 }
+

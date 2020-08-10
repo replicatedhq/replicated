@@ -133,4 +133,6 @@ type runnerArgs struct {
 
 	enterpriseInstallerAssignInstallerID string
 	enterpriseInstallerAssignChannelID   string
+	customerLicenseInspectCustomer       string
+	customerLicenseInspectOutput         string
 }

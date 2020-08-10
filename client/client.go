@@ -10,13 +10,16 @@ type Client struct {
 	PlatformClient *platformclient.HTTPClient
 	ShipClient     *shipclient.GraphQLClient
 	KotsClient     *kotsclient.GraphQLClient
+	KotsHTTPClient *kotsclient.HTTPClient
 }
 
 func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kurlOrigin string) Client {
+	httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
 	client := Client{
-		PlatformClient: platformclient.NewHTTPClient(platformOrigin, apiToken),
+		PlatformClient: httpClient,
 		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
 		KotsClient:     kotsclient.NewGraphQLClient(graphqlOrigin, apiToken, kurlOrigin),
+		KotsHTTPClient: &kotsclient.HTTPClient{HTTPClient: *httpClient},
 	}
 
 	return client

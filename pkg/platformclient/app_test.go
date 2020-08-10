@@ -7,7 +7,7 @@ package platformclient
 // 		token := "cli-delete-app-auth"
 //
 // 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-// 		client := HTTPClient{
+// 		client := PlatformClient{
 // 			apiKey:    token,
 // 			apiOrigin: u,
 // 		}
