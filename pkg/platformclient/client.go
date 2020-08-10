@@ -84,11 +84,12 @@ func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, res
 }
 
 
+// Minimal, simplified version of DoJSON for GET requests, just returns bytes
 func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
-	var buf bytes.Buffer
-	req, err := http.NewRequest("GET", endpoint, &buf)
+
+	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
