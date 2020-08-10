@@ -3,53 +3,25 @@ module github.com/replicatedhq/replicated
 go 1.14
 
 require (
-	github.com/BurntSushi/toml v0.3.1-0.20170626110600-a368813c5e64
-	github.com/PuerkitoBio/purell v1.1.1-0.20170324134132-b938d81255b5
-	github.com/PuerkitoBio/urlesc v0.0.0-20170324140228-bbf7a2afc14f
-	github.com/bep/gitmap v0.0.0-20170613154459-de8030ebafb7
-	github.com/bep/inflect v0.0.0-20160408190323-b896c45f5af9
-	github.com/chaseadamsio/goorgeous v0.0.0-20170427125010-677defd0e024
-	github.com/cpuguy83/go-md2man v1.0.7-0.20170603125239-23709d084719
-	github.com/davecgh/go-spew v1.0.1-0.20160907170601-6d212800a42e
-	github.com/dchest/cssmin v0.0.0-20151210170030-fb8d9b44afdc
-	github.com/eknkc/amber v0.0.0-20170614172037-5fa789550097
-	github.com/fsnotify/fsnotify v1.4.3-0.20170329110642-4da3e2cfbabc
-	github.com/go-kit/kit v0.6.0
-	github.com/go-logfmt/logfmt v0.4.0
-	github.com/go-stack/stack v1.8.0
-	github.com/hashicorp/errwrap v1.0.0
-	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/go-version v1.2.1-0.20190424083514-192140e6f3e6
-	github.com/hashicorp/hcl v0.0.0-20170509225359-392dba7d905e
-	github.com/hashicorp/logutils v1.0.0
-	github.com/inconshreveable/mousetrap v1.0.0
-	github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515
-	github.com/kyokomi/emoji v0.0.3-0.20170519011427-ddd4753eac3f
-	github.com/magiconair/properties v1.7.3
+	github.com/alecthomas/chroma v0.8.0 // indirect
+	github.com/bep/gitmap v1.1.2 // indirect
+	github.com/fatih/color v1.7.0
+	github.com/go-kit/kit v0.10.0
+	github.com/gohugoio/hugo v0.22.1
+	github.com/hashicorp/go-multierror v1.1.0
+	github.com/jdkato/prose v1.2.0 // indirect
+	github.com/kyokomi/emoji v2.2.4+incompatible // indirect
+	github.com/manifoldco/promptui v0.7.0
+	github.com/markbates/inflect v1.0.4 // indirect
+	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver/v3 v3.3.0
-	github.com/miekg/mmark v1.3.6
-	github.com/mitchellh/mapstructure v0.0.0-20170523030023-d0303fe80992
-	github.com/nicksnyder/go-i18n v1.8.1
-	github.com/onsi/ginkgo v1.3.1
-	github.com/pact-foundation/pact-go v1.0.0-beta.5
-	github.com/pelletier/go-toml v1.0.1-0.20170628012637-69d355db5304
-	github.com/pkg/errors v0.8.2-0.20190227000051-27936f6d90f9
-	github.com/pmezard/go-difflib v0.0.0-20151028094244-d8ed2627bdf0
-	github.com/russross/blackfriday v0.0.0-20170610170232-067529f716f4
-	github.com/shurcooL/sanitized_anchor_name v0.0.0-20170515013256-541ff5ee47f1
-	github.com/spf13/afero v0.0.0-20170217164146-9be650865eab
-	github.com/spf13/cast v1.1.0
-	github.com/spf13/cobra v0.0.0-20170629105234-8c6fa02d2225
-	github.com/spf13/hugo v0.20.5-0.20170522131122-f63ee6567dea
-	github.com/spf13/jwalterweatherman v0.0.0-20170523133247-0efa5202c046
-	github.com/spf13/nitro v0.0.0-20131003134307-24d7ef30a12d
-	github.com/spf13/pflag v1.0.0
-	github.com/spf13/viper v0.0.0-20170619124313-c1de95864d73
-	github.com/stretchr/testify v1.1.4
-	github.com/yosssi/ace v0.0.5
-	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
-	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
-	golang.org/x/sys v0.0.0-20200331124033-c3d80250170d
-	golang.org/x/text v0.3.0
-	gopkg.in/yaml.v2 v2.0.0-20170712054546-1be3d31502d6
+	github.com/onsi/ginkgo v1.11.0
+	github.com/pact-foundation/pact-go v1.0.4
+	github.com/pkg/errors v0.9.1
+	github.com/replicatedhq/kots v1.17.2
+	github.com/spf13/cobra v1.0.0
+	github.com/stretchr/testify v1.6.1
+	github.com/tj/go-spin v1.1.0
+	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	gopkg.in/src-d/go-git.v4 v4.13.1
 )

@@ -1,7 +1,6 @@
 package test
 
 import (
-	"bufio"
 	"bytes"
 	"io/ioutil"
 	"os"
@@ -42,13 +41,7 @@ var _ = Describe("release create", func() {
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")
 			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
-
-			r := bufio.NewScanner(&stdout)
-
-			assert.True(t, r.Scan())
-			assert.Equal(t, "SEQUENCE: 1", r.Text())
-
-			assert.False(t, r.Scan())
+			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
 		})
 	})
 
@@ -68,10 +61,7 @@ var _ = Describe("release create", func() {
 			assert.Empty(t, stderr.String(), "Expected no stderr output")
 			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
 
-			r := bufio.NewScanner(&stdout)
-
-			assert.True(t, r.Scan())
-			assert.Equal(t, "SEQUENCE: 1", r.Text())
+			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
 		})
 	})
 
@@ -99,12 +89,7 @@ var _ = Describe("release create", func() {
 			assert.Empty(t, stderr.String(), "Expected no stderr output")
 			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
 
-			r := bufio.NewScanner(&stdout)
-
-			assert.True(t, r.Scan())
-			assert.Equal(t, "SEQUENCE: 1", r.Text())
-
-			assert.False(t, r.Scan())
+			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
 		})
 	})
 })

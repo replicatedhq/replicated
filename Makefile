@@ -46,8 +46,16 @@ deps:
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicatedhq.replicated glide install
 
-test:
-	go test ./cli/test
+.PHONY: test-env
+test-env:
+	@if [ -z "${REPLICATED_API_TOKEN}" ]; then echo "Missing REPLICATED_API_TOKEN"; exit 1; fi
+	@if [ -z "${VENDOR_USER_PASSWORD}" ]; then echo "Missing VENDOR_USER_PASSWORD"; exit 1; fi
+	@if [ -z "${VENDOR_USER_EMAIL}" ]; then echo "Missing VENDOR_USER_EMAIL"; exit 1; fi
+	@if [ -z "${REPLICATED_API_ORIGIN}" ]; then echo "Missing REPLICATED_API_ORIGIN"; exit 1; fi
+	@if [ -z "${REPLICATED_ID_ORIGIN}" ]; then echo "Missing REPLICATED_ID_ORIGIN"; exit 1; fi
+
+test: test-env
+	go test -v ./cli/test
 
 pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
@@ -126,10 +134,4 @@ build:
     		cli/main.go
 
 docs:
-	go run docs/generate.go --path ./gen/docs
-
-package_docker_docs: docs
-	docker login -p $(QUAY_PASS) -u $(QUAY_USER) quay.io
-	docker build -t quay.io/replicatedcom/vendor-cli-docs:release -f docs/Dockerfile .
-	docker push quay.io/replicatedcom/vendor-cli-docs:release
-	docker rmi -f quay.io/replicatedcom/vendor-cli-docs:release
+	go run ./docs/

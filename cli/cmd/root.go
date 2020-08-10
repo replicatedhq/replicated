@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -127,7 +127,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitChannelRemove(channelCmd)
 
 	runCmds.rootCmd.AddCommand(releaseCmd)
-	runCmds.InitReleaseCreate(releaseCmd)
+	err := runCmds.InitReleaseCreate(releaseCmd)
+	if err != nil {
+		return errors.Wrap(err, "initialize release create command")
+	}
 	runCmds.InitReleaseInspect(releaseCmd)
 	runCmds.IniReleaseList(releaseCmd)
 	runCmds.InitReleaseUpdate(releaseCmd)
