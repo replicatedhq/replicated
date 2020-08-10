@@ -2,59 +2,39 @@ package kotsclient
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"net/http"
 	"time"
 )
 
-const kotsCreateCustomer = `
-	mutation createKotsCustomer($name: String!, $channelId: String!, $expiresAt: String) {
-		createKotsCustomer(name: $name, channelId: $channelId, isKots: true, airgap: false, type: "dev", entitlements: [], expiresAt: $expiresAt, isGitopsSupported: false) {
-			id
-			name 
-			type
-			expiresAt
-			# cant fetch channels here 
-        }
-	}`
-
-type GraphQLResponseCreateCustomer struct {
-	Data   *CreateCustomerData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
+type CreateCustomerRequest struct {
+	Name      string `json:"name"`
+	ChannelID string `json:"channel_id"`
+	AppID     string `json:"app_id"`
+	Type      string `json:"type"`
+	ExpiresAt string `json:"expires_at"`
 }
 
-type CreateCustomerData struct {
-	Customer *Customer `json:"createKotsCustomer"`
+type CreateCustomerResponse struct {
+	Customer *types.Customer `json:"customer"`
 }
 
-func (c *GraphQLClient) CreateCustomer(name, channel string, expiresIn time.Duration) (*types.Customer, error) {
-
-	response := GraphQLResponseCreateCustomer{}
-
-	request := graphql.Request{
-		Query: kotsCreateCustomer,
-		Variables: map[string]interface{}{
-			"name":      name,
-			"channelId": channel,
-		},
+func (c *HTTPClient) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration) (*types.Customer, error) {
+	request := &CreateCustomerRequest{
+		Name:      name,
+		ChannelID: channelID,
+		AppID:     appID,
+		Type:      "dev", // hardcode for now
 	}
+
 	if expiresIn > 0 {
-		request.Variables["expiresAt"] = (time.Now().Add(expiresIn)).Format(time.RFC3339)
+		request.ExpiresAt = (time.Now().UTC().Add(expiresIn)).Format(time.RFC3339)
 	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, errors.Wrap(err, "execute gql request")
-	}
-
-	customer, err := types.Customer{
-		ID:   response.Data.Customer.ID,
-		Name: response.Data.Customer.Name,
-		Type: response.Data.Customer.Type,
-	}.WithExpiryTime(response.Data.Customer.ExpiresAt)
-
+	var response CreateCustomerResponse
+	err := c.DoJSON("POST", "/v3/customer", http.StatusCreated, request, &response)
 	if err != nil {
-		return nil, errors.Wrap(err, "set expiry time")
+		return nil, errors.Wrap(err, "create customer")
 	}
 
-	return &customer, nil
+	return response.Customer, nil
 }

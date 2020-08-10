@@ -9,7 +9,7 @@ import (
 
 var customersTmplSrc = `ID	NAME	CHANNELS	EXPIRES	TYPE
 {{ range . -}}
-{{ .ID }}	{{ .Name }}	{{range .Channels}}{{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}
+{{ .ID }}	{{ .Name }}	{{range .Channels}} {{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}
 {{ end }}`
 
 var customersTmpl = template.Must(template.New("channels").Parse(customersTmplSrc))
