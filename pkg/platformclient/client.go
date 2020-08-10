@@ -83,3 +83,29 @@ func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, res
 	return nil
 }
 
+
+func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
+
+	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
+	var buf bytes.Buffer
+	req, err := http.NewRequest("GET", endpoint, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", c.apiKey)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrNotFound
+	}
+	if resp.StatusCode != successStatus {
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("GET %s %d: %s", endpoint, resp.StatusCode, body)
+	}
+
+	return ioutil.ReadAll(resp.Body)
+}
