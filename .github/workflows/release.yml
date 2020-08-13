@@ -13,7 +13,7 @@ jobs:
     - name: docker login
       run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
       env:
-        DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_DOCKER_USER }}
-        DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_DOCKER_PASS }}
+        DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
+        DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: run goreleaser
       run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash

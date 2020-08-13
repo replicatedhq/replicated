@@ -9,13 +9,13 @@ on:
     - '!**.png'
 
 jobs:
-  pacts:
+  make-pacts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: make pacts
         run: make pacts
-  tests:
+  make-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -27,9 +27,17 @@ jobs:
           VENDOR_USER_EMAIL: dex+qa@replicated.com
           VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-  build:
+  make-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - name: make build
         run: make build
+  snyk-vuln:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/golang@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
