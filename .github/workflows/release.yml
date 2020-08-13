@@ -5,9 +5,48 @@ on:
     tags:
       - 'v*'
 
+# many jobs copied from main.yml because GHA has no way to create cross-workflow dependencies
+# and no really rock-solid way to use an `if` property to limit to tag creation
 jobs:
+  make-pacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: make pacts
+        run: make pacts
+  make-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: make test
+        run: make test
+        env:
+          REPLICATED_API_ORIGIN: https://api.staging.replicated.com/vendor
+          REPLICATED_ID_ORIGIN: https://id.staging.replicated.com
+          VENDOR_USER_EMAIL: dex+qa@replicated.com
+          VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+  make-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: make build
+        run: make build
+  snyk-vuln:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/golang@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
   create-release:
     runs-on: ubuntu-latest
+    needs:
+      - make-pacts
+      - make-tests
+      - make-build
+      - snyk-vuln
     steps:
     - uses: actions/checkout@v2
     - name: docker login
