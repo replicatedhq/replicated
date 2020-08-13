@@ -135,4 +135,5 @@ type runnerArgs struct {
 	enterpriseInstallerAssignChannelID   string
 	customerLicenseInspectCustomer       string
 	customerLicenseInspectOutput         string
+	createReleaseAutoDefaults            bool
 }
