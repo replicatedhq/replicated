@@ -11,6 +11,7 @@ brews:
     install: bin.install "replicated"
     homepage: https://www.replicated.com/docs/reference/vendor-cli/
     description: "Manage your app's channels and releases from the command line"
+    token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
 builds:
 - goos:
   - linux
