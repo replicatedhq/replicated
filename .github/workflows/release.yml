@@ -76,5 +76,4 @@ jobs:
     - name: run goreleaser
       run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMBREW_TAP_GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.HOMBREW_TAP_GITHUB_TOKEN }}
