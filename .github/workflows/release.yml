@@ -49,6 +49,12 @@ jobs:
       - snyk-vuln
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.14
     - name: docker login
       run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
       env:
@@ -56,3 +62,5 @@ jobs:
         DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
     - name: run goreleaser
       run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
