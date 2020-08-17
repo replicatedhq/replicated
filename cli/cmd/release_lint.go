@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
+	kotslint "github.com/replicatedhq/kots-lint/pkg/kots"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -54,9 +55,18 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to read yaml dir")
 	}
 
-	lintResult, err := r.api.LintRelease(r.appType, lintReleaseYAML)
-	if err != nil {
-		return err
+	offline := false
+	var lintResult []kotslint.LintExpression
+	if offline {
+		lintResult, err = lintOffline("some-rego-path", lintReleaseYAML)
+		if err != nil {
+			return err
+		}
+	} else {
+		lintResult, err = r.api.LintRelease(r.appType, lintReleaseYAML)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := print.LintErrors(r.w, lintResult); err != nil {
@@ -70,7 +80,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func shouldFail(lintResult []types.LintMessage, failOn string) bool {
+func shouldFail(lintResult []kotslint.LintExpression, failOn string) bool {
 	switch failOn {
 	case "", "none":
 		return false
@@ -117,4 +127,22 @@ func tarYAMLDir(yamlDir string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func lintOffline(regoPath string, yamlTar []byte) ([]kotslint.LintExpression, error){
+	kotslint.InitOPALinting()
+	specFiles, err := kotslint.SpecFilesFromTar(bytes.NewReader(yamlTar))
+	if err != nil {
+		return nil, errors.Wrap(err, "read spec files from tar")
+	}
+	lintResult, done, err := kotslint.LintSpecFiles(specFiles)
+	if err != nil {
+		return nil, errors.Wrap(err, "lint spec files")
+	}
+
+	// pretty sure this is only false when err is non-nil but checking just in case
+	if !done {
+		return nil, errors.Errorf("linting did not complete")
+	}
+	return lintResult, nil
 }

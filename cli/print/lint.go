@@ -1,10 +1,9 @@
 package print
 
 import (
+	"github.com/replicatedhq/kots-lint/pkg/kots"
 	"text/tabwriter"
 	"text/template"
-
-	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 var lintTmplSrc = `RULE	TYPE	FILENAME	LINE	MESSAGE
@@ -14,7 +13,7 @@ var lintTmplSrc = `RULE	TYPE	FILENAME	LINE	MESSAGE
 
 var lintTmpl = template.Must(template.New("lint").Parse(lintTmplSrc))
 
-func LintErrors(w *tabwriter.Writer, lintErrors []types.LintMessage) error {
+func LintErrors(w *tabwriter.Writer, lintErrors []kots.LintExpression) error {
 	if err := lintTmpl.Execute(w, lintErrors); err != nil {
 		return err
 	}

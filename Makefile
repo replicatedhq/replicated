@@ -4,6 +4,7 @@ API_PKGS=apps channels releases
 
 VERSION=$(shell git describe)
 ABBREV_VERSION=$(shell git describe --abbrev=0)
+BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
 VERSION_PACKAGE = github.com/replicatedhq/replicated/pkg/version
 DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 export GO111MODULE=on
@@ -55,7 +56,7 @@ test-env:
 	@if [ -z "${REPLICATED_ID_ORIGIN}" ]; then echo "Missing REPLICATED_ID_ORIGIN"; exit 1; fi
 
 test: test-env
-	go test -v ./cli/test
+	go  test -tags "$(BUILDTAGS)" -v ./cli/test
 
 pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
