@@ -42,4 +42,3 @@ func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTa
 type HTTPClient struct {
 	platformclient.HTTPClient
 }
-

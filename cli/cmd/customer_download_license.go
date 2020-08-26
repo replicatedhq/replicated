@@ -8,10 +8,10 @@ import (
 
 func (r *runners) InitCustomersDownloadLicenseCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "download-license",
-		Short: "download a customer license",
-		Long:  `download a customer license`,
-		RunE:  r.downloadCustomerLicense,
+		Use:          "download-license",
+		Short:        "download a customer license",
+		Long:         `download a customer license`,
+		RunE:         r.downloadCustomerLicense,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)

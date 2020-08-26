@@ -1,9 +1,6 @@
 package shipclient
 
 import (
-	"fmt"
-
-	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -134,43 +131,6 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 		ReleaseSequence: response.Data.ShipChannel.CurrentSequence,
 		ReleaseLabel:    response.Data.ShipChannel.CurrentVersion,
 	}, nil
-}
-
-func (c *GraphQLClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
-	allChannels, err := c.ListChannels(appID)
-	if err != nil {
-		return nil, err
-	}
-
-	matchingChannels := make([]*types.Channel, 0)
-	for _, channel := range allChannels {
-		if channel.ID == name || channel.Name == name {
-			matchingChannels = append(matchingChannels, &types.Channel{
-				ID:              channel.ID,
-				Name:            channel.Name,
-				Description:     channel.Description,
-				ReleaseSequence: channel.ReleaseSequence,
-				ReleaseLabel:    channel.ReleaseLabel,
-			})
-		}
-	}
-
-	if len(matchingChannels) == 0 {
-		if create {
-			channel, err := c.CreateChannel(appID, name, description)
-			if err != nil {
-				return nil, errors.Wrapf(err, "create channel %q ", name)
-			}
-			return channel, nil
-		}
-
-		return nil, fmt.Errorf("could not find channel %q", name)
-	}
-
-	if len(matchingChannels) > 1 {
-		return nil, fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
-	}
-	return matchingChannels[0], nil
 }
 
 var getShipChannel = `

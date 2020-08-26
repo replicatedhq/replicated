@@ -14,4 +14,3 @@ func (c *HTTPClient) DownloadLicense(appID string, customerID string) ([]byte, e
 	}
 	return licenseBytes, nil
 }
-

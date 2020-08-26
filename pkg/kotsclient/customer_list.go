@@ -8,9 +8,11 @@ import (
 )
 
 var _ error = ErrCustomerNotFound{}
+
 type ErrCustomerNotFound struct {
 	Name string
 }
+
 func (e ErrCustomerNotFound) Error() string {
 	return fmt.Sprintf("customer %q not found", e.Name)
 }

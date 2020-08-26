@@ -83,7 +83,6 @@ func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, res
 	return nil
 }
 
-
 // Minimal, simplified version of DoJSON for GET requests, just returns bytes
 func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 
