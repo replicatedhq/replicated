@@ -103,10 +103,10 @@ func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug 
 		// for some reason CreateChannel returns the list of all channels,
 		// so now we gotta go find the channel we just created
 		channel, _, err := c.findChannel(updatedListOfChannels, name)
-		return channel, errors.Wrapf(err, "find channel %q")
+		return channel, errors.Wrapf(err, "find channel %q", name)
 	}
 
-	return foundChannel, errors.Wrapf(err, "find channel %q")
+	return foundChannel, errors.Wrapf(err, "find channel %q", name)
 }
 
 func (c *Client) GetChannelByName(appID string, appType string, appSlug string, name string) (*types.Channel, error) {
