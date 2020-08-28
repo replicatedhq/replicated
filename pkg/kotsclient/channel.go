@@ -72,8 +72,9 @@ func (c *KotsChannel) EmbeddedAirgapInstallCommand(appSlug string) string {
 	kurlURL := fmt.Sprintf("%s/bundle/%s.tar.gz", kurlBaseURL, slug)
 
 	return fmt.Sprintf(`    curl -fsSL -o %s.tar.gz %s
+    # ... scp or sneakernet %s.tar.gz to airgapped machine, then
     tar xvf %s.tar.gz
-    sudo bash ./install.sh airgap`, slug, kurlURL, slug)
+    sudo bash ./install.sh airgap`, slug, kurlURL, slug, slug)
 
 }
 
