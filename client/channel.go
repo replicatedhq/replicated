@@ -118,7 +118,7 @@ func (c *Client) findChannel(channels []types.Channel, name string) (*types.Chan
 	matchingChannels := make([]*types.Channel, 0)
 	for _, channel := range channels {
 		if channel.ID == name || channel.Name == name {
-			matchingChannels = append(matchingChannels, &channel)
+			matchingChannels = append(matchingChannels, channel.Copy())
 		}
 	}
 	if len(matchingChannels) == 0 {

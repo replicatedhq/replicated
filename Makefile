@@ -1,5 +1,3 @@
-.PHONY: docker shell deps test pacts publish-pacts get-spec-prod get-spec-local gen-models build docs package_docker_docs
-
 API_PKGS=apps channels releases
 
 VERSION=$(shell git describe)
@@ -33,14 +31,17 @@ define LDFLAGS
 "
 endef
 
+.PHONY: docker
 docker:
 	docker build -t replicatedhq.replicated .
 
+.PHONY: shell
 shell:
 	docker run --rm -it \
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicatedhq.replicated
 
+.PHONY: deps
 deps:
 	docker run --rm \
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
@@ -54,9 +55,11 @@ test-env:
 	@if [ -z "${REPLICATED_API_ORIGIN}" ]; then echo "Missing REPLICATED_API_ORIGIN"; exit 1; fi
 	@if [ -z "${REPLICATED_ID_ORIGIN}" ]; then echo "Missing REPLICATED_ID_ORIGIN"; exit 1; fi
 
+.PHONY: test
 test: test-env
 	go test -v ./cli/test
 
+.PHONY: pacts
 pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
@@ -65,6 +68,7 @@ pacts:
 		go test -v ./pkg/...
 
 
+.PHONY: publish-pacts
 publish-pacts:
 	curl \
 		--silent --output /dev/null --show-error --fail \
@@ -89,12 +93,14 @@ publish-pacts:
 		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-api/consumer/replicated-cli/version/$(ABBREV_VERSION)
 
 # fetch the swagger specs from the production Vendor API
+.PHONY: get-spec-prod
 get-spec-prod:
 	mkdir -p gen/spec/
 	curl -o gen/spec/v1.json https://api.replicated.com/vendor/v1/spec/vendor-api.json
 	curl -o gen/spec/v2.json https://api.replicated.com/vendor/v2/spec/swagger.json; # TODO this is still wrong, need to find where this is hosted
 
 # generate the swagger specs from the local replicatedcom/vendor-api repo
+.PHONY: get-spec-local
 get-spec-local:
 	mkdir -p gen/spec/
 	docker run --rm \
@@ -110,6 +116,7 @@ get-spec-local:
 				-o gen/spec/v2.json'
 
 # generate from the specs in gen/spec, which come from either get-spec-prod or get-spec-local
+.PHONY: gen-models
 gen-models:
 	docker run --rm \
 		--volume `pwd`:/local \
@@ -127,11 +134,13 @@ gen-models:
 		-l go \
 		-o /local/gen/go/v2;
 
+.PHONY: build
 build:
 	go build \
     		${LDFLAGS} \
     		-o bin/replicated \
     		cli/main.go
 
+.PHONY: docs
 docs:
 	go run ./docs/
