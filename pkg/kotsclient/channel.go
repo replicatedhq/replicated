@@ -94,7 +94,7 @@ type ListChannelsResponse struct {
 	Channels []*KotsChannel `json:"channels"`
 }
 
-func (c *HTTPClient) ListChannels(appID string, appSlug string) ([]types.Channel, error) {
+func (c *VendorV3Client) ListChannels(appID string, appSlug string) ([]types.Channel, error) {
 	var response = ListChannelsResponse{}
 	url := fmt.Sprintf("/v3/app/%s/channels", appID)
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)

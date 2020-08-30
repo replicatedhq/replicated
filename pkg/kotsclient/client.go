@@ -39,6 +39,6 @@ func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTa
 //
 // we should think more about how we want to organize these going forward, but
 // I'm inclined to wait until after everything has been moved off of GQL before deciding
-type HTTPClient struct {
+type VendorV3Client struct {
 	platformclient.HTTPClient
 }
