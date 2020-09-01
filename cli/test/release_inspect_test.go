@@ -41,7 +41,6 @@ var _ = Describe("release inspect", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "inspect", seq, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)

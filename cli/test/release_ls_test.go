@@ -37,7 +37,6 @@ var _ = Describe("release ls", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "ls", "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)

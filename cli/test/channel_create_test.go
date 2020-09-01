@@ -38,7 +38,6 @@ var _ = Describe("channel create", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"channel", "create", "--name", name, "--description", desc, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 			assert.Nil(t, err)

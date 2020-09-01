@@ -48,7 +48,6 @@ var _ = Describe("release promote", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)

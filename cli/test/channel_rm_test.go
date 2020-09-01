@@ -48,7 +48,6 @@ var _ = Describe("channel rm", func() {
 			args := []string{"channel", "rm", appChan.Id, "--app", app.Slug}
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs(args)
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err, "execute channel rm -- args: %v", args)
