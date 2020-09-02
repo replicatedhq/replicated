@@ -6,12 +6,9 @@ import (
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"net/http"
+	"os"
 )
-
-type GraphQLResponseListChannels struct {
-	Data   *KotsChannelData   `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
-}
 
 type GraphQLResponseGetChannel struct {
 	Data   *KotsGetChannelData `json:"data,omitempty"`
@@ -30,9 +27,6 @@ type KotsGetChannelData struct {
 type KotsCreateChannelData struct {
 	KotsChannel *KotsChannel `json:"createKotsChannel"`
 }
-type KotsChannelData struct {
-	KotsChannels []*KotsChannel `json:"getKotsAppChannels"`
-}
 
 type KotsChannel struct {
 	ID              string `json:"id"`
@@ -41,82 +35,85 @@ type KotsChannel struct {
 	ChannelSequence int64  `json:"channelSequence"`
 	ReleaseSequence int64  `json:"releaseSequence"`
 	CurrentVersion  string `json:"currentVersion"`
+	ChannelSlug     string `json:"channelSlug"`
 }
 
-const listChannelsQuery = `
-query getKotsAppChannels($appId: ID!) {
-	getKotsAppChannels(appId: $appId) {
-	id
-	appId
-	name
-	currentVersion
-	channelSequence
-	releaseSequence
-	currentReleaseDate
-	numReleases
-	description
-	channelIcon
-	created
-	updated
-	isDefault
-	isArchived
-	adoptionRate {
-		releaseSequence
-		semver
-		count
-		percent
-		totalOnChannel
+const embeddedInstallBaseURL = "https://k8s.kurl.sh"
+
+var embeddedInstallOverrideURL = os.Getenv("EMBEDDED_INSTALL_BASE_URL")
+
+// this is not client logic, but sure, let's go with it
+func (c *KotsChannel) EmbeddedInstallCommand(appSlug string) string {
+
+	kurlBaseURL := embeddedInstallBaseURL
+	if embeddedInstallOverrideURL != "" {
+		kurlBaseURL = embeddedInstallOverrideURL
 	}
-	customers {
-		id
-		name
-		avatar
-		shipInstallStatus {
-		status
-		}
+
+	kurlURL := fmt.Sprintf("%s/%s-%s", kurlBaseURL, appSlug, c.ChannelSlug)
+	if c.ChannelSlug == "stable" {
+		kurlURL = fmt.Sprintf("%s/%s", kurlBaseURL, appSlug)
 	}
-	githubRef {
-		owner
-		repoFullName
-		branch
-		path
-	}
-	releases {
-		semver
-		releaseNotes
-		created
-		updated
-		releasedAt
-		sequence
-		channelSequence
-		airgapBuildStatus
-	}
-	}
+	return fmt.Sprintf(`    curl -fsSL %s | sudo bash`, kurlURL)
+
 }
-`
 
-func (c *GraphQLClient) ListChannels(appID string) ([]types.Channel, error) {
-	response := GraphQLResponseListChannels{}
+func (c *KotsChannel) EmbeddedAirgapInstallCommand(appSlug string) string {
 
-	request := graphql.Request{
-		Query: listChannelsQuery,
-
-		Variables: map[string]interface{}{
-			"appId": appID,
-		},
+	kurlBaseURL := embeddedInstallBaseURL
+	if embeddedInstallOverrideURL != "" {
+		kurlBaseURL = embeddedInstallOverrideURL
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
+	slug := fmt.Sprintf("%s-%s", appSlug, c.ChannelSlug)
+	if c.ChannelSlug == "stable" {
+		slug = appSlug
+	}
+	kurlURL := fmt.Sprintf("%s/bundle/%s.tar.gz", kurlBaseURL, slug)
+
+	return fmt.Sprintf(`    curl -fSL -o %s.tar.gz %s
+    # ... scp or sneakernet %s.tar.gz to airgapped machine, then
+    tar xvf %s.tar.gz
+    sudo bash ./install.sh airgap`, slug, kurlURL, slug, slug)
+
+}
+
+// this is not client logic, but sure, let's go with it
+func (c *KotsChannel) ExistingInstallCommand(appSlug string) string {
+
+	slug := appSlug
+	if c.ChannelSlug != "stable" {
+		slug = fmt.Sprintf("%s/%s", appSlug, c.ChannelSlug)
+	}
+
+	return fmt.Sprintf(`    curl -fsSL https://kots.io/install | bash
+    kubectl kots install %s`, slug)
+}
+
+type ListChannelsResponse struct {
+	Channels []*KotsChannel `json:"channels"`
+}
+
+func (c *VendorV3Client) ListChannels(appID string, appSlug string) ([]types.Channel, error) {
+	var response = ListChannelsResponse{}
+	url := fmt.Sprintf("/v3/app/%s/channels", appID)
+	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channels")
 	}
 
 	channels := make([]types.Channel, 0, 0)
-	for _, kotsChannel := range response.Data.KotsChannels {
+	for _, kotsChannel := range response.Channels {
 		channel := types.Channel{
 			ID:              kotsChannel.ID,
 			Name:            kotsChannel.Name,
 			ReleaseLabel:    kotsChannel.CurrentVersion,
 			ReleaseSequence: kotsChannel.ReleaseSequence,
+			InstallCommands: &types.InstallCommands{
+				Existing: kotsChannel.ExistingInstallCommand(appSlug),
+				Embedded: kotsChannel.EmbeddedInstallCommand(appSlug),
+				Airgap:   kotsChannel.EmbeddedAirgapInstallCommand(appSlug),
+			},
 		}
 
 		channels = append(channels, channel)
@@ -166,10 +163,6 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 		ReleaseLabel:    response.Data.KotsChannel.CurrentVersion,
 	}, nil
 
-}
-
-func ArchiveChannel(appID string, channelID string) error {
-	return nil
 }
 
 const getKotsChannel = `
@@ -255,39 +248,3 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 	return &channelDetail, nil, nil
 }
 
-func (c *GraphQLClient) GetChannelByName(appID string, name string, description string, create bool) (*types.Channel, error) {
-	allChannels, err := c.ListChannels(appID)
-	if err != nil {
-		return nil, err
-	}
-
-	matchingChannels := make([]*types.Channel, 0)
-	for _, channel := range allChannels {
-		if channel.ID == name || channel.Name == name {
-			matchingChannels = append(matchingChannels, &types.Channel{
-				ID:              channel.ID,
-				Name:            channel.Name,
-				Description:     channel.Description,
-				ReleaseSequence: channel.ReleaseSequence,
-				ReleaseLabel:    channel.ReleaseLabel,
-			})
-		}
-	}
-
-	if len(matchingChannels) == 0 {
-		if create {
-			channel, err := c.CreateChannel(appID, name, description)
-			if err != nil {
-				return nil, errors.Wrapf(err, "create channel %q ", name)
-			}
-			return channel, nil
-		}
-
-		return nil, fmt.Errorf("could not find channel %q", name)
-	}
-
-	if len(matchingChannels) > 1 {
-		return nil, fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
-	}
-	return matchingChannels[0], nil
-}

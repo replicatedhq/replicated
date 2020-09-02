@@ -225,18 +225,21 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				return err
 			}
 			runCmds.appID = app.Id
+			runCmds.appSlug = app.Slug
 		} else if appType == "ship" {
 			app, err := shipAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
 			runCmds.appID = app.ID
+			runCmds.appSlug = app.Slug
 		} else if appType == "kots" {
 			app, err := kotsAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
 			runCmds.appID = app.ID
+			runCmds.appSlug = app.Slug
 		}
 
 		return nil

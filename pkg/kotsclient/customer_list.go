@@ -8,9 +8,11 @@ import (
 )
 
 var _ error = ErrCustomerNotFound{}
+
 type ErrCustomerNotFound struct {
 	Name string
 }
+
 func (e ErrCustomerNotFound) Error() string {
 	return fmt.Sprintf("customer %q not found", e.Name)
 }
@@ -19,7 +21,7 @@ type CustomerListResponse struct {
 	Customers []types.Customer `json:"customers"`
 }
 
-func (c *HTTPClient) ListCustomers(appID string) ([]types.Customer, error) {
+func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 
 	path := fmt.Sprintf("/v3/app/%s/customers", appID)
 	var resp CustomerListResponse
@@ -31,7 +33,7 @@ func (c *HTTPClient) ListCustomers(appID string) ([]types.Customer, error) {
 
 }
 
-func (c *HTTPClient) GetCustomerByName(appID string, name string) (*types.Customer, error) {
+func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
 	allCustomers, err := c.ListCustomers(appID)
 	if err != nil {
 		return nil, err

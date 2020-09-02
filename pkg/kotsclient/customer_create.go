@@ -19,7 +19,7 @@ type CreateCustomerResponse struct {
 	Customer *types.Customer `json:"customer"`
 }
 
-func (c *HTTPClient) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration) (*types.Customer, error) {
+func (c *VendorV3Client) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
 		Name:      name,
 		ChannelID: channelID,

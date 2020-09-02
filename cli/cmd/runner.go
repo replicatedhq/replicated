@@ -20,6 +20,7 @@ import (
 // commands, which are defined as methods on this type.
 type runners struct {
 	appID            string
+	appSlug          string
 	appType          string
 	api              client.Client
 	enterpriseClient *enterpriseclient.HTTPClient

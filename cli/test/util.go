@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"log"
 	"net/http"
@@ -59,7 +60,7 @@ func mustToken(n int) string {
 	if n == 0 {
 		n = 256
 	}
-	data := make([]byte, int(n))
+	data := make([]byte, n)
 	if _, err := io.ReadFull(rand.Reader, data); err != nil {
 		log.Fatal(err)
 	}
@@ -133,18 +134,65 @@ func cleanupApps() {
 	sessionToken := respBody.SessionToken
 
 	for _, id := range appsToDelete {
-		req, err := http.NewRequest("DELETE", origin+"/v1/app/"+id, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Set("Authorization", sessionToken)
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp.Body.Close()
-		if resp.StatusCode >= 300 {
-			t.Fatalf("Delete app response status: %d", resp.StatusCode)
-		}
+		doDeleteApp(origin, id, t, sessionToken)
 	}
+
+}
+
+func doDeleteApp(origin string, id string, t GinkgoTInterface, sessionToken string) {
+	req, err := http.NewRequest("DELETE", origin+"/v1/app/"+id, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Authorization", sessionToken)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		t.Fatalf("Delete app response status: %d", resp.StatusCode)
+	}
+}
+
+type Params struct {
+	APIOrigin          string
+	IDOrigin           string
+	VendorUserEmail    string
+	VendorUserPassword string
+	GraphqlOrigin      string
+	KurlOrigin         string
+	APIToken           string
+}
+
+func GetParams() (*Params, error) {
+	p := &Params{
+		APIOrigin:          os.Getenv("REPLICATED_API_ORIGIN"),
+		IDOrigin:           os.Getenv("REPLICATED_ID_ORIGIN"),
+		VendorUserEmail:    os.Getenv("VENDOR_USER_EMAIL"),
+		VendorUserPassword: os.Getenv("VENDOR_USER_PASSWORD"),
+		GraphqlOrigin:      os.Getenv("REPLICATED_GRAPHQL_ORIGIN"),
+		KurlOrigin:         os.Getenv("REPLICATED_KURL_ORIGIN"),
+		APIToken:           os.Getenv("REPLICATED_API_TOKEN"),
+	}
+	if p.VendorUserPassword == "" || p.VendorUserEmail == "" || p.APIToken == "" {
+		return nil, errors.New("Must provide each of VENDOR_USER_EMAIL, VENDOR_USER_PASSWORD, REPLICATED_API_TOKEN")
+	}
+
+	if p.APIOrigin == "" {
+		p.APIOrigin = "https://api.replicated.com/vendor"
+	}
+
+	if p.IDOrigin == "" {
+		p.IDOrigin = "https://id.replicated.com"
+	}
+
+	if p.GraphqlOrigin == "" {
+		p.GraphqlOrigin = "https://g.replicated.com/graphql"
+	}
+
+	if p.KurlOrigin == "" {
+		p.KurlOrigin = "https://kurl.sh"
+	}
+	return p, nil
 }

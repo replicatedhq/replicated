@@ -17,7 +17,7 @@ func (r *runners) InitChannelList(parent *cobra.Command) {
 }
 
 func (r *runners) channelList(cmd *cobra.Command, args []string) error {
-	channels, err := r.api.ListChannels(r.appID, r.appType)
+	channels, err := r.api.ListChannels(r.appID, r.appType, r.appSlug)
 	if err != nil {
 		return err
 	}

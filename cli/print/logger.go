@@ -12,7 +12,7 @@ import (
 )
 
 type Logger struct {
-	w io.Writer
+	w             io.Writer
 	spinnerStopCh chan bool
 	spinnerMsg    string
 	spinnerArgs   []interface{}

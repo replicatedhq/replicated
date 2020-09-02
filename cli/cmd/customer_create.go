@@ -9,10 +9,10 @@ import (
 
 func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "create a customer",
-		Long:  `create a customer`,
-		RunE:  r.createCustomer,
+		Use:          "create",
+		Short:        "create a customer",
+		Long:         `create a customer`,
+		RunE:         r.createCustomer,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
@@ -26,9 +26,10 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 
 func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 
-	channel, err := r.api.GetChannelByName(
+	channel, err := r.api.GetOrCreateChannelByName(
 		r.appID,
 		r.appType,
+		r.appSlug,
 		r.args.customerCreateChannel,
 		"",
 		r.args.customerCreateEnsureChannel,

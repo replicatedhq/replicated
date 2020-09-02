@@ -12,10 +12,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -269,9 +269,10 @@ func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbs
 
 	description := "" // todo: do we want a flag for the desired channel description
 
-	channel, err := r.api.GetChannelByName(
+	channel, err := r.api.GetOrCreateChannelByName(
 		r.appID,
 		r.appType,
+		r.appSlug,
 		channelName,
 		description,
 		createIfAbsent,
