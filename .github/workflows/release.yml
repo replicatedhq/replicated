@@ -21,11 +21,9 @@ jobs:
       - name: make test
         run: make test
         env:
-          REPLICATED_API_ORIGIN: https://api.staging.replicated.com/vendor
-          REPLICATED_ID_ORIGIN: https://id.staging.replicated.com
-          REPLICATED_GRAPHQL_ORIGIN: https://g.staging.replicated.com/graphql
-          REPLICATED_KURL_ORIGIN: https://staging.kurl.sh
-          VENDOR_USER_EMAIL: dex+qa@replicated.com
+          REPLICATED_API_ORIGIN: https://api.replicated.com/vendor
+          REPLICATED_ID_ORIGIN: https://id.replicated.com
+          VENDOR_USER_EMAIL: dexter@replicated.com
           VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
   make-build:
