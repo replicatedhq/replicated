@@ -23,6 +23,8 @@ jobs:
         env:
           REPLICATED_API_ORIGIN: https://api.staging.replicated.com/vendor
           REPLICATED_ID_ORIGIN: https://id.staging.replicated.com
+          REPLICATED_GRAPHQL_ORIGIN: https://g.staging.replicated.com/graphql
+          REPLICATED_KURL_ORIGIN: https://staging.kurl.sh
           VENDOR_USER_EMAIL: dex+qa@replicated.com
           VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
@@ -61,19 +63,19 @@ jobs:
       - snyk-test
       - snyk-monitor
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Set up Go
-      uses: actions/setup-go@v2
-      with:
-        go-version: 1.14
-    - name: docker login
-      run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
-      env:
-        DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
-        DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
-    - name: run goreleaser
-      run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
-      env:
-        GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.14
+      - name: docker login
+        run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
+        env:
+          DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
+          DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: run goreleaser
+        run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
