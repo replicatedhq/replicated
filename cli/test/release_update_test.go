@@ -43,7 +43,6 @@ var _ = Describe("release update", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml", yaml, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)
@@ -75,7 +74,6 @@ var _ = Describe("release update", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml-file", fileName, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)

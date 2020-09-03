@@ -51,7 +51,6 @@ var _ = Describe("channel releases", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"channel", "releases", appChan.Id, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			assert.Nil(t, err)

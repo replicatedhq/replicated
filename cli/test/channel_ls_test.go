@@ -41,7 +41,6 @@ var _ = Describe("channel ls", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"channel", "ls", "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 			assert.Nil(t, err)

@@ -34,7 +34,6 @@ var _ = Describe("release create", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "create", "--yaml", yaml, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 			assert.Nil(t, err)
@@ -53,7 +52,6 @@ var _ = Describe("release create", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "create", "--yaml", "-", "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 			err := cmd.Execute(rootCmd, stdin, &stdout, &stderr)
 
 			assert.Nil(t, err)
@@ -81,7 +79,6 @@ var _ = Describe("release create", func() {
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "create", "--yaml-file", fileName, "--app", app.Slug})
-			rootCmd.SetOutput(&stderr)
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
 			assert.Nil(t, err)

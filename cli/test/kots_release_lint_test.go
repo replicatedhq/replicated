@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ = Describe("kots release create", func() {
+var _ = Describe("kots release lint", func() {
 	t := GinkgoT()
 	req := assert.New(t) // using assert since it plays nicer with ginkgo
 	params, err := GetParams()
@@ -43,8 +43,8 @@ var _ = Describe("kots release create", func() {
 		req.NoError(err)
 	})
 
-	Context("with valid --yaml-dir in an app with no releases", func() {
-		It("should create release 1", func() {
+	Context("with just a single config map", func() {
+		It("should have errors about missing files", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
@@ -59,33 +59,7 @@ data:
 			req.NoError(err)
 
 			rootCmd := cmd.GetRootCmd()
-			rootCmd.SetArgs([]string{"release", "create", "--yaml-dir", tmpdir, "--app", app.Slug})
-
-			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
-
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
-			req.Contains(stdout.String(), "SEQUENCE: 1")
-		})
-	})
-	Context("with the --promote=Unstable flag", func() {
-		It("should create release 1 and promote it", func() {
-			var stdout bytes.Buffer
-			var stderr bytes.Buffer
-
-			configMap := `apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fake
-data:
-  fake: yep it's fake
-`
-			err := ioutil.WriteFile(filepath.Join(tmpdir, "config.yaml"), []byte(configMap), 0644)
-			req.NoError(err)
-
-			rootCmd := cmd.GetRootCmd()
-			rootCmd.SetArgs([]string{"release", "create", "--yaml-dir", tmpdir, "--app", app.Slug, "--promote", "Unstable"})
+			rootCmd.SetArgs([]string{"release", "lint", "--yaml-dir", tmpdir, "--app", app.Slug})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			req.NoError(err)
@@ -93,11 +67,9 @@ data:
 			req.Empty(stderr.String(), "Expected no stderr output")
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
-			req.Contains(stdout.String(), `• Reading manifests from ` + tmpdir)
-			req.Contains(stdout.String(), `• Creating Release`)
-			req.Contains(stdout.String(), `• SEQUENCE: 1`)
-			req.Contains(stdout.String(), `• Promoting`)
-			req.Contains(stdout.String(), "successfully set to release 1")
+			req.Contains(stdout.String(), `preflight-spec       warn                            Missing preflight spec`)
+			req.Contains(stdout.String(), `config-spec          warn                            Missing config spec`)
+			req.Contains(stdout.String(), `troubleshoot-spec    warn                            Missing troubleshoot spec`)
 		})
 	})
 })

@@ -103,7 +103,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		runCmds.rootCmd = GetRootCmd()
 	}
 	if stderr != nil {
-		runCmds.rootCmd.SetOutput(stderr)
+		runCmds.rootCmd.SetErr(stderr)
+	}
+	if stdout != nil {
+		runCmds.rootCmd.SetOut(stdout)
 	}
 
 	channelCmd := &cobra.Command{
