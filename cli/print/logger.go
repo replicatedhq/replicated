@@ -184,6 +184,16 @@ func (l *Logger) FinishChildSpinner() {
 	}
 }
 
+func (l *Logger) WithSpinner(msg string, f func() error, args ...interface{}) error {
+	l.ActionWithSpinner(msg, args...)
+	if err := f(); err != nil {
+		l.FinishSpinnerWithError()
+		return err
+	}
+	l.FinishSpinner()
+	return nil
+}
+
 func (l *Logger) FinishSpinner() {
 	if l == nil || l.isSilent {
 		return

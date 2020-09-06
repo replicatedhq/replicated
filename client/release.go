@@ -138,7 +138,7 @@ func (c *Client) GetRelease(appID string, appType string, sequence int64) (*rele
 	} else if appType == "ship" {
 		return nil, errors.New("This feature is not supported for Ship applications.")
 	} else if appType == "kots" {
-		return nil, errors.New("This feature is not supported for Kots applications.")
+		return c.KotsClient.GetRelease(appID, sequence)
 	}
 	return nil, errors.New("unknown app type")
 }

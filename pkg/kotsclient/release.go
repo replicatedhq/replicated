@@ -223,3 +223,4 @@ func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label strin
 
 	return nil
 }
+

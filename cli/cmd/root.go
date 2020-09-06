@@ -135,6 +135,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		return errors.Wrap(err, "initialize release create command")
 	}
 	runCmds.InitReleaseInspect(releaseCmd)
+	runCmds.InitReleaseDownload(releaseCmd)
 	runCmds.IniReleaseList(releaseCmd)
 	runCmds.InitReleaseUpdate(releaseCmd)
 	runCmds.InitReleasePromote(releaseCmd)

@@ -98,6 +98,51 @@ data:
 			req.Contains(stdout.String(), `• SEQUENCE: 1`)
 			req.Contains(stdout.String(), `• Promoting`)
 			req.Contains(stdout.String(), "successfully set to release 1")
+
+			// download it back down and verify content
+			stdout.Reset()
+			stderr.Reset()
+			downloadTmpDir, err := ioutil.TempDir("", "replicated-cli-test")
+			req.NoError(err)
+			defer os.RemoveAll(downloadTmpDir)
+
+
+			rootCmd = cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "download", "1", "--dest", downloadTmpDir, "--app", app.Slug})
+
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			req.NoError(err)
+
+			downloadedFile, err := ioutil.ReadFile(filepath.Join(downloadTmpDir, "config.yaml"))
+			req.NoError(err)
+			req.Equal(configMap, string(downloadedFile))
+
+		})
+	})
+	Context("with the --auto flag and no git repo", func() {
+		It("should fail", func() {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			var stdin bytes.Buffer
+
+			stdin.Write([]byte{'n', '\n',})
+
+			configMap := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fake
+data:
+  fake: yep it's fake
+`
+			err := ioutil.WriteFile(filepath.Join(tmpdir, "config.yaml"), []byte(configMap), 0644)
+			req.NoError(err)
+
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "create", "--auto"})
+
+			err = cmd.Execute(rootCmd, &stdin, &stdout, &stderr)
+			req.EqualError(err, "resolve kots defaults: get git properties: open \".\": repository does not exist")
+
 		})
 	})
 })

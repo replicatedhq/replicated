@@ -33,6 +33,7 @@ func (c *GraphQLClient) ExecuteRequest(requestObj graphql.Request, deserializeTa
 	return c.GraphQLClient.ExecuteRequest(requestObj, deserializeTarget)
 }
 
+
 // Putting a wrapper in the kotsclient package for kots-specific methods but
 // don't want to re-invent or duplicate  all that logic for initialization,
 // instantiation, and the DoJSON method
