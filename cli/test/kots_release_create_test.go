@@ -117,30 +117,4 @@ data:
 
 		})
 	})
-	Context("with the --auto flag and no git repo", func() {
-		It("should fail", func() {
-			var stdout bytes.Buffer
-			var stderr bytes.Buffer
-			var stdin bytes.Buffer
-
-			stdin.Write([]byte{'n', '\n'})
-
-			configMap := `apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fake
-data:
-  fake: yep it's fake
-`
-			err := ioutil.WriteFile(filepath.Join(tmpdir, "config.yaml"), []byte(configMap), 0644)
-			req.NoError(err)
-
-			rootCmd := cmd.GetRootCmd()
-			rootCmd.SetArgs([]string{"release", "create", "--auto"})
-
-			err = cmd.Execute(rootCmd, &stdin, &stdout, &stderr)
-			req.EqualError(err, "resolve kots defaults: get git properties: open \".\": repository does not exist")
-
-		})
-	})
 })
