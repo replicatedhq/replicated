@@ -53,21 +53,21 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	var releaseYamls []kotsSingleSpec
 	err = json.Unmarshal([]byte(release.Config), &releaseYamls)
 	if err != nil {
-			  return errors.Wrap(err, "unmarshal release yamls")
-			  }
+		return errors.Wrap(err, "unmarshal release yamls")
+	}
 
 	err = os.MkdirAll(r.args.releaseDownloadDest, 0755)
 	if err != nil {
-			  return errors.Wrapf(err, "create dir %q", r.args.releaseDownloadDest)
-			  }
+		return errors.Wrapf(err, "create dir %q", r.args.releaseDownloadDest)
+	}
 
 	for _, releaseYaml := range releaseYamls {
 		path := filepath.Join(r.args.releaseDownloadDest, releaseYaml.Path)
 		log.ChildActionWithoutSpinner(releaseYaml.Path)
 		err := ioutil.WriteFile(path, []byte(releaseYaml.Content), 0644)
 		if err != nil {
-				  return errors.Wrapf(err, "write file %q", path)
-				  }
+			return errors.Wrapf(err, "write file %q", path)
+		}
 	}
 
 	return nil

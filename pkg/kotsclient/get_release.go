@@ -35,7 +35,7 @@ func (c *GraphQLClient) GetRelease(appID string, sequence int64) (*releases.AppR
 	request := graphql.Request{
 		Query: kotsQueryGetReleaseForSequence,
 		Variables: map[string]interface{}{
-			"appId": appID,
+			"appId":    appID,
 			"sequence": sequence,
 		},
 	}
@@ -44,7 +44,7 @@ func (c *GraphQLClient) GetRelease(appID string, sequence int64) (*releases.AppR
 		return nil, err
 	}
 	return &releases.AppRelease{
-		Config:    response.Data.KotsReleaseData.Spec,
-		Sequence:  response.Data.KotsReleaseData.Sequence,
+		Config:   response.Data.KotsReleaseData.Spec,
+		Sequence: response.Data.KotsReleaseData.Sequence,
 	}, nil
 }

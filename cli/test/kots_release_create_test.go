@@ -26,7 +26,6 @@ var _ = Describe("kots release create", func() {
 	var app *kotsclient.KotsApp
 	var tmpdir string
 
-
 	BeforeEach(func() {
 		var err error
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
@@ -93,7 +92,7 @@ data:
 			req.Empty(stderr.String(), "Expected no stderr output")
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
-			req.Contains(stdout.String(), `• Reading manifests from ` + tmpdir)
+			req.Contains(stdout.String(), `• Reading manifests from `+tmpdir)
 			req.Contains(stdout.String(), `• Creating Release`)
 			req.Contains(stdout.String(), `• SEQUENCE: 1`)
 			req.Contains(stdout.String(), `• Promoting`)
@@ -105,7 +104,6 @@ data:
 			downloadTmpDir, err := ioutil.TempDir("", "replicated-cli-test")
 			req.NoError(err)
 			defer os.RemoveAll(downloadTmpDir)
-
 
 			rootCmd = cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "download", "1", "--dest", downloadTmpDir, "--app", app.Slug})
@@ -125,7 +123,7 @@ data:
 			var stderr bytes.Buffer
 			var stdin bytes.Buffer
 
-			stdin.Write([]byte{'n', '\n',})
+			stdin.Write([]byte{'n', '\n'})
 
 			configMap := `apiVersion: v1
 kind: ConfigMap
