@@ -33,7 +33,7 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
+		return fmt.Errorf("Failed to parse sequence argument %q", args[0])
 	}
 
 	if r.args.releaseDownloadDest == "" {
