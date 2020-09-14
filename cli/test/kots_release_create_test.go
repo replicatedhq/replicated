@@ -26,7 +26,6 @@ var _ = Describe("kots release create", func() {
 	var app *kotsclient.KotsApp
 	var tmpdir string
 
-
 	BeforeEach(func() {
 		var err error
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
@@ -93,11 +92,29 @@ data:
 			req.Empty(stderr.String(), "Expected no stderr output")
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
-			req.Contains(stdout.String(), `• Reading manifests from ` + tmpdir)
+			req.Contains(stdout.String(), `• Reading manifests from `+tmpdir)
 			req.Contains(stdout.String(), `• Creating Release`)
 			req.Contains(stdout.String(), `• SEQUENCE: 1`)
 			req.Contains(stdout.String(), `• Promoting`)
 			req.Contains(stdout.String(), "successfully set to release 1")
+
+			// download it back down and verify content
+			stdout.Reset()
+			stderr.Reset()
+			downloadTmpDir, err := ioutil.TempDir("", "replicated-cli-test")
+			req.NoError(err)
+			defer os.RemoveAll(downloadTmpDir)
+
+			rootCmd = cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "download", "1", "--dest", downloadTmpDir, "--app", app.Slug})
+
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			req.NoError(err)
+
+			downloadedFile, err := ioutil.ReadFile(filepath.Join(downloadTmpDir, "config.yaml"))
+			req.NoError(err)
+			req.Equal(configMap, string(downloadedFile))
+
 		})
 	})
 })

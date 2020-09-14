@@ -138,4 +138,6 @@ type runnerArgs struct {
 	customerLicenseInspectOutput         string
 	createReleaseAutoDefaults            bool
 	createReleaseAutoDefaultsAccept      bool
+
+	releaseDownloadDest string
 }

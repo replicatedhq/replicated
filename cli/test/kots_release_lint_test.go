@@ -26,7 +26,6 @@ var _ = Describe("kots release lint", func() {
 	var app *kotsclient.KotsApp
 	var tmpdir string
 
-
 	BeforeEach(func() {
 		var err error
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))

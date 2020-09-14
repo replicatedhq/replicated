@@ -247,4 +247,3 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 	}
 	return &channelDetail, nil, nil
 }
-
