@@ -85,7 +85,7 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 		return "", "", false, errors.Wrap(err, "get git status")
 	}
 
-	return h.String()[0:6], head.Name().Short(), !status.IsClean(), nil
+	return h.String()[0:7], head.Name().Short(), !status.IsClean(), nil
 }
 
 func (r *runners) setKOTSDefaultReleaseParams() error {
