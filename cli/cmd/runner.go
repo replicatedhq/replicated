@@ -139,5 +139,7 @@ type runnerArgs struct {
 	createReleaseAutoDefaults            bool
 	createReleaseAutoDefaultsAccept      bool
 
-	releaseDownloadDest string
+	releaseDownloadDest               string
+	createInstallerAutoDefaults       bool
+	createInstallerAutoDefaultsAccept bool
 }

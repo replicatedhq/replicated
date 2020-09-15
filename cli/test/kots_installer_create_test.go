@@ -83,7 +83,7 @@ spec:
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
 			req.Contains(stdout.String(), `SEQUENCE: 2`)
-			req.Contains(stdout.String(), `successfully set to release 2`)
+			req.Contains(stdout.String(), `successfully set to installer 2`)
 		})
 	})
 })

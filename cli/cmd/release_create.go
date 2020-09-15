@@ -88,19 +88,42 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 	return h.String()[0:6], head.Name().Short(), !status.IsClean(), nil
 }
 
-func (r *runners) setKOTSDefaults() error {
-	rev, branch, isDirty, err := r.gitSHABranch()
-	if err != nil {
-		return errors.Wrapf(err, "get git properties")
-	}
+func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	if r.args.createReleaseYamlDir == "" {
 		r.args.createReleaseYamlDir = "./manifests"
 	}
 
+	rev, branch, isDirty, err := r.gitSHABranch()
+	if err != nil {
+		return errors.Wrapf(err, "get git properties")
+	}
+	dirtyStatus := ""
+	if isDirty {
+		dirtyStatus = "-dirty"
+	}
+
 	if r.args.createReleasePromoteNotes == "" {
+		// set some default release notes
 		r.args.createReleasePromoteNotes = fmt.Sprintf(
-			`CLI release by %s on %s`, os.Getenv("USER"), time.Now().Format(time.RFC822))
+			`CLI release of %s triggered by %s [SHA: %s%s] [%s]`,
+			branch,
+			os.Getenv("USER"),
+			rev,
+			dirtyStatus,
+			time.Now().Format(time.RFC822),
+		)
+		// unless it's GH actions, then we can link to the commit! yay!
+		if os.Getenv("GITHUB_ACTIONS") != "" {
+			r.args.createReleasePromoteNotes = fmt.Sprintf(
+				`GitHub Action release of %s triggered by %s: [%s](https://github.com/%s/commit/%s)`,
+				os.Getenv("GITHUB_REF"),
+				os.Getenv("GITHUB_ACTOR"),
+				os.Getenv("GITHUB_SHA")[0:7],
+				os.Getenv("GITHUB_REPOSITORY"),
+				os.Getenv("GITHUB_SHA"),
+			)
+		}
 	}
 
 	if r.args.createReleasePromote == "" {
@@ -111,10 +134,6 @@ func (r *runners) setKOTSDefaults() error {
 	}
 
 	if r.args.createReleasePromoteVersion == "" {
-		dirtyStatus := ""
-		if isDirty {
-			dirtyStatus = "-dirty"
-		}
 		r.args.createReleasePromoteVersion = fmt.Sprintf("%s-%s%s", r.args.createReleasePromote, rev, dirtyStatus)
 	}
 
@@ -129,7 +148,7 @@ func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
 
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
-		err := r.setKOTSDefaults()
+		err := r.setKOTSDefaultReleaseParams()
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "resolve kots defaults")
@@ -159,38 +178,9 @@ Prepared to create release with defaults:
 		}
 	}
 
-	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
-		return errors.New("one of --yaml, --yaml-file must be provided")
-	}
-
-	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-		return errors.New("only one of --yaml or --yaml-file may be specified")
-	}
-
-	if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
-		return errors.New("--yaml-dir flag must be provided for KOTS applications")
-	}
-
-	// can't ensure a channel if you didn't pass one
-	if r.args.createReleasePromoteEnsureChannel && r.args.createReleasePromote == "" {
-		return errors.New("cannot use the flag --ensure-channel without also using --promote <channel> ")
-	}
-
-	// we check this again below, but lets be explicit and fail fast
-	if r.args.createReleasePromoteEnsureChannel && !(r.appType == "ship" || r.appType == "kots") {
-		return errors.Errorf("the flag --ensure-channel is only supported for KOTS and Ship applications, app %q is of type %q", r.appID, r.appType)
-	}
-
-	if r.args.createReleasePromoteRequired && r.appType == "kots" {
-		return errors.Errorf("the --required flag is not supported for KOTS applications")
-	}
-
-	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
-		return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
-	}
-
-	if r.args.createReleaseYaml != "" && r.appType == "kots" {
-		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
+	err := r.validateReleaseCreateParams()
+	if err != nil {
+		return errors.Wrap(err, "validate params")
 	}
 
 	if r.args.createReleaseYaml == "-" {
@@ -265,6 +255,43 @@ Prepared to create release with defaults:
 		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d\n", promoteChanID, release.Sequence)
 	}
 
+	return nil
+}
+
+func (r *runners) validateReleaseCreateParams() error {
+	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
+		return errors.New("one of --yaml, --yaml-file must be provided")
+	}
+
+	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
+		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
+		return errors.New("--yaml-dir flag must be provided for KOTS applications")
+	}
+
+	// can't ensure a channel if you didn't pass one
+	if r.args.createReleasePromoteEnsureChannel && r.args.createReleasePromote == "" {
+		return errors.New("cannot use the flag --ensure-channel without also using --promote <channel> ")
+	}
+
+	// we check this again below, but lets be explicit and fail fast
+	if r.args.createReleasePromoteEnsureChannel && !(r.appType == "ship" || r.appType == "kots") {
+		return errors.Errorf("the flag --ensure-channel is only supported for KOTS and Ship applications, app %q is of type %q", r.appID, r.appType)
+	}
+
+	if r.args.createReleasePromoteRequired && r.appType == "kots" {
+		return errors.Errorf("the --required flag is not supported for KOTS applications")
+	}
+
+	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
+		return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
+	}
+
+	if r.args.createReleaseYaml != "" && r.appType == "kots" {
+		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
+	}
 	return nil
 }
 
@@ -363,7 +390,7 @@ func promptForConfirm() (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Create release with these properties? [Y/n]",
+		Label:     "Create with these properties? [Y/n]",
 		Templates: templates,
 		Default:   "y",
 		Validate: func(input string) error {
