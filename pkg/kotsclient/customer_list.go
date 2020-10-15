@@ -28,13 +28,16 @@ func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 	resp := CustomerListResponse{}
 	page := 0
 	for len(allCustomers) < resp.TotalCustomers || page == 0 {
-		page = page + 1
 		path := fmt.Sprintf("/v3/app/%s/customers?currentPage=%d", appID, page)
 		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list customers page %d", page)
 		}
 		allCustomers = append(allCustomers, resp.Customers...)
+		page = page + 1
+		if len(resp.Customers) == 0 {
+			break
+		}
 	}
 
 	return allCustomers, nil
