@@ -76,7 +76,7 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 		return releaseInfos, nil
 
 	} else if appType == "kots" {
-		return c.KotsClient.ListReleases(appID)
+		return c.KotsHTTPClient.ListReleases(appID)
 	}
 
 	return nil, errors.New("unknown app type")
