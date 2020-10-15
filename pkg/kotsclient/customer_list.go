@@ -2,9 +2,10 @@ package kotsclient
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"net/http"
 )
 
 var _ error = ErrCustomerNotFound{}
@@ -23,7 +24,7 @@ type CustomerListResponse struct {
 
 func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 
-	path := fmt.Sprintf("/v3/app/%s/customers", appID)
+	path := fmt.Sprintf("/v3/app/%s/customers?pageSize=9999", appID)
 	var resp CustomerListResponse
 	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 	if err != nil {

@@ -142,7 +142,7 @@ const allKotsReleases = `
 func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	response := GraphQLResponseListReleases{}
 
-	request := graphql.Request{
+	request := graphql.Request{ // todo: move to v3 api and make paged
 		Query: allKotsReleases,
 		Variables: map[string]interface{}{
 			"appId": appID,
