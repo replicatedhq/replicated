@@ -2,9 +2,10 @@ package kotsclient
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"net/http"
 )
 
 var _ error = ErrCustomerNotFound{}
@@ -18,19 +19,25 @@ func (e ErrCustomerNotFound) Error() string {
 }
 
 type CustomerListResponse struct {
-	Customers []types.Customer `json:"customers"`
+	Customers      []types.Customer `json:"customers"`
+	TotalCustomers int              `json:"totalCustomers"`
 }
 
 func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
-
-	path := fmt.Sprintf("/v3/app/%s/customers", appID)
-	var resp CustomerListResponse
-	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
-	if err != nil {
-		return nil, errors.Wrapf(err, "list customers")
+	allCustomers := []types.Customer{}
+	resp := CustomerListResponse{}
+	page := 0
+	for len(allCustomers) < resp.TotalCustomers || page == 0 {
+		page = page + 1
+		path := fmt.Sprintf("/v3/app/%s/customers?currentPage=%d", appID, page)
+		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+		if err != nil {
+			return nil, errors.Wrapf(err, "list customers page %d", page)
+		}
+		allCustomers = append(allCustomers, resp.Customers...)
 	}
-	return resp.Customers, nil
 
+	return allCustomers, nil
 }
 
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
