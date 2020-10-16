@@ -9,6 +9,8 @@ type Channel struct {
 	ReleaseSequence int64
 	ReleaseLabel    string
 
+	IsArchived bool `json:"isArchived"`
+
 	InstallCommands *InstallCommands
 }
 

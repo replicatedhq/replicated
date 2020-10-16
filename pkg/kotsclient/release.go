@@ -1,12 +1,12 @@
 package kotsclient
 
 import (
-	"time"
+	"fmt"
+	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 type GraphQLResponseKotsCreateRelease struct {
@@ -119,75 +119,51 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml st
 	return nil
 }
 
-const allKotsReleases = `
-  query allKotsReleases($appId: ID!, $pageSize: Int, $currentPage: Int) {
-    allKotsReleases(appId: $appId, pageSize: $pageSize, currentPage: $currentPage) {
-      sequence
-      channelSequence
-      created
-      updated
-      releasedAt
-      releaseNotes
-      channels {
-        id
-        name
-        currentVersion
-        numReleases
-      }
-      isReleaseNotEditable
-    }
-  }
-`
-
-func (c *GraphQLClient) ListReleases(appID string) ([]types.ReleaseInfo, error) {
-	response := GraphQLResponseListReleases{}
-
-	request := graphql.Request{ // todo: move to v3 api and make paged
-		Query: allKotsReleases,
-		Variables: map[string]interface{}{
-			"appId": appID,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return nil, err
-	}
-
-	releaseInfos := make([]types.ReleaseInfo, 0, 0)
-	for _, kotsRelease := range response.Data.KotsReleases {
-		activeChannels := make([]types.Channel, 0, 0)
-		createdAt, err := util.ParseTime(kotsRelease.CreatedAt)
+func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
+	allReleases := []types.ReleaseInfo{}
+	resp := types.ListReleasesResponse{}
+	done := false
+	page := 0
+	for !done {
+		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
+		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
-			return nil, err
+			done = true
+			continue
 		}
+		page += 1
+		for _, release := range resp.Releases {
+			activeChannels := make([]types.Channel, 0, 0)
 
-		for _, kotsReleaseChannel := range kotsRelease.Channels {
-			activeChannel := types.Channel{
-				ID:   kotsReleaseChannel.ID,
-				Name: kotsReleaseChannel.Name,
+			for _, kotsReleaseChannel := range release.Channels {
+				if kotsReleaseChannel.IsArchived {
+					continue
+				}
+				activeChannel := types.Channel{
+					ID:   kotsReleaseChannel.ID,
+					Name: kotsReleaseChannel.Name,
+				}
+				activeChannels = append(activeChannels, activeChannel)
 			}
-			activeChannels = append(activeChannels, activeChannel)
 
-		}
-		releaseInfo := types.ReleaseInfo{
-			AppID:          appID,
-			CreatedAt:      createdAt.In(location),
-			EditedAt:       time.Time{}, // not supported
-			Editable:       false,
-			Sequence:       kotsRelease.Sequence,
-			Version:        "n/a",
-			ActiveChannels: activeChannels,
+
+			newReleaseInfo := types.ReleaseInfo{
+				ActiveChannels: activeChannels,
+				AppID:          release.AppID,
+				CreatedAt:      release.CreatedAt,
+				Editable:       !release.IsReleaseNotEditable,
+				Sequence:       release.Sequence,
+			}
+			allReleases = append(allReleases, newReleaseInfo)
 		}
 
-		releaseInfos = append(releaseInfos, releaseInfo)
+		if len(resp.Releases) == 0 {
+			done = true
+			continue
+		}
 	}
 
-	return releaseInfos, nil
+	return allReleases, nil
 }
 
 const promoteKotsRelease = `

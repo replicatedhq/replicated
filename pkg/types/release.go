@@ -31,3 +31,19 @@ type LintLinePosition struct {
 	Line     int64 `json:"line"`
 	Column   int64 `json:"column"`
 }
+
+// ListReleasesResponse contains the JSON releases list
+type ListReleasesResponse struct {
+	Releases []*KotsAppRelease `json:"releases"`
+}
+
+type KotsAppRelease struct {
+	AppID                string     `json:"appId"`
+	Sequence             int64      `json:"sequence"`
+	CreatedAt            time.Time  `json:"created"`
+	IsArchived           bool       `json:"isArchived"`
+	Spec                 string     `json:"spec"`
+	ReleaseNotes         string     `json:"releaseNotes"`
+	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
+	Channels             []*Channel `json:"channels"`
+}
