@@ -121,10 +121,10 @@ func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml st
 
 func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
 	allReleases := []types.ReleaseInfo{}
-	resp := types.ListReleasesResponse{}
 	done := false
 	page := 0
 	for !done {
+		resp := types.ListReleasesResponse{}
 		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
 		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
@@ -145,7 +145,6 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 				}
 				activeChannels = append(activeChannels, activeChannel)
 			}
-
 
 			newReleaseInfo := types.ReleaseInfo{
 				ActiveChannels: activeChannels,
