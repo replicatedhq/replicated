@@ -25,19 +25,22 @@ type CustomerListResponse struct {
 
 func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 	allCustomers := []types.Customer{}
-	resp := CustomerListResponse{}
 	page := 0
-	for len(allCustomers) < resp.TotalCustomers || page == 0 {
+	for {
+		resp := CustomerListResponse{}
 		path := fmt.Sprintf("/v3/app/%s/customers?currentPage=%d", appID, page)
 		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list customers page %d", page)
 		}
+
 		allCustomers = append(allCustomers, resp.Customers...)
-		page = page + 1
-		if len(resp.Customers) == 0 {
+
+		if len(allCustomers) == resp.TotalCustomers || len(resp.Customers) == 0 {
 			break
 		}
+
+		page = page + 1
 	}
 
 	return allCustomers, nil
