@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
 	"text/tabwriter"
+
+	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
@@ -45,6 +46,11 @@ func init() {
 	enterpriseOriginFromEnv := os.Getenv("REPLICATED_ENTERPRISE_ORIGIN")
 	if enterpriseOriginFromEnv != "" {
 		enterpriseOrigin = enterpriseOriginFromEnv
+	}
+
+	graphqlOriginFromEnv := os.Getenv("REPLICATED_GRAPHQL_ORIGIN")
+	if graphqlOriginFromEnv != "" {
+		graphqlOrigin = graphqlOriginFromEnv
 	}
 }
 

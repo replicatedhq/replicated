@@ -2,12 +2,14 @@ package kotsclient
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+
 	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"net/http"
-	"os"
 )
 
 type GraphQLResponseGetChannel struct {
@@ -94,9 +96,13 @@ type ListChannelsResponse struct {
 	Channels []*KotsChannel `json:"channels"`
 }
 
-func (c *VendorV3Client) ListChannels(appID string, appSlug string) ([]types.Channel, error) {
+func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName string) ([]types.Channel, error) {
 	var response = ListChannelsResponse{}
-	url := fmt.Sprintf("/v3/app/%s/channels", appID)
+
+	v := url.Values{}
+	v.Set("channelName", channelName)
+
+	url := fmt.Sprintf("/v3/app/%s/channels?%s", appID, v.Encode())
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list channels")

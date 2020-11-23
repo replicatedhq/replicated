@@ -2,13 +2,14 @@ package client
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListChannels(appID string, appType string, appSlug string) ([]types.Channel, error) {
+func (c *Client) ListChannels(appID string, appType string, appSlug string, channelName string) ([]types.Channel, error) {
 
 	if appType == "platform" {
 		platformChannels, err := c.PlatformClient.ListChannels(appID)
@@ -33,7 +34,7 @@ func (c *Client) ListChannels(appID string, appType string, appSlug string) ([]t
 	} else if appType == "ship" {
 		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.ListChannels(appID, appSlug)
+		return c.KotsHTTPClient.ListChannels(appID, appSlug, channelName)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -71,7 +72,7 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 		if err := c.PlatformClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
-		return c.ListChannels(appID, appType, appSlug)
+		return c.ListChannels(appID, appType, appSlug, name)
 	} else if appType == "ship" {
 		if _, err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
@@ -81,14 +82,14 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 		if _, err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
-		return c.KotsHTTPClient.ListChannels(appID, appSlug)
+		return c.KotsHTTPClient.ListChannels(appID, appSlug, name)
 	}
 
 	return nil, errors.New("unknown app type")
 }
 
 func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug string, name string, description string, createIfAbsent bool) (*types.Channel, error) {
-	allChannels, err := c.ListChannels(appID, appType, appSlug)
+	allChannels, err := c.ListChannels(appID, appType, appSlug, name)
 	if err != nil {
 		return nil, err
 	}
