@@ -2,13 +2,14 @@ package client
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
+	"strings"
 
+	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListChannels(appID string, appType string, appSlug string) ([]types.Channel, error) {
+func (c *Client) ListChannels(appID string, appType string, appSlug string, channelName string) ([]types.Channel, error) {
 
 	if appType == "platform" {
 		platformChannels, err := c.PlatformClient.ListChannels(appID)
@@ -33,7 +34,7 @@ func (c *Client) ListChannels(appID string, appType string, appSlug string) ([]t
 	} else if appType == "ship" {
 		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.ListChannels(appID, appSlug)
+		return c.KotsHTTPClient.ListChannels(appID, appSlug, channelName)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -71,7 +72,7 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 		if err := c.PlatformClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
-		return c.ListChannels(appID, appType, appSlug)
+		return c.ListChannels(appID, appType, appSlug, name)
 	} else if appType == "ship" {
 		if _, err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
@@ -81,32 +82,47 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 		if _, err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
-		return c.KotsHTTPClient.ListChannels(appID, appSlug)
+		return c.KotsHTTPClient.ListChannels(appID, appSlug, name)
 	}
 
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug string, name string, description string, createIfAbsent bool) (*types.Channel, error) {
-	allChannels, err := c.ListChannels(appID, appType, appSlug)
+func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug string, nameOrID string, description string, createIfAbsent bool) (*types.Channel, error) {
+
+	gqlNotFoundErr := fmt.Sprintf("channel %s not found", nameOrID)
+	channel, _, err := c.GetChannel(appID, appType, nameOrID)
+	if err == nil {
+		return &types.Channel{
+			ID:              channel.Id,
+			Name:            channel.Name,
+			Description:     channel.Description,
+			ReleaseSequence: channel.ReleaseSequence,
+			ReleaseLabel:    channel.ReleaseLabel,
+		}, nil
+	} else if !strings.Contains(err.Error(), gqlNotFoundErr) {
+		return nil, errors.Wrap(err, "get channel")
+	}
+
+	allChannels, err := c.ListChannels(appID, appType, appSlug, nameOrID)
 	if err != nil {
 		return nil, err
 	}
 
-	foundChannel, numMatching, err := c.findChannel(allChannels, name)
+	foundChannel, numMatching, err := c.findChannel(allChannels, nameOrID)
 
 	if numMatching == 0 && createIfAbsent {
-		updatedListOfChannels, err := c.CreateChannel(appID, appType, appSlug, name, description)
+		updatedListOfChannels, err := c.CreateChannel(appID, appType, appSlug, nameOrID, description)
 		if err != nil {
-			return nil, errors.Wrapf(err, "create channel %q ", name)
+			return nil, errors.Wrapf(err, "create channel %q ", nameOrID)
 		}
 		// for some reason CreateChannel returns the list of all channels,
 		// so now we gotta go find the channel we just created
-		channel, _, err := c.findChannel(updatedListOfChannels, name)
-		return channel, errors.Wrapf(err, "find channel %q", name)
+		channel, _, err := c.findChannel(updatedListOfChannels, nameOrID)
+		return channel, errors.Wrapf(err, "find channel %q", nameOrID)
 	}
 
-	return foundChannel, errors.Wrapf(err, "find channel %q", name)
+	return foundChannel, errors.Wrapf(err, "find channel %q", nameOrID)
 }
 
 func (c *Client) GetChannelByName(appID string, appType string, appSlug string, name string) (*types.Channel, error) {
