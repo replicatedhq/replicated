@@ -101,6 +101,7 @@ func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName 
 
 	v := url.Values{}
 	v.Set("channelName", channelName)
+	v.Set("excludeDetail", "true")
 
 	url := fmt.Sprintf("/v3/app/%s/channels?%s", appID, v.Encode())
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
@@ -252,4 +253,27 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
 	}
 	return &channelDetail, nil, nil
+}
+
+const archiveKotsChannelMutation = `
+mutation archiveKotsChannel($channelId: ID!) {
+    archiveKotsChannel(channelId: $channelId)
+  }
+`
+
+func (c *GraphQLClient) ArchiveChannel(channelId string) error {
+	response := graphql.ResponseErrorOnly{}
+
+	request := graphql.Request{
+		Query: archiveKotsChannelMutation,
+		Variables: map[string]interface{}{
+			"channelId": channelId,
+		},
+	}
+
+	if err := c.ExecuteRequest(request, &response); err != nil {
+		return err
+	}
+
+	return nil
 }

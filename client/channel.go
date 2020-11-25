@@ -60,7 +60,7 @@ func (c *Client) ArchiveChannel(appID string, appType string, channelID string) 
 	} else if appType == "ship" {
 		return errors.New("This feature is not currently supported for Ship applications.")
 	} else if appType == "kots" {
-		return errors.New("This feature is not currently supported for Kots applications.")
+		return c.KotsClient.ArchiveChannel(channelID)
 	}
 	return errors.New("unknown app type")
 
