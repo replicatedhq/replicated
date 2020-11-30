@@ -22,7 +22,7 @@ func (c *HTTPClient) ListApps() ([]apps.AppAndChannels, error) {
 func (c *HTTPClient) GetApp(slugOrID string) (*apps.App, error) {
 	appsAndChannels, err := c.ListApps()
 	if err != nil {
-		return nil, fmt.Errorf("GetApp: %v", err)
+		return nil, fmt.Errorf("GetApp: %w", err)
 	}
 	for _, ac := range appsAndChannels {
 		if ac.App.Slug == slugOrID || ac.App.Id == slugOrID {
@@ -53,7 +53,7 @@ func (c *HTTPClient) DeleteApp(id string) error {
 	req.Header.Add("Authorization", c.apiKey)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("DeleteApp (%s %s): %v", req.Method, endpoint, err)
+		return fmt.Errorf("DeleteApp (%s %s): %w", req.Method, endpoint, err)
 	}
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {

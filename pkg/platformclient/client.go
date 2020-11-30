@@ -5,9 +5,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
@@ -76,7 +77,7 @@ func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, res
 			return errors.Wrap(err, "read body")
 		}
 		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
-			return fmt.Errorf("%s %s response decoding: %v", method, endpoint, err)
+			return fmt.Errorf("%s %s response decoding: %w", method, endpoint, err)
 		}
 	}
 

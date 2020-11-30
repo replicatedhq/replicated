@@ -65,7 +65,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if err := r.api.UpdateRelease(r.appID, r.appType, seq, r.args.updateReleaseYaml); err != nil {
-		return fmt.Errorf("Failure setting new yaml config for release: %v", err)
+		return fmt.Errorf("Failure setting new yaml config for release: %w", err)
 	}
 
 	// ignore the error since operation was successful
