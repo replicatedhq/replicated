@@ -81,7 +81,7 @@ func (c *HTTPClient) doJSON(method, path string, successStatus int, reqBody inte
 	}
 	if respBody != nil {
 		if err := json.NewDecoder(resp.Body).Decode(respBody); err != nil {
-			return fmt.Errorf("%s %s response decoding: %v", method, endpoint, err)
+			return fmt.Errorf("%s %s response decoding: %w", method, endpoint, err)
 		}
 	}
 

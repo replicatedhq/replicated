@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -100,7 +101,7 @@ func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug 
 			ReleaseSequence: channel.ReleaseSequence,
 			ReleaseLabel:    channel.ReleaseLabel,
 		}, nil
-	} else if !strings.Contains(err.Error(), gqlNotFoundErr) {
+	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) {
 		return nil, errors.Wrap(err, "get channel")
 	}
 

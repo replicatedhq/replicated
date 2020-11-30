@@ -29,7 +29,7 @@ func (c *HTTPClient) ListChannels(appID string) ([]channels.AppChannel, error) {
 	appChannels := make([]channels.AppChannel, 0)
 	err := c.DoJSON("GET", path, http.StatusOK, nil, &appChannels)
 	if err != nil {
-		return nil, fmt.Errorf("ListChannels: %v", err)
+		return nil, fmt.Errorf("ListChannels: %w", err)
 	}
 	sort.Sort(AppChannels(appChannels))
 
@@ -46,7 +46,7 @@ func (c *HTTPClient) CreateChannel(appID string, name string, description string
 	appChannels := make([]channels.AppChannel, 0)
 	err := c.DoJSON("POST", path, http.StatusOK, body, &appChannels)
 	if err != nil {
-		return fmt.Errorf("CreateChannel: %v", err)
+		return fmt.Errorf("CreateChannel: %w", err)
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (c *HTTPClient) ArchiveChannel(appID, channelID string) error {
 	req.Header.Add("Authorization", c.apiKey)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("ArchiveChannel (%s %s): %v", req.Method, endpoint, err)
+		return fmt.Errorf("ArchiveChannel (%s %s): %w", req.Method, endpoint, err)
 	}
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
@@ -94,7 +94,7 @@ func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, 
 	respBody := channels.GetChannelInlineResponse200{}
 	err := c.DoJSON("GET", path, http.StatusOK, nil, &respBody)
 	if err != nil {
-		return nil, nil, fmt.Errorf("GetChannel: %v", err)
+		return nil, nil, fmt.Errorf("GetChannel: %w", err)
 	}
 	sort.Sort(ChannelReleases(respBody.Releases))
 	return respBody.Channel, respBody.Releases, nil
