@@ -7,7 +7,7 @@ import (
 	"io"
 )
 
-// ErrNotFound represnets a 404 response from the API.
+// ErrNotFound represents a 404 response from the API.
 var ErrNotFound = errors.New("Not found")
 
 // BadRequest represents a 400 response from the API.
