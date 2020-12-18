@@ -35,23 +35,24 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
 	}
-	chanID := args[1]
+	channelName := args[1]
+	newID := channelName
 
 	if r.appType != "ship" {
 		// try to turn chanID into an actual id if it was a channel name
-		newID, err := r.api.GetOrCreateChannelByName(r.appID, r.appType, r.appSlug, chanID, "", false)
+		channelID, err := r.api.GetOrCreateChannelByName(r.appID, r.appType, r.appSlug, channelName, "", false)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get channel ID from name")
 		}
-		chanID = newID.ID
+		newID = channelID.ID
 	}
 
-	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, chanID); err != nil {
+	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, newID); err != nil {
 		return err
 	}
 
 	// ignore error since operation was successful
-	fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", chanID, seq)
+	fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
 	r.w.Flush()
 
 	return nil
