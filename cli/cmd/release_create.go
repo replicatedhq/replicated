@@ -88,7 +88,7 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 	branchName := head.Name().Short()
 
 	// for GH Actions, prefer env branch
-	envBranch := os.Getenv("GITHUB_BRANCH")
+	envBranch := os.Getenv("GITHUB_BRANCH_NAME")
 	if envBranch != "" {
 		branchName = envBranch
 	}
