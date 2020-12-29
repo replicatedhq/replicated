@@ -63,7 +63,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err error) {
 	path := "."
 	rev := "HEAD"
-	repository, err := git.PlainOpen(path)
+	repository, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil {
 		return "", "", false, errors.Wrapf(err, "open %q", path)
 	}
@@ -85,7 +85,15 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 		return "", "", false, errors.Wrap(err, "get git status")
 	}
 
-	return h.String()[0:7], head.Name().Short(), !status.IsClean(), nil
+	branchName := head.Name().Short()
+
+	// for GH Actions, prefer env branch
+	envBranch := os.Getenv("GITHUB_BRANCH")
+	if envBranch != "" {
+		branchName = envBranch
+	}
+
+	return h.String()[0:7], branchName, !status.IsClean(), nil
 }
 
 func (r *runners) setKOTSDefaultReleaseParams() error {
