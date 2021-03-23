@@ -16,6 +16,8 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	// import go linter  
+	"github.com/replicatedhq/replicated/cli/cmd"
 )
 
 const (
@@ -46,6 +48,8 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
+	// Insert create lint flag
+	cmd.Flags().StringVar(&r.args.createReleaseLint, "lint", "yaml", "Lint a manifests directory prior to creation of the KOTS Release")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 	cmd.Flags().BoolVar(&r.args.createReleaseAutoDefaults, "auto", false, "generate default values for use in CI")
@@ -300,6 +304,12 @@ func (r *runners) validateReleaseCreateParams() error {
 	if r.args.createReleaseYaml != "" && r.appType == "kots" {
 		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 	}
+	
+	// createReleaseList method below
+	if r.args.createReleaseLint != "" && r.appType == "kots" {
+		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir manifests instead")
+	}
+
 	return nil
 }
 
