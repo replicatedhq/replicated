@@ -151,7 +151,20 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 	}
 
 	r.args.createReleasePromoteEnsureChannel = true
+	
+	// Set createReleaseLint to true
+	r.args.createReleaseLint = true
 
+	// Check if lintReleaseFailOn has been provided, if not set to error
+	// should setup as a function that returns each 
+	if r.args.lintReleaseFailOn == "info" {
+		r.args.lintReleaseFailOn = "info"
+	} else if r.args.lintReleaseFailOn == "warn" {
+		r.args.lintReleaseFailOn = "warn"
+	} else {
+		r.args.lintReleaseFailOn = "error"
+	}
+	
 	return nil
 }
 
@@ -166,6 +179,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "resolve kots defaults")
 		}
+		
 		time.Sleep(500 * time.Millisecond)
 		log.FinishSpinner()
 
@@ -177,8 +191,9 @@ Prepared to create release with defaults:
     version         %q
     release-notes   %q
     ensure-channel  %t
+    lint-relase     %t
 
-`, r.args.createReleaseYamlDir, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel)
+`, r.args.createReleaseYamlDir, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel, r.args.createReleaseLint)
 		if !r.args.createReleaseAutoDefaultsAccept {
 			confirmed, err := promptForConfirm()
 			if err != nil {
@@ -198,8 +213,9 @@ Prepared to create release with defaults:
 
 	// Check if --lint argument has been passed in by the enduser
 	if r.args.createReleaseLint {
-		// Set lint release yaml directory to 
+		// Request lint release yaml directory to check
 		r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
+		// Call release_lint.go releaseLint function
 		err := r.releaseLint(cmd, args)
 		if err != nil {
 			return errors.Wrap(err, "lint yaml")
@@ -315,11 +331,6 @@ func (r *runners) validateReleaseCreateParams() error {
 	if r.args.createReleaseYaml != "" && r.appType == "kots" {
 		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 	}
-
-	// createReleaseList method below
-	// if r.args.createReleaseLint != false && r.appType == "kots" {
-		// return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir manifests instead")
-	// }
 
 	return nil
 }
