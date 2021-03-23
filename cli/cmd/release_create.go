@@ -4,20 +4,19 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/manifoldco/promptui"
-	"github.com/replicatedhq/replicated/cli/print"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/manifoldco/promptui"
+	"github.com/replicatedhq/replicated/cli/print"
+
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	// import go linter  
-	"github.com/replicatedhq/replicated/cli/cmd"
 )
 
 const (
@@ -48,8 +47,10 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
-	// Insert create lint flag
-	cmd.Flags().StringVar(&r.args.createReleaseLint, "lint", "yaml", "Lint a manifests directory prior to creation of the KOTS Release")
+	// Replicated release create lint flag
+	cmd.Flags().BoolVar(&r.args.createReleaseLint, "lint", false, "Lint a manifests directory prior to creation of the KOTS Release")
+	// Fail-on linting flag (from release_lint.go)
+	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 	cmd.Flags().BoolVar(&r.args.createReleaseAutoDefaults, "auto", false, "generate default values for use in CI")
@@ -154,7 +155,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 	return nil
 }
 
-func (r *runners) releaseCreate(_ *cobra.Command, _ []string) error {
+func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 
 	log := print.NewLogger(r.w)
 
@@ -193,6 +194,16 @@ Prepared to create release with defaults:
 	err := r.validateReleaseCreateParams()
 	if err != nil {
 		return errors.Wrap(err, "validate params")
+	}
+
+	// Check if --lint argument has been passed in by the enduser
+	if r.args.createReleaseLint {
+		// Set lint release yaml directory to 
+		r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
+		err := r.releaseLint(cmd, args)
+		if err != nil {
+			return errors.Wrap(err, "lint yaml")
+		}
 	}
 
 	if r.args.createReleaseYaml == "-" {
@@ -304,11 +315,11 @@ func (r *runners) validateReleaseCreateParams() error {
 	if r.args.createReleaseYaml != "" && r.appType == "kots" {
 		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 	}
-	
+
 	// createReleaseList method below
-	if r.args.createReleaseLint != "" && r.appType == "kots" {
-		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir manifests instead")
-	}
+	// if r.args.createReleaseLint != false && r.appType == "kots" {
+		// return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir manifests instead")
+	// }
 
 	return nil
 }
