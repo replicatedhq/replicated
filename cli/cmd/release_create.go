@@ -152,20 +152,6 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	r.args.createReleasePromoteEnsureChannel = true
 	
-	// Check if lintReleaseFailOn has been provided, if not set to error
-	// should setup as a function that returns each 
-	if r.args.lintReleaseFailOn == "none" {
-		r.args.lintReleaseFailOn = "none"
-	} else if r.args.lintReleaseFailOn == "info" {
-		r.args.lintReleaseFailOn = "info"
-	} else if r.args.lintReleaseFailOn == "warn" {
-		r.args.lintReleaseFailOn = "warn"
-	} else if r.args.lintReleaseFailOn == "error" {
-		r.args.lintReleaseFailOn = "error"
-	} else {
-		return errors.New("You have entered an incorrect fail-on flag. See 'replicated release create --help' for valid options.")
-	}
-	
 	return nil
 }
 
