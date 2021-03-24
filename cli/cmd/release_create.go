@@ -47,10 +47,10 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
-	// Replicated release create lint flag
-	cmd.Flags().BoolVar(&r.args.createReleaseLint, "lint", false, "Lint a manifests directory prior to creation of the KOTS Release")
 	// Fail-on linting flag (from release_lint.go)
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
+	// Replicated release create lint flag
+	cmd.Flags().BoolVar(&r.args.createReleaseLint, "lint", false, "Lint a manifests directory prior to creation of the KOTS Release.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteRequired, "required", false, "When used with --promote <channel>, marks this release as required during upgrades.")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 	cmd.Flags().BoolVar(&r.args.createReleaseAutoDefaults, "auto", false, "generate default values for use in CI")
@@ -152,17 +152,18 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	r.args.createReleasePromoteEnsureChannel = true
 	
-	// Set createReleaseLint to true
-	r.args.createReleaseLint = true
-
 	// Check if lintReleaseFailOn has been provided, if not set to error
 	// should setup as a function that returns each 
-	if r.args.lintReleaseFailOn == "info" {
+	if r.args.lintReleaseFailOn == "none" {
+		r.args.lintReleaseFailOn = "none"
+	} else if r.args.lintReleaseFailOn == "info" {
 		r.args.lintReleaseFailOn = "info"
 	} else if r.args.lintReleaseFailOn == "warn" {
 		r.args.lintReleaseFailOn = "warn"
-	} else {
+	} else if r.args.lintReleaseFailOn == "error" {
 		r.args.lintReleaseFailOn = "error"
+	} else {
+		return errors.New("You have entered an incorrect fail-on flag. See 'replicated release create --help' for valid options.")
 	}
 	
 	return nil
@@ -179,7 +180,6 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "resolve kots defaults")
 		}
-		
 		time.Sleep(500 * time.Millisecond)
 		log.FinishSpinner()
 
@@ -191,7 +191,7 @@ Prepared to create release with defaults:
     version         %q
     release-notes   %q
     ensure-channel  %t
-    lint-relase     %t
+    lint-release    %t
 
 `, r.args.createReleaseYamlDir, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel, r.args.createReleaseLint)
 		if !r.args.createReleaseAutoDefaultsAccept {
@@ -430,7 +430,7 @@ func promptForConfirm() (string, error) {
 	}
 
 	prompt := promptui.Prompt{
-		Label:     "Create with these properties? [Y/n]",
+		Label:     "Create with these properties? (default Yes) [Y/n]",
 		Templates: templates,
 		Default:   "y",
 		Validate: func(input string) error {
