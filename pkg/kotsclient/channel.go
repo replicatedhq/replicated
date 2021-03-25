@@ -194,17 +194,9 @@ query getKotsChannel($channelId: ID!) {
       totalOnChannel
     }
     customers {
-      id
-      name
-      avatar
-      actions {
-	shipApplyDocker
-      }
-      installationId
-      shipInstallStatus {
-	status
-	updatedAt
-      }
+			totalCustomers
+			activeCustomers
+			inactiveCustomers
     }
     githubRef {
       owner
