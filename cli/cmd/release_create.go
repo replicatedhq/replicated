@@ -151,6 +151,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 	}
 
 	r.args.createReleasePromoteEnsureChannel = true
+	r.args.createReleaseLint = true
 	
 	return nil
 }
