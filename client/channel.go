@@ -48,7 +48,7 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ch
 	} else if appType == "ship" {
 		return c.ShipClient.GetChannel(appID, channelID)
 	} else if appType == "kots" {
-		return c.KotsClient.GetChannel(appID, channelID)
+		return c.KotsHTTPClient.GetChannel(appID, channelID)
 	}
 	return nil, nil, errors.New("unknown app type")
 
