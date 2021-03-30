@@ -15,6 +15,11 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 		return nil, err
 	}
 
+	kotsApps, err := c.KotsClient.ListApps()
+	if err != nil {
+		return nil, err
+	}
+
 	apps := make([]types.AppAndChannels, 0, 0)
 	for _, platformApp := range platformApps {
 		channels := make([]types.Channel, 0, 0)
@@ -42,6 +47,7 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 	}
 
 	apps = append(apps, shipApps...)
+	apps = append(apps, kotsApps...)
 
 	return apps, nil
 }

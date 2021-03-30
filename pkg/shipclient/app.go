@@ -77,6 +77,7 @@ func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
 				ID:   app.ID,
 				Name: app.Name,
 				Slug: app.Slug,
+				Scheduler: "ship",
 			},
 			Channels: channels,
 		}

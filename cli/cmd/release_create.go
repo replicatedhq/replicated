@@ -409,13 +409,6 @@ func readYAMLDir(yamlDir string) (string, error) {
 
 func promptForConfirm() (string, error) {
 
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
 	prompt := promptui.Prompt{
 		Label:     "Create with these properties? (default Yes) [Y/n]",
 		Templates: templates,
