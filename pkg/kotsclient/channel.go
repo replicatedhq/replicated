@@ -12,11 +12,6 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type GraphQLResponseGetChannel struct {
-	Data   *KotsGetChannelData `json:"data,omitempty"`
-	Errors []graphql.GQLError  `json:"errors,omitempty"`
-}
-
 type GraphQLResponseCreateChannel struct {
 	Data   *KotsCreateChannelData `json:"data,omitempty"`
 	Errors []graphql.GQLError     `json:"errors,omitempty"`
@@ -172,85 +167,21 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 
 }
 
-const getKotsChannel = `
-query getKotsChannel($channelId: ID!) {
-  getKotsChannel(channelId: $channelId) {
-    id
-    appId
-    name
-    description
-    channelIcon
-    channelSequence
-    releaseSequence
-    currentVersion
-    currentReleaseDate
-    installInstructions
-    numReleases
-    adoptionRate {
-      releaseSequence
-      semver
-      count
-      percent
-      totalOnChannel
-    }
-    customers {
-      id
-      name
-      avatar
-      actions {
-	shipApplyDocker
-      }
-      installationId
-      shipInstallStatus {
-	status
-	updatedAt
-      }
-    }
-    githubRef {
-      owner
-      repoFullName
-      branch
-      path
-    }
-    extraLintRules
-    created
-    updated
-    isDefault
-    isArchived
-    releases {
-      semver
-      releaseNotes
-      created
-      updated
-      releasedAt
-      sequence
-      channelSequence
-      airgapBuildStatus
-    }
-  }
-}
-`
+func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+	var response = KotsGetChannelData{}
 
-func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-	response := GraphQLResponseGetChannel{}
-
-	request := graphql.Request{
-		Query: getKotsChannel,
-		Variables: map[string]interface{}{
-			"appID":     appID,
-			"channelId": channelID,
-		},
-	}
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, nil, err
+	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channelID)
+	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "get app channel")
 	}
 
 	channelDetail := channels.AppChannel{
-		Id:              response.Data.KotsChannel.ID,
-		Name:            response.Data.KotsChannel.Name,
-		Description:     response.Data.KotsChannel.Description,
-		ReleaseLabel:    response.Data.KotsChannel.CurrentVersion,
-		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
+		Id:              response.KotsChannel.ID,
+		Name:            response.KotsChannel.Name,
+		Description:     response.KotsChannel.Description,
+		ReleaseLabel:    response.KotsChannel.CurrentVersion,
+		ReleaseSequence: response.KotsChannel.ReleaseSequence,
 	}
 	return &channelDetail, nil, nil
 }
