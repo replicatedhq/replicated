@@ -6,7 +6,6 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func (r *runners) InitAppDelete(parent *cobra.Command) *cobra.Command {
@@ -82,15 +81,11 @@ func promptConfirmDelete() (string, error) {
 		Templates: templates,
 		Default:   "",
 		Validate: func(input string) error {
-			if input == "no" {
+			// "no" will exit with a "prompt declined" error, just in case they don't think to ctrl+c
+			if input == "no" || input == "yes" {
 				return nil
 			}
-
-			if input != "yes" {
-				return errors.New(`only "yes" will be accepted`)
-			}
-
-			return nil
+			return errors.New(`only "yes" will be accepted`)
 		},
 	}
 
@@ -98,7 +93,7 @@ func promptConfirmDelete() (string, error) {
 		result, err := prompt.Run()
 		if err != nil {
 			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
+				return "", errors.New("interrupted")
 			}
 			continue
 		}
