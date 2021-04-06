@@ -98,28 +98,8 @@ var _ = Describe("kots apps", func() {
 `)
 		})
 	})
-	Context("replicated app create", func() {
-		It("should create an app", func() {
-			newName := mustToken(8)
-			var stdout bytes.Buffer
-			var stderr bytes.Buffer
-
-			rootCmd := cmd.GetRootCmd()
-			rootCmd.SetArgs([]string{"app", "create", newName})
-
-			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
-
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
-
-			req.Contains(stdout.String(), newName)
-			req.Contains(stdout.String(), "kots")
-		})
-	})
-
-	Context("replicated app delete", func() {
-		It("should delete an app", func() {
+	Context("replicated app create & replicated app delete", func() {
+		It("should create and then delete an app", func() {
 			newName := mustToken(8)
 			newName = strings.ReplaceAll(newName, "_", "-")
 			newName = strings.ReplaceAll(newName, "=", "-")
