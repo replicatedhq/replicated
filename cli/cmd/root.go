@@ -192,9 +192,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterpriseInstallerRM(enterpriseInstallerCmd)
 	runCmds.InitEnterpriseInstallerAssign(enterpriseInstallerCmd)
 
+	appCmd := runCmds.InitAppCommand(runCmds.rootCmd)
+	runCmds.InitAppList(appCmd)
+	runCmds.InitAppCreate(appCmd)
+	runCmds.InitAppDelete(appCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
-	prerunCommand := func(cmd *cobra.Command, args []string) error {
+	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
 		if apiToken == "" {
 			apiToken = os.Getenv("REPLICATED_API_TOKEN")
 			if apiToken == "" {
@@ -218,33 +223,40 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
+		return nil
+	}
+
+	prerunCommand := func(cmd *cobra.Command, args []string) error {
+		if err := preRunSetupAPIs(cmd, args); err != nil {
+			return errors.Wrap(err, "set up APIs")
+		}
 
 		if appSlugOrID == "" {
 			appSlugOrID = os.Getenv("REPLICATED_APP")
 		}
 
-		appType, err := commonAPI.GetAppType(appSlugOrID)
+		appType, err := runCmds.api.GetAppType(appSlugOrID)
 		if err != nil {
 			return err
 		}
 		runCmds.appType = appType
 
 		if appType == "platform" {
-			app, err := platformAPI.GetApp(appSlugOrID)
+			app, err := runCmds.platformAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
 			runCmds.appID = app.Id
 			runCmds.appSlug = app.Slug
 		} else if appType == "ship" {
-			app, err := shipAPI.GetApp(appSlugOrID)
+			app, err := runCmds.shipAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
 			runCmds.appID = app.ID
 			runCmds.appSlug = app.Slug
 		} else if appType == "kots" {
-			app, err := kotsAPI.GetApp(appSlugOrID)
+			app, err := runCmds.kotsAPI.GetApp(appSlugOrID)
 			if err != nil {
 				return err
 			}
@@ -255,12 +267,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		return nil
 	}
 
+
 	channelCmd.PersistentPreRunE = prerunCommand
 	releaseCmd.PersistentPreRunE = prerunCommand
 	collectorsCmd.PersistentPreRunE = prerunCommand
 	entitlementsCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
+	appCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
 

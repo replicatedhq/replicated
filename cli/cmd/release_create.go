@@ -409,13 +409,6 @@ func readYAMLDir(yamlDir string) (string, error) {
 
 func promptForConfirm() (string, error) {
 
-	templates := &promptui.PromptTemplates{
-		Prompt:  "{{ . | bold }} ",
-		Valid:   "{{ . | green }} ",
-		Invalid: "{{ . | red }} ",
-		Success: "{{ . | bold }} ",
-	}
-
 	prompt := promptui.Prompt{
 		Label:     "Create with these properties? (default Yes) [Y/n]",
 		Templates: templates,
@@ -433,7 +426,7 @@ func promptForConfirm() (string, error) {
 		result, err := prompt.Run()
 		if err != nil {
 			if err == promptui.ErrInterrupt {
-				os.Exit(-1)
+				return "", errors.New("interrupted")
 			}
 			continue
 		}

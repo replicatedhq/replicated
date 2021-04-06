@@ -61,15 +61,15 @@ type runnerArgs struct {
 	createReleasePromoteVersion       string
 	createReleasePromoteEnsureChannel bool
 	// Add Create Release Lint
-	createReleaseLint			      bool
-	lintReleaseYamlDir                string
-	lintReleaseFailOn                 string
-	releaseOptional                   bool
-	releaseNotes                      string
-	releaseVersion                    string
-	updateReleaseYaml                 string
-	updateReleaseYamlDir              string
-	updateReleaseYamlFile             string
+	createReleaseLint     bool
+	lintReleaseYamlDir    string
+	lintReleaseFailOn     string
+	releaseOptional       bool
+	releaseNotes          string
+	releaseVersion        string
+	updateReleaseYaml     string
+	updateReleaseYamlDir  string
+	updateReleaseYamlFile string
 
 	entitlementsAPIServer                string
 	entitlementsVerbose                  bool
@@ -144,4 +144,5 @@ type runnerArgs struct {
 	releaseDownloadDest               string
 	createInstallerAutoDefaults       bool
 	createInstallerAutoDefaultsAccept bool
+	deleteAppForceYes                 bool
 }
