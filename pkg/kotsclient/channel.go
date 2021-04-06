@@ -18,7 +18,7 @@ type GraphQLResponseCreateChannel struct {
 }
 
 type KotsGetChannelData struct {
-	KotsChannel *KotsChannel `json:"getKotsChannel"`
+	KotsChannel *KotsChannel `json:"channel"`
 }
 
 type KotsCreateChannelData struct {
@@ -168,9 +168,9 @@ func (c *GraphQLClient) CreateChannel(appID string, name string, description str
 }
 
 func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-	var response = KotsGetChannelData{}
+	response := KotsGetChannelData{}
 
-	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channelID)
+	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "get app channel")
