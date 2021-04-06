@@ -93,8 +93,8 @@ var _ = Describe("kots apps", func() {
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
 			req.Equal(stdout.String(),
-`ID                             NAME           SCHEDULER
-`+ app.ID +`    ` + app.Name + `    kots
+`ID                             NAME           SLUG           SCHEDULER
+`+ app.ID +`    ` + app.Name + `    ` + app.Slug + `    kots
 `)
 		})
 	})
@@ -113,8 +113,7 @@ var _ = Describe("kots apps", func() {
 			req.Empty(stderr.String(), "Expected no stderr output")
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
-			req.Contains(stdout.String(), app.ID)
-			req.Contains(stdout.String(), app.Name)
+			req.Contains(stdout.String(), newName)
 			req.Contains(stdout.String(), "kots")
 		})
 	})
