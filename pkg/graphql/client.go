@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	multierror "github.com/hashicorp/go-multierror"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	multierror "github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
 )
 
 const APIOrigin = "https://g.replicated.com/graphql"
@@ -95,11 +96,12 @@ func (c *Client) ExecuteRequest(requestObj Request, deserializeTarget interface{
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code %d", resp.StatusCode)
+		// GraphQL always returns 200. If it's not 200, useful error info should be in the response body
+		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, responseBody)
 	}
 
 	if err := json.Unmarshal(responseBody, deserializeTarget); err != nil {
-		return err
+		return errors.Wrap(err, "unmarshal body")
 	}
 
 	return nil
