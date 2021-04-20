@@ -32,8 +32,20 @@ type LintLinePosition struct {
 	Column   int64 `json:"column"`
 }
 
-// ListReleasesResponse contains the JSON releases list
-type ListReleasesResponse struct {
+type KotsCreateReleaseRequest struct {
+	SpecGzip []byte `json:"spec_gzip"`
+}
+
+type KotsGetReleaseResponse struct {
+	Release KotsAppRelease `json:"release"`
+}
+
+type KotsUpdateReleaseRequest struct {
+	SpecGzip []byte `json:"spec_gzip"`
+}
+
+// KotsListReleasesResponse contains the JSON releases list
+type KotsListReleasesResponse struct {
 	Releases []*KotsAppRelease `json:"releases"`
 }
 

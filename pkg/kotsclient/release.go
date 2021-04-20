@@ -1,35 +1,17 @@
 package kotsclient
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
-
-type GraphQLResponseKotsCreateRelease struct {
-	Data   KotsCreateReleaseData `json:"data,omitempty"`
-	Errors []graphql.GQLError    `json:"errors,omitempty"`
-}
-
-type KotsCreateReleaseData struct {
-	KotsReleaseData KotsReleaseSequence `json:"createKotsRelease"`
-}
-
-type KotsReleaseSequence struct {
-	Sequence int64 `json:"sequence"`
-}
-
-type GraphQLResponseKotsUpdateRelease struct {
-	Data   KotsUpdateReleaseData `json:"data,omitempty"`
-	Errors []graphql.GQLError    `json:"errors,omitempty"`
-}
-
-type KotsUpdateReleaseData struct {
-	KotsReleaseData KotsReleaseSequence `json:"updateKotsRelease"`
-}
 
 type GraphQLResponseListReleases struct {
 	Data   *KotsReleasesData  `json:"data,omitempty"`
@@ -48,72 +30,60 @@ type KotsRelease struct {
 	Channels     []*KotsChannel `json:"channels"`
 }
 
-type GraphQLResponseUpdateKotsRelease struct {
-	Data *KotsReleaseUpdateData `json:"data,omitempty"`
-}
-
-type KotsReleaseUpdateData struct {
-	UpdateKotsRelease *UpdateKotsRelease `json:"updateKotsRelease"`
-}
-
-type UpdateKotsRelease struct {
-	ID     string `json:"id"`
-	Config string `json:"spec,omitempty"`
-}
-
-const createReleaseQuery = `
-mutation createKotsRelease($appId: ID!, $spec: String) {
-	createKotsRelease(appId: $appId, spec: $spec) {
-		sequence
-	}
-}`
-
-func (c *GraphQLClient) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
-	response := GraphQLResponseKotsCreateRelease{}
-
-	request := graphql.Request{
-		Query: createReleaseQuery,
-		Variables: map[string]interface{}{
-			"appId": appID,
-			"spec":  multiyaml,
-		},
+func (c *VendorV3Client) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
+	gzipData := bytes.NewBuffer(nil)
+	gzipWriter := gzip.NewWriter(gzipData)
+	_, err := io.Copy(gzipWriter, strings.NewReader(multiyaml))
+	if err != nil {
+		gzipWriter.Close()
+		return nil, errors.Wrap(err, "failed to write gzip data")
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
+	if err := gzipWriter.Close(); err != nil {
+		return nil, errors.Wrap(err, "failed to close gzip writer")
+	}
+
+	request := types.KotsCreateReleaseRequest{
+		SpecGzip: gzipData.Bytes(),
+	}
+
+	response := types.KotsGetReleaseResponse{}
+
+	url := fmt.Sprintf("/v3/app/%s/release", appID)
+	err = c.DoJSON("POST", url, http.StatusCreated, request, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create release")
 	}
 
 	releaseInfo := types.ReleaseInfo{
-		AppID:    appID,
-		Sequence: response.Data.KotsReleaseData.Sequence,
+		AppID:    response.Release.AppID,
+		Sequence: response.Release.Sequence,
 	}
 
 	return &releaseInfo, nil
 }
 
-const updateKotsRelease = `
-  mutation updateKotsRelease($appId: ID!, $spec: String!, $sequence: Int) {
-    updateKotsRelease(appId: $appId, spec: $spec, sequence: $sequence) {
-      sequence
-    }
-  }
-`
-
-func (c *GraphQLClient) UpdateRelease(appID string, sequence int64, multiyaml string) error {
-	response := GraphQLResponseUpdateKotsRelease{}
-
-	request := graphql.Request{
-		Query: updateKotsRelease,
-
-		Variables: map[string]interface{}{
-			"appId":    appID,
-			"spec":     multiyaml,
-			"sequence": sequence,
-		},
+func (c *VendorV3Client) UpdateRelease(appID string, sequence int64, multiyaml string) error {
+	gzipData := bytes.NewBuffer(nil)
+	gzipWriter := gzip.NewWriter(gzipData)
+	_, err := io.Copy(gzipWriter, strings.NewReader(multiyaml))
+	if err != nil {
+		gzipWriter.Close()
+		return errors.Wrap(err, "failed to write gzip data")
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err
+	if err := gzipWriter.Close(); err != nil {
+		return errors.Wrap(err, "failed to close gzip writer")
+	}
+
+	request := types.KotsUpdateReleaseRequest{
+		SpecGzip: gzipData.Bytes(),
+	}
+
+	url := fmt.Sprintf("/v3/app/%s/release/%d", appID, sequence)
+	err = c.DoJSON("PUT", url, http.StatusOK, request, nil)
+	if err != nil {
+		return errors.Wrap(err, "failed to create release")
 	}
 
 	return nil
@@ -124,7 +94,7 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	done := false
 	page := 0
 	for !done {
-		resp := types.ListReleasesResponse{}
+		resp := types.KotsListReleasesResponse{}
 		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
 		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
