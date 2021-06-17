@@ -2,25 +2,27 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
-	"io/ioutil"
-	"time"
 )
 
 func (r *runners) InitInstallerCreate(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create a new installer spec",
-		Long:  `Create a new installer spec by providing YAML configuration for a https://kurl.sh cluster.`,
+		Use:          "create",
+		Short:        "Create a new installer spec",
+		Long:         `Create a new installer spec by providing YAML configuration for a https://kurl.sh cluster.`,
 		SilenceUsage: true,
 	}
 
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createInstallerYaml, "yaml", "", "The YAML config for this installer. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
-	cmd.Flags().StringVar(&r.args.createInstallerYamlFile, "yaml-file", "", "The file name with YAML config for this installer.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.createInstallerYaml, "yaml", "", "The YAML config for this installer. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
+	cmd.Flags().StringVar(&r.args.createInstallerYamlFile, "yaml-file", "", "The file name with YAML config for this installer. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.createInstallerPromote, "promote", "", "Channel name or id to promote this installer to")
 	cmd.Flags().BoolVar(&r.args.createInstallerPromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 	cmd.Flags().BoolVar(&r.args.createInstallerAutoDefaults, "auto", false, "generate default values for use in CI")
@@ -30,7 +32,6 @@ func (r *runners) InitInstallerCreate(parent *cobra.Command) {
 }
 
 func (r *runners) setKOTSDefaultInstallerParams() error {
-
 	if r.args.createInstallerYamlFile == "" {
 		r.args.createInstallerYamlFile = "./kurl-installer.yaml"
 	}
@@ -90,16 +91,21 @@ Prepared to create release with defaults:
 
 	if r.args.createInstallerYaml == "" &&
 		r.args.createInstallerYamlFile == "" {
-		return errors.New("one of --yaml, --yaml-file is required")
+		return errors.New("one of --yaml or --yaml-file is required")
+	}
+
+	if r.args.createInstallerYaml != "" && r.args.createInstallerYamlFile != "" {
+		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if (strings.HasSuffix(r.args.createInstallerYaml, ".yaml") || strings.HasSuffix(r.args.createInstallerYaml, ".yml")) &&
+		len(strings.Split(r.args.createInstallerYaml, " ")) == 1 {
+		return errors.New("use the --yaml-file flag when passing a yaml filename")
 	}
 
 	// can't ensure a channel if you didn't pass one
 	if r.args.createInstallerPromoteEnsureChannel && r.args.createInstallerPromote == "" {
 		return errors.New("cannot use the flag --ensure-channel without also using --promote <channel> ")
-	}
-
-	if r.args.createInstallerYaml != "" && r.args.createInstallerYamlFile != "" {
-		return errors.New("only one of --yaml or --yaml-file may be specified")
 	}
 
 	if r.args.createInstallerYaml == "-" {

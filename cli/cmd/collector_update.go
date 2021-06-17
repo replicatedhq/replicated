@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -17,26 +18,30 @@ func (r *runners) InitCollectorUpdate(parent *cobra.Command) {
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.updateCollectorYaml, "yaml", "", "The new YAML config for this collector. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
-	cmd.Flags().StringVar(&r.args.updateCollectorYamlFile, "yaml-file", "", "The file name with YAML config for this collector.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.updateCollectorYaml, "yaml", "", "The new YAML config for this collector. Use '-' to read from stdin. Cannot be used with the --yaml-file` flag.")
+	cmd.Flags().StringVar(&r.args.updateCollectorYamlFile, "yaml-file", "", "The file name with YAML config for this collector. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.updateCollectorName, "name", "", "The name for this collector")
 
 	cmd.RunE = r.collectorUpdate
 }
 
 func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
-
 	if len(args) < 1 {
 		return errors.New("collector spec ID is required")
 	}
 	specID := args[0]
 
 	if r.args.updateCollectorName == "" && r.args.updateCollectorYaml == "" && r.args.updateCollectorYamlFile == "" {
-		return fmt.Errorf("name or yaml is required")
+		return errors.New("one of --name, --yaml or --yaml-file is required")
 	}
 
 	if r.args.updateCollectorYaml != "" && r.args.updateCollectorYamlFile != "" {
-		return fmt.Errorf("only yaml or yaml-file has to be specified")
+		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if (strings.HasSuffix(r.args.updateCollectorYaml, ".yaml") || strings.HasSuffix(r.args.updateCollectorYaml, ".yml")) &&
+		len(strings.Split(r.args.updateCollectorYaml, " ")) == 1 {
+		return errors.New("use the --yaml-file flag when passing a yaml filename")
 	}
 
 	if r.args.updateCollectorYaml == "-" {
@@ -58,14 +63,14 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 	if r.args.updateCollectorYaml != "" {
 		_, err := r.api.UpdateCollector(r.appID, specID, r.args.updateCollectorYaml)
 		if err != nil {
-			return fmt.Errorf("Failure setting updates for collector: %w", err)
+			return errors.Wrap(err, "failure setting updates for collector")
 		}
 	}
 
 	if r.args.updateCollectorName != "" {
 		_, err := r.api.UpdateCollectorName(r.appID, specID, r.args.updateCollectorName)
 		if err != nil {
-			return fmt.Errorf("Failure setting new yaml config for collector: %w", err)
+			return errors.Wrap(err, "failure setting new yaml config for collector")
 		}
 	}
 
