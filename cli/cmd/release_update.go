@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -18,20 +19,25 @@ func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
 
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.updateReleaseYaml, "yaml", "", "The new YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
-	cmd.Flags().StringVar(&r.args.updateReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
-	cmd.Flags().StringVar(&r.args.updateReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.updateReleaseYaml, "yaml", "", "The new YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
+	cmd.Flags().StringVar(&r.args.updateReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release. Cannot be used with the --yaml flag.")
+	cmd.Flags().StringVar(&r.args.updateReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 
 	cmd.RunE = r.releaseUpdate
 }
 
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	if r.args.updateReleaseYaml == "" && r.args.updateReleaseYamlFile == "" && r.args.updateReleaseYamlDir == "" {
-		return fmt.Errorf("yaml is required")
+		return errors.New("one of --yaml or --yaml-file is required")
 	}
 
 	if r.args.updateReleaseYaml != "" && r.args.updateReleaseYamlFile != "" {
-		return fmt.Errorf("only yaml or yaml-file has to be specified")
+		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if (strings.HasSuffix(r.args.updateReleaseYaml, ".yaml") || strings.HasSuffix(r.args.updateReleaseYaml, ".yml")) &&
+		len(strings.Split(r.args.updateReleaseYaml, " ")) == 1 {
+		return errors.New("use the --yaml-file flag when passing a yaml filename")
 	}
 
 	if r.args.updateReleaseYaml == "-" {
@@ -55,7 +61,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("invalid release sequence: %s", args[0])
+		return errors.Errorf("invalid release sequence: %s", args[0])
 	}
 
 	if r.args.updateReleaseYamlDir != "" {
@@ -65,7 +71,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		}
 	}
 	if err := r.api.UpdateRelease(r.appID, r.appType, seq, r.args.updateReleaseYaml); err != nil {
-		return fmt.Errorf("Failure setting new yaml config for release: %w", err)
+		return errors.Wrap(err, "failure setting new yaml config for release")
 	}
 
 	// ignore the error since operation was successful

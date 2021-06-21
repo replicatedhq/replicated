@@ -86,4 +86,24 @@ var _ = Describe("release update", func() {
 			assert.True(t, r.Scan())
 		})
 	})
+
+	Context("error case using --yaml flag with yaml filename", func() {
+		It("should return an error telling user to use --yaml-file flag", func() {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+
+			sequence := strconv.Itoa(int(release.Sequence))
+
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml", "installer.yaml", "--app", app.Slug})
+
+			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			assert.NotNil(t, err)
+
+			assert.Empty(t, stderr.String(), "Expected no stderr output")
+			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+
+			assert.Contains(t, stdout.String(), `use the --yaml-file flag when passing a yaml filename`)
+		})
+	})
 })

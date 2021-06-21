@@ -41,9 +41,9 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin.  Cannot be used with the `yaml-file` flag.")
-	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release.  Cannot be used with the `yaml` flag.")
-	cmd.Flags().StringVar(&r.args.createReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
+	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release. Cannot be used with the --yaml flag.")
+	cmd.Flags().StringVar(&r.args.createReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
@@ -102,7 +102,6 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 }
 
 func (r *runners) setKOTSDefaultReleaseParams() error {
-
 	if r.args.createReleaseYamlDir == "" {
 		r.args.createReleaseYamlDir = "./manifests"
 	}
@@ -152,12 +151,11 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	r.args.createReleasePromoteEnsureChannel = true
 	r.args.createReleaseLint = true
-	
+
 	return nil
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-
 	log := print.NewLogger(r.w)
 
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
@@ -286,11 +284,16 @@ Prepared to create release with defaults:
 
 func (r *runners) validateReleaseCreateParams() error {
 	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
-		return errors.New("one of --yaml, --yaml-file must be provided")
+		return errors.New("one of --yaml or --yaml-file must be provided")
 	}
 
 	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
 		return errors.New("only one of --yaml or --yaml-file may be specified")
+	}
+
+	if (strings.HasSuffix(r.args.createReleaseYaml, ".yaml") || strings.HasSuffix(r.args.createReleaseYaml, ".yml")) &&
+		len(strings.Split(r.args.createReleaseYaml, " ")) == 1 {
+		return errors.New("use the --yaml-file flag when passing a yaml filename")
 	}
 
 	if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
@@ -323,7 +326,6 @@ func (r *runners) validateReleaseCreateParams() error {
 }
 
 func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbsent bool) (string, error) {
-
 	description := "" // todo: do we want a flag for the desired channel description
 
 	channel, err := r.api.GetOrCreateChannelByName(
@@ -384,7 +386,6 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSing
 }
 
 func readYAMLDir(yamlDir string) (string, error) {
-
 	var allKotsReleaseSpecs []kotsSingleSpec
 	err := filepath.Walk(yamlDir, func(path string, info os.FileInfo, err error) error {
 		spec, err := encodeKotsFile(yamlDir, path, info, err)
@@ -408,7 +409,6 @@ func readYAMLDir(yamlDir string) (string, error) {
 }
 
 func promptForConfirm() (string, error) {
-
 	prompt := promptui.Prompt{
 		Label:     "Create with these properties? (default Yes) [Y/n]",
 		Templates: templates,
