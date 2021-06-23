@@ -276,7 +276,7 @@ Prepared to create release with defaults:
 		log.FinishSpinner()
 
 		// ignore error since operation was successful
-		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d\n", promoteChanID, release.Sequence)
+		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d\n", r.args.createReleasePromote, release.Sequence)
 	}
 
 	return nil
