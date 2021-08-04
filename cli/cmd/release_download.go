@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
@@ -68,12 +67,19 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		path := filepath.Join(r.args.releaseDownloadDest, releaseYaml.Path)
 		log.ChildActionWithoutSpinner(releaseYaml.Path)
 
-		content := []byte(releaseYaml.Content)
-		if isTarGz(path) {
+		var content []byte
+
+		ext := filepath.Ext(releaseYaml.Path)
+		switch ext {
+		case ".tgz", ".gz":
 			decoded, err := base64.StdEncoding.DecodeString(releaseYaml.Content)
 			if err == nil {
 				content = decoded
+			} else {
+				content = []byte(releaseYaml.Content)
 			}
+		default:
+			content = []byte(releaseYaml.Content)
 		}
 
 		err := ioutil.WriteFile(path, content, 0644)
@@ -84,8 +90,4 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 
 	return nil
 
-}
-
-func isTarGz(path string) bool {
-	return strings.HasSuffix(path, ".tgz") || strings.HasSuffix(path, ".tar.gz")
 }
