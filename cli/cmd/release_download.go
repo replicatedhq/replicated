@@ -1,15 +1,17 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/spf13/cobra"
 )
 
 func (r *runners) InitReleaseDownload(parent *cobra.Command) {
@@ -64,7 +66,23 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	for _, releaseYaml := range releaseYamls {
 		path := filepath.Join(r.args.releaseDownloadDest, releaseYaml.Path)
 		log.ChildActionWithoutSpinner(releaseYaml.Path)
-		err := ioutil.WriteFile(path, []byte(releaseYaml.Content), 0644)
+
+		var content []byte
+
+		ext := filepath.Ext(releaseYaml.Path)
+		switch ext {
+		case ".tgz", ".gz":
+			decoded, err := base64.StdEncoding.DecodeString(releaseYaml.Content)
+			if err == nil {
+				content = decoded
+			} else {
+				content = []byte(releaseYaml.Content)
+			}
+		default:
+			content = []byte(releaseYaml.Content)
+		}
+
+		err := ioutil.WriteFile(path, content, 0644)
 		if err != nil {
 			return errors.Wrapf(err, "write file %q", path)
 		}
