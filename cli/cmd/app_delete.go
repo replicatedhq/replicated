@@ -56,7 +56,7 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 	}
 
 	log.ActionWithSpinner("Deleting App")
-	err = r.kotsAPI.DeleteKOTSApp(app.ID)
+	err = r.api.KotsHTTPClient.DeleteKOTSApp(app.ID)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "delete app")

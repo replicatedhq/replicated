@@ -1,9 +1,9 @@
 package kotsclient
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -25,23 +25,11 @@ func (c *VendorV3Client) CreateKOTSApp(name string) (*types.KotsAppWithChannels,
 	return app.App, nil
 }
 
-const deleteAppMutation = `
-mutation deleteKotsApplication($appId: ID!, $password: String) {
-  deleteKotsApplication(appId: $appId, password: $password)
-}
-`
+func (c *VendorV3Client) DeleteKOTSApp(id string) error {
+	url := fmt.Sprintf("/v3/app/%s", id)
 
-func (c *GraphQLClient) DeleteKOTSApp(id string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: deleteAppMutation,
-		Variables: map[string]interface{}{
-			"appId": id,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	err := c.DoJSON("DELETE", url, http.StatusOK, nil, nil)
+	if err != nil {
 		return err
 	}
 
