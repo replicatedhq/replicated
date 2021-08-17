@@ -1,8 +1,10 @@
 package kotsclient
 
 import (
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"net/http"
+
+	"github.com/replicatedhq/replicated/pkg/graphql"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type CreateKOTSAppRequest struct {
@@ -10,10 +12,10 @@ type CreateKOTSAppRequest struct {
 }
 
 type CreateKOTSAppResponse struct {
-	App *KotsApp `json:"app"`
+	App *types.KotsAppWithChannels `json:"app"`
 }
 
-func (c *VendorV3Client) CreateKOTSApp(name string) (*KotsApp, error) {
+func (c *VendorV3Client) CreateKOTSApp(name string) (*types.KotsAppWithChannels, error) {
 	reqBody := &CreateKOTSAppRequest{Name: name}
 	app := CreateKOTSAppResponse{}
 	err := c.DoJSON("POST", "/v3/app", http.StatusCreated, reqBody, &app)

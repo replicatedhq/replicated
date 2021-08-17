@@ -30,14 +30,14 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 	appName := args[0]
 
 	log.ActionWithSpinner("Fetching App")
-	app, err := r.kotsAPI.GetApp(appName)
+	app, err := r.api.KotsHTTPClient.GetApp(appName)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "list apps")
 	}
 	log.FinishSpinner()
 
-	apps := []types.AppAndChannels{{ App: app}}
+	apps := []types.AppAndChannels{{App: app}}
 
 	err = print.Apps(r.w, apps)
 	if err != nil {
@@ -54,7 +54,6 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 			return errors.New("prompt declined")
 		}
 	}
-
 
 	log.ActionWithSpinner("Deleting App")
 	err = r.kotsAPI.DeleteKOTSApp(app.ID)

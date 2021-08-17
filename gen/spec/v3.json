@@ -1,0 +1,2477 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "schemes": [
+    "https"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "List, create, update, archive customers and fetch customer licenses",
+    "title": "Vendor API V3",
+    "contact": {
+      "name": "Replicated, Inc.",
+      "url": "http://www.replicated.com/",
+      "email": "info@replicated.com"
+    },
+    "version": "3.0.0"
+  },
+  "host": "api.replicated.com",
+  "basePath": "/vendor/v3",
+  "paths": {
+    "/app": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps"
+        ],
+        "summary": "Create a KOTS app.",
+        "operationId": "createApp",
+        "parameters": [
+          {
+            "description": "App create parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "description": "Name of the app that is to be created.",
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/getAppResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/app/customer/{customer_id}/licenses-download": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/yaml",
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license",
+          "customers"
+        ],
+        "summary": "Download a customer license file as YAML.",
+        "operationId": "downloadLicenses",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/downloadLicensesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps"
+        ],
+        "summary": "Get a KOTS app.",
+        "operationId": "getAppProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getAppResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channels"
+        ],
+        "summary": "Creates a channel in the KOTS application.",
+        "operationId": "createChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "JSON input",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "description": {
+                  "description": "Description of the channel that is to be created.",
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "enterprisePartnerChannelID": {
+                  "description": "Enterprise Partner Channel Id to be added to channel.",
+                  "type": "string",
+                  "x-go-name": "EnterprisePartnerChannelID"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/getChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channels"
+        ],
+        "summary": "Get a channel.",
+        "operationId": "getChannelProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channels"
+        ],
+        "summary": "Updates a KOTS channel.",
+        "operationId": "updateChannel",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Channel update parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "autoAirgapBuildsValue": {
+                  "description": "AutoAirgapBuildsValue of the channel that is to be updated.",
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "AutoAirgapBuildsValue"
+                },
+                "channelIcon": {
+                  "description": "Icon of the channel that is to be updated.",
+                  "type": "string",
+                  "x-go-name": "ChannelIcon"
+                },
+                "description": {
+                  "description": "Description of the channel that is to be updated.",
+                  "type": "string",
+                  "x-go-name": "Description"
+                },
+                "name": {
+                  "description": "Name of the channel that is to be updated.",
+                  "type": "string",
+                  "x-go-name": "Name"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getChannelResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channel/{channel_id}/release/{sequence}/airgap/build": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channelReleases"
+        ],
+        "summary": "Trigger airgap build for a channel release.",
+        "operationId": "channelReleaseAirgapBuildParameters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelID",
+            "description": "Channel identifier",
+            "name": "channel_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "Sequence",
+            "description": "Release identifier",
+            "name": "sequence",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/channelReleaseAirgapBuildResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/channels": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "channels"
+        ],
+        "summary": "List channels for an app.",
+        "operationId": "listChannels",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ChannelName",
+            "description": "filter by customer name",
+            "name": "channelName",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "ExcludeDetail",
+            "description": "Exclude detail",
+            "name": "excludeDetail",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listChannelsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/customer/{customer_id}": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "Get customer.",
+        "operationId": "getCustomerProperties",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getCustomerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/customer/{customer_id}/instances": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "instances"
+        ],
+        "summary": "List customer instances.",
+        "operationId": "listCustomerInstances",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listCustomerInstancesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/customer/{customer_id}/license-download": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "text/yaml",
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license",
+          "customers"
+        ],
+        "summary": "Download a customer license file as YAML.",
+        "operationId": "downloadLicense",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/downloadLicenseResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/customers": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "List customers for an app.",
+        "operationId": "listAppCustomers",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "PageSize",
+            "description": "Page size",
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "CurrentPage",
+            "description": "Current page",
+            "name": "currentPage",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "SortColumn",
+            "description": "Sort column",
+            "name": "sortColumn",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "SortDesc",
+            "description": "Sort descending",
+            "name": "sortDesc",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "CustomerName",
+            "description": "filter by customer name",
+            "name": "customerName",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listCustomersResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/app/{app_id}/customers_csv": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "file"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "app",
+          "customers"
+        ],
+        "summary": "List all customers for a given appId.",
+        "operationId": "listAppCustomersCsv",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AppID",
+            "description": "App identifier",
+            "name": "app_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "PageSize",
+            "description": "Page size",
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "CurrentPage",
+            "description": "Current page",
+            "name": "currentPage",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "SortColumn",
+            "description": "Sort column",
+            "name": "sortColumn",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "SortDesc",
+            "description": "Sort descending",
+            "name": "sortDesc",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "CustomerName",
+            "description": "filter by customer name",
+            "name": "customerName",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppCustomersCsvResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          }
+        }
+      }
+    },
+    "/apps": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apps"
+        ],
+        "summary": "List apps for a team.",
+        "operationId": "apps",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listAppsResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customer": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "Create a KOTS customer.",
+        "operationId": "createCustomer",
+        "parameters": [
+          {
+            "description": "Customer create parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "app_id",
+                "channel_id"
+              ],
+              "properties": {
+                "app_id": {
+                  "description": "App to which the channel is associated.",
+                  "type": "string",
+                  "x-go-name": "AppID"
+                },
+                "avatar": {
+                  "type": "string",
+                  "x-go-name": "Avatar"
+                },
+                "channel_id": {
+                  "description": "Channel to which the customer license is associated.",
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                },
+                "domain": {
+                  "type": "string",
+                  "x-go-name": "Domain"
+                },
+                "entitlementValues": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/EntitlementValue"
+                  },
+                  "x-go-name": "EntitlementValues"
+                },
+                "expires_at": {
+                  "type": "string",
+                  "x-go-name": "ExpiresAtStr"
+                },
+                "is_airgap_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "IsAirgapEnabled"
+                },
+                "is_geoaxis_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsGeoaxisSupported"
+                },
+                "is_gitops_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsGitopsSupported"
+                },
+                "is_identity_service_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsIdentityServiceSupported"
+                },
+                "is_snapshot_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsSnapshotSupported"
+                },
+                "name": {
+                  "description": "Name of the customer that is to be created.",
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "type": {
+                  "$ref": "#/definitions/CustomerType"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/getCustomerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/customer/{customer_id}": {
+      "put": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "Update a customer.",
+        "operationId": "updateCustomer",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "description": "Update customer parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "app_id": {
+                  "description": "App to which the channel is associated.",
+                  "type": "string",
+                  "x-go-name": "AppID"
+                },
+                "avatar": {
+                  "type": "string",
+                  "x-go-name": "Avatar"
+                },
+                "channel_id": {
+                  "description": "Legacy single-app update",
+                  "type": "string",
+                  "x-go-name": "ChannelID"
+                },
+                "channel_ids": {
+                  "description": "Channels to which the customer licenses are associated.\nOne license is created per app.",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "ChannelIDs"
+                },
+                "domain": {
+                  "type": "string",
+                  "x-go-name": "Domain"
+                },
+                "entitlementValues": {
+                  "description": "Applies ony to the currently selected app",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/EntitlementValue"
+                  },
+                  "x-go-name": "EntitlementValues"
+                },
+                "expires_at": {
+                  "type": "string",
+                  "x-go-name": "ExpiresAtStr"
+                },
+                "is_airgap_enabled": {
+                  "type": "boolean",
+                  "x-go-name": "IsAirgapEnabled"
+                },
+                "is_geoaxis_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsGeoaxisSupported"
+                },
+                "is_gitops_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsGitopsSupported"
+                },
+                "is_identity_service_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsIdentityServiceSupported"
+                },
+                "is_snapshot_supported": {
+                  "type": "boolean",
+                  "x-go-name": "IsSnapshotSupported"
+                },
+                "name": {
+                  "description": "Name of the customer that is to be updated.",
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "type": {
+                  "$ref": "#/definitions/CustomerType"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/getCustomerResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customer/{customer_id}/airgap/password": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "license",
+          "airgap"
+        ],
+        "summary": "Update an airgap passsword.",
+        "operationId": "postAirgapPassword",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/postAirgapPasswordResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customer/{customer_id}/archive": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "Archive a customer.",
+        "operationId": "archiveCustomerParameters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customer/{customer_id}/unarchive": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "Unarchive a customer.",
+        "operationId": "unarchiveCustomerParameters",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "CustomerID",
+            "description": "Customer identifier",
+            "name": "customer_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customers": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "List all customers.",
+        "operationId": "listCustomers",
+        "parameters": [
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "PageSize",
+            "description": "Page size",
+            "name": "pageSize",
+            "in": "query"
+          },
+          {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "CurrentPage",
+            "description": "Current page",
+            "name": "currentPage",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "SortColumn",
+            "description": "Sort column",
+            "name": "sortColumn",
+            "in": "query"
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "SortDesc",
+            "description": "Sort descending",
+            "name": "sortDesc",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listCustomersResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/customers/search": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "customers"
+        ],
+        "summary": "Search all customers for a given team context.",
+        "operationId": "searchTeamCustomers",
+        "parameters": [
+          {
+            "description": "Search licenses parameters.",
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "query"
+              ],
+              "properties": {
+                "app_id": {
+                  "type": "string",
+                  "x-go-name": "AppID"
+                },
+                "channel_names": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "ChannelNames"
+                },
+                "include_active": {
+                  "type": "boolean",
+                  "x-go-name": "IncludeActive"
+                },
+                "include_archived": {
+                  "type": "boolean",
+                  "x-go-name": "IncludeArchived"
+                },
+                "include_dev": {
+                  "type": "boolean",
+                  "x-go-name": "IncludeDev"
+                },
+                "include_inactive": {
+                  "type": "boolean",
+                  "x-go-name": "IncludeInactive"
+                },
+                "include_paid": {
+                  "type": "boolean",
+                  "x-go-name": "IncludePaid"
+                },
+                "include_trial": {
+                  "type": "boolean",
+                  "x-go-name": "IncludeTrial"
+                },
+                "offset": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Offset"
+                },
+                "page_size": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "PageSize"
+                },
+                "query": {
+                  "type": "string",
+                  "x-go-name": "Query"
+                },
+                "sort_direction": {
+                  "type": "string",
+                  "x-go-name": "SortDirection"
+                },
+                "sort_field": {
+                  "type": "string",
+                  "x-go-name": "SortField"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/searchTeamCustomersResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          }
+        }
+      }
+    },
+    "/external_registries": {
+      "get": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "List external registries for a team.",
+        "operationId": "externalRegistries",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/listExternalRegistriesResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          },
+          "404": {
+            "$ref": "#/responses/responseErrNotFound"
+          }
+        }
+      }
+    },
+    "/external_registry": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "team"
+        ],
+        "summary": "Creates an external registry with the specified parameters.",
+        "operationId": "createExternalRegistry",
+        "parameters": [
+          {
+            "description": "ExternalRegistry create parameters.",
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "required": [
+                "endpoint",
+                "username",
+                "password"
+              ],
+              "properties": {
+                "endpoint": {
+                  "description": "Endpoint of the upstream registry.",
+                  "type": "string",
+                  "x-go-name": "Endpoint"
+                },
+                "password": {
+                  "description": "Password for authentication with the upstream registry.",
+                  "type": "string",
+                  "x-go-name": "Password"
+                },
+                "username": {
+                  "description": "Username for authentication with the upstream registry.",
+                  "type": "string",
+                  "x-go-name": "Username"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/responses/createExternalRegistryResponse"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    },
+    "/external_registry/{endpoint}": {
+      "post": {
+        "security": [
+          {
+            "api_key": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "team"
+        ],
+        "summary": "Deletes an external registry by endpoint.",
+        "operationId": "deleteExternalRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Endpoint",
+            "description": "Endpoint identifier",
+            "name": "endpoint",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "204": {
+            "$ref": "#/responses/responseNoContent"
+          },
+          "400": {
+            "$ref": "#/responses/responseErrBadRequest"
+          },
+          "401": {
+            "$ref": "#/responses/responseErrUnauthorized"
+          },
+          "403": {
+            "$ref": "#/responses/responseErrForbidden"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "AppChannel": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "AppWithChannels": {
+      "type": "object",
+      "properties": {
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AppChannel"
+          },
+          "x-go-name": "Channels"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "isArchived": {
+          "type": "boolean",
+          "x-go-name": "IsArchived"
+        },
+        "isKotsApp": {
+          "type": "boolean",
+          "x-go-name": "IsKotsApp"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "renamedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "RenamedAt"
+        },
+        "slug": {
+          "type": "string",
+          "x-go-name": "Slug"
+        },
+        "teamId": {
+          "type": "string",
+          "x-go-name": "TeamID"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/handlers/replv3/apps"
+    },
+    "Channel": {
+      "type": "object",
+      "properties": {
+        "adoptionRate": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerAdoption"
+          },
+          "x-go-name": "AdoptionRate"
+        },
+        "appId": {
+          "type": "string",
+          "x-go-name": "AppID"
+        },
+        "buildAirgapAutomatically": {
+          "type": "boolean",
+          "x-go-name": "BuildAirgapAutomatically"
+        },
+        "channelIcon": {
+          "type": "string",
+          "x-go-name": "ChannelIcon"
+        },
+        "channelSequence": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ChannelSequence"
+        },
+        "channelSlug": {
+          "type": "string",
+          "x-go-name": "ChannelSlug"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Created"
+        },
+        "currentVersion": {
+          "type": "string",
+          "x-go-name": "CurrentVersion"
+        },
+        "customers": {
+          "$ref": "#/definitions/TotalActiveInactiveCustomers"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "enterprisePartnerChannelID": {
+          "type": "string",
+          "x-go-name": "EnterprisePartnerChannelID"
+        },
+        "extraLintRules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ExtraLintRules"
+          },
+          "x-go-name": "ExtraLintRules"
+        },
+        "gitHubRef": {
+          "$ref": "#/definitions/GitHubRef"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "isArchived": {
+          "type": "boolean",
+          "x-go-name": "IsArchived"
+        },
+        "isDefault": {
+          "type": "boolean",
+          "x-go-name": "IsDefault"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "numReleases": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumReleases"
+        },
+        "releaseNotes": {
+          "type": "string",
+          "x-go-name": "ReleaseNotes"
+        },
+        "releaseSequence": {
+          "description": "TODO: set these (see kotsChannelToSchema function)",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ReleaseSequence"
+        },
+        "releases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ChannelRelease"
+          },
+          "x-go-name": "Releases"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Updated"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "ChannelRelease": {
+      "type": "object",
+      "properties": {
+        "airgapBuildError": {
+          "type": "string",
+          "x-go-name": "AirgapBuildError"
+        },
+        "airgapBuildStatus": {
+          "type": "string",
+          "x-go-name": "AirgapBuildStatus"
+        },
+        "channelIcon": {
+          "type": "string",
+          "x-go-name": "ChannelIcon"
+        },
+        "channelId": {
+          "type": "string",
+          "x-go-name": "ChannelID"
+        },
+        "channelName": {
+          "type": "string",
+          "x-go-name": "ChannelName"
+        },
+        "channelSequence": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ChannelSequence"
+        },
+        "created": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Created"
+        },
+        "registrySecret": {
+          "type": "string",
+          "x-go-name": "RegistrySecret"
+        },
+        "releaseNotes": {
+          "type": "string",
+          "x-go-name": "ReleaseNotes"
+        },
+        "releasedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ReleasedAt"
+        },
+        "semver": {
+          "type": "string",
+          "x-go-name": "Semver"
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Sequence"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "Updated"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "Customer": {
+      "type": "object",
+      "properties": {
+        "actions": {
+          "$ref": "#/definitions/CustomerActions"
+        },
+        "airgap": {
+          "type": "boolean",
+          "x-go-name": "IsAirgapEnabled"
+        },
+        "appType": {
+          "type": "string",
+          "x-go-name": "AppType"
+        },
+        "avatar": {
+          "type": "string",
+          "x-go-name": "Avatar"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Channel"
+          },
+          "x-go-name": "Channels"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "expiresAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "ExpiresAt"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "installationId": {
+          "type": "string",
+          "x-go-name": "InstallationID"
+        },
+        "installationVersion": {
+          "type": "string",
+          "x-go-name": "InstallationVersion"
+        },
+        "instances": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerInstance"
+          },
+          "x-go-name": "Instances"
+        },
+        "isArchived": {
+          "type": "boolean",
+          "x-go-name": "IsArchived"
+        },
+        "isGeoaxisSupported": {
+          "type": "boolean",
+          "x-go-name": "IsGeoaxisSupported"
+        },
+        "isGitopsSupported": {
+          "type": "boolean",
+          "x-go-name": "IsGitopsSupported"
+        },
+        "isIdentityServiceSupported": {
+          "type": "boolean",
+          "x-go-name": "IsIdentityServiceSupported"
+        },
+        "isSnapshotSupported": {
+          "type": "boolean",
+          "x-go-name": "IsSnapshotSupported"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "shipInstallStatus": {
+          "$ref": "#/definitions/ShipInstallStatus"
+        },
+        "teamId": {
+          "type": "string",
+          "x-go-name": "TeamID"
+        },
+        "type": {
+          "$ref": "#/definitions/CustomerType"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "CustomerActions": {
+      "type": "object",
+      "properties": {
+        "shipApply": {
+          "type": "string",
+          "x-go-name": "ShipApply"
+        },
+        "shipApplyDocker": {
+          "type": "string",
+          "x-go-name": "ShipApplyDocker"
+        },
+        "shipInitCloud": {
+          "type": "string",
+          "x-go-name": "ShipInitCloud"
+        },
+        "shipInitHomebrew": {
+          "type": "string",
+          "x-go-name": "ShipInitHomebrew"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "CustomerAdoption": {
+      "description": "TODO: move this an implement",
+      "type": "object",
+      "properties": {
+        "channelId": {
+          "type": "string",
+          "x-go-name": "ChannelID"
+        },
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "Count"
+        },
+        "percent": {
+          "type": "number",
+          "format": "float",
+          "x-go-name": "Percent"
+        },
+        "releaseSequence": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "ReleaseSequence"
+        },
+        "semver": {
+          "type": "string",
+          "x-go-name": "Semver"
+        },
+        "totalOnChannel": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalOnChannel"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "CustomerInstance": {
+      "type": "object",
+      "properties": {
+        "active": {
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
+        "appStatus": {
+          "type": "string",
+          "x-go-name": "AppStatus"
+        },
+        "cloud": {
+          "type": "string",
+          "x-go-name": "Cloud"
+        },
+        "clusterId": {
+          "type": "string",
+          "x-go-name": "ClusterID"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "instanceId": {
+          "type": "string",
+          "x-go-name": "InstanceID"
+        },
+        "isDummyInstance": {
+          "type": "boolean",
+          "x-go-name": "IsDummyInstance"
+        },
+        "isKurl": {
+          "type": "boolean",
+          "x-go-name": "IsKurl"
+        },
+        "k8sVersion": {
+          "type": "string",
+          "x-go-name": "K8sVersion"
+        },
+        "kotsVersion": {
+          "type": "string",
+          "x-go-name": "KotsVersion"
+        },
+        "lastActive": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "LastActive"
+        },
+        "licenseId": {
+          "type": "string",
+          "x-go-name": "LicenseID"
+        },
+        "versionHistory": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomerInstanceVersionHistory"
+          },
+          "x-go-name": "VersionHistory"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "CustomerInstanceVersionHistory": {
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "type": "string",
+          "x-go-name": "ClusterID"
+        },
+        "downstreamChannelId": {
+          "type": "string",
+          "x-go-name": "DownstreamChannelID"
+        },
+        "downstreamReleaseSequence": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DownstreamReleaseSequence"
+        },
+        "instanceId": {
+          "type": "string",
+          "x-go-name": "InstanceID"
+        },
+        "intervalLast": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "IntervalLast"
+        },
+        "intervalStart": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "IntervalStart"
+        },
+        "versionLabel": {
+          "type": "string",
+          "x-go-name": "VersionLabel"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "CustomerType": {
+      "type": "string",
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "EnterpriseChannel": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "enterprise_name": {
+          "type": "string",
+          "x-go-name": "EnterpriseName"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "installer": {
+          "$ref": "#/definitions/EnterpriseInstaller"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EnterprisePolicy"
+          },
+          "x-go-name": "Policies"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/enterprise"
+    },
+    "EnterpriseInstaller": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "partner_id": {
+          "type": "string",
+          "x-go-name": "PartnerID"
+        },
+        "yaml": {
+          "type": "string",
+          "x-go-name": "Yaml"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/enterprise"
+    },
+    "EnterprisePolicy": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "partner_id": {
+          "type": "string",
+          "x-go-name": "PartnerID"
+        },
+        "policy": {
+          "type": "string",
+          "x-go-name": "Policy"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/enterprise"
+    },
+    "EntitlementValue": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "value": {
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "ExternalRegistry": {
+      "type": "object",
+      "properties": {
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "CreatedAt"
+        },
+        "endpoint": {
+          "type": "string",
+          "x-go-name": "Endpoint"
+        },
+        "teamId": {
+          "type": "string",
+          "x-go-name": "TeamID"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "ExtraLintRules": {
+      "type": "object",
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "GitHubRef": {
+      "type": "object",
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "ShipInstallStatus": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "x-go-name": "Status"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "x-go-name": "UpdatedAt"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    },
+    "TotalActiveInactiveCustomers": {
+      "type": "object",
+      "properties": {
+        "activeCustomers": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ActiveCustomers"
+        },
+        "inactiveCustomers": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "InactiveCustomers"
+        },
+        "totalCustomers": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "TotalCustomers"
+        }
+      },
+      "x-go-package": "github.com/replicatedhq/vandoor/vendor-api/kots"
+    }
+  },
+  "responses": {
+    "channelReleaseAirgapBuildResponse": {
+      "description": "ChannelReleaseAirgapBuildResponse contains empty JSON object",
+      "schema": {
+        "type": "object"
+      }
+    },
+    "createExternalRegistryResponse": {
+      "description": "CreateExternalRegistryResponse represents an external registry.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "external_registry": {
+            "$ref": "#/definitions/ExternalRegistry"
+          }
+        }
+      }
+    },
+    "downloadLicenseResponse": {
+      "description": "DownloadLicenseResponse contains the license yaml",
+      "schema": {
+        "type": "string"
+      }
+    },
+    "downloadLicensesResponse": {
+      "description": "DownloadLicenseResponse contains the license yaml",
+      "schema": {
+        "type": "string"
+      }
+    },
+    "getAppResponse": {
+      "description": "GetAppResponse represents an app.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "$ref": "#/definitions/AppWithChannels"
+          }
+        }
+      }
+    },
+    "getChannelResponse": {
+      "description": "GetChannelResponse represents a channel.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "channel": {
+            "$ref": "#/definitions/Channel"
+          }
+        }
+      }
+    },
+    "getCustomerResponse": {
+      "description": "GetCustomerResponse represents a customer.",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customer": {
+            "$ref": "#/definitions/Customer"
+          }
+        }
+      }
+    },
+    "listAppCustomersCsvResponse": {
+      "description": "ListAppCustomersCsvResponse contains the list of customers",
+      "headers": {
+        "ContentDisposition": {
+          "type": "string",
+          "description": "Required: true\nIn: header"
+        }
+      }
+    },
+    "listAppsResponse": {
+      "description": "ListAppsResponse contains the JSON apps list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "apps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AppWithChannels"
+            },
+            "x-go-name": "Apps"
+          }
+        }
+      }
+    },
+    "listChannelsResponse": {
+      "description": "ListChannelsResponse contains the JSON channels list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Channel"
+            },
+            "x-go-name": "Channels"
+          },
+          "enterprise_channels": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/EnterpriseChannel"
+            },
+            "x-go-name": "EnterpriseChannels"
+          }
+        }
+      }
+    },
+    "listCustomerInstancesResponse": {
+      "description": "ListCustomerInstancesResponse contains the JSON instances list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "instances": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/CustomerInstance"
+            },
+            "x-go-name": "Instances"
+          }
+        }
+      }
+    },
+    "listCustomersResponse": {
+      "description": "ListCustomersResponse contains the JSON customers list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Customer"
+            },
+            "x-go-name": "Customers"
+          },
+          "totalCustomers": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "TotalCustomers"
+          }
+        }
+      }
+    },
+    "listExternalRegistriesResponse": {
+      "description": "ListExternalRegistriesResponse contains the JSON external registries list",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "external_registries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/ExternalRegistry"
+            },
+            "x-go-name": "ExternalRegistries"
+          }
+        }
+      }
+    },
+    "postAirgapPasswordResponse": {
+      "description": "PostAirgapPasswordResponse contains the returned password",
+      "schema": {
+        "type": "object",
+        "required": [
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string",
+            "x-go-name": "Password"
+          }
+        }
+      }
+    },
+    "responseErrBadRequest": {
+      "description": "Returned on bad input"
+    },
+    "responseErrConflict": {
+      "description": "Returned on a conflict"
+    },
+    "responseErrForbidden": {
+      "description": "Returned if the caller does not have the needed permission"
+    },
+    "responseErrNotFound": {
+      "description": "Returned on resource not found"
+    },
+    "responseErrUnauthorized": {
+      "description": "Return if the caller is not authorized"
+    },
+    "responseNoContent": {
+      "description": "On success, no payload returned"
+    },
+    "responseOk": {
+      "description": "On success"
+    },
+    "searchTeamCustomersResponse": {
+      "description": "SearchTeamCustomersResponse contains the list of licenses",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "customers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/Customer"
+            },
+            "x-go-name": "Customers"
+          },
+          "query": {
+            "type": "string",
+            "x-go-name": "Query"
+          },
+          "total_hits": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-name": "TotalHits"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

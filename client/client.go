@@ -4,6 +4,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type Client struct {
@@ -25,21 +26,27 @@ func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kur
 	return client
 }
 
-func (c *Client) GetAppType(appID string) (string, error) {
-	platformApp, err := c.PlatformClient.GetApp(appID)
-	if err == nil && platformApp != nil {
-		return "platform", nil
+func (c *Client) GetAppType(appID string) (*types.App, string, error) {
+	platformSwaggerApp, err := c.PlatformClient.GetApp(appID)
+	if err == nil && platformSwaggerApp != nil {
+		platformApp := &types.App{
+			ID:        platformSwaggerApp.Id,
+			Name:      platformSwaggerApp.Name,
+			Slug:      platformSwaggerApp.Slug,
+			Scheduler: platformSwaggerApp.Scheduler,
+		}
+		return platformApp, "platform", nil
 	}
 
 	shipApp, err := c.ShipClient.GetApp(appID)
 	if err == nil && shipApp != nil {
-		return "ship", nil
+		return shipApp, "ship", nil
 	}
 
-	kotsApp, err := c.KotsClient.GetApp(appID)
+	kotsApp, err := c.KotsHTTPClient.GetApp(appID)
 	if err == nil && kotsApp != nil {
-		return "kots", nil
+		return kotsApp, "kots", nil
 	}
 
-	return "", err
+	return nil, "", err
 }

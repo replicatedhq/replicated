@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
@@ -23,7 +24,7 @@ func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
 
 func (r *runners) listApps(_ *cobra.Command, args []string) error {
 
-	kotsApps, err := r.kotsAPI.ListApps()
+	kotsApps, err := r.api.KotsHTTPClient.ListApps()
 	if err != nil {
 		return errors.Wrap(err, "list apps")
 	}
@@ -33,11 +34,11 @@ func (r *runners) listApps(_ *cobra.Command, args []string) error {
 	}
 
 	appSearch := args[0]
-	var apps []types.AppAndChannels
+	var resultApps []types.AppAndChannels
 	for _, app := range kotsApps {
 		if strings.Contains(app.App.ID, appSearch) || strings.Contains(app.App.Slug, appSearch) {
-			apps = append(apps, app)
+			resultApps = append(resultApps, app)
 		}
 	}
-	return print.Apps(r.w, apps)
+	return print.Apps(r.w, resultApps)
 }

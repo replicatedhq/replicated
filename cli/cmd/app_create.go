@@ -29,7 +29,6 @@ func (r *runners) createApp(_ *cobra.Command, args []string) error {
 
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-
 	app, err := kotsRestClient.CreateKOTSApp(appName)
 
 	if err != nil {
@@ -39,9 +38,9 @@ func (r *runners) createApp(_ *cobra.Command, args []string) error {
 	apps := []types.AppAndChannels{
 		{
 			App: &types.App{
-				ID: app.ID,
-				Name: app.Name,
-				Slug: app.Slug,
+				ID:        app.Id,
+				Name:      app.Name,
+				Slug:      app.Slug,
 				Scheduler: "kots",
 			},
 		},
