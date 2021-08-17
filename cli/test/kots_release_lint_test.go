@@ -23,7 +23,6 @@ var _ = Describe("kots release lint", func() {
 
 	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-	kotsGraphqlClient := kotsclient.NewGraphQLClient(params.GraphqlOrigin, params.APIToken, params.KurlOrigin)
 
 	var app *types.KotsAppWithChannels
 	var tmpdir string
@@ -38,7 +37,7 @@ var _ = Describe("kots release lint", func() {
 	})
 
 	AfterEach(func() {
-		err := kotsGraphqlClient.DeleteKOTSApp(app.Id)
+		err := kotsRestClient.DeleteKOTSApp(app.Id)
 		req.NoError(err)
 		err = os.RemoveAll(tmpdir)
 		req.NoError(err)
