@@ -16,6 +16,20 @@ type InstallerSpec struct {
 	Immutable       bool      `json:"isInstallerNotEditable"`
 }
 
+type InstallerSpecResponse struct {
+	Body InstallerSpec `json:"installer"`
+}
+
+type CreateInstallerRequest struct {
+	Yaml string `json:"yaml"`
+}
+
+type PromoteInstallerRequest struct {
+	Sequence     int64  `json:"sequence"`
+	VersionLabel string `json:"versionLabel"`
+	ChannelID    string `json:"channelId"`
+}
+
 type EnterpriseChannel struct {
 	Description    string               `json:"description,omitempty"`
 	EnterpriseName string               `json:"enterprise_name,omitempty"`

@@ -11,7 +11,7 @@ func (c *Client) CreateInstaller(appId string, appType string, yaml string) (*ty
 	} else if appType == "ship" {
 		return nil, errors.Errorf("Kubernetes Installers are not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsClient.CreateInstaller(appId, yaml)
+		return c.KotsHTTPClient.CreateInstaller(appId, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -24,7 +24,7 @@ func (c *Client) ListInstallers(appId string, appType string) ([]types.Installer
 	} else if appType == "ship" {
 		return nil, errors.Errorf("Kubernetes Installers are not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsClient.ListInstallers(appId)
+		return c.KotsHTTPClient.ListInstallers(appId)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -37,7 +37,7 @@ func (c *Client) PromoteInstaller(appId string, appType string, sequence int64, 
 	} else if appType == "ship" {
 		return errors.Errorf("Kubernetes Installers are not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsClient.PromoteInstaller(appId, sequence, channelID, versionLabel)
+		return c.KotsHTTPClient.PromoteInstaller(appId, sequence, channelID, versionLabel)
 	}
 
 	return errors.New("unknown app type")
