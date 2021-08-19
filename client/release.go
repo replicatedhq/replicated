@@ -138,7 +138,7 @@ func (c *Client) GetRelease(appID string, appType string, sequence int64) (*rele
 	} else if appType == "ship" {
 		return nil, errors.New("This feature is not supported for Ship applications.")
 	} else if appType == "kots" {
-		return c.KotsClient.GetRelease(appID, sequence)
+		return c.KotsHTTPClient.GetRelease(appID, sequence)
 	}
 	return nil, errors.New("unknown app type")
 }
@@ -150,7 +150,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	} else if appType == "ship" {
 		return c.ShipClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
 	} else if appType == "kots" {
-		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
+		return c.KotsHTTPClient.PromoteRelease(appID, label, notes, sequence, channelIDs...)
 	}
 	return errors.New("unknown app type")
 }
@@ -164,7 +164,7 @@ func (c *Client) LintRelease(appType string, data []byte) ([]types.LintMessage, 
 	} else if appType == "ship" {
 		return nil, errors.New("Linting is not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsClient.LintRelease(data)
+		return c.KotsHTTPClient.LintRelease(data)
 	}
 
 	return nil, errors.New("unknown app type")

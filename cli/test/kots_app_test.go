@@ -103,6 +103,7 @@ var _ = Describe("kots apps", func() {
 	Context("replicated app delete", func() {
 		It("should delete an app", func() {
 			newName := mustToken(8)
+			// this test is fragile - if the first character ends up as - , it assumes the token is a flag and fails
 			newName = strings.ReplaceAll(newName, "_", "-")
 			newName = strings.ReplaceAll(newName, "=", "-")
 			var stdout bytes.Buffer

@@ -14,7 +14,7 @@ import (
 
 // this is part of the gql client with plans to rename gql client to kotsclient
 // and have endpoints for multiple release services included
-func (c *GraphQLClient) LintRelease(data []byte) ([]types.LintMessage, error) {
+func (c *VendorV3Client) LintRelease(data []byte) ([]types.LintMessage, error) {
 	endpoint := "https://lint.replicated.com/v1/lint"
 
 	reader := bytes.NewReader(data)

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -23,11 +24,31 @@ type KotsReleasesData struct {
 }
 
 type KotsRelease struct {
-	ID           string         `json:"id"`
-	Sequence     int64          `json:"sequence"`
-	CreatedAt    string         `json:"created"`
-	ReleaseNotes string         `json:"releaseNotes"`
-	Channels     []*KotsChannel `json:"channels"`
+	ID           string               `json:"id"`
+	Sequence     int64                `json:"sequence"`
+	CreatedAt    string               `json:"created"`
+	ReleaseNotes string               `json:"releaseNotes"`
+	Channels     []*types.KotsChannel `json:"channels"`
+}
+
+func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
+	resp := types.KotsGetReleaseResponse{}
+
+	path := fmt.Sprintf("/v3/app/%s/release/%v", appID, sequence)
+
+	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get release")
+	}
+
+	appRelease := releases.AppRelease{
+		Config:    resp.Release.Spec,
+		CreatedAt: resp.Release.CreatedAt,
+		Editable:  !resp.Release.IsReleaseNotEditable,
+		Sequence:  resp.Release.Sequence,
+	}
+
+	return &appRelease, nil
 }
 
 func (c *VendorV3Client) CreateRelease(appID string, multiyaml string) (*types.ReleaseInfo, error) {
@@ -135,35 +156,17 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	return allReleases, nil
 }
 
-const promoteKotsRelease = `
-mutation promoteKotsRelease($appId: ID!, $sequence: Int, $channelIds: [String], $versionLabel: String!, $releaseNotes: String) {
-    promoteKotsRelease(appId: $appId, sequence: $sequence, channelIds: $channelIds, versionLabel: $versionLabel, releaseNotes: $releaseNotes) {
-      sequence
-    }
-  }
-`
-
-func (c *GraphQLClient) PromoteRelease(appID string, sequence int64, label string, notes string, channelIDs ...string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: promoteKotsRelease,
-		Variables: map[string]interface{}{
-			"appId":              appID,
-			"sequence":           sequence,
-			"versionLabel":       label,
-			"releaseNotes":       notes,
-			"troubleshootSpecId": "",
-			"channelIds":         channelIDs,
-		},
+func (c *VendorV3Client) PromoteRelease(appID, label, notes string, sequence int64, channelIDs ...string) error {
+	request := types.KotsPromoteReleaseRequest{
+		ReleaseNotes: notes,
+		VersionLabel: label,
+		ChannelIDs:   channelIDs,
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, sequence)
+	err := c.DoJSON("POST", path, http.StatusOK, request, nil)
+	if err != nil {
 		return err
-	}
-
-	if len(response.Errors) != 0 {
-		return errors.New(response.Errors[0].Message)
 	}
 
 	return nil

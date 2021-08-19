@@ -61,7 +61,7 @@ func (c *Client) ArchiveChannel(appID string, appType string, channelID string) 
 	} else if appType == "ship" {
 		return errors.New("This feature is not currently supported for Ship applications.")
 	} else if appType == "kots" {
-		return c.KotsClient.ArchiveChannel(channelID)
+		return c.KotsHTTPClient.ArchiveChannel(appID, channelID)
 	}
 	return errors.New("unknown app type")
 
@@ -80,7 +80,7 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 		}
 		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
-		if _, err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
+		if _, err := c.KotsHTTPClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
 		}
 		return c.KotsHTTPClient.ListChannels(appID, appSlug, name)

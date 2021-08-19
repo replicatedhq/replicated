@@ -23,3 +23,9 @@ func (c Customer) WithExpiryTime(expiryTime string) (Customer, error) {
 	}
 	return c, nil
 }
+
+type TotalActiveInactiveCustomers struct {
+	ActiveCustomers   int64 `json:"activeCustomers,omitempty"`
+	InactiveCustomers int64 `json:"inactiveCustomers,omitempty"`
+	TotalCustomers    int64 `json:"totalCustomers,omitempty"`
+}

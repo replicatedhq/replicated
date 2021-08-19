@@ -97,7 +97,6 @@ publish-pacts:
 get-spec-prod:
 	mkdir -p gen/spec/
 	curl -o gen/spec/v1.json https://api.replicated.com/vendor/v1/spec/vendor-api.json
-	curl -o gen/spec/v2.json https://api.replicated.com/vendor/v2/spec/vendor-api-v2.json
 	curl -o gen/spec/v3.json https://api.replicated.com/vendor/v3/spec/vendor-api-v3.json
 
 # generate the swagger specs from the local replicatedcom/vendor-api repo
@@ -126,13 +125,6 @@ gen-models:
 		-i /local/gen/spec/v1.json \
 		-l go \
 		-o /local/gen/go/v1; \
-	docker run --rm \
-		--volume `pwd`:/local \
-		swaggerapi/swagger-codegen-cli generate \
-		-Dmodels -DmodelsDocs=false \
-		-i /local/gen/spec/v2.json \
-		-l go \
-		-o /local/gen/go/v2;
 	docker run --rm \
 		--volume `pwd`:/local \
 		swaggerapi/swagger-codegen-cli generate \
