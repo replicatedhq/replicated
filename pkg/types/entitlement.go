@@ -7,7 +7,7 @@ type EntitlementSpec struct {
 	CreatedAt string `json:"createdAt,omitempty"`
 }
 
-type EntitlementValue struct {
+type EntitlementValueResponse struct {
 	ID         string `json:"id,omitempty"`
 	SpecID     string `json:"specId,omitempty"`
 	CustomerID string `json:"customerId,omitempty"`

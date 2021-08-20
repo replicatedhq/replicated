@@ -1,100 +1,42 @@
 package kotsclient
 
 import (
+	"net/http"
+
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type GraphQLResponseListApps struct {
-	Data   *KotsData          `json:"data,omitempty"`
-	Errors []graphql.GQLError `json:"errors,omitempty"`
+type kotsAppResponse struct {
+	Apps []types.KotsAppWithChannels `json:"apps"`
 }
 
-type KotsData struct {
-	Kots *KotsAppsData `json:"kots"`
-}
+func (c *VendorV3Client) ListApps() ([]types.AppAndChannels, error) {
+	var response = kotsAppResponse{}
 
-type KotsAppsData struct {
-	KotsApps []*KotsApp `json:"apps"`
-}
-
-type KotsAppChannelData struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	CurrentSequence int64  `json:"currentSequence"`
-	CurrentVersion  string `json:"currentVersion"`
-}
-
-type KotsApp struct {
-	ID       string                `json:"id"`
-	Name     string                `json:"name"`
-	Slug     string                `json:"slug"`
-	Channels []*KotsAppChannelData `json:"channels"`
-}
-
-const listAppsQuery = `
-query kots {
-	kots {
-	  apps {
-		id
-		name
-		created
-		updated
-		isDefault
-		isArchived
-		slug
-		channels {
-		  id
-		}
-		isKotsApp
-	  }
-	}
-  }
-`
-
-func (c *GraphQLClient) ListApps() ([]types.AppAndChannels, error) {
-	response := GraphQLResponseListApps{}
-
-	request := graphql.Request{
-		Query: listAppsQuery,
-
-		Variables: map[string]interface{}{},
+	err := c.DoJSON("GET", "/v3/apps", http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channels")
 	}
 
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	appsAndChannels := make([]types.AppAndChannels, 0, 0)
-	for _, kotsapp := range response.Data.Kots.KotsApps {
-		channels := make([]types.Channel, 0, 0)
-		for _, kotsChannel := range kotsapp.Channels {
-			channel := types.Channel{
-				ID:          kotsChannel.ID,
-				Name:        kotsChannel.Name,
-				Description: kotsChannel.Description,
-			}
-			channels = append(channels, channel)
-		}
-		appAndChannels := types.AppAndChannels{
+	results := make([]types.AppAndChannels, 0)
+	for _, kotsApp := range response.Apps {
+		app := types.AppAndChannels{
 			App: &types.App{
-				ID:   kotsapp.ID,
-				Name: kotsapp.Name,
-				Slug: kotsapp.Slug,
+				ID:        kotsApp.Id,
+				Name:      kotsApp.Name,
+				Slug:      kotsApp.Slug,
 				Scheduler: "kots",
 			},
-			Channels: channels,
+			Channels: kotsApp.Channels,
 		}
-
-		appsAndChannels = append(appsAndChannels, appAndChannels)
+		results = append(results, app)
 	}
 
-	return appsAndChannels, nil
+	return results, nil
 }
 
-func (c *GraphQLClient) GetApp(appID string) (*types.App, error) {
+func (c *VendorV3Client) GetApp(appID string) (*types.App, error) {
 	apps, err := c.ListApps()
 	if err != nil {
 		return nil, err
@@ -102,7 +44,12 @@ func (c *GraphQLClient) GetApp(appID string) (*types.App, error) {
 
 	for _, app := range apps {
 		if app.App.ID == appID || app.App.Slug == appID {
-			return app.App, nil
+			return &types.App{
+				ID:        app.App.ID,
+				Name:      app.App.Name,
+				Slug:      app.App.Slug,
+				Scheduler: "kots",
+			}, nil
 		}
 	}
 

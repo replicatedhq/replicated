@@ -49,6 +49,13 @@ type KotsListReleasesResponse struct {
 	Releases []*KotsAppRelease `json:"releases"`
 }
 
+type KotsPromoteReleaseRequest struct {
+	ReleaseNotes   string   `json:"releaseNotes"`
+	VersionLabel   string   `json:"versionLabel"`
+	ChannelIDs     []string `json:"channelIds"`
+	IgnoreWarnings bool     `json:"ignoreWarnings"`
+}
+
 type KotsAppRelease struct {
 	AppID                string     `json:"appId"`
 	Sequence             int64      `json:"sequence"`
@@ -58,4 +65,9 @@ type KotsAppRelease struct {
 	ReleaseNotes         string     `json:"releaseNotes"`
 	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
 	Channels             []*Channel `json:"channels"`
+}
+
+type EntitlementValue struct {
+	Name  string `json:"name,omitempty"`
+	Value string `json:"value,omitempty"`
 }

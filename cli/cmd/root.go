@@ -218,7 +218,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken, kurlDotSHOrigin)
+		httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
+		kotsAPI := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 		runCmds.kotsAPI = kotsAPI
 
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
@@ -235,38 +236,18 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			appSlugOrID = os.Getenv("REPLICATED_APP")
 		}
 
-		appType, err := runCmds.api.GetAppType(appSlugOrID)
+		app, appType, err := runCmds.api.GetAppType(appSlugOrID)
 		if err != nil {
 			return err
 		}
+
 		runCmds.appType = appType
 
-		if appType == "platform" {
-			app, err := runCmds.platformAPI.GetApp(appSlugOrID)
-			if err != nil {
-				return err
-			}
-			runCmds.appID = app.Id
-			runCmds.appSlug = app.Slug
-		} else if appType == "ship" {
-			app, err := runCmds.shipAPI.GetApp(appSlugOrID)
-			if err != nil {
-				return err
-			}
-			runCmds.appID = app.ID
-			runCmds.appSlug = app.Slug
-		} else if appType == "kots" {
-			app, err := runCmds.kotsAPI.GetApp(appSlugOrID)
-			if err != nil {
-				return err
-			}
-			runCmds.appID = app.ID
-			runCmds.appSlug = app.Slug
-		}
+		runCmds.appID = app.ID
+		runCmds.appSlug = app.Slug
 
 		return nil
 	}
-
 
 	channelCmd.PersistentPreRunE = prerunCommand
 	releaseCmd.PersistentPreRunE = prerunCommand

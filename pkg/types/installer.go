@@ -13,3 +13,17 @@ type InstallerSpec struct {
 	CreatedAt       util.Time `json:"created"`
 	Immutable       bool      `json:"isInstallerNotEditable"`
 }
+
+type InstallerSpecResponse struct {
+	Body InstallerSpec `json:"installer"`
+}
+
+type CreateInstallerRequest struct {
+	Yaml string `json:"yaml"`
+}
+
+type PromoteInstallerRequest struct {
+	Sequence     int64  `json:"sequence"`
+	VersionLabel string `json:"versionLabel"`
+	ChannelID    string `json:"channelId"`
+}

@@ -8,39 +8,15 @@ import (
 
 	"github.com/pkg/errors"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
-	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
-
-type GraphQLResponseCreateChannel struct {
-	Data   *KotsCreateChannelData `json:"data,omitempty"`
-	Errors []graphql.GQLError     `json:"errors,omitempty"`
-}
-
-type KotsGetChannelData struct {
-	KotsChannel *KotsChannel `json:"channel"`
-}
-
-type KotsCreateChannelData struct {
-	KotsChannel *KotsChannel `json:"createKotsChannel"`
-}
-
-type KotsChannel struct {
-	ID              string `json:"id"`
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	ChannelSequence int64  `json:"channelSequence"`
-	ReleaseSequence int64  `json:"releaseSequence"`
-	CurrentVersion  string `json:"currentVersion"`
-	ChannelSlug     string `json:"channelSlug"`
-}
 
 const embeddedInstallBaseURL = "https://k8s.kurl.sh"
 
 var embeddedInstallOverrideURL = os.Getenv("EMBEDDED_INSTALL_BASE_URL")
 
 // this is not client logic, but sure, let's go with it
-func (c *KotsChannel) EmbeddedInstallCommand(appSlug string) string {
+func embeddedInstallCommand(appSlug string, c *types.KotsChannel) string {
 
 	kurlBaseURL := embeddedInstallBaseURL
 	if embeddedInstallOverrideURL != "" {
@@ -55,7 +31,7 @@ func (c *KotsChannel) EmbeddedInstallCommand(appSlug string) string {
 
 }
 
-func (c *KotsChannel) EmbeddedAirgapInstallCommand(appSlug string) string {
+func embeddedAirgapInstallCommand(appSlug string, c *types.KotsChannel) string {
 
 	kurlBaseURL := embeddedInstallBaseURL
 	if embeddedInstallOverrideURL != "" {
@@ -76,7 +52,7 @@ func (c *KotsChannel) EmbeddedAirgapInstallCommand(appSlug string) string {
 }
 
 // this is not client logic, but sure, let's go with it
-func (c *KotsChannel) ExistingInstallCommand(appSlug string) string {
+func existingInstallCommand(appSlug string, c *types.KotsChannel) string {
 
 	slug := appSlug
 	if c.ChannelSlug != "stable" {
@@ -88,7 +64,7 @@ func (c *KotsChannel) ExistingInstallCommand(appSlug string) string {
 }
 
 type ListChannelsResponse struct {
-	Channels []*KotsChannel `json:"channels"`
+	Channels []*types.KotsChannel `json:"channels"`
 }
 
 func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName string) ([]types.Channel, error) {
@@ -107,14 +83,14 @@ func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName 
 	channels := make([]types.Channel, 0, 0)
 	for _, kotsChannel := range response.Channels {
 		channel := types.Channel{
-			ID:              kotsChannel.ID,
+			ID:              kotsChannel.Id,
 			Name:            kotsChannel.Name,
 			ReleaseLabel:    kotsChannel.CurrentVersion,
-			ReleaseSequence: kotsChannel.ReleaseSequence,
+			ReleaseSequence: int64(kotsChannel.ReleaseSequence),
 			InstallCommands: &types.InstallCommands{
-				Existing: kotsChannel.ExistingInstallCommand(appSlug),
-				Embedded: kotsChannel.EmbeddedInstallCommand(appSlug),
-				Airgap:   kotsChannel.EmbeddedAirgapInstallCommand(appSlug),
+				Existing: existingInstallCommand(appSlug, kotsChannel),
+				Embedded: embeddedInstallCommand(appSlug, kotsChannel),
+				Airgap:   embeddedAirgapInstallCommand(appSlug, kotsChannel),
 			},
 		}
 
@@ -124,52 +100,32 @@ func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName 
 	return channels, nil
 }
 
-const createChannelQuery = `
-mutation createKotsChannel($appId: String!, $channelName: String!, $description: String) {
-	createKotsChannel(appId: $appId, channelName: $channelName, description: $description) {
-	id
-	name
-	description
-	currentVersion
-	currentReleaseDate
-	numReleases
-	created
-	updated
-	isDefault
-	isArchived
+func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.Channel, error) {
+	request := types.CreateChannelRequest{
+		Name:        name,
+		Description: description,
 	}
-}
-`
+	var response types.KotsChannel
 
-func (c *GraphQLClient) CreateChannel(appID string, name string, description string) (*types.Channel, error) {
-	response := GraphQLResponseCreateChannel{}
-
-	request := graphql.Request{
-		Query: createChannelQuery,
-		Variables: map[string]interface{}{
-			"appId":       appID,
-			"channelName": name,
-			"description": description,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
+	url := fmt.Sprintf("/v3/app/%s/channel", appID)
+	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channels")
 	}
 
 	return &types.Channel{
-		ID:              response.Data.KotsChannel.ID,
-		Name:            response.Data.KotsChannel.Name,
-		Description:     response.Data.KotsChannel.Description,
-		ReleaseSequence: response.Data.KotsChannel.ReleaseSequence,
-		ReleaseLabel:    response.Data.KotsChannel.CurrentVersion,
+		ID:              response.Id,
+		Name:            response.Name,
+		Description:     response.Description,
+		Slug:            response.ChannelSlug,
+		ReleaseSequence: int64(response.ReleaseSequence),
+		ReleaseLabel:    response.CurrentVersion,
+		IsArchived:      response.IsArchived,
 	}, nil
-
 }
 
 func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-	response := KotsGetChannelData{}
-
+	response := types.KotsChannel{}
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
 	if err != nil {
@@ -177,33 +133,21 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.A
 	}
 
 	channelDetail := channels.AppChannel{
-		Id:              response.KotsChannel.ID,
-		Name:            response.KotsChannel.Name,
-		Description:     response.KotsChannel.Description,
-		ReleaseLabel:    response.KotsChannel.CurrentVersion,
-		ReleaseSequence: response.KotsChannel.ReleaseSequence,
+		Id:              response.Id,
+		Name:            response.Name,
+		Description:     response.Description,
+		ReleaseLabel:    response.CurrentVersion,
+		ReleaseSequence: int64(response.ReleaseSequence),
 	}
 	return &channelDetail, nil, nil
 }
 
-const archiveKotsChannelMutation = `
-mutation archiveKotsChannel($channelId: ID!) {
-    archiveKotsChannel(channelId: $channelId)
-  }
-`
+func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
+	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 
-func (c *GraphQLClient) ArchiveChannel(channelId string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: archiveKotsChannelMutation,
-		Variables: map[string]interface{}{
-			"channelId": channelId,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return err
+	err := c.DoJSON("DELETE", url, http.StatusOK, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "archive app channel")
 	}
 
 	return nil

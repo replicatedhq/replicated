@@ -76,7 +76,7 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 		return releaseInfos, nil
 
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.ListReleases(appID)
+		return c.KotsClient.ListReleases(appID)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -113,7 +113,7 @@ func (c *Client) CreateRelease(appID string, appType string, yaml string) (*type
 	} else if appType == "ship" {
 		return c.ShipClient.CreateRelease(appID, yaml)
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.CreateRelease(appID, yaml)
+		return c.KotsClient.CreateRelease(appID, yaml)
 	}
 
 	return nil, errors.New("unknown app type")
@@ -126,7 +126,7 @@ func (c *Client) UpdateRelease(appID string, appType string, sequence int64, yam
 	} else if appType == "ship" {
 		return c.ShipClient.UpdateRelease(appID, sequence, yaml)
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.UpdateRelease(appID, sequence, yaml)
+		return c.KotsClient.UpdateRelease(appID, sequence, yaml)
 	}
 	return errors.New("unknown app type")
 }
@@ -150,7 +150,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	} else if appType == "ship" {
 		return c.ShipClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
 	} else if appType == "kots" {
-		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
+		return c.KotsClient.PromoteRelease(appID, label, notes, sequence, channelIDs...)
 	}
 	return errors.New("unknown app type")
 }

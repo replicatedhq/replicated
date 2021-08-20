@@ -2,10 +2,12 @@ package test
 
 import (
 	"bytes"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
@@ -21,9 +23,8 @@ var _ = Describe("kots release lint", func() {
 
 	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-	kotsGraphqlClient := kotsclient.NewGraphQLClient(params.GraphqlOrigin, params.APIToken, params.KurlOrigin)
 
-	var app *kotsclient.KotsApp
+	var app *types.KotsAppWithChannels
 	var tmpdir string
 
 	BeforeEach(func() {
@@ -36,7 +37,7 @@ var _ = Describe("kots release lint", func() {
 	})
 
 	AfterEach(func() {
-		err := kotsGraphqlClient.DeleteKOTSApp(app.ID)
+		err := kotsRestClient.DeleteKOTSApp(app.Id)
 		req.NoError(err)
 		err = os.RemoveAll(tmpdir)
 		req.NoError(err)

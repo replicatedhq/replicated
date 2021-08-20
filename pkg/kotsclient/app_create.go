@@ -1,8 +1,10 @@
 package kotsclient
 
 import (
-	"github.com/replicatedhq/replicated/pkg/graphql"
+	"fmt"
 	"net/http"
+
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type CreateKOTSAppRequest struct {
@@ -10,10 +12,10 @@ type CreateKOTSAppRequest struct {
 }
 
 type CreateKOTSAppResponse struct {
-	App *KotsApp `json:"app"`
+	App *types.KotsAppWithChannels `json:"app"`
 }
 
-func (c *VendorV3Client) CreateKOTSApp(name string) (*KotsApp, error) {
+func (c *VendorV3Client) CreateKOTSApp(name string) (*types.KotsAppWithChannels, error) {
 	reqBody := &CreateKOTSAppRequest{Name: name}
 	app := CreateKOTSAppResponse{}
 	err := c.DoJSON("POST", "/v3/app", http.StatusCreated, reqBody, &app)
@@ -23,23 +25,11 @@ func (c *VendorV3Client) CreateKOTSApp(name string) (*KotsApp, error) {
 	return app.App, nil
 }
 
-const deleteAppMutation = `
-mutation deleteKotsApplication($appId: ID!, $password: String) {
-  deleteKotsApplication(appId: $appId, password: $password)
-}
-`
+func (c *VendorV3Client) DeleteKOTSApp(id string) error {
+	url := fmt.Sprintf("/v3/app/%s", id)
 
-func (c *GraphQLClient) DeleteKOTSApp(id string) error {
-	response := graphql.ResponseErrorOnly{}
-
-	request := graphql.Request{
-		Query: deleteAppMutation,
-		Variables: map[string]interface{}{
-			"appId": id,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
+	err := c.DoJSON("DELETE", url, http.StatusOK, nil, nil)
+	if err != nil {
 		return err
 	}
 

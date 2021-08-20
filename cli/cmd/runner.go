@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/spf13/cobra"
 
@@ -26,7 +25,7 @@ type runners struct {
 	enterpriseClient *enterpriseclient.HTTPClient
 	platformAPI      *platformclient.HTTPClient
 	shipAPI          *shipclient.GraphQLClient
-	kotsAPI          *kotsclient.GraphQLClient
+	kotsAPI          *kotsclient.VendorV3Client
 	stdin            io.Reader
 	dir              string
 	w                *tabwriter.Writer

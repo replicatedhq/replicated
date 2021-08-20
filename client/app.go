@@ -20,9 +20,9 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 		return nil, err
 	}
 
-	apps := make([]types.AppAndChannels, 0, 0)
+	apps := make([]types.AppAndChannels, 0)
 	for _, platformApp := range platformApps {
-		channels := make([]types.Channel, 0, 0)
+		channels := make([]types.Channel, 0)
 		for _, platformChannel := range platformApp.Channels {
 			channel := types.Channel{
 				ID:          platformChannel.Id,
@@ -38,7 +38,7 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 				ID:        platformApp.App.Id,
 				Name:      platformApp.App.Name,
 				Scheduler: platformApp.App.Scheduler,
-				Slug:      platformApp.App.Scheduler,
+				Slug:      platformApp.App.Slug,
 			},
 			Channels: channels,
 		}

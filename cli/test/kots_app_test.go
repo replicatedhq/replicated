@@ -3,14 +3,16 @@ package test
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 var _ = Describe("kots apps", func() {
@@ -21,9 +23,8 @@ var _ = Describe("kots apps", func() {
 
 	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-	kotsGraphqlClient := kotsclient.NewGraphQLClient(params.GraphqlOrigin, params.APIToken, params.KurlOrigin)
 
-	var app *kotsclient.KotsApp
+	var app *types.KotsAppWithChannels
 	var tmpdir string
 
 	BeforeEach(func() {
@@ -36,7 +37,7 @@ var _ = Describe("kots apps", func() {
 	})
 
 	AfterEach(func() {
-		err := kotsGraphqlClient.DeleteKOTSApp(app.ID)
+		err := kotsRestClient.DeleteKOTSApp(app.Id)
 		req.NoError(err)
 		err = os.RemoveAll(tmpdir)
 		req.NoError(err)
@@ -73,7 +74,7 @@ var _ = Describe("kots apps", func() {
 			req.Empty(stderr.String(), "Expected no stderr output")
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
-			req.Contains(stdout.String(), app.ID)
+			req.Contains(stdout.String(), app.Id)
 			req.Contains(stdout.String(), app.Name)
 			req.Contains(stdout.String(), "kots")
 		})
@@ -93,8 +94,8 @@ var _ = Describe("kots apps", func() {
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
 			req.Equal(stdout.String(),
-`ID                             NAME           SLUG           SCHEDULER
-`+ app.ID +`    ` + app.Name + `    ` + app.Slug + `    kots
+				`ID                             NAME           SLUG           SCHEDULER
+`+app.Id+`    `+app.Name+`    `+app.Slug+`    kots
 `)
 		})
 	})
@@ -102,6 +103,7 @@ var _ = Describe("kots apps", func() {
 	Context("replicated app delete", func() {
 		It("should delete an app", func() {
 			newName := mustToken(8)
+			// this test is fragile - if the first character ends up as - , it assumes the token is a flag and fails
 			newName = strings.ReplaceAll(newName, "_", "-")
 			newName = strings.ReplaceAll(newName, "=", "-")
 			var stdout bytes.Buffer
@@ -120,7 +122,6 @@ var _ = Describe("kots apps", func() {
 			req.Contains(stdout.String(), appSlug)
 			req.Contains(stdout.String(), "kots")
 
-
 			stdout.Truncate(0)
 			rootCmd = cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"app", "delete", appSlug, "--force"})
@@ -138,7 +139,7 @@ var _ = Describe("kots apps", func() {
 
 			req.NotContains(stdout.String(), appSlug)
 			req.Equal(stdout.String(),
-`ID    NAME    SLUG    SCHEDULER
+				`ID    NAME    SLUG    SCHEDULER
 `)
 		})
 	})
