@@ -108,7 +108,7 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 	var response types.KotsChannel
 
 	url := fmt.Sprintf("/v3/app/%s/channel", appID)
-	err := c.DoJSON("POST", url, http.StatusOK, request, &response)
+	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list channels")
 	}
