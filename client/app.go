@@ -15,7 +15,7 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 		return nil, err
 	}
 
-	kotsApps, err := c.KotsHTTPClient.ListApps()
+	kotsApps, err := c.KotsClient.ListApps()
 	if err != nil {
 		return nil, err
 	}

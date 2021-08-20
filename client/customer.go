@@ -1,8 +1,9 @@
 package client
 
 import (
-	"github.com/pkg/errors"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -14,7 +15,7 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 	} else if appType == "ship" {
 		return nil, errors.New("listing customers is not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.ListCustomers(appID)
+		return c.KotsClient.ListCustomers(appID)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
@@ -26,7 +27,7 @@ func (c *Client) CreateCustomer(appID, appType string, name string, channelID st
 	} else if appType == "ship" {
 		return nil, errors.New("creating customers is not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.CreateCustomer(name, appID, channelID, expiresIn)
+		return c.KotsClient.CreateCustomer(name, appID, channelID, expiresIn)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
@@ -39,7 +40,7 @@ func (c *Client) GetCustomerByName(appType string, appID, name string) (*types.C
 	} else if appType == "ship" {
 		return nil, errors.New("listing customers is not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.GetCustomerByName(appID, name)
+		return c.KotsClient.GetCustomerByName(appID, name)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
@@ -52,7 +53,7 @@ func (c *Client) DownloadLicense(appType string, appID string, customerID string
 	} else if appType == "ship" {
 		return nil, errors.New("downloading  customer licenses is not supported for ship applications")
 	} else if appType == "kots" {
-		return c.KotsHTTPClient.DownloadLicense(appID, customerID)
+		return c.KotsClient.DownloadLicense(appID, customerID)
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }

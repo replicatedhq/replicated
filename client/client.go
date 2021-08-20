@@ -10,7 +10,7 @@ import (
 type Client struct {
 	PlatformClient *platformclient.HTTPClient
 	ShipClient     *shipclient.GraphQLClient
-	KotsHTTPClient *kotsclient.VendorV3Client
+	KotsClient     *kotsclient.VendorV3Client
 }
 
 func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kurlOrigin string) Client {
@@ -18,7 +18,7 @@ func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kur
 	client := Client{
 		PlatformClient: httpClient,
 		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
-		KotsHTTPClient: &kotsclient.VendorV3Client{HTTPClient: *httpClient},
+		KotsClient:     &kotsclient.VendorV3Client{HTTPClient: *httpClient},
 	}
 
 	return client
@@ -41,7 +41,7 @@ func (c *Client) GetAppType(appID string) (*types.App, string, error) {
 		return shipApp, "ship", nil
 	}
 
-	kotsApp, err := c.KotsHTTPClient.GetApp(appID)
+	kotsApp, err := c.KotsClient.GetApp(appID)
 	if err == nil && kotsApp != nil {
 		return kotsApp, "kots", nil
 	}
