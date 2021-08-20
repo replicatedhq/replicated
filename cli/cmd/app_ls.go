@@ -24,7 +24,7 @@ func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
 
 func (r *runners) listApps(_ *cobra.Command, args []string) error {
 
-	kotsApps, err := r.api.KotsHTTPClient.ListApps()
+	kotsApps, err := r.kotsAPI.ListApps()
 	if err != nil {
 		return errors.Wrap(err, "list apps")
 	}

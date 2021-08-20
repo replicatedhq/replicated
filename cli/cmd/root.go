@@ -218,7 +218,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
 		runCmds.shipAPI = shipAPI
 
-		kotsAPI := kotsclient.NewGraphQLClient(graphqlOrigin, apiToken, kurlDotSHOrigin)
+		httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
+		kotsAPI := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 		runCmds.kotsAPI = kotsAPI
 
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
