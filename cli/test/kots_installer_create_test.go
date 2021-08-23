@@ -88,6 +88,14 @@ spec:
 
 			req.Contains(stdout.String(), `SEQUENCE: 2`)
 			req.Contains(stdout.String(), `successfully set to installer 2`)
+
+			rootCmd.SetArgs([]string{"installer", "ls", "--app", app.Slug})
+
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			req.NoError(err)
+
+			req.Empty(stderr.String(), "Expected no stderr output")
+			req.NotEmpty(stdout.String(), "Expected stdout output")
 		})
 	})
 

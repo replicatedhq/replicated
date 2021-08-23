@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 func (c *VendorV3Client) ListInstallers(appID string) ([]types.InstallerSpec, error) {
-	var response []types.InstallerSpec
+	var response types.ListInstallersResponse
 
 	url := fmt.Sprintf("/v3/app/%s/installers", appID)
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
@@ -16,7 +18,15 @@ func (c *VendorV3Client) ListInstallers(appID string) ([]types.InstallerSpec, er
 		return nil, err
 	}
 
-	return response, nil
+	for i, installerSpec := range response.Body {
+		createdAtTime, err := util.ParseTime(installerSpec.CreatedAtString)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing time string to CreatedAt time")
+		}
+		response.Body[i].CreatedAt = util.Time{createdAtTime}
+	}
+
+	return response.Body, nil
 }
 
 func (c *VendorV3Client) CreateInstaller(appID string, yaml string) (*types.InstallerSpec, error) {

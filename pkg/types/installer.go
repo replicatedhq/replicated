@@ -11,11 +11,16 @@ type InstallerSpec struct {
 	YAML            string    `json:"yaml"`
 	ActiveChannels  []Channel `json:"channels"`
 	CreatedAt       util.Time `json:"created"`
+	CreatedAtString string    `json:"createdAt"`
 	Immutable       bool      `json:"isInstallerNotEditable"`
 }
 
 type InstallerSpecResponse struct {
 	Body InstallerSpec `json:"installer"`
+}
+
+type ListInstallersResponse struct {
+	Body []InstallerSpec `json:"installers"`
 }
 
 type CreateInstallerRequest struct {
