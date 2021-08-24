@@ -105,7 +105,11 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 		Name:        name,
 		Description: description,
 	}
-	var response types.KotsChannel
+
+	type createChannelResponse struct {
+		Channel types.KotsChannel `json:"channel"`
+	}
+	var response createChannelResponse
 
 	url := fmt.Sprintf("/v3/app/%s/channel", appID)
 	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
@@ -114,18 +118,22 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 	}
 
 	return &types.Channel{
-		ID:              response.Id,
-		Name:            response.Name,
-		Description:     response.Description,
-		Slug:            response.ChannelSlug,
-		ReleaseSequence: int64(response.ReleaseSequence),
-		ReleaseLabel:    response.CurrentVersion,
-		IsArchived:      response.IsArchived,
+		ID:              response.Channel.Id,
+		Name:            response.Channel.Name,
+		Description:     response.Channel.Description,
+		Slug:            response.Channel.ChannelSlug,
+		ReleaseSequence: int64(response.Channel.ReleaseSequence),
+		ReleaseLabel:    response.Channel.CurrentVersion,
+		IsArchived:      response.Channel.IsArchived,
 	}, nil
 }
 
 func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-	response := types.KotsChannel{}
+	type getChannelResponse struct {
+		Channel types.KotsChannel `json:"channel"`
+	}
+
+	response := getChannelResponse{}
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
 	if err != nil {
@@ -133,11 +141,11 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.A
 	}
 
 	channelDetail := channels.AppChannel{
-		Id:              response.Id,
-		Name:            response.Name,
-		Description:     response.Description,
-		ReleaseLabel:    response.CurrentVersion,
-		ReleaseSequence: int64(response.ReleaseSequence),
+		Id:              response.Channel.Id,
+		Name:            response.Channel.Name,
+		Description:     response.Channel.Description,
+		ReleaseLabel:    response.Channel.CurrentVersion,
+		ReleaseSequence: int64(response.Channel.ReleaseSequence),
 	}
 	return &channelDetail, nil, nil
 }
