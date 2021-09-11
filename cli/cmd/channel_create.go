@@ -9,7 +9,7 @@ func (r *runners) InitChannelCreate(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new channel in your app",
-		Long: `Create a new channel in your app and print the full set of channels in the app on success.
+		Long: `Create a new channel in your app and print the channel on success.
 
   Example:
   replicated channel create --name Beta --description 'New features subject to change'`,
