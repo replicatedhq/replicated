@@ -87,6 +87,8 @@ type runnerArgs struct {
 	customerCreateChannel        string
 	customerCreateEnsureChannel  bool
 	customerCreateExpiryDuration time.Duration
+	customerCreateAirgap         bool
+	customerCreateGitops         bool
 
 	createInstallerYaml                 string
 	createInstallerYamlFile             string

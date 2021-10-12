@@ -1,30 +1,35 @@
 package kotsclient
 
 import (
-	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type CreateCustomerRequest struct {
-	Name      string `json:"name"`
-	ChannelID string `json:"channel_id"`
-	AppID     string `json:"app_id"`
-	Type      string `json:"type"`
-	ExpiresAt string `json:"expires_at"`
+	Name              string `json:"name"`
+	ChannelID         string `json:"channel_id"`
+	AppID             string `json:"app_id"`
+	Type              string `json:"type"`
+	ExpiresAt         string `json:"expires_at"`
+	IsAirgapEnabled   bool   `json:"is_airgap_enabled"`
+	IsGitopsSupported bool   `json:"is_gitops_supported"`
 }
 
 type CreateCustomerResponse struct {
 	Customer *types.Customer `json:"customer"`
 }
 
-func (c *VendorV3Client) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration) (*types.Customer, error) {
+func (c *VendorV3Client) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration, airgap, gitops bool) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
-		Name:      name,
-		ChannelID: channelID,
-		AppID:     appID,
-		Type:      "dev", // hardcode for now
+		Name:              name,
+		ChannelID:         channelID,
+		AppID:             appID,
+		IsAirgapEnabled:   airgap,
+		IsGitopsSupported: gitops,
+		Type:              "dev", // hardcode for now
 	}
 
 	if expiresIn > 0 {
