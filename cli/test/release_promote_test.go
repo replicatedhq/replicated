@@ -3,7 +3,6 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
 	"strconv"
 
 	. "github.com/onsi/ginkgo"
@@ -16,8 +15,10 @@ import (
 )
 
 var _ = Describe("release promote", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
+	params, err := GetParams()
+	assert.NoError(t, err)
+	api := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	app := &apps.App{Name: mustToken(8)}
 	var appChan *channels.AppChannel
 	var release *releases.AppReleaseInfo
@@ -25,13 +26,13 @@ var _ = Describe("release promote", func() {
 	BeforeEach(func() {
 		var err error
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		release, err = api.CreateRelease(app.Id, "")
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		appChannels, err := api.ListChannels(app.Id)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		appChan = &appChannels[0]
 	})
 
@@ -50,7 +51,7 @@ var _ = Describe("release promote", func() {
 			rootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			assert.Empty(t, stderr.String(), "Expected no stderr output")
 			assert.NotEmpty(t, stdout.String(), "Expected stdout output")

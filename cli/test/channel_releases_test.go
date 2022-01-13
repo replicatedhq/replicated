@@ -3,7 +3,6 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -15,8 +14,10 @@ import (
 )
 
 var _ = Describe("channel releases", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
+	params, err := GetParams()
+	assert.NoError(t, err)
+	api := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	app := &apps.App{Name: mustToken(8)}
 	var appChan channels.AppChannel
 

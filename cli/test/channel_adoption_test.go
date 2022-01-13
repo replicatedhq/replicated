@@ -3,7 +3,6 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
 
 	. "github.com/onsi/ginkgo"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +16,10 @@ import (
 // This only tests with no active licenses since the vendor API does not provide
 // a way to update licenses' last_active field.
 var _ = Describe("channel adoption", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
+	params, err := GetParams()
+	assert.NoError(t, err)
+	api := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	var app = &apps.App{Name: mustToken(8)}
 	var appChan = &channels.AppChannel{}
 

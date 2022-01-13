@@ -16,8 +16,10 @@ import (
 )
 
 var _ = Describe("release update", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
 	t := GinkgoT()
+	params, err := GetParams()
+	assert.NoError(t, err)
+	api := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
 	app := &apps.App{Name: mustToken(8)}
 	var release *releases.AppReleaseInfo
 
