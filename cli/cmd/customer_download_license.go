@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"os"
+	"io/ioutil"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -46,5 +46,5 @@ func (r *runners) downloadCustomerLicense(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return os.WriteFile(r.args.customerLicenseInspectOutput, license, 0644)
+	return ioutil.WriteFile(r.args.customerLicenseInspectOutput, license, 0644)
 }
