@@ -24,8 +24,6 @@ jobs:
         env:
           REPLICATED_API_ORIGIN: https://api.replicated.com/vendor
           REPLICATED_ID_ORIGIN: https://id.replicated.com
-          VENDOR_USER_EMAIL: dexter@replicated.com
-          VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
   make-build:
     runs-on: ubuntu-latest

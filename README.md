@@ -126,7 +126,7 @@ The models are generated from the API's swagger spec.
 
 #### Environment
 * ```REPLICATED_API_ORIGIN``` may be set to override the API endpoint
-* ```VENDOR_USER_EMAIL``` and ```VENDOR_USER_PASSWORD``` should be set to delete apps created for testing
+* ```REPLICATED_API_TOKEN``` should be set to delete apps created for testing
 
 ### Releases
 Releases are created on Travis when a tag is pushed. This will also update the docs container.
