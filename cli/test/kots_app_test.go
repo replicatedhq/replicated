@@ -94,7 +94,7 @@ var _ = Describe("kots apps", func() {
 			req.NotEmpty(stdout.String(), "Expected stdout output")
 
 			req.Equal(stdout.String(),
-				`ID                             NAME           SLUG           SCHEDULER
+				`ID                             NAME           SLUG            SCHEDULER
 `+app.Id+`    `+app.Name+`    `+app.Slug+`    kots
 `)
 		})
