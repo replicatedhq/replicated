@@ -184,8 +184,7 @@ Prepared to create release with defaults:
 			if err != nil {
 				return err
 			}
-			switch strings.ToLower(confirmed) {
-			case "n", "N":
+			if strings.ToLower(confirmed) == "n" {
 				return errors.New("configuration declined")
 			}
 			fmt.Printf("You can use the --confirm-auto or -y flag in the future to skip this prompt.\n")
