@@ -184,8 +184,8 @@ Prepared to create release with defaults:
 			if err != nil {
 				return err
 			}
-			valid := map[string]bool{"y": true, "Y": true}
-			if !valid[confirmed] {
+			switch strings.ToLower(confirmed) {
+			case "n", "N":
 				return errors.New("configuration declined")
 			}
 			fmt.Printf("You can use the --confirm-auto or -y flag in the future to skip this prompt.\n")
@@ -415,12 +415,12 @@ func promptForConfirm() (string, error) {
 		Templates: templates,
 		Default:   "y",
 		Validate: func(input string) error {
-			valid := map[string]bool{"y": true, "Y": true, "n": true, "N": true}
-			if !valid[input] {
+			switch strings.ToLower(input) {
+			case "y", "n":
+				return nil
+			default:
 				return errors.New(`please choose "y" or "n"`)
 			}
-
-			return nil
 		},
 	}
 
