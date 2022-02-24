@@ -59,6 +59,15 @@ type CreateChannelRequest struct {
 	Name                       string `json:"name"`
 }
 
+type UpdateChannelRequest struct {
+	// Description of the channel that is to be created.
+	Name                  string `json:"name"`
+	SemverRequired        bool   `json:"semverRequired,omitempty"`
+	Description           string `json:"description,omitempty"`
+	ChannelIcon           string `json:"channelIcon,omitempty"`
+	AutoAirgapBuildsValue int    `json:"autoAirgapBuildsValue,omitempty"`
+}
+
 type Channel struct {
 	ID          string
 	Name        string

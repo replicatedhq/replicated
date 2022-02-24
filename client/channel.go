@@ -127,6 +127,7 @@ func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug 
 }
 
 func (c *Client) GetChannelByName(appID string, appType string, appSlug string, name string) (*types.Channel, error) {
+
 	return c.GetOrCreateChannelByName(appID, appType, appSlug, name, "", false)
 }
 
@@ -146,4 +147,22 @@ func (c *Client) findChannel(channels []types.Channel, name string) (*types.Chan
 		return nil, len(matchingChannels), fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
 	}
 	return matchingChannels[0], 1, nil
+}
+
+func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string, chanID string, enableSemver bool) error {
+
+	if appType == "platform" {
+		return errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "ship" {
+		return errors.New("This feature is not currently supported for Ship applications.")
+	} else if appType == "kots" {
+		channel, _, err := c.KotsClient.GetChannel(appID, chanID)
+		if err != nil {
+			return err
+		}
+		err = c.KotsClient.UpdateSemanticVersioning(appID, channel, enableSemver)
+		return err
+	}
+
+	return errors.New("unknown app type")
 }
