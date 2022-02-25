@@ -160,3 +160,23 @@ func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
 
 	return nil
 }
+
+func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *channels.AppChannel, enableSemver bool) error {
+	request := types.UpdateChannelRequest{
+		Name:           channel.Name,
+		SemverRequired: enableSemver,
+	}
+
+	type updateChannelResponse struct {
+		Channel types.KotsChannel `json:"channel"`
+	}
+	var response updateChannelResponse
+
+	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channel.Id)
+	err := c.DoJSON("PUT", url, http.StatusOK, request, &response)
+	if err != nil {
+		return errors.Wrap(err, "edit semantic versioning for channel")
+	}
+
+	return nil
+}
