@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,9 @@ func (r *runners) channelEnableSemanticVersioning(cmd *cobra.Command, args []str
 	if err := r.api.UpdateSemanticVersioningForChannel(r.appType, r.appID, chanID, true); err != nil {
 		return err
 	}
+
+	fmt.Fprintf(r.w, "Semver successfully enabled for channel %s\n", chanID)
+	r.w.Flush()
 
 	return nil
 }
