@@ -3,31 +3,34 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 var _ = Describe("channel ls", func() {
 
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
-	var appChans []channels.AppChannel
+	var (
+		api      *platformclient.HTTPClient
+		app      *apps.App
+		appChans []channels.AppChannel
+		err      error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		appChans, err = api.ListChannels(app.Id)
-		assert.Nil(t, err)
-		assert.Len(t, appChans, 3)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(appChans).To(HaveLen(3))
 	})
 
 	AfterEach(func() {
@@ -42,23 +45,22 @@ var _ = Describe("channel ls", func() {
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"channel", "ls", "--app", app.Slug})
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Nil(t, err)
-
-			assert.Zero(t, stderr, "Expected no stderr output")
-			assert.NotZero(t, stdout, "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
-			assert.Regexp(t, `^ID\s+NAME\s+RELEASE\s+VERSION$`, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(MatchRegexp(`^ID\s+NAME\s+RELEASE\s+VERSION$`))
 
 			for i := 0; i < 3; i++ {
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^\w+\s+\w+\s+`, r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^\w+\s+\w+\s+`))
 			}
 
-			assert.False(t, r.Scan())
+			Expect(r.Scan()).To(BeFalse())
 		})
 	})
 })

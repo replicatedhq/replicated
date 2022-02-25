@@ -3,29 +3,32 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 var _ = Describe("channel rm", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
-	var appChan *channels.AppChannel
+	var (
+		api     *platformclient.HTTPClient
+		app     *apps.App
+		appChan *channels.AppChannel
+		err     error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		appChans, err := api.ListChannels(app.Id)
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		// can't archive the default channel
 		for _, channel := range appChans {
@@ -45,27 +48,32 @@ var _ = Describe("channel rm", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
+			// verify length of initial channels
+			appChans, err := api.ListChannels(app.Id)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(appChans).To(HaveLen(3))
+
 			args := []string{"channel", "rm", appChan.Id, "--app", app.Slug}
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs(args)
 
-			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err, "execute channel rm -- args: %v", args)
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Zero(t, stderr, "Expected no stderr output")
-			assert.NotZero(t, stdout, "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
-			assert.Equal(t, "Channel "+appChan.Id+" successfully archived", r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(Equal("Channel " + appChan.Id + " successfully archived"))
 
-			assert.False(t, r.Scan())
+			Expect(r.Scan()).To(BeFalse())
 
 			// verify with the api that it's really gone
-			appChans, err := api.ListChannels(app.Id)
-			assert.Nil(t, err)
-			assert.Len(t, appChans, 2)
+			appChans, err = api.ListChannels(app.Id)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(appChans).To(HaveLen(2))
 		})
 	})
 })

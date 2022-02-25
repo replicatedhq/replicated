@@ -5,22 +5,26 @@ import (
 	"io/ioutil"
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("release create", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
+	var (
+		api *platformclient.HTTPClient
+		app *apps.App
+		err error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -36,11 +40,11 @@ var _ = Describe("release create", func() {
 			rootCmd.SetArgs([]string{"release", "create", "--yaml", yaml, "--app", app.Slug})
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
-			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
+			Expect(stdout.String()).To(ContainSubstring("SEQUENCE: 1"))
 		})
 	})
 
@@ -54,12 +58,12 @@ var _ = Describe("release create", func() {
 			rootCmd.SetArgs([]string{"release", "create", "--yaml", "-", "--app", app.Slug})
 			err := cmd.Execute(rootCmd, stdin, &stdout, &stderr)
 
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
+			Expect(stdout.String()).To(ContainSubstring("SEQUENCE: 1"))
 		})
 	})
 
@@ -69,24 +73,27 @@ var _ = Describe("release create", func() {
 			var stderr bytes.Buffer
 
 			file, err := ioutil.TempFile("", app.Slug)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
+
 			fileName := file.Name()
 			defer os.Remove(fileName)
+
 			_, err = file.WriteString(yaml)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
+
 			err = file.Close()
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "create", "--yaml-file", fileName, "--app", app.Slug})
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
 
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			assert.Contains(t, stdout.String(), "SEQUENCE: 1")
+			Expect(stdout.String()).To(ContainSubstring("SEQUENCE: 1"))
 		})
 	})
 
@@ -95,16 +102,19 @@ var _ = Describe("release create", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
+			var expectedError = "use the --yaml-file flag when passing a yaml filename"
+
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "create", "--yaml", "installer.yaml", "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.NotNil(t, err)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(expectedError))
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			assert.Contains(t, stdout.String(), `use the --yaml-file flag when passing a yaml filename`)
+			Expect(stdout.String()).To(ContainSubstring(expectedError))
 		})
 	})
 })

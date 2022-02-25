@@ -3,29 +3,33 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 var _ = Describe("channel inspect", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
-	var appChan = &channels.AppChannel{}
+	var (
+		api     *platformclient.HTTPClient
+		app     *apps.App
+		appChan *channels.AppChannel
+		err     error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+		appChan = &channels.AppChannel{}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		appChans, err := api.ListChannels(app.Id)
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 		appChan = &appChans[0]
 	})
 
@@ -43,40 +47,27 @@ var _ = Describe("channel inspect", func() {
 				rootCmd.SetArgs([]string{"channel", "inspect", appChan.Id, "--app", app.Slug})
 
 				err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-				assert.Nil(t, err)
+				Expect(err).ToNot(HaveOccurred())
 
-				assert.Zero(t, stderr, "Expected no stderr output")
-				assert.NotZero(t, stdout, "Expected stdout output")
+				Expect(stderr.String()).To(BeEmpty())
+				Expect(stdout.String()).ToNot(BeEmpty())
 
 				r := bufio.NewScanner(&stdout)
 
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^ID:\s+`+appChan.Id+`$`, r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^ID:\s+` + appChan.Id + `$`))
 
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^NAME:\s+`+appChan.Name+`$`, r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^NAME:\s+` + appChan.Name + `$`))
 
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^DESCRIPTION:\s+`+appChan.Description+`$`, r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^DESCRIPTION:\s+` + appChan.Description + `$`))
 
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^RELEASE:\s+`, r.Text())
-				/*
-					assert.True(t, r.Scan())
-					assert.Equal(t, "LICENSE_COUNTS", r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^RELEASE:\s+`))
 
-					assert.True(t, r.Scan())
-					assert.Equal(t, "No licenses in channel", r.Text())
-
-					assert.True(t, r.Scan())
-					assert.Equal(t, "", r.Text())
-
-					assert.True(t, r.Scan())
-					assert.Equal(t, "RELEASES", r.Text())
-
-					assert.True(t, r.Scan())
-					assert.Equal(t, "No releases in channel", r.Text())
-				*/
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^VERSION:\s+`))
 			})
 		})
 	})

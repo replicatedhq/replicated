@@ -6,32 +6,35 @@ import (
 	"os"
 	"strconv"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("release promote", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	app := &apps.App{Name: mustToken(8)}
-	var appChan *channels.AppChannel
-	var release *releases.AppReleaseInfo
+	var (
+		api     *platformclient.HTTPClient
+		app     *apps.App
+		appChan *channels.AppChannel
+		release *releases.AppReleaseInfo
+		err     error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		release, err = api.CreateRelease(app.Id, "")
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		appChannels, err := api.ListChannels(app.Id)
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 		appChan = &appChannels[0]
 	})
 
@@ -50,17 +53,17 @@ var _ = Describe("release promote", func() {
 			rootCmd.SetArgs([]string{"release", "promote", sequence, appChan.Id, "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
-			assert.Equal(t, "Channel "+appChan.Id+" successfully set to release "+sequence, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(Equal("Channel " + appChan.Id + " successfully set to release " + sequence))
 
-			assert.False(t, r.Scan())
+			Expect(r.Scan()).To(BeFalse())
 		})
 	})
 })

@@ -7,27 +7,31 @@ import (
 	"os"
 	"strconv"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("release update", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	app := &apps.App{Name: mustToken(8)}
-	var release *releases.AppReleaseInfo
+	var (
+		api     *platformclient.HTTPClient
+		app     *apps.App
+		release *releases.AppReleaseInfo
+		err     error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		release, err = api.CreateRelease(app.Id, "")
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -45,14 +49,14 @@ var _ = Describe("release update", func() {
 			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml", yaml, "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
+			Expect(r.Scan()).To(BeTrue())
 		})
 	})
 
@@ -62,13 +66,16 @@ var _ = Describe("release update", func() {
 			var stderr bytes.Buffer
 
 			file, err := ioutil.TempFile("", app.Slug)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
+
 			fileName := file.Name()
 			defer os.Remove(fileName)
+
 			_, err = file.WriteString(yaml)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
+
 			err = file.Close()
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
 			sequence := strconv.Itoa(int(release.Sequence))
 
@@ -76,14 +83,14 @@ var _ = Describe("release update", func() {
 			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml-file", fileName, "--app", app.Slug})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
+			Expect(r.Scan()).To(BeTrue())
 		})
 	})
 
@@ -98,12 +105,12 @@ var _ = Describe("release update", func() {
 			rootCmd.SetArgs([]string{"release", "update", sequence, "--yaml", "installer.yaml", "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.NotNil(t, err)
+			Expect(err).To(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			assert.Contains(t, stdout.String(), `use the --yaml-file flag when passing a yaml filename`)
+			Expect(stdout.String()).To(ContainSubstring(`use the --yaml-file flag when passing a yaml filename`))
 		})
 	})
 })

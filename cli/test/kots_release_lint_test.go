@@ -9,38 +9,43 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("kots release lint", func() {
-	t := GinkgoT()
-	req := assert.New(t) // using assert since it plays nicer with ginkgo
-	params, err := GetParams()
-	req.NoError(err)
+	var (
+		httpClient     *platformclient.HTTPClient
+		kotsRestClient kotsclient.VendorV3Client
 
-	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-
-	var app *types.KotsAppWithChannels
-	var tmpdir string
+		app    *types.KotsAppWithChannels
+		tmpdir string
+		params *Params
+		err    error
+	)
 
 	BeforeEach(func() {
-		var err error
+		params, err = GetParams()
+		Expect(err).ToNot(HaveOccurred())
+
+		httpClient = platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
+		kotsRestClient = kotsclient.VendorV3Client{HTTPClient: *httpClient}
+
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 		tmpdir, err = ioutil.TempDir("", "replicated-cli-test")
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 
 	})
 
 	AfterEach(func() {
 		err := kotsRestClient.DeleteKOTSApp(app.Id)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
+
 		err = os.RemoveAll(tmpdir)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("with just a single config map", func() {
@@ -56,20 +61,20 @@ data:
   fake: yep it's fake
 `
 			err := ioutil.WriteFile(filepath.Join(tmpdir, "config.yaml"), []byte(configMap), 0644)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"release", "lint", "--yaml-dir", tmpdir, "--app", app.Slug})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Contains(stdout.String(), `preflight-spec       warn                            Missing preflight spec`)
-			req.Contains(stdout.String(), `config-spec          warn                            Missing config spec`)
-			req.Contains(stdout.String(), `troubleshoot-spec    warn                            Missing troubleshoot spec`)
+			Expect(stdout.String()).To(ContainSubstring(`preflight-spec       warn                            Missing preflight spec`))
+			Expect(stdout.String()).To(ContainSubstring(`config-spec          warn                            Missing config spec`))
+			Expect(stdout.String()).To(ContainSubstring(`troubleshoot-spec    warn                            Missing troubleshoot spec`))
 		})
 	})
 })
