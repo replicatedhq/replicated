@@ -29,7 +29,7 @@ func (r *runners) channelEnableSemanticVersioning(cmd *cobra.Command, args []str
 		return err
 	}
 
-	fmt.Fprintf(r.w, "Semver successfully enabled for channel %s\n", chanID)
+	fmt.Fprintf(r.w, "Semantic versioning successfully enabled for channel %s\n", chanID)
 	r.w.Flush()
 
 	return nil
