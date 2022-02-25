@@ -15,6 +15,7 @@ require (
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver/v3 v3.3.0
 	github.com/onsi/ginkgo/v2 v2.1.3
+	github.com/onsi/gomega v1.18.1
 	github.com/pact-foundation/pact-go v1.0.4
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pkg/errors v0.9.1
