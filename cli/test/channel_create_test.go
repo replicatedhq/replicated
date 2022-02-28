@@ -6,31 +6,36 @@ import (
 	"fmt"
 	"os"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("channel create", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
+	var (
+		api  *platformclient.HTTPClient
+		app  *apps.App
+		name string
+		desc string
+		err  error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+		name = mustToken(8)
+		desc = mustToken(16)
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(GinkgoT(), err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
-		// ignore error, garbage collection
 		deleteApp(app.Id)
 	})
 
-	name := mustToken(8)
-	desc := mustToken(16)
 	Describe(fmt.Sprintf("--name %s --description %s", name, desc), func() {
 		It("should print the created channel", func() {
 			var stdout bytes.Buffer
@@ -39,25 +44,24 @@ var _ = Describe("channel create", func() {
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"channel", "create", "--name", name, "--description", desc, "--app", app.Slug})
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Nil(t, err)
-
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
-			assert.Regexp(t, `^ID\s+NAME\s+RELEASE\s+VERSION$`, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(MatchRegexp(`^ID\s+NAME\s+RELEASE\s+VERSION$`))
 
 			// default Stable, Beta, and Unstable channels should be listed too
 			for i := 0; i < 3; i++ {
-				assert.True(t, r.Scan())
-				assert.Regexp(t, `^\w+\s+\w+`, r.Text())
+				Expect(r.Scan()).To(BeTrue())
+				Expect(r.Text()).To(MatchRegexp(`^\w+\s+\w+`))
 			}
 
-			assert.True(t, r.Scan())
-			assert.Regexp(t, `^\w+\s+`+name+`\s+$`, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(MatchRegexp(`^\w+\s+` + name + `\s+$`))
 		})
 	})
 })

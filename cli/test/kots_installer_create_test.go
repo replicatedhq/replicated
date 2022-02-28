@@ -9,39 +9,41 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = Describe("kots installer create", func() {
-	t := GinkgoT()
-	req := assert.New(t) // using assert since it plays nicer with ginkgo
-	params, err := GetParams()
-	req.NoError(err)
+	var (
+		httpClient     *platformclient.HTTPClient
+		kotsRestClient kotsclient.VendorV3Client
 
-	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-
-	var app *types.KotsAppWithChannels
-
-	var tmpdir string
+		app    *types.KotsAppWithChannels
+		tmpdir string
+		params *Params
+		err    error
+	)
 
 	BeforeEach(func() {
-		var err error
+		params, err = GetParams()
+		httpClient = platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
+		kotsRestClient = kotsclient.VendorV3Client{HTTPClient: *httpClient}
+
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 		tmpdir, err = ioutil.TempDir("", "replicated-cli-test")
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 
 	})
 
 	AfterEach(func() {
 		err := kotsRestClient.DeleteKOTSApp(app.Id)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
+
 		err = os.RemoveAll(tmpdir)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("with a standard kubernetes kurl installer", func() {
@@ -75,27 +77,27 @@ spec:
 `
 			installerPath := filepath.Join(tmpdir, "installer.yaml")
 			err := ioutil.WriteFile(installerPath, []byte(installer), 0644)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"installer", "create", "--yaml-file", installerPath, "--app", app.Slug, "--promote", "Unstable"})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Contains(stdout.String(), `SEQUENCE: 2`)
-			req.Contains(stdout.String(), `successfully set to installer 2`)
+			Expect(stdout.String()).To(ContainSubstring(`SEQUENCE: 2`))
+			Expect(stdout.String()).To(ContainSubstring(`successfully set to installer 2`))
 
 			rootCmd.SetArgs([]string{"installer", "ls", "--app", app.Slug})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 		})
 	})
 
@@ -103,17 +105,19 @@ spec:
 		It("should return an error telling user to use --yaml-file flag", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
+			var errorMsg = "use the --yaml-file flag when passing a yaml filename"
 
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"installer", "create", "--yaml", "installer.yaml", "--app", app.Slug, "--promote", "Unstable"})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.NotNil(t, err)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(errorMsg))
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Contains(stdout.String(), `use the --yaml-file flag when passing a yaml filename`)
+			Expect(stdout.String()).To(ContainSubstring(errorMsg))
 		})
 	})
 })

@@ -3,44 +3,47 @@ package test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
-	"github.com/stretchr/testify/assert"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 var _ = Describe("kots apps", func() {
-	t := GinkgoT()
-	req := assert.New(t) // using assert since it plays nicer with ginkgo
-	params, err := GetParams()
-	req.NoError(err, fmt.Sprintf("%+v", err))
+	var (
+		httpClient     *platformclient.HTTPClient
+		kotsRestClient kotsclient.VendorV3Client
 
-	httpClient := platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *httpClient}
-
-	var app *types.KotsAppWithChannels
-	var tmpdir string
+		app    *types.KotsAppWithChannels
+		tmpdir string
+		params *Params
+		err    error
+	)
 
 	BeforeEach(func() {
-		var err error
+		params, err = GetParams()
+		Expect(err).ToNot(HaveOccurred())
+
+		httpClient = platformclient.NewHTTPClient(params.APIOrigin, params.APIToken)
+		kotsRestClient = kotsclient.VendorV3Client{HTTPClient: *httpClient}
+
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 		tmpdir, err = ioutil.TempDir("", "replicated-cli-test")
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 
 	})
 
 	AfterEach(func() {
 		err := kotsRestClient.DeleteKOTSApp(app.Id)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 		err = os.RemoveAll(tmpdir)
-		req.NoError(err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	Context("replicated app --help", func() {
@@ -52,12 +55,12 @@ var _ = Describe("kots apps", func() {
 			rootCmd.SetArgs([]string{"app", "--help"})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Contains(stdout.String(), `list apps and create new apps`)
+			Expect(stdout.String()).To(ContainSubstring("list apps and create new apps"))
 		})
 	})
 	Context("replicated app ls", func() {
@@ -69,14 +72,14 @@ var _ = Describe("kots apps", func() {
 			rootCmd.SetArgs([]string{"app", "ls"})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Contains(stdout.String(), app.Id)
-			req.Contains(stdout.String(), app.Name)
-			req.Contains(stdout.String(), "kots")
+			Expect(stdout.String()).To(ContainSubstring(app.Id))
+			Expect(stdout.String()).To(ContainSubstring(app.Name))
+			Expect(stdout.String()).To(ContainSubstring("kots"))
 		})
 	})
 	Context("replicated app ls SLUG", func() {
@@ -88,15 +91,15 @@ var _ = Describe("kots apps", func() {
 			rootCmd.SetArgs([]string{"app", "ls", app.Slug})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
-			req.Equal(stdout.String(),
-				`ID                             NAME           SLUG           SCHEDULER
-`+app.Id+`    `+app.Name+`    `+app.Slug+`    kots
-`)
+			expectedLsOutput := fmt.Sprintf(`ID                             NAME           SLUG           SCHEDULER
+%s    %s    %s    kots
+`, app.Id, app.Name, app.Slug)
+			Expect(stdout.String()).To(Equal(expectedLsOutput))
 		})
 	})
 
@@ -112,35 +115,34 @@ var _ = Describe("kots apps", func() {
 			rootCmd := cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"app", "create", newName})
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			appSlug := strings.ToLower(newName) // maybe?
 
-			req.Contains(stdout.String(), newName)
-			req.Contains(stdout.String(), appSlug)
-			req.Contains(stdout.String(), "kots")
+			Expect(stdout.String()).To(ContainSubstring(newName))
+			Expect(stdout.String()).To(ContainSubstring(appSlug))
+			Expect(stdout.String()).To(ContainSubstring("kots"))
 
 			stdout.Truncate(0)
 			rootCmd = cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"app", "delete", appSlug, "--force"})
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.Empty(stderr.String(), "Expected no stderr output")
-			req.NotEmpty(stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			stdout.Truncate(0)
 			rootCmd = cmd.GetRootCmd()
 			rootCmd.SetArgs([]string{"app", "ls", appSlug})
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			req.NoError(err)
+			Expect(err).ToNot(HaveOccurred())
 
-			req.NotContains(stdout.String(), appSlug)
-			req.Equal(stdout.String(),
-				`ID    NAME    SLUG    SCHEDULER
-`)
+			Expect(stdout.String()).ToNot(ContainSubstring(appSlug))
+			Expect(stdout.String()).To(Equal(`ID    NAME    SLUG    SCHEDULER
+`))
 		})
 	})
 })

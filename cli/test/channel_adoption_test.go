@@ -1,13 +1,11 @@
 package test
 
 import (
-	"bufio"
 	"bytes"
 	"os"
 
-	. "github.com/onsi/ginkgo"
-	"github.com/stretchr/testify/assert"
-
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	channels "github.com/replicatedhq/replicated/gen/go/v1"
@@ -17,19 +15,23 @@ import (
 // This only tests with no active licenses since the vendor API does not provide
 // a way to update licenses' last_active field.
 var _ = Describe("channel adoption", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	var app = &apps.App{Name: mustToken(8)}
-	var appChan = &channels.AppChannel{}
+	var (
+		api     *platformclient.HTTPClient
+		app     *apps.App
+		appChan *channels.AppChannel
+		err     error
+	)
 
 	BeforeEach(func() {
-		t.Logf("%+v\n", api)
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		appChan = &channels.AppChannel{}
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		appChans, err := api.ListChannels(app.Id)
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 		appChan = &appChans[0]
 	})
 
@@ -46,15 +48,12 @@ var _ = Describe("channel adoption", func() {
 				rootCmd := cmd.GetRootCmd()
 				rootCmd.SetArgs([]string{"channel", "adoption", appChan.Id, "--app", app.Slug})
 				err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-				assert.Nil(t, err)
+				Expect(err).ToNot(HaveOccurred())
 
-				assert.Zero(t, stderr, "Expected no stderr output")
-				assert.NotZero(t, stdout, "Expected stdout output")
+				Expect(stderr.String()).To(BeEmpty())
+				Expect(stdout.String()).ToNot(BeEmpty())
 
-				r := bufio.NewScanner(&stdout)
-
-				assert.True(t, r.Scan())
-				assert.Equal(t, "No active licenses in channel", r.Text())
+				Expect(stdout.String()).To(Equal("No active licenses in channel\n"))
 			})
 		})
 	})

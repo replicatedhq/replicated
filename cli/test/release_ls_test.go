@@ -3,27 +3,30 @@ package test
 import (
 	"bufio"
 	"bytes"
-	"os"
-
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
 	apps "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/stretchr/testify/assert"
+	"os"
 )
 
 var _ = Describe("release ls", func() {
-	api := platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
-	t := GinkgoT()
-	app := &apps.App{Name: mustToken(8)}
+	var (
+		api *platformclient.HTTPClient
+		app *apps.App
+		err error
+	)
 
 	BeforeEach(func() {
-		var err error
+		api = platformclient.NewHTTPClient(os.Getenv("REPLICATED_API_ORIGIN"), os.Getenv("REPLICATED_API_TOKEN"))
+		app = &apps.App{Name: mustToken(8)}
+
 		app, err = api.CreateApp(&platformclient.AppOptions{Name: app.Name})
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 
 		_, err = api.CreateRelease(app.Id, "")
-		assert.Nil(t, err)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -39,20 +42,20 @@ var _ = Describe("release ls", func() {
 			rootCmd.SetArgs([]string{"release", "ls", "--app", app.Slug})
 
 			err := cmd.Execute(rootCmd, nil, &stdout, &stderr)
-			assert.Nil(t, err)
+			Expect(err).ToNot(HaveOccurred())
 
-			assert.Empty(t, stderr.String(), "Expected no stderr output")
-			assert.NotEmpty(t, stdout.String(), "Expected stdout output")
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
 
 			r := bufio.NewScanner(&stdout)
 
-			assert.True(t, r.Scan())
-			assert.Regexp(t, `SEQUENCE\s+CREATED\s+EDITED\s+ACTIVE_CHANNELS`, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(MatchRegexp(`SEQUENCE\s+CREATED\s+EDITED\s+ACTIVE_CHANNELS`))
 
-			assert.True(t, r.Scan())
-			assert.Regexp(t, `\d+\s+`, r.Text())
+			Expect(r.Scan()).To(BeTrue())
+			Expect(r.Text()).To(MatchRegexp(`\d+\s+`))
 
-			assert.False(t, r.Scan())
+			Expect(r.Scan()).To(BeFalse())
 		})
 	})
 })

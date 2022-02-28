@@ -2,28 +2,25 @@ package test
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/types"
-
+	"fmt"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
+	"io/ioutil"
+	"os"
 )
 
-var _ = Describe("kots release lint", func() {
+var _ = Describe("channel disable semantic versioning", func() {
 	var (
 		httpClient     *platformclient.HTTPClient
 		kotsRestClient kotsclient.VendorV3Client
-
-		app    *types.KotsAppWithChannels
-		tmpdir string
-		params *Params
-		err    error
+		app            *types.KotsAppWithChannels
+		params         *Params
+		err            error
+		tmpdir         string
 	)
 
 	BeforeEach(func() {
@@ -35,9 +32,9 @@ var _ = Describe("kots release lint", func() {
 
 		app, err = kotsRestClient.CreateKOTSApp(mustToken(8))
 		Expect(err).ToNot(HaveOccurred())
+
 		tmpdir, err = ioutil.TempDir("", "replicated-cli-test")
 		Expect(err).ToNot(HaveOccurred())
-
 	})
 
 	AfterEach(func() {
@@ -48,23 +45,13 @@ var _ = Describe("kots release lint", func() {
 		Expect(err).ToNot(HaveOccurred())
 	})
 
-	Context("with just a single config map", func() {
-		It("should have errors about missing files", func() {
+	Context("replicated channel disable-semantic-versioning --help ", func() {
+		It("should print usage", func() {
 			var stdout bytes.Buffer
 			var stderr bytes.Buffer
 
-			configMap := `apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: fake
-data:
-  fake: yep it's fake
-`
-			err := ioutil.WriteFile(filepath.Join(tmpdir, "config.yaml"), []byte(configMap), 0644)
-			Expect(err).ToNot(HaveOccurred())
-
 			rootCmd := cmd.GetRootCmd()
-			rootCmd.SetArgs([]string{"release", "lint", "--yaml-dir", tmpdir, "--app", app.Slug})
+			rootCmd.SetArgs([]string{"channel", "disable-semantic-versioning", "--help"})
 
 			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
 			Expect(err).ToNot(HaveOccurred())
@@ -72,9 +59,26 @@ data:
 			Expect(stderr.String()).To(BeEmpty())
 			Expect(stdout.String()).ToNot(BeEmpty())
 
-			Expect(stdout.String()).To(ContainSubstring(`preflight-spec       warn                            Missing preflight spec`))
-			Expect(stdout.String()).To(ContainSubstring(`config-spec          warn                            Missing config spec`))
-			Expect(stdout.String()).To(ContainSubstring(`troubleshoot-spec    warn                            Missing troubleshoot spec`))
+			Expect(stdout.String()).To(ContainSubstring("Disable semantic versioning for the CHANNEL_ID."))
+		})
+	})
+
+	Context("with a valid CHANNEL_ID", func() {
+		It("should disable semantic versioning", func() {
+			var stdout bytes.Buffer
+			var stderr bytes.Buffer
+			var chanID = app.Channels[0].ID
+
+			rootCmd := cmd.GetRootCmd()
+			rootCmd.SetArgs([]string{"channel", "disable-semantic-versioning", chanID, "--app", app.Id})
+
+			err = cmd.Execute(rootCmd, nil, &stdout, &stderr)
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(stderr.String()).To(BeEmpty())
+			Expect(stdout.String()).ToNot(BeEmpty())
+
+			Expect(stdout.String()).To(ContainSubstring(fmt.Sprintf("Semantic versioning successfully disabled for channel %s\n", chanID)))
 		})
 	})
 })
