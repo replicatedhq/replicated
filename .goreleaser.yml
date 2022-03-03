@@ -10,7 +10,7 @@ brews:
   folder: HomebrewFormula
   install: bin.install "replicated"
   homepage: https://docs.replicated.com/reference/replicated-cli-installing
-  description: "Package KOTS applications and manage releases, channels, customers and entitlements using a command-line interface."
+  description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
 builds:
 - goos:
   - linux
