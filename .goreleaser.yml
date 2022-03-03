@@ -1,16 +1,16 @@
 project_name: cli
 release:
   github:
-    owner: replicatedhq
     name: replicated
+    owner: replicatedhq
 brews:
-  - github:
-      owner: replicatedhq
-      name: homebrew-replicated
-    folder: HomebrewFormula
-    install: bin.install "replicated"
-    homepage: https://www.replicated.com/docs/reference/vendor-cli/
-    description: "Manage your app's channels and releases from the command line"
+- tap:
+    name: homebrew-replicated
+    owner: replicatedhq
+  folder: HomebrewFormula
+  install: bin.install "replicated"
+  homepage: https://docs.replicated.com/reference/replicated-cli-installing
+  description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
 builds:
 - goos:
   - linux
@@ -29,10 +29,9 @@ builds:
   flags: -tags netgo -installsuffix netgo
   binary: replicated
   hooks: {}
-archive:
-  format: tar.gz
-  name_template: '{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{
-    .Arm }}{{ end }}'
+archives:
+- format: tar.gz
+  name_template: "{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
   files:
   - licence*
   - LICENCE*

@@ -77,6 +77,6 @@ jobs:
           DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: run goreleaser
-        run: curl -sL https://git.io/goreleaser | VERSION=v0.123.3 bash
+        run: curl -sL https://git.io/goreleaser | VERSION=v1.5.0 bash 
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
