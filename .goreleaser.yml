@@ -4,13 +4,15 @@ release:
     name: replicated
     owner: replicatedhq
 brews:
-- tap:
-    name: homebrew-replicated
+- homepage: https://docs.replicated.com/reference/replicated-cli-installing
+  description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
+  tap:
     owner: replicatedhq
+    name: homebrew-replicated
   folder: HomebrewFormula
   install: bin.install "replicated"
-  homepage: https://docs.replicated.com/reference/replicated-cli-installing
-  description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
+universal_binaries:
+- replace: true
 builds:
 - goos:
   - linux
