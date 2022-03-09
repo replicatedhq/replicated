@@ -1,4 +1,4 @@
-project_name: cli
+project_name: replicated
 release:
   github:
     name: replicated
