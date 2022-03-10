@@ -1,4 +1,4 @@
-project_name: replicated
+project_name: cli
 release:
   github:
     name: replicated
@@ -13,6 +13,7 @@ brews:
   install: bin.install "replicated"
 universal_binaries:
 - replace: true
+  id: replicated
 builds:
 - goos:
   - linux
