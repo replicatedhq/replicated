@@ -12,8 +12,10 @@ brews:
   folder: HomebrewFormula
   install: bin.install "replicated"
 universal_binaries:
-- replace: true
-  id: replicated
+- ids:
+  - cli
+  replace: true
+  name_template: replicated
 builds:
 - goos:
   - linux
