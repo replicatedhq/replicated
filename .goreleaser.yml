@@ -15,6 +15,7 @@ universal_binaries:
 - ids:
   - cli
   replace: true
+  name_template: replicated
 builds:
 - goos:
   - linux
