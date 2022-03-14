@@ -2,6 +2,42 @@
 
 All you need is a computer with Go installed, and a Replicatd account to test with.
 
+### Updating Goreleaser / Testing Homebrew updates
+
+#### How releases work
+
+In general, push a SemVer tag to the repo on the `main` branch and a GitHub action will trigger, invoking [goreleaser](https://goreleaser.com/) to create the necessary artifacts including go binaries, docker images, and homebrew tap updates. Binaries are availabled on the [releases page](https://github.com/replicatedhq/replicated/releases).
+
+Goreleaser is configured to push updates to our [Hombebrew Tap](https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap) at https://github.com/replicatedhq/homebrew-replicated.
+
+These can be installed with
+
+```
+# preferred method, more clear
+brew install replicatedhq/replicated/cli 
+
+# later
+brew upgrade replicatedhq/replicated/cli 
+```
+or
+
+```
+# alternative method. less typing but also less clear, esp on upgrades
+brew tap replicatedhq/replicated
+brew install cli 
+
+# later
+brew upgrade cli
+```
+
+#### How to use goreleaser locally to preview what assets would be created
+
+#### Testing homebrew tap changes locally
+
+You can edit the tap file directly in your local homebrew cache. E.g. mine is checked out at /Users/dex/homebrew/Library/Taps/replicatedhq/homebrew-replicated/. By editing those files and running e.g. `brew upgrade replicatedhq/replicated/cli`, you can verify the changes.
+
+If you want to allow others to test your homebrew-only changes (that is, just changes to the ruby file) without you needing to create a full release via goreleaser, you can also edit the file in the github repo. Testers may need to `rm -r` their locally cached checkout of the tap (e.g. `rm -r /Users/dex/homebrew/Library/Taps/replicatedhq/homebrew-replicated/`) before running `brew install` or `brew upgrade`.
+
 ### Design
 
 Replicated apps can be "platform" or "ship". Avoid deep-in-the-callstack checks for app type. There's a common "Client" class that should handle the switch on appType, and call the appropriate implementation. We would like to avoid having this switch get lower in the call stack.
