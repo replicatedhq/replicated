@@ -29,18 +29,16 @@ brew install cli
 # later
 brew upgrade cli
 ```
-
-#### How to use goreleaser locally to preview what assets would be created
-
 #### Testing goreleaser locally
 
-You can test the artefacts goreleaser will create locally!
+You can test the artifacts goreleaser will create locally!
 
 1. Install [goreleaser](https://goreleaser.com/install/) using `brew install goreleaser`
 2. Run `goreleaser release --snapshot --rm-dist`.
-3. Check the artefacts created under `dist/`
+3. Check the artifacts created under `dist/`
    1. Check `cli.rb` and make sure it has the expected content.
    2. Check the `replicated_SNAPSHOT-*.tar.gz` files and by using `tar -tvf` making sure they contain the `replicated` binary.
+   3. Optionally, follow the instructions below to test your created `cli.rb` with `brew install` or `brew upgrade` by copying it into your tap cache.
 
 #### Testing homebrew tap changes locally
 
