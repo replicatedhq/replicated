@@ -156,10 +156,11 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	return allReleases, nil
 }
 
-func (c *VendorV3Client) PromoteRelease(appID, label, notes string, sequence int64, channelIDs ...string) error {
+func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
 	request := types.KotsPromoteReleaseRequest{
 		ReleaseNotes: notes,
 		VersionLabel: label,
+		IsRequired:   required,
 		ChannelIDs:   channelIDs,
 	}
 

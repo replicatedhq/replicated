@@ -52,6 +52,7 @@ type KotsListReleasesResponse struct {
 type KotsPromoteReleaseRequest struct {
 	ReleaseNotes   string   `json:"releaseNotes"`
 	VersionLabel   string   `json:"versionLabel"`
+	IsRequired     bool     `json:"isRequired"`
 	ChannelIDs     []string `json:"channelIds"`
 	IgnoreWarnings bool     `json:"ignoreWarnings"`
 }

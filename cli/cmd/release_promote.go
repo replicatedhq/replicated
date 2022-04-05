@@ -21,6 +21,7 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.releaseNotes, "release-notes", "", "The **markdown** release notes")
 	cmd.Flags().BoolVar(&r.args.releaseOptional, "optional", false, "If set, this release can be skipped")
+	cmd.Flags().BoolVar(&r.args.releaseRequired, "required", false, "If set, this release can't be skipped")
 	cmd.Flags().StringVar(&r.args.releaseVersion, "version", "", "A version label for the release in this channel")
 
 	cmd.RunE = r.releasePromote
@@ -47,7 +48,14 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 		newID = channelID.ID
 	}
 
-	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, !r.args.releaseOptional, newID); err != nil {
+	required := false
+	if r.appType == "platform" {
+		required = !r.args.releaseOptional
+	} else if r.appType == "kots" {
+		required = r.args.releaseRequired
+	}
+
+	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, required, newID); err != nil {
 		return err
 	}
 

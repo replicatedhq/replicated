@@ -150,7 +150,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	} else if appType == "ship" {
 		return c.ShipClient.PromoteRelease(appID, sequence, label, notes, channelIDs...)
 	} else if appType == "kots" {
-		return c.KotsClient.PromoteRelease(appID, label, notes, sequence, channelIDs...)
+		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
 	}
 	return errors.New("unknown app type")
 }
