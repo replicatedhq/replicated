@@ -1,0 +1,15 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: example-config
+spec:
+  groups:
+    - name: example_settings
+      title: Test Config
+      description: Test configuration
+      items:
+        - name: use_ingress
+          title: Use Ingress?
+          help_text: An example
+          type: bool
+          default: "0"

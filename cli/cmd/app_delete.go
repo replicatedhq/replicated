@@ -4,6 +4,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +24,7 @@ func (r *runners) InitAppDelete(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
-	log := print.NewLogger(r.w)
+	log := logger.NewLogger(r.w)
 	if len(args) != 1 {
 		return errors.New("missing app slug or id")
 	}

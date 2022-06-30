@@ -10,25 +10,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/manifoldco/promptui"
-	"github.com/replicatedhq/replicated/cli/print"
-
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	kotstypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
 const (
 	defaultYAMLDir = "manifests"
 )
-
-type kotsSingleSpec struct {
-	Name     string   `json:"name"`
-	Path     string   `json:"path"`
-	Content  string   `json:"content"`
-	Children []string `json:"children"`
-}
 
 func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd := &cobra.Command{
@@ -156,7 +149,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 }
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
-	log := print.NewLogger(r.w)
+	log := logger.NewLogger(r.w)
 
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
@@ -343,7 +336,7 @@ func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbs
 	return channel.ID, nil
 }
 
-func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSingleSpec, error) {
+func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstypes.KotsSingleSpec, error) {
 	if err != nil {
 		return nil, err
 	}
@@ -377,16 +370,16 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotsSing
 		str = string(bytes)
 	}
 
-	return &kotsSingleSpec{
+	return &kotstypes.KotsSingleSpec{
 		Name:     info.Name(),
 		Path:     singlefile,
 		Content:  str,
-		Children: []string{},
+		Children: []kotstypes.KotsSingleSpec{},
 	}, nil
 }
 
 func readYAMLDir(yamlDir string) (string, error) {
-	var allKotsReleaseSpecs []kotsSingleSpec
+	var allKotsReleaseSpecs []kotstypes.KotsSingleSpec
 	err := filepath.Walk(yamlDir, func(path string, info os.FileInfo, err error) error {
 		spec, err := encodeKotsFile(yamlDir, path, info, err)
 		if err != nil {
