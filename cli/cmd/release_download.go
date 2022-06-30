@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/cli/print"
+	kotsrelease "github.com/replicatedhq/replicated/pkg/kots/release"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +39,7 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		return errors.New("Downloading a release for a KOTS application requires a --dest directory to unpack the manifests, e.g. \"./manifests\"")
 	}
 
-	log := print.NewLogger(os.Stdout)
+	log := logger.NewLogger(os.Stdout)
 	log.ActionWithSpinner("Fetching Release %d", seq)
 	release, err := r.api.GetRelease(r.appID, r.appType, seq)
 	if err != nil {
@@ -52,40 +49,10 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	log.FinishSpinner()
 
 	log.ActionWithoutSpinner("Writing files to %s", r.args.releaseDownloadDest)
-	var releaseYamls []kotsSingleSpec
-	err = json.Unmarshal([]byte(release.Config), &releaseYamls)
+
+	err = kotsrelease.Save(r.args.releaseDownloadDest, release, log)
 	if err != nil {
-		return errors.Wrap(err, "unmarshal release yamls")
-	}
-
-	err = os.MkdirAll(r.args.releaseDownloadDest, 0755)
-	if err != nil {
-		return errors.Wrapf(err, "create dir %q", r.args.releaseDownloadDest)
-	}
-
-	for _, releaseYaml := range releaseYamls {
-		path := filepath.Join(r.args.releaseDownloadDest, releaseYaml.Path)
-		log.ChildActionWithoutSpinner(releaseYaml.Path)
-
-		var content []byte
-
-		ext := filepath.Ext(releaseYaml.Path)
-		switch ext {
-		case ".tgz", ".gz":
-			decoded, err := base64.StdEncoding.DecodeString(releaseYaml.Content)
-			if err == nil {
-				content = decoded
-			} else {
-				content = []byte(releaseYaml.Content)
-			}
-		default:
-			content = []byte(releaseYaml.Content)
-		}
-
-		err := ioutil.WriteFile(path, content, 0644)
-		if err != nil {
-			return errors.Wrapf(err, "write file %q", path)
-		}
+		return errors.Wrap(err, "save release")
 	}
 
 	return nil

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -58,7 +58,7 @@ func (r *runners) installerCreate(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("Installer specs are only supported for KOTS applications, app %q has type %q", r.appID, r.appType)
 	}
 
-	log := print.NewLogger(r.w)
+	log := logger.NewLogger(r.w)
 	if r.args.createInstallerAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
 		err := r.setKOTSDefaultInstallerParams()

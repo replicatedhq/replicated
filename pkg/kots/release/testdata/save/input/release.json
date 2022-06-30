@@ -1,0 +1,46 @@
+[
+    {
+      "name": "app",
+      "path": "app",
+      "content": "",
+      "children": [
+        {
+          "name": "example-configmap.yaml",
+          "path": "app/example-configmap.yaml",
+          "content": "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: example-configmap\ndata:\n    ENV_VAR_1: \"fake\"\n    ENV_VAR_2: \"faker\"",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "example-service.yaml",
+      "path": "example-service.yaml",
+      "content": "apiVersion: v1\nkind: Service\nmetadata:\n  name: example-nginx\n  labels:\n    app: example\n    component: nginx\nspec:\n  type: ClusterIP\n  ports:\n  - port: 80\n  selector:\n    app: example\n    component: nginx\n",
+      "children": []
+    },
+    {
+      "name": "archive.tgz",
+      "path": "archive.tgz",
+      "content": "cHJldGVuZCB0aGlzIGlzIGJpbmFyeSBkYXRh",
+      "children": []
+    },
+    {
+      "name": "kots",
+      "path": "kots",
+      "content": "",
+      "children": [
+        {
+          "name": "kots-config.yaml",
+          "path": "kots/kots-config.yaml",
+          "content": "apiVersion: kots.io/v1beta1\nkind: Config\nmetadata:\n  name: example-config\nspec:\n  groups:\n    - name: example_settings\n      title: Test Config\n      description: Test configuration\n      items:\n        - name: use_ingress\n          title: Use Ingress?\n          help_text: An example\n          type: bool\n          default: \"0\"\n",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "kots-app.yaml",
+      "path": "kots-app.yaml",
+      "content": "apiVersion: kots.io/v1beta1\nkind: Application\nmetadata:\n  name: app-slug\nspec:\n  title: App Name\n  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png\n  statusInformers:\n    - deployment/example-nginx\n  ports:\n    - serviceName: \"example-nginx\"\n      servicePort: 80\n      localPort: 8888\n      applicationUrl: \"http://example-nginx\"\n",
+      "children": []
+    }
+  ]
