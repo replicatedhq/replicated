@@ -57,15 +57,16 @@ test-env:
 
 .PHONY: test
 test: test-env
-	go test -v ./cli/test
-
-.PHONY: pacts
-pacts:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
+		-e REPLICATED_API_ORIGIN \
+		-e REPLICATED_ID_ORIGIN \
+		-e VENDOR_USER_EMAIL \
+		-e VENDOR_USER_PASSWORD \
+		-e REPLICATED_API_TOKEN \
 		replicated-cli-test \
-		go test -v ./pkg/...
+		go test -v ./...
 
 
 .PHONY: publish-pacts
