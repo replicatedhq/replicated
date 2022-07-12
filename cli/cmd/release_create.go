@@ -310,10 +310,6 @@ func (r *runners) validateReleaseCreateParams() error {
 		return errors.Errorf("the flag --ensure-channel is only supported for KOTS and Ship applications, app %q is of type %q", r.appID, r.appType)
 	}
 
-	if r.args.createReleasePromoteRequired && r.appType == "kots" {
-		return errors.Errorf("the --required flag is not supported for KOTS applications")
-	}
-
 	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
 		return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
 	}

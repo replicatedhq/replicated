@@ -54,6 +54,7 @@ type KotsPromoteReleaseRequest struct {
 	VersionLabel   string   `json:"versionLabel"`
 	ChannelIDs     []string `json:"channelIds"`
 	IgnoreWarnings bool     `json:"ignoreWarnings"`
+	Required       bool     `json:"isRequired"`
 }
 
 type KotsAppRelease struct {
