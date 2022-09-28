@@ -145,4 +145,20 @@ type runnerArgs struct {
 	createInstallerAutoDefaults       bool
 	createInstallerAutoDefaultsAccept bool
 	deleteAppForceYes                 bool
+
+	addRegistrySkipValidation             bool
+	addRegistryAuthType                   string
+	addRegistryEndpoint                   string
+	addRegistryUsername                   string
+	addRegistryPassword                   string
+	addRegistryPasswordFromStdIn          bool
+	addRegistryAccessKeyID                string
+	addRegistrySecretAccessKey            string
+	addRegistrySecretAccessKeyFromStdIn   bool
+	addRegistryServiceAccountKey          string
+	addRegistryServiceAccountKeyFromStdIn bool
+	addRegistryToken                      string
+	addRegistryTokenFromStdIn             bool
+
+	testRegistryImage string
 }
