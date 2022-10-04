@@ -7,92 +7,14 @@
   },
   "interactions": [
     {
-      "description": "A request to create a new release for cli-create-release-app-id",
-      "providerState": "Create a release for cli-create-release-app-id",
-      "request": {
-        "method": "POST",
-        "path": "/v1/app/cli-create-release-app-id/release",
-        "headers": {
-          "Authorization": "cli-create-release-auth",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "source": "latest",
-          "sourcedata": 0
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "Config": "",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 10
-        },
-        "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
-            "match": "type"
-          },
-          "$.body.Sequence": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "An empty request to create a new release for cli-create-release-app-id",
-      "providerState": "Empty create a release for cli-create-release-app-id",
-      "request": {
-        "method": "POST",
-        "path": "/v1/app/cli-create-release-app-id/release",
-        "headers": {
-          "Authorization": "cli-create-release-auth"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "Config": "",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 10
-        },
-        "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
-            "match": "type"
-          },
-          "$.body.Sequence": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get an existing release for cli-create-release-app-id",
-      "providerState": "Get a release for cli-create-release-app-id",
+      "description": "A request to get kots app channel",
+      "providerState": "Get KOTS app channel",
       "request": {
         "method": "GET",
-        "path": "/v1/app/cli-create-release-app-id/2/properties",
+        "path": "/v3/app/replicated-cli-get-channel-app/channel/unstable",
         "headers": {
-          "Authorization": "cli-create-release-auth"
+          "Authorization": "replicated-cli-get-channel-token",
+          "Content-Type": "application/json"
         }
       },
       "response": {
@@ -100,20 +22,25 @@
         "headers": {
         },
         "body": {
-          "Config": "there might be a config here",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 2
+          "channel": {
+            "id": "replicated-cli-get-channel-unstable",
+            "name": "Unstable",
+            "releases": [
+              {
+                "channelSeqeuence": 1,
+                "sequence": 1,
+                "version": "0.0.1"
+              },
+              {
+                "channelSeqeuence": 2,
+                "sequence": 2,
+                "version": "0.0.2"
+              }
+            ]
+          }
         },
         "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
+          "$.body.channel.id": {
             "match": "type"
           }
         }

@@ -71,7 +71,9 @@ func (c *VendorV3Client) ListChannels(appID string, appSlug string, channelName 
 	var response = ListChannelsResponse{}
 
 	v := url.Values{}
-	v.Set("channelName", channelName)
+	if channelName != "" {
+		v.Set("channelName", channelName)
+	}
 	v.Set("excludeDetail", "true")
 
 	url := fmt.Sprintf("/v3/app/%s/channels?%s", appID, v.Encode())
@@ -114,7 +116,7 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 	url := fmt.Sprintf("/v3/app/%s/channel", appID)
 	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
 	if err != nil {
-		return nil, errors.Wrap(err, "list channels")
+		return nil, errors.Wrap(err, "create channel")
 	}
 
 	return &types.Channel{
