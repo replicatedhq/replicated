@@ -42,7 +42,6 @@ func (c *Client) ListChannels(appID string, appType string, appSlug string, chan
 }
 
 func (c *Client) GetChannel(appID string, appType string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
-
 	if appType == "platform" {
 		return c.PlatformClient.GetChannel(appID, channelID)
 	} else if appType == "ship" {
@@ -55,7 +54,6 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ch
 }
 
 func (c *Client) ArchiveChannel(appID string, appType string, channelID string) error {
-
 	if appType == "platform" {
 		return c.PlatformClient.ArchiveChannel(appID, channelID)
 	} else if appType == "ship" {
@@ -90,7 +88,6 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 }
 
 func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug string, nameOrID string, description string, createIfAbsent bool) (*types.Channel, error) {
-
 	gqlNotFoundErr := fmt.Sprintf("channel %s not found", nameOrID)
 	channel, _, err := c.GetChannel(appID, appType, nameOrID)
 	if err == nil {
@@ -127,12 +124,10 @@ func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug 
 }
 
 func (c *Client) GetChannelByName(appID string, appType string, appSlug string, name string) (*types.Channel, error) {
-
 	return c.GetOrCreateChannelByName(appID, appType, appSlug, name, "", false)
 }
 
 func (c *Client) findChannel(channels []types.Channel, name string) (*types.Channel, int, error) {
-
 	matchingChannels := make([]*types.Channel, 0)
 	for _, channel := range channels {
 		if channel.ID == name || channel.Name == name {
@@ -150,7 +145,6 @@ func (c *Client) findChannel(channels []types.Channel, name string) (*types.Chan
 }
 
 func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string, chanID string, enableSemver bool) error {
-
 	if appType == "platform" {
 		return errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "ship" {

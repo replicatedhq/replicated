@@ -16,7 +16,7 @@ func (c *VendorV3Client) ListApps() ([]types.AppAndChannels, error) {
 
 	err := c.DoJSON("GET", "/v3/apps", http.StatusOK, nil, &response)
 	if err != nil {
-		return nil, errors.Wrap(err, "list channels")
+		return nil, errors.Wrap(err, "list apps")
 	}
 
 	results := make([]types.AppAndChannels, 0)
