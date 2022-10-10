@@ -9,41 +9,29 @@ on:
     - '!**.png'
 
 jobs:
+
+  install-pact:
+    runs-on: ubuntu-20.04
+    steps:
+      - run: |
+          curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.69.0/pact-1.69.0-linux-x86_64.tar.gz
+          tar -zxvf pact-1.69.0-linux-x86_64.tar.gz
+          sudo mv pact /usr/local/bin
+          echo "export PATH=/usr/local/bin/pact/bin:\$PATH" | sudo tee -a /etc/profile > /dev/null
   make-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    needs:
+      - install-pact
     steps:
       - uses: actions/checkout@v2
       - name: make test
         run: make test
-        env:
-          REPLICATED_API_ORIGIN: https://api.replicated.com/vendor
-          REPLICATED_ID_ORIGIN: https://id.replicated.com
-          VENDOR_USER_EMAIL: dexter@replicated.com
-          VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
-          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
   make-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.18'
       - name: make build
         run: make build
-  snyk-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-  snyk-monitor:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor

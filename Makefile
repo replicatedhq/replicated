@@ -47,26 +47,16 @@ deps:
 		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicatedhq.replicated glide install
 
-.PHONY: test-env
-test-env:
-	@if [ -z "${REPLICATED_API_TOKEN}" ]; then echo "Missing REPLICATED_API_TOKEN"; exit 1; fi
-	@if [ -z "${VENDOR_USER_PASSWORD}" ]; then echo "Missing VENDOR_USER_PASSWORD"; exit 1; fi
-	@if [ -z "${VENDOR_USER_EMAIL}" ]; then echo "Missing VENDOR_USER_EMAIL"; exit 1; fi
-	@if [ -z "${REPLICATED_API_ORIGIN}" ]; then echo "Missing REPLICATED_API_ORIGIN"; exit 1; fi
-	@if [ -z "${REPLICATED_ID_ORIGIN}" ]; then echo "Missing REPLICATED_ID_ORIGIN"; exit 1; fi
-
 .PHONY: test
-test: test-env
+test:
+	# pacts and unit
+	go test -v ./...
+
+	# integration and e2e
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
-		-e REPLICATED_API_ORIGIN \
-		-e REPLICATED_ID_ORIGIN \
-		-e VENDOR_USER_EMAIL \
-		-e VENDOR_USER_PASSWORD \
-		-e REPLICATED_API_TOKEN \
 		replicated-cli-test \
-		go test -v ./...
 
 
 .PHONY: publish-pacts
