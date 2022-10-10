@@ -15,12 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
-      - name: Install pact
-        run: |
-          curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.91.0/pact-1.91.0-linux-x86_64.tar.gz
-          tar -zxvf pact-1.91.0-linux-x86_64.tar.gz
-          sudo mv pact /usr/local/bin
-          echo "/usr/local/bin/pact/bin" >> $GITHUB_PATH
+      - uses: replicatedhq/action-install-pact@d6ba7a41a55371e550788f297006d12163aaac15
       - name: make test
         run: make test
   make-build:
