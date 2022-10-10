@@ -125,7 +125,7 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 		}
 		page += 1
 		for _, release := range resp.Releases {
-			activeChannels := make([]types.Channel, 0, 0)
+			activeChannels := []types.Channel{}
 
 			for _, kotsReleaseChannel := range release.Channels {
 				if kotsReleaseChannel.IsArchived {

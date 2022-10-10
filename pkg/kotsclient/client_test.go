@@ -9,7 +9,31 @@ import (
 )
 
 var (
-	pact     dsl.Pact
+	pact              dsl.Pact
+	testInstallerYAML = `apiVersion: kurl.sh/v1beta1
+kind: Installer
+metadata:
+  name: 'myapp'
+help_text: |
+  Please check this file exists in root directory: config.yaml
+spec:
+  kubernetes:
+    version: latest
+  docker:
+    version: latest
+  weave:
+    version: latest
+  rook:
+    version: latest
+  contour:
+    version: latest
+  registry:
+    version: latest
+  prometheus:
+    version: latest
+  kotsadm:
+    version: latest
+`
 	testYAML = `---
 replicated_api_version: 2.9.2
 name: "Test"
