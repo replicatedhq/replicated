@@ -7,13 +7,39 @@
   },
   "interactions": [
     {
-      "description": "A request to get kots app channel",
-      "providerState": "Get KOTS app channel",
+      "description": "A request to create a kots release",
+      "providerState": "Create KOTS release",
+      "request": {
+        "method": "POST",
+        "path": "/v3/app/replicated-cli-kots-release-app/release",
+        "headers": {
+          "Authorization": "replicated-cli-kots-release-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "spec_gzip": "H4sIAAAAAAAA/6SSMW/bMBCFd/6KgzJkogRkK4F2SQp0aod0KwqBoS4RYeqO5Z2sGoH/e0HJjj1kKbLpRPG9p++dtdYUzCkGrzj0Psd+j0Uik4O79lN7Z8hP6KD5iaKNMTfmBkbVLK7rlmVpL3fbwFM3cJAu+7DzL5FerCfr8/ZBZOqunm0unLFoRDE35jI4A+Bz7ueS3Grkuu71tbrAPdNzfPmR63VoRhat0Ro4Hg1AYBJO2GvU9J9xd0+dzDlz0Rr5wHOxYRblCYt0kUR9SnZHvJA9oamRq39f8M8cC05Iuia/IvlGsfnyeQV5SvOIWn0EJBRE+gjOsAKxZyGzzc5Y2Do7IzIAJyzfLm8GlFDiCtPBV5K5IOgYBQaefKRVAqJA4Vn9U0JggsoGCHXhsmsNQFSc1v9+x/E9T4C9TzM6uL1UWls7MYFGk7RvxR6Pt5vOIaMDxb+6jSja58LBreMQJSd/6LcA9yOGHTx8f1zPAk+Tp8FBQeG0x75qbzU84HMkhJEX0BHhCmtdJfWRsAgsMSV4QggFayfgaQBRXxSHjxU3Zaa6NNbTYC+Ga4nnMwe/fpt/AQAA//9wVga6oAMAAA=="
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "release": {
+            "appId": "replicated-cli-kots-release-app",
+            "sequence": 1
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to get a kots release",
+      "providerState": "Get KOTS release",
       "request": {
         "method": "GET",
-        "path": "/v3/app/replicated-cli-get-channel-app/channel/unstable",
+        "path": "/v3/app/replicated-cli-kots-release-app/release/1",
         "headers": {
-          "Authorization": "replicated-cli-get-channel-token",
+          "Authorization": "replicated-cli-kots-release-token",
           "Content-Type": "application/json"
         }
       },
@@ -22,26 +48,10 @@
         "headers": {
         },
         "body": {
-          "channel": {
-            "id": "replicated-cli-get-channel-unstable",
-            "name": "Unstable",
-            "releases": [
-              {
-                "channelSeqeuence": 1,
-                "sequence": 1,
-                "version": "0.0.1"
-              },
-              {
-                "channelSeqeuence": 2,
-                "sequence": 2,
-                "version": "0.0.2"
-              }
-            ]
-          }
-        },
-        "matchingRules": {
-          "$.body.channel.id": {
-            "match": "type"
+          "release": {
+            "appId": "replicated-cli-kots-release-app",
+            "sequence": 1,
+            "spec": "LS0tCnJlcGxpY2F0ZWRfYXBpX3ZlcnNpb246IDIuOS4yCm5hbWU6ICJUZXN0IgoKIwojIGh0dHBzOi8vd3d3LnJlcGxpY2F0ZWQuY29tL2RvY3MvcGFja2FnaW5nLWFuLWFwcGxpY2F0aW9uL2FwcGxpY2F0aW9uLXByb3BlcnRpZXMKIwpwcm9wZXJ0aWVzOgogIGFwcF91cmw6IGh0dHA6Ly97e3JlcGwgQ29uZmlnT3B0aW9uICJob3N0bmFtZSIgfX0KICBjb25zb2xlX3RpdGxlOiAiVGVzdCIKCiMKIyBodHRwczovL3d3dy5yZXBsaWNhdGVkLmNvbS9kb2NzL2tiL3N1cHBvcnRpbmcteW91ci1jdXN0b21lcnMvaW5zdGFsbC1rbm93bi12ZXJzaW9ucwojCmhvc3RfcmVxdWlyZW1lbnRzOgogIHJlcGxpY2F0ZWRfdmVyc2lvbjogIj49Mi45LjIiCgojCiMgU2V0dGluZ3Mgc2NyZWVuCiMgaHR0cHM6Ly93d3cucmVwbGljYXRlZC5jb20vZG9jcy9wYWNrYWdpbmctYW4tYXBwbGljYXRpb24vY29uZmlnLXNjcmVlbgojCmNvbmZpZzoKLSBuYW1lOiBob3N0bmFtZQogIHRpdGxlOiBIb3N0bmFtZQogIGRlc2NyaXB0aW9uOiBFbnN1cmUgdGhpcyBkb21haW4gbmFtZSBpcyByb3V0YWJsZSBvbiB5b3VyIG5ldHdvcmsuCiAgaXRlbXM6CiAgLSBuYW1lOiBob3N0bmFtZQogICAgdGl0bGU6IEhvc3RuYW1lCiAgICB2YWx1ZTogJ3t7cmVwbCBDb25zb2xlU2V0dGluZyAidGxzLmhvc3RuYW1lIn19JwogICAgdHlwZTogdGV4dAogICAgdGVzdF9wcm9jOgogICAgZGlzcGxheV9uYW1lOiBDaGVjayBETlMKICAgIGNvbW1hbmQ6IHJlc29sdmVfaG9zdAoKIwojIERlZmluZSBob3cgdGhlIGFwcGxpY2F0aW9uIGNvbnRhaW5lcnMgd2lsbCBiZSBjcmVhdGVkIGFuZCBzdGFydGVkCiMgaHR0cHM6Ly93d3cucmVwbGljYXRlZC5jb20vZG9jcy9wYWNrYWdpbmctYW4tYXBwbGljYXRpb24vY29tcG9uZW50cy1hbmQtY29udGFpbmVycwojCmNvbXBvbmVudHM6IFtdCg=="
           }
         }
       }
