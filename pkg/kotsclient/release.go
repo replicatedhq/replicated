@@ -36,6 +36,7 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*releases.App
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v", appID, sequence)
 
+	fmt.Printf("path: %s\n", path)
 	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get release")
@@ -124,7 +125,7 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 		}
 		page += 1
 		for _, release := range resp.Releases {
-			activeChannels := make([]types.Channel, 0, 0)
+			activeChannels := []types.Channel{}
 
 			for _, kotsReleaseChannel := range release.Channels {
 				if kotsReleaseChannel.IsArchived {

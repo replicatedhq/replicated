@@ -8,7 +8,6 @@ import (
 )
 
 func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo, error) {
-
 	if appType == "platform" {
 		platformReleases, err := c.PlatformClient.ListReleases(appID)
 		if err != nil {
@@ -74,7 +73,6 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 		}
 
 		return releaseInfos, nil
-
 	} else if appType == "kots" {
 		return c.KotsClient.ListReleases(appID)
 	}
@@ -158,7 +156,6 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 // data is a []byte describing a tarred yaml-dir, created by tarYAMLDir()
 // this Client abstraction continue to spring more leaks :)
 func (c *Client) LintRelease(appType string, data []byte) ([]types.LintMessage, error) {
-
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
 	} else if appType == "ship" {
