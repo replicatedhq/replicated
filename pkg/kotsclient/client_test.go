@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"log"
 	"os"
 	"path"
 	"testing"
@@ -87,7 +88,9 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	pact.WritePact()
+	if err := pact.WritePact(); err != nil {
+		log.Fatalf("Error writing pact file: %v", err)
+	}
 	pact.Teardown()
 
 	os.Exit(code)
