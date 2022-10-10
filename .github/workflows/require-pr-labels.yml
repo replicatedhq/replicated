@@ -1,0 +1,16 @@
+name: Require pull request labels
+
+permissions:
+  pull-requests: read
+
+on:
+  pull_request:
+    types:
+      - opened
+      - labeled
+      - unlabeled
+      - synchronize
+
+jobs:
+  require-pr-labels:
+    uses: replicatedhq/reusable-workflows/.github/workflows/pr-enforce-labels.yaml@main
