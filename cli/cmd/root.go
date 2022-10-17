@@ -199,6 +199,19 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitAppCreate(appCmd)
 	runCmds.InitAppDelete(appCmd)
 
+	registryCmd := runCmds.InitRegistryCommand(runCmds.rootCmd)
+	runCmds.InitRegistryList(registryCmd)
+	runCmds.InitRegistryRemove(registryCmd)
+	runCmds.InitRegistryTest(registryCmd)
+	runCmds.InitRegistryLogs(registryCmd)
+	registryAddCmd := runCmds.InitRegistryAdd(registryCmd)
+	runCmds.InitRegistryAddECR(registryAddCmd)
+	runCmds.InitRegistryAddGCR(registryAddCmd)
+	runCmds.InitRegistryAddGHCR(registryAddCmd)
+	runCmds.InitRegistryAddDockerHub(registryAddCmd)
+	runCmds.InitRegistryAddQuay(registryAddCmd)
+	runCmds.InitRegistryAddOther(registryAddCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
@@ -258,6 +271,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	customersCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
 	appCmd.PersistentPreRunE = preRunSetupAPIs
+	registryCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
 
