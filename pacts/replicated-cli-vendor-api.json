@@ -347,6 +347,173 @@
       }
     },
     {
+      "description": "A request to add a dockerhub external registry using authtype password",
+      "providerState": "Add a dockerhub external registry using a password",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "password",
+          "endpoint": "index.docker.io",
+          "password": "test",
+          "provider": "dockerhub",
+          "skipValidation": true,
+          "username": "test"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "password",
+            "endpoint": "index.docker.io",
+            "provider": "dockerhub"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to add a dockerhub external registry using authtype access token",
+      "providerState": "Add a dockerhub external registry using a token",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "token",
+          "endpoint": "index.docker.io",
+          "password": "test",
+          "provider": "dockerhub",
+          "skipValidation": true,
+          "username": "test"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "token",
+            "endpoint": "index.docker.io",
+            "provider": "dockerhub"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to add an ecr external registry using auth type accesskey",
+      "providerState": "Add an ecr external registry using a accesskey",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "accesskey",
+          "endpoint": "0000000000.dkr.ecr.us-east-2.amazonaws.com",
+          "password": "test",
+          "provider": "ecr",
+          "skipValidation": true,
+          "username": "test"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "accesskey",
+            "endpoint": "0000000000.dkr.ecr.us-east-2.amazonaws.com",
+            "provider": "ecr"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to add an rcr external registry using auth type serviceaccount",
+      "providerState": "Add an gcr external registry using a serviceaccount",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "serviceaccount",
+          "endpoint": "gcr.io",
+          "password": "test",
+          "provider": "gcr",
+          "skipValidation": true,
+          "username": "_json_key"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "serviceaccount",
+            "endpoint": "gcr.io",
+            "provider": "gcr"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to remove a dockerhub external registry using authtype password",
+      "providerState": "Remove a dockerhub external registry using a password",
+      "request": {
+        "method": "DELETE",
+        "path": "/v3/external_registry/index.docker.io",
+        "headers": {
+          "Authorization": "replicated-cli-rm-registry-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+        }
+      }
+    },
+    {
+      "description": "A request to list registries after deleting them",
+      "providerState": "List registries after deleting the only one",
+      "request": {
+        "method": "GET",
+        "path": "/v3/external_registries",
+        "headers": {
+          "Authorization": "replicated-cli-rm-registry-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "external_registries": [
+
+          ]
+        }
+      }
+    },
+    {
       "description": "A request to create a kots release",
       "providerState": "Create KOTS release",
       "request": {
