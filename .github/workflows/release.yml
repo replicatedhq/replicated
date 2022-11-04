@@ -5,15 +5,15 @@ on:
     tags:
       - 'v*'
 
+env:
+  PACT_VERSION: ${{ github.ref }}
+  PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+  PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+  PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+
 # many jobs copied from main.yml because GHA has no way to create cross-workflow dependencies
 # and no really rock-solid way to use an `if` property to limit to tag creation
 jobs:
-  make-pacts:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: make pacts
-        run: make pacts
   make-tests:
     runs-on: ubuntu-20.04
     steps:
@@ -22,8 +22,9 @@ jobs:
         with:
           go-version: '^1.18'
       - uses: replicatedhq/action-install-pact@v1
-      - name: make test
-        run: make test
+      - run: make test
+      - run: make publish-pact
+      - run: make can-i-deploy
   make-build:
     runs-on: ubuntu-20.04
     steps:
@@ -54,3 +55,4 @@ jobs:
         run: curl -sL https://git.io/goreleaser | VERSION=v1.6.1 bash
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - run: make record-release
