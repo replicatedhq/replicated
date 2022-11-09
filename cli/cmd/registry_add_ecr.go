@@ -19,6 +19,7 @@ func (r *runners) InitRegistryAddECR(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
+	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The ECR endpoint")
 	cmd.Flags().StringVar(&r.args.addRegistryAccessKeyID, "accesskeyid", "", "The access key id to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistrySecretAccessKey, "secretaccesskey", "", "The secret access key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistrySecretAccessKeyFromStdIn, "secretaccesskey-stdin", false, "Take the secret access key from stdin")
