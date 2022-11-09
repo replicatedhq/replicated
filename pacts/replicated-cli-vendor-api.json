@@ -158,18 +158,16 @@
         },
         "body": {
           "channel": {
+            "channelSlug": "new-channel",
             "description": "Description",
-            "id": "replicated-cli-create-channel-channel",
-            "name": "New Channel",
-            "slug": "new-channel"
+            "id": "2HKXWE5CM7bqkR5T2sKfVniMJfD",
+            "name": "New Channel"
           }
         },
         "matchingRules": {
           "$.body.channel.id": {
-            "match": "type"
-          },
-          "$.body.channel.slug": {
-            "match": "type"
+            "match": "regex",
+            "regex": "^[a-zA-Z0-9]{27}$"
           }
         }
       }

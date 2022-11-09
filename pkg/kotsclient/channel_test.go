@@ -46,10 +46,10 @@ func Test_CreateChannel(t *testing.T) {
 			Status: 201,
 			Body: map[string]interface{}{
 				"channel": map[string]interface{}{
-					"id":          dsl.Like("replicated-cli-create-channel-channel"),
+					"id":          dsl.Term("2HKXWE5CM7bqkR5T2sKfVniMJfD", ksuidRegex),
 					"name":        "New Channel",
 					"description": "Description",
-					"slug":        dsl.Like("new-channel"),
+					"channelSlug": dsl.String("new-channel"),
 				},
 			},
 		})
