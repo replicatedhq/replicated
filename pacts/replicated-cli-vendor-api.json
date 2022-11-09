@@ -87,7 +87,6 @@
               ],
               "id": "replicated-cli-list-apps-app",
               "name": "Replicated CLI List Apps App",
-              "scheduler": "kots",
               "slug": "replicated-cli-list-apps-app"
             }
           ]
