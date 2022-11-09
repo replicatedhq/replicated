@@ -208,7 +208,7 @@
       "providerState": "Get KOTS app channel",
       "request": {
         "method": "GET",
-        "path": "/v3/app/replicated-cli-get-channel-app/channel/unstable",
+        "path": "/v3/app/replicated-cli-get-channel-app/channel/replicated-cli-get-channel-unstable",
         "headers": {
           "Authorization": "replicated-cli-get-channel-token",
           "Content-Type": "application/json"
@@ -223,16 +223,7 @@
             "id": "replicated-cli-get-channel-unstable",
             "name": "Unstable",
             "releases": [
-              {
-                "channelSeqeuence": 1,
-                "sequence": 1,
-                "version": "0.0.1"
-              },
-              {
-                "channelSeqeuence": 2,
-                "sequence": 2,
-                "version": "0.0.2"
-              }
+
             ]
           }
         },
