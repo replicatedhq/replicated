@@ -1,0 +1,37 @@
+name: PR/main branch CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  make-tests:
+    env:
+      PACT_VERSION: ${{ github.sha }}
+      PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+      PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+      PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+      - uses: replicatedhq/action-install-pact@v1
+      - run: make test
+      - if: github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository )
+        run: make publish-pact
+      - if: github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository )
+        run: |
+          make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
+  make-build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18'
+      - name: make build
+        run: make build

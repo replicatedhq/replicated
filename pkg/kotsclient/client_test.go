@@ -75,6 +75,7 @@ config:
 #
 components: []
 `
+	ksuidRegex = "^[a-zA-Z0-9]{27}$"
 )
 
 func TestMain(m *testing.M) {
