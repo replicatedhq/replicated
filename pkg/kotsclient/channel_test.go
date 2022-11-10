@@ -180,7 +180,6 @@ func Test_RemoveChannels(t *testing.T) {
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 200,
-			Body:   map[string]interface{}{},
 		})
 
 	pact.AddInteraction().
