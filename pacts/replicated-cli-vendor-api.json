@@ -491,9 +491,7 @@
         "headers": {
         },
         "body": {
-          "external_registries": [
-
-          ]
+          "external_registries": null
         }
       }
     },
