@@ -70,7 +70,7 @@ func Test_CreateGetRelease(t *testing.T) {
 				"release": map[string]interface{}{
 					"appId":    "replicated-cli-kots-release-app",
 					"sequence": int64(1),
-					"spec":     base64.StdEncoding.EncodeToString([]byte(testMultiYAML)),
+					"spec":     testMultiYAML,
 				},
 			},
 		})
