@@ -565,13 +565,13 @@
           "releases": [
             {
               "appId": "replicated-cli-list-releases-app",
-              "sequence": 1,
-              "spec": "dGVzdHNwZWM="
+              "sequence": 2,
+              "spec": ""
             },
             {
               "appId": "replicated-cli-list-releases-app",
-              "sequence": 2,
-              "spec": "dGVzdHNwZWM="
+              "sequence": 1,
+              "spec": ""
             }
           ]
         }

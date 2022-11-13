@@ -1,7 +1,6 @@
 package kotsclient
 
 import (
-	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -116,13 +115,13 @@ func Test_ListReleases(t *testing.T) {
 				"releases": []map[string]interface{}{
 					{
 						"appId":    "replicated-cli-list-releases-app",
-						"sequence": int64(1),
-						"spec":     base64.StdEncoding.EncodeToString([]byte("testspec")),
+						"sequence": int64(2),
+						"spec":     "",
 					},
 					{
 						"appId":    "replicated-cli-list-releases-app",
-						"sequence": int64(2),
-						"spec":     base64.StdEncoding.EncodeToString([]byte("testspec")),
+						"sequence": int64(1),
+						"spec":     "",
 					},
 				},
 			},
