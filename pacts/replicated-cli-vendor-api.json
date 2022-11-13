@@ -310,9 +310,9 @@
       "providerState": "Create KOTS installer",
       "request": {
         "method": "POST",
-        "path": "/v3/app/replicated-cli-create-installer-app/installer",
+        "path": "/v3/app/repl-cli-create-installer-app/installer",
         "headers": {
-          "Authorization": "replicated-cli-create-installer-token",
+          "Authorization": "repl-cli-create-installer-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -325,7 +325,7 @@
         },
         "body": {
           "installer": {
-            "appId": "replicated-cli-create-installer-app"
+            "appId": "repl-cli-create-installer-app"
           }
         }
       }
