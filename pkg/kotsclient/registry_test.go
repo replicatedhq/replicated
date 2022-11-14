@@ -296,7 +296,7 @@ func Test_RemoveRegistryDockerHubPassword(t *testing.T) {
 		WillRespondWith(dsl.Response{
 			Status: 200,
 			Body: map[string]interface{}{
-				"external_registries": []interface{}{},
+				"external_registries": nil,
 			},
 		})
 

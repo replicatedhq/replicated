@@ -46,10 +46,10 @@ func Test_CreateChannel(t *testing.T) {
 			Status: 201,
 			Body: map[string]interface{}{
 				"channel": map[string]interface{}{
-					"id":          dsl.Like("replicated-cli-create-channel-channel"),
+					"id":          dsl.Term("2HKXWE5CM7bqkR5T2sKfVniMJfD", ksuidRegex),
 					"name":        "New Channel",
 					"description": "Description",
-					"slug":        dsl.Like("new-channel"),
+					"channelSlug": dsl.String("new-channel"),
 				},
 			},
 		})
@@ -95,7 +95,7 @@ func Test_ListChannels(t *testing.T) {
 				"channels": []map[string]interface{}{
 					{
 						"id":   dsl.Like("replicated-cli-list-channels-unstable"),
-						"name": "Unstable",
+						"name": dsl.String("Unstable"),
 					},
 				},
 			},
@@ -113,7 +113,7 @@ func Test_GetChannel(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-get-channel-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		channel, releases, err := client.GetChannel("replicated-cli-get-channel-app", "unstable")
+		channel, releases, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable")
 		assert.Nil(t, err)
 
 		assert.Equal(t, "Unstable", channel.Name)
@@ -127,7 +127,7 @@ func Test_GetChannel(t *testing.T) {
 		UponReceiving("A request to get kots app channel").
 		WithRequest(dsl.Request{
 			Method: "GET",
-			Path:   dsl.String("/v3/app/replicated-cli-get-channel-app/channel/unstable"),
+			Path:   dsl.String("/v3/app/replicated-cli-get-channel-app/channel/replicated-cli-get-channel-unstable"),
 			Headers: dsl.MapMatcher{
 				"Authorization": dsl.String("replicated-cli-get-channel-token"),
 				"Content-Type":  dsl.String("application/json"),
@@ -137,20 +137,9 @@ func Test_GetChannel(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"channel": map[string]interface{}{
-					"id":   dsl.Like("replicated-cli-get-channel-unstable"),
-					"name": "Unstable",
-					"releases": []map[string]interface{}{
-						{
-							"sequence":         1,
-							"version":          "0.0.1",
-							"channelSeqeuence": 1,
-						},
-						{
-							"sequence":         2,
-							"version":          "0.0.2",
-							"channelSeqeuence": 2,
-						},
-					},
+					"id":       dsl.Like("replicated-cli-get-channel-unstable"),
+					"name":     "Unstable",
+					"releases": []map[string]interface{}{},
 				},
 			},
 		})
@@ -191,7 +180,6 @@ func Test_RemoveChannels(t *testing.T) {
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 200,
-			Body:   map[string]interface{}{},
 		})
 
 	pact.AddInteraction().

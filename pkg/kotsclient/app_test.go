@@ -49,11 +49,10 @@ func Test_ListApps(t *testing.T) {
 			Body: map[string]interface{}{
 				"apps": []map[string]interface{}{
 					{
-						"name":      "Replicated CLI List Apps App",
-						"slug":      "replicated-cli-list-apps-app",
-						"id":        "replicated-cli-list-apps-app",
-						"scheduler": "kots",
-						"channels":  dsl.EachLike(map[string]interface{}{}, 1),
+						"name":     "Replicated CLI List Apps App",
+						"slug":     "replicated-cli-list-apps-app",
+						"id":       "replicated-cli-list-apps-app",
+						"channels": dsl.EachLike(map[string]interface{}{}, 1),
 					},
 				},
 			},
@@ -95,7 +94,6 @@ func Test_RemoveApp(t *testing.T) {
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 200,
-			Body:   map[string]interface{}{},
 		})
 
 	pact.AddInteraction().

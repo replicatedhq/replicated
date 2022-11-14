@@ -58,30 +58,28 @@ test:
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicated-cli-test \
 
+.PHONY: publish-pact
+publish-pact:
+	pact-broker publish ./pacts \
+		--auto-detect-version-properties \
+		--consumer-app-version ${PACT_VERSION} \
+		--verbose
 
-.PHONY: publish-pacts
-publish-pacts:
-	curl \
-		--silent --output /dev/null --show-error --fail \
-		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
-		-X PUT \
-		-H "Content-Type: application/json" \
-		-d@pacts/replicated-cli-vendor-graphql-api.json \
-		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli/version/$(ABBREV_VERSION)
-	curl \
-		--silent --output /dev/null --show-error --fail \
-		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
-		-X PUT \
-		-H "Content-Type: application/json" \
-		-d@pacts/replicated-cli-kots-vendor-graphql-api.json \
-		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-graphql-api/consumer/replicated-cli-kots/version/$(ABBREV_VERSION)
-	curl \
-		--silent --output /dev/null --show-error --fail \
-		--user ${PACT_BROKER_USERNAME}:${PACT_BROKER_PASSWORD} \
-		-X PUT \
-		-H "Content-Type: application/json" \
-		-d@pacts/replicated-cli-vendor-api.json \
-		https://replicated-pact-broker.herokuapp.com/pacts/provider/vendor-api/consumer/replicated-cli/version/$(ABBREV_VERSION)
+.PHONY: can-i-deploy
+can-i-deploy:
+	pact-broker can-i-deploy \
+		--pacticipant replicated-cli \
+		--version ${PACT_VERSION} \
+		--to-environment production \
+		--verbose
+
+.PHONY: record-release
+record-release:
+	pact-broker record-release \
+		--pacticipant replicated-cli \
+		--version ${PACT_VERSION} \
+		--environment production \
+		--verbose
 
 # fetch the swagger specs from the production Vendor API
 .PHONY: get-spec-prod

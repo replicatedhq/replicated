@@ -1,7 +1,6 @@
 package kotsclient
 
 import (
-	"encoding/base64"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,7 @@ func Test_CreateGetRelease(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-kots-release-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		releaseInfo, err := client.CreateRelease("replicated-cli-kots-release-app", testYAML)
+		releaseInfo, err := client.CreateRelease("replicated-cli-kots-release-app", testMultiYAML)
 		assert.NoError(t, err)
 
 		assert.Equal(t, "replicated-cli-kots-release-app", releaseInfo.AppID)
@@ -40,7 +39,7 @@ func Test_CreateGetRelease(t *testing.T) {
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
-				"spec_gzip": "H4sIAAAAAAAA/6SSMW/bMBCFd/6KgzJkogRkK4F2SQp0aod0KwqBoS4RYeqO5Z2sGoH/e0HJjj1kKbLpRPG9p++dtdYUzCkGrzj0Psd+j0Uik4O79lN7Z8hP6KD5iaKNMTfmBkbVLK7rlmVpL3fbwFM3cJAu+7DzL5FerCfr8/ZBZOqunm0unLFoRDE35jI4A+Bz7ueS3Grkuu71tbrAPdNzfPmR63VoRhat0Ro4Hg1AYBJO2GvU9J9xd0+dzDlz0Rr5wHOxYRblCYt0kUR9SnZHvJA9oamRq39f8M8cC05Iuia/IvlGsfnyeQV5SvOIWn0EJBRE+gjOsAKxZyGzzc5Y2Do7IzIAJyzfLm8GlFDiCtPBV5K5IOgYBQaefKRVAqJA4Vn9U0JggsoGCHXhsmsNQFSc1v9+x/E9T4C9TzM6uL1UWls7MYFGk7RvxR6Pt5vOIaMDxb+6jSja58LBreMQJSd/6LcA9yOGHTx8f1zPAk+Tp8FBQeG0x75qbzU84HMkhJEX0BHhCmtdJfWRsAgsMSV4QggFayfgaQBRXxSHjxU3Zaa6NNbTYC+Ga4nnMwe/fpt/AQAA//9wVga6oAMAAA==",
+				"spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA",
 			},
 		}).
 		WillRespondWith(dsl.Response{
@@ -70,7 +69,7 @@ func Test_CreateGetRelease(t *testing.T) {
 				"release": map[string]interface{}{
 					"appId":    "replicated-cli-kots-release-app",
 					"sequence": int64(1),
-					"spec":     base64.StdEncoding.EncodeToString([]byte(testYAML)),
+					"spec":     testMultiYAML,
 				},
 			},
 		})
@@ -116,13 +115,13 @@ func Test_ListReleases(t *testing.T) {
 				"releases": []map[string]interface{}{
 					{
 						"appId":    "replicated-cli-list-releases-app",
-						"sequence": int64(1),
-						"spec":     base64.StdEncoding.EncodeToString([]byte("testspec")),
+						"sequence": int64(2),
+						"spec":     "",
 					},
 					{
 						"appId":    "replicated-cli-list-releases-app",
-						"sequence": int64(2),
-						"spec":     base64.StdEncoding.EncodeToString([]byte("testspec")),
+						"sequence": int64(1),
+						"spec":     "",
 					},
 				},
 			},
@@ -161,7 +160,7 @@ func Test_UpdateRelease(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-update-release-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		err = client.UpdateRelease("replicated-cli-update-release-app", 1, "testspec2")
+		err = client.UpdateRelease("replicated-cli-update-release-app", 1, testMultiYAML)
 		assert.NoError(t, err)
 
 		return nil
@@ -178,7 +177,7 @@ func Test_UpdateRelease(t *testing.T) {
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
-				"spec_gzip": "H4sIAAAAAAAA/ypJLS4pLkhNNgIEAAD//2X3KIMJAAAA",
+				"spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA",
 			},
 		}).
 		WillRespondWith(dsl.Response{

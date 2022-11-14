@@ -1,15 +1,16 @@
-name: CI
+name: Working branch CI
 
 on:
   push:
     paths:
-    - '**'
-    - '!**.md'
-    - '!doc/**'
-    - '!**.png'
+      - '**'
+      - '!**.md'
+      - '!doc/**'
+      - '!**.png'
+    branches-ignore:
+      - main
 
 jobs:
-
   make-tests:
     runs-on: ubuntu-20.04
     steps:

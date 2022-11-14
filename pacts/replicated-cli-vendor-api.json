@@ -36,11 +36,11 @@
             ],
             "created": "2000-02-01T12:30:00Z",
             "description": "",
-            "id": "",
+            "id": "2HKT3v84IjvCPSH03F3Hlg0Kpj6",
             "isArchived": false,
             "isKotsApp": true,
             "name": "app-create-1",
-            "renamedAt": "2000-02-01T12:30:00Z",
+            "renamedAt": null,
             "slug": "app-create-1",
             "teamId": "replicated-cli-app-create"
           }
@@ -56,9 +56,9 @@
             "match": "regex",
             "regex": "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$"
           },
-          "$.body.app.renamedAt": {
+          "$.body.app.id": {
             "match": "regex",
-            "regex": "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$"
+            "regex": "^[a-zA-Z0-9]{27}$"
           }
         }
       }
@@ -87,7 +87,6 @@
               ],
               "id": "replicated-cli-list-apps-app",
               "name": "Replicated CLI List Apps App",
-              "scheduler": "kots",
               "slug": "replicated-cli-list-apps-app"
             }
           ]
@@ -116,8 +115,6 @@
       "response": {
         "status": 200,
         "headers": {
-        },
-        "body": {
         }
       }
     },
@@ -161,18 +158,16 @@
         },
         "body": {
           "channel": {
+            "channelSlug": "new-channel",
             "description": "Description",
-            "id": "replicated-cli-create-channel-channel",
-            "name": "New Channel",
-            "slug": "new-channel"
+            "id": "2HKXWE5CM7bqkR5T2sKfVniMJfD",
+            "name": "New Channel"
           }
         },
         "matchingRules": {
           "$.body.channel.id": {
-            "match": "type"
-          },
-          "$.body.channel.slug": {
-            "match": "type"
+            "match": "regex",
+            "regex": "^[a-zA-Z0-9]{27}$"
           }
         }
       }
@@ -213,7 +208,7 @@
       "providerState": "Get KOTS app channel",
       "request": {
         "method": "GET",
-        "path": "/v3/app/replicated-cli-get-channel-app/channel/unstable",
+        "path": "/v3/app/replicated-cli-get-channel-app/channel/replicated-cli-get-channel-unstable",
         "headers": {
           "Authorization": "replicated-cli-get-channel-token",
           "Content-Type": "application/json"
@@ -228,16 +223,7 @@
             "id": "replicated-cli-get-channel-unstable",
             "name": "Unstable",
             "releases": [
-              {
-                "channelSeqeuence": 1,
-                "sequence": 1,
-                "version": "0.0.1"
-              },
-              {
-                "channelSeqeuence": 2,
-                "sequence": 2,
-                "version": "0.0.2"
-              }
+
             ]
           }
         },
@@ -262,8 +248,6 @@
       "response": {
         "status": 200,
         "headers": {
-        },
-        "body": {
         }
       }
     },
@@ -326,9 +310,9 @@
       "providerState": "Create KOTS installer",
       "request": {
         "method": "POST",
-        "path": "/v3/app/replicated-cli-create-installer-app/installer",
+        "path": "/v3/app/repl-cli-create-installer-app/installer",
         "headers": {
-          "Authorization": "replicated-cli-create-installer-token",
+          "Authorization": "repl-cli-create-installer-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -341,7 +325,7 @@
         },
         "body": {
           "installer": {
-            "appId": "replicated-cli-create-installer-app"
+            "appId": "repl-cli-create-installer-app"
           }
         }
       }
@@ -507,9 +491,7 @@
         "headers": {
         },
         "body": {
-          "external_registries": [
-
-          ]
+          "external_registries": null
         }
       }
     },
@@ -524,7 +506,7 @@
           "Content-Type": "application/json"
         },
         "body": {
-          "spec_gzip": "H4sIAAAAAAAA/6SSMW/bMBCFd/6KgzJkogRkK4F2SQp0aod0KwqBoS4RYeqO5Z2sGoH/e0HJjj1kKbLpRPG9p++dtdYUzCkGrzj0Psd+j0Uik4O79lN7Z8hP6KD5iaKNMTfmBkbVLK7rlmVpL3fbwFM3cJAu+7DzL5FerCfr8/ZBZOqunm0unLFoRDE35jI4A+Bz7ueS3Grkuu71tbrAPdNzfPmR63VoRhat0Ro4Hg1AYBJO2GvU9J9xd0+dzDlz0Rr5wHOxYRblCYt0kUR9SnZHvJA9oamRq39f8M8cC05Iuia/IvlGsfnyeQV5SvOIWn0EJBRE+gjOsAKxZyGzzc5Y2Do7IzIAJyzfLm8GlFDiCtPBV5K5IOgYBQaefKRVAqJA4Vn9U0JggsoGCHXhsmsNQFSc1v9+x/E9T4C9TzM6uL1UWls7MYFGk7RvxR6Pt5vOIaMDxb+6jSja58LBreMQJSd/6LcA9yOGHTx8f1zPAk+Tp8FBQeG0x75qbzU84HMkhJEX0BHhCmtdJfWRsAgsMSV4QggFayfgaQBRXxSHjxU3Zaa6NNbTYC+Ga4nnMwe/fpt/AQAA//9wVga6oAMAAA=="
+          "spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA"
         }
       },
       "response": {
@@ -558,7 +540,7 @@
           "release": {
             "appId": "replicated-cli-kots-release-app",
             "sequence": 1,
-            "spec": "LS0tCnJlcGxpY2F0ZWRfYXBpX3ZlcnNpb246IDIuOS4yCm5hbWU6ICJUZXN0IgoKIwojIGh0dHBzOi8vd3d3LnJlcGxpY2F0ZWQuY29tL2RvY3MvcGFja2FnaW5nLWFuLWFwcGxpY2F0aW9uL2FwcGxpY2F0aW9uLXByb3BlcnRpZXMKIwpwcm9wZXJ0aWVzOgogIGFwcF91cmw6IGh0dHA6Ly97e3JlcGwgQ29uZmlnT3B0aW9uICJob3N0bmFtZSIgfX0KICBjb25zb2xlX3RpdGxlOiAiVGVzdCIKCiMKIyBodHRwczovL3d3dy5yZXBsaWNhdGVkLmNvbS9kb2NzL2tiL3N1cHBvcnRpbmcteW91ci1jdXN0b21lcnMvaW5zdGFsbC1rbm93bi12ZXJzaW9ucwojCmhvc3RfcmVxdWlyZW1lbnRzOgogIHJlcGxpY2F0ZWRfdmVyc2lvbjogIj49Mi45LjIiCgojCiMgU2V0dGluZ3Mgc2NyZWVuCiMgaHR0cHM6Ly93d3cucmVwbGljYXRlZC5jb20vZG9jcy9wYWNrYWdpbmctYW4tYXBwbGljYXRpb24vY29uZmlnLXNjcmVlbgojCmNvbmZpZzoKLSBuYW1lOiBob3N0bmFtZQogIHRpdGxlOiBIb3N0bmFtZQogIGRlc2NyaXB0aW9uOiBFbnN1cmUgdGhpcyBkb21haW4gbmFtZSBpcyByb3V0YWJsZSBvbiB5b3VyIG5ldHdvcmsuCiAgaXRlbXM6CiAgLSBuYW1lOiBob3N0bmFtZQogICAgdGl0bGU6IEhvc3RuYW1lCiAgICB2YWx1ZTogJ3t7cmVwbCBDb25zb2xlU2V0dGluZyAidGxzLmhvc3RuYW1lIn19JwogICAgdHlwZTogdGV4dAogICAgdGVzdF9wcm9jOgogICAgZGlzcGxheV9uYW1lOiBDaGVjayBETlMKICAgIGNvbW1hbmQ6IHJlc29sdmVfaG9zdAoKIwojIERlZmluZSBob3cgdGhlIGFwcGxpY2F0aW9uIGNvbnRhaW5lcnMgd2lsbCBiZSBjcmVhdGVkIGFuZCBzdGFydGVkCiMgaHR0cHM6Ly93d3cucmVwbGljYXRlZC5jb20vZG9jcy9wYWNrYWdpbmctYW4tYXBwbGljYXRpb24vY29tcG9uZW50cy1hbmQtY29udGFpbmVycwojCmNvbXBvbmVudHM6IFtdCg=="
+            "spec": "[{\"name\":\"example-deployment.yaml\",\"path\":\"example-deployment.yaml\",\"content\":\"---\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\nspec:\\n  selector:\\n    matchLabels:\\n      app: nginx\\n  template:\\n    metadata:\\n      labels:\\n        app: nginx\\n      annotations:\\n        backup.velero.io/backup-volumes: nginx-content\\n    spec:\\n      containers:\\n      - name: nginx\\n        image: nginx\\n        volumeMounts:\\n        - name: nginx-content\\n          mountPath: /usr/share/nginx/html/\\n        resources:\\n          limits:\\n            memory: '256Mi'\\n            cpu: '500m'\\n          requests:\\n            memory: '32Mi'\\n            cpu: '100m'\\n      volumes:\\n      - name: nginx-content\\n        configMap:\\n          name: nginx-content\\n\",\"children\":[]},{\"name\":\"example-service.yaml\",\"path\":\"example-service.yaml\",\"content\":\"apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\n  annotations:\\n    kots.io/when: '{{repl not IsKurl }}'\\nspec:\\n  type: ClusterIP\\n  ports:\\n    - port: 80\\n  selector:\\n    app: nginx\\n---\\napiVersion: v1\\nkind: Service\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\n  annotations:\\n    kots.io/when: '{{repl IsKurl }}'\\nspec:\\n  type: NodePort\\n  ports:\\n    - port: 80\\n      nodePort: 8888\\n  selector:\\n    app: nginx\",\"children\":[]},{\"name\":\"kots-app.yaml\",\"path\":\"kots-app.yaml\",\"content\":\"---\\napiVersion: kots.io/v1beta1\\nkind: Application\\nmetadata:\\n  name: nginx\\nspec:\\n  title: App Name\\n  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png\\n  statusInformers:\\n    - deployment/nginx\\n  ports:\\n    - serviceName: \\\"nginx\\\"\\n      servicePort: 80\\n      localPort: 8888\\n      applicationUrl: \\\"http://nginx\\\"\\n\",\"children\":[]},{\"name\":\"kots-config.yaml\",\"path\":\"kots-config.yaml\",\"content\":\"---\\napiVersion: kots.io/v1beta1\\nkind: Config\\nmetadata:\\n  name: config\\nspec:\\n  groups: []\",\"children\":[]},{\"name\":\"kots-preflight.yaml\",\"path\":\"kots-preflight.yaml\",\"content\":\"apiVersion: troubleshoot.sh/v1beta2\\nkind: Preflight\\nmetadata:\\n  name: preflight-checks\\nspec:\\n  analyzers: []\",\"children\":[]},{\"name\":\"kots-support-bundle.yaml\",\"path\":\"kots-support-bundle.yaml\",\"content\":\"apiVersion: troubleshoot.sh/v1beta2\\nkind: SupportBundle\\nmetadata:\\n  name: support-bundle\\nspec:\\n  collectors:\\n    - clusterInfo: {}\\n    - clusterResources: {}\\n    - logs:\\n        selector:\\n          - app=nginx\\n        namespace: '{{repl Namespace }}'\\n\",\"children\":[]}]"
           }
         }
       }
@@ -583,13 +565,13 @@
           "releases": [
             {
               "appId": "replicated-cli-list-releases-app",
-              "sequence": 1,
-              "spec": "dGVzdHNwZWM="
+              "sequence": 2,
+              "spec": ""
             },
             {
               "appId": "replicated-cli-list-releases-app",
-              "sequence": 2,
-              "spec": "dGVzdHNwZWM="
+              "sequence": 1,
+              "spec": ""
             }
           ]
         }
@@ -629,7 +611,7 @@
           "Content-Type": "application/json"
         },
         "body": {
-          "spec_gzip": "H4sIAAAAAAAA/ypJLS4pLkhNNgIEAAD//2X3KIMJAAAA"
+          "spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA"
         }
       },
       "response": {

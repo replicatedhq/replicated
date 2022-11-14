@@ -13,13 +13,13 @@ func Test_CreateInstaller(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
-		api := platformclient.NewHTTPClient(u, "replicated-cli-create-installer-token")
+		api := platformclient.NewHTTPClient(u, "repl-cli-create-installer-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		installerSpec, err := client.CreateInstaller("replicated-cli-create-installer-app", testInstallerYAML)
+		installerSpec, err := client.CreateInstaller("repl-cli-create-installer-app", testInstallerYAML)
 		assert.NoError(t, err)
 
-		assert.Equal(t, "replicated-cli-create-installer-app", installerSpec.AppID)
+		assert.Equal(t, "repl-cli-create-installer-app", installerSpec.AppID)
 		return nil
 	}
 
@@ -28,9 +28,9 @@ func Test_CreateInstaller(t *testing.T) {
 		UponReceiving("A request to create a kots installer").
 		WithRequest(dsl.Request{
 			Method: "POST",
-			Path:   dsl.String("/v3/app/replicated-cli-create-installer-app/installer"),
+			Path:   dsl.String("/v3/app/repl-cli-create-installer-app/installer"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-create-installer-token"),
+				"Authorization": dsl.String("repl-cli-create-installer-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -41,7 +41,7 @@ func Test_CreateInstaller(t *testing.T) {
 			Status: 201,
 			Body: map[string]interface{}{
 				"installer": map[string]interface{}{
-					"appId": "replicated-cli-create-installer-app",
+					"appId": "repl-cli-create-installer-app",
 				},
 			},
 		})
