@@ -346,10 +346,7 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstype
 		return nil, nil
 	}
 	ext := filepath.Ext(info.Name())
-	switch ext {
-	case ".tgz", ".gz", ".yaml", ".yml":
-		// continue
-	default:
+	if !isSupportedExt(ext) {
 		return nil, nil
 	}
 
@@ -360,7 +357,7 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstype
 
 	var str string
 	switch ext {
-	case ".tgz", ".gz":
+	case ".tgz", ".gz", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".svg":
 		str = base64.StdEncoding.EncodeToString(bytes)
 	default:
 		str = string(bytes)
@@ -422,5 +419,14 @@ func promptForConfirm() (string, error) {
 		}
 
 		return result, nil
+	}
+}
+
+func isSupportedExt(ext string) bool {
+	switch ext {
+	case ".tgz", ".gz", ".yaml", ".yml", ".css", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".svg":
+		return true
+	default:
+		return false
 	}
 }

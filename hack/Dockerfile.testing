@@ -1,6 +1,6 @@
-FROM golang:1.17
+FROM golang:1.18
 
-RUN cd /opt && curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.81.0/pact-1.81.0-linux-x86_64.tar.gz && tar xzf pact-1.81.0-linux-x86_64.tar.gz
+RUN cd /opt && curl -LO https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v1.91.0/pact-1.91.0-linux-x86_64.tar.gz && tar xzf pact-1.91.0-linux-x86_64.tar.gz
 ENV PATH="/opt/pact/bin:${PATH}"
 
 WORKDIR /go/src/github.com/replicatedhq/replicated

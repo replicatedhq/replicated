@@ -5,78 +5,54 @@ on:
     tags:
       - 'v*'
 
+env:
+  PACT_VERSION: ${{ github.ref }}
+  PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
+  PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
+  PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+
 # many jobs copied from main.yml because GHA has no way to create cross-workflow dependencies
 # and no really rock-solid way to use an `if` property to limit to tag creation
 jobs:
-  make-pacts:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: make pacts
-        run: make pacts
   make-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
         with:
-          go-version: '^1.17.4'
-      - name: make test
-        run: make test
-        env:
-          REPLICATED_API_ORIGIN: https://api.replicated.com/vendor
-          REPLICATED_ID_ORIGIN: https://id.replicated.com
-          VENDOR_USER_EMAIL: dexter@replicated.com
-          VENDOR_USER_PASSWORD: ${{ secrets.VENDOR_USER_PASSWORD }}
-          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+          go-version: '^1.18'
+      - uses: replicatedhq/action-install-pact@v1
+      - run: make test
+      - run: make publish-pact
+      - run: make can-i-deploy
   make-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: make build
         run: make build
-  snyk-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: test
-  snyk-monitor:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/golang@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
+
   create-release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     needs:
       - make-pacts
       - make-tests
       - make-build
-      - snyk-test
-      - snyk-monitor
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: '^1.18'
       - name: docker login
         run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
         env:
           DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: run goreleaser
-        run: curl -sL https://git.io/goreleaser | VERSION=v1.6.1 bash 
+        run: curl -sL https://git.io/goreleaser | VERSION=v1.6.1 bash
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - run: make record-release

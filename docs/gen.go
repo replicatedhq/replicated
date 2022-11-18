@@ -2,11 +2,12 @@ package main
 
 import (
 	"bytes"
-	"github.com/replicatedhq/replicated/cli/cmd"
-	"github.com/spf13/cobra/doc"
 	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/replicatedhq/replicated/cli/cmd"
+	"github.com/spf13/cobra/doc"
 )
 
 const docsDest = "./gen/docs"
