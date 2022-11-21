@@ -22,7 +22,7 @@ You can use the replicated CLI command (i.e. `$ replicated --help`).
 
 #### (Pre-requirement) Config the CLI to have access to the Replicated Vendor portal 
 
-To use the CLI you need a user Token to connect. You can create one by click on `New User API Token` into your 
+To use the CLI you need a user API Token to connect. You can create one by clicking on `New User API Token` in your 
 [Account Settings](https://vendor.replicated.com/account-settings). 
 
 Then, you can set the following environment variable to avoid passing it as arguments to each command
