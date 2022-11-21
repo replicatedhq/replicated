@@ -25,7 +25,7 @@ You can use the replicated CLI command (i.e. `$ replicated --help`).
 To use the CLI you need a user API Token to connect. You can create one by clicking on `New User API Token` in your 
 [Account Settings](https://vendor.replicated.com/account-settings). 
 
-Then, you can set the following environment variable to avoid passing it as arguments to each command
+Then, you can set the following environment variable to avoid passing it as an argument to each command
 
 ```shell
 $ export REPLICATED_API_TOKEN=<Your new User API Token>
