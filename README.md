@@ -33,7 +33,7 @@ $ export REPLICATED_API_TOKEN=<Your new User API Token>
 
 #### Now, let's check an example
 
-We will check all Applications available as its distribution channels:
+We will check all Applications available and the distribution channels:
 
 To list the applications available run `replicated app ls`, i.e.:
 
