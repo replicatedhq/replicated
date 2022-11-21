@@ -55,8 +55,8 @@ ID                             NAME        RELEASE    VERSION
 ```
 
 > **Notes:**
-> - If you do not export the environment variable above then, you must inform your User API token via the flag `--token e8d7ce8e3d3278a8b1255237e6310069`
-> - You can also, set via environment variable your app slug or ID (i.e. `export REPLICATED_APP=2FOfwth3fHauBqCvsZ1OaBAr7MU`). So that, the above 
+> - If you do not export the environment variable above then, you must pass your User API token via the flag `--token <Your new User API Token>`
+> - You can also, set via environment variable your app slug or ID (i.e. `export REPLICATED_APP=<Your APP SLUG OR ID>`). So that, the above 
 command would be simply `replicated channel ls`.
 
 ### CI Example
