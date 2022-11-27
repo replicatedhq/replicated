@@ -8,8 +8,7 @@ on:
 env:
   PACT_VERSION: ${{ github.ref }}
   PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-  PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
-  PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+  PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
 
 # many jobs copied from main.yml because GHA has no way to create cross-workflow dependencies
 # and no really rock-solid way to use an `if` property to limit to tag creation
