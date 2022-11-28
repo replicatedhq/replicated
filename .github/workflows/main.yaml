@@ -11,8 +11,7 @@ jobs:
     env:
       PACT_VERSION: ${{ github.sha }}
       PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-      PACT_BROKER_USERNAME: ${{ secrets.PACT_BROKER_USERNAME }}
-      PACT_BROKER_PASSWORD: ${{ secrets.PACT_BROKER_PASSWORD }}
+      PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
