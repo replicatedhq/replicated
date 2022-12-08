@@ -212,6 +212,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitRegistryAddQuay(registryAddCmd)
 	runCmds.InitRegistryAddOther(registryAddCmd)
 
+	runCmds.InitCompletionCommand(runCmds.rootCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
