@@ -84,10 +84,13 @@ type runnerArgs struct {
 	entitlementsSetValueValue            string
 	entitlementsSetValueType             string
 
-	customerCreateName           string
-	customerCreateChannel        string
-	customerCreateEnsureChannel  bool
-	customerCreateExpiryDuration time.Duration
+	customerCreateName                string
+	customerCreateChannel             string
+	customerCreateEnsureChannel       bool
+	customerCreateExpiryDuration      time.Duration
+	customerCreateIsAirgapEnabled     bool
+	customerCreateIsGitopsSupported   bool
+	customerCreateIsSnapshotSupported bool
 
 	createInstallerYaml                 string
 	createInstallerYamlFile             string
