@@ -6,7 +6,7 @@ on:
       - 'v*'
 
 env:
-  PACT_VERSION: ${{ github.ref }}
+  PACT_VERSION: ${{ github.sha }}
   PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
   PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
 
