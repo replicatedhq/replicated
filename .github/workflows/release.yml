@@ -23,18 +23,15 @@ jobs:
       - uses: replicatedhq/action-install-pact@v1
       - run: make test
       - run: make publish-pact
-      - run: make can-i-deploy
   make-build:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       - name: make build
         run: make build
-
   create-release:
     runs-on: ubuntu-20.04
     needs:
-      - make-pacts
       - make-tests
       - make-build
     steps:
@@ -50,6 +47,7 @@ jobs:
         env:
           DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - run: make can-i-deploy 
       - name: run goreleaser
         run: curl -sL https://git.io/goreleaser | VERSION=v1.6.1 bash
         env:
