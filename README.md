@@ -17,18 +17,47 @@ sudo bash ./install.sh
 ```
 
 ### Getting Started
-```
-replicated channel ls --app my-app-slug --token e8d7ce8e3d3278a8b1255237e6310069
+
+You can use the replicated CLI command (i.e. `$ replicated --help`). 
+
+#### (Pre-requirement) Config the CLI to have access to the Replicated Vendor portal 
+
+To use the CLI you need a user API Token to connect. You can create one by clicking on `New User API Token` in your 
+[Account Settings](https://vendor.replicated.com/account-settings). 
+
+Then, you can set the following environment variable to avoid passing it as an argument to each command
+
+```shell
+$ export REPLICATED_API_TOKEN=<Your new User API Token>
 ```
 
-Set the following env vars to avoid passing them as arguments to each command.
-* REPLICATED_APP - either an app slug or app ID
-* REPLICATED_API_TOKEN
+#### Now, let's check an example
 
-Then the above command would be simply
+We will check all Applications available and the distribution channels:
+
+To list the applications available run `replicated app ls`, i.e.:
+
+```shell
+$ replicated app ls  
+ID                             NAME     SLUG              SCHEDULER
+2FOfwth3fHauBqCvsZ1OaBAr7MU    test     test-rodent       kots
+2FOvdw6IR0oewVPVCcmH12tSRoL    nginx    nginx-sheepdog    kots
 ```
-replicated channel ls
+
+Then, to check the channels run `replicated channel ls --app <Your APP SLUG OR ID>`, i.e.:
+
+```shell
+$ replicated channel ls --app 2FOfwth3fHauBqCvsZ1OaBAr7MU
+ID                             NAME        RELEASE    VERSION
+2FOfwru7Rq1plkqyZFLH6MLR1fk    Stable      1          0.0.1
+2FOfwu2zcDbqR24BVPSjjnkVwIe    Beta        1          0.0.1
+2FOfwreTFbmkXtf9bukwh8s1ewb    Unstable    1          0.0.1
 ```
+
+> **Notes:**
+> - If you do not export the environment variable above then, you must pass your User API token via the flag `--token <Your new User API Token>`
+> - You can also, set via environment variable your app slug or ID (i.e. `export REPLICATED_APP=<Your APP SLUG OR ID>`). So that, the above 
+command would be simply `replicated channel ls`.
 
 ### CI Example
 Creating a new release for every tagged build is a common use of the replicated command.
