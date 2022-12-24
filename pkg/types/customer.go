@@ -6,11 +6,12 @@ import (
 )
 
 type Customer struct {
-	ID       string     `json:"id"`
-	Name     string     `json:"name"`
-	Channels []Channel  `json:"channels"`
-	Type     string     `json:"type"`
-	Expires  *util.Time `json:"expiresAt"`
+	ID        string     `json:"id"`
+	Name      string     `json:"name"`
+	Channels  []Channel  `json:"channels"`
+	Type      string     `json:"type"`
+	Expires   *util.Time `json:"expiresAt"`
+	CreatedAt *util.Time `json:"createdAt"`
 }
 
 func (c Customer) WithExpiryTime(expiryTime string) (Customer, error) {

@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
+	"github.com/pkg/errors"
 	"io"
 	"text/tabwriter"
+	"text/template"
 	"time"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -27,6 +30,7 @@ type runners struct {
 	shipAPI          *shipclient.GraphQLClient
 	kotsAPI          *kotsclient.VendorV3Client
 	stdin            io.Reader
+	stdout           io.Writer
 	dir              string
 	w                *tabwriter.Writer
 
@@ -34,7 +38,31 @@ type runners struct {
 	args    runnerArgs
 }
 
+// prototype for allowing json output, not used in many methods yet
+func (r *runners) Print(tmpl *template.Template, objects any) error {
+	if r.args.output != "json" {
+		if err := tmpl.Execute(r.w, objects); err != nil {
+			return err
+		}
+		return r.w.Flush()
+	}
+
+	bytes, err := json.Marshal(objects)
+	if err != nil {
+		return errors.Wrap(err, "marshall objects")
+	}
+	_, err = r.stdout.Write(bytes)
+
+	if err != nil {
+		return errors.Wrap(err, "write bytes")
+	}
+
+	return nil
+}
+
 type runnerArgs struct {
+	output string
+
 	channelCreateName        string
 	channelCreateDescription string
 

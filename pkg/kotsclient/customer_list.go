@@ -46,7 +46,7 @@ func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 	return allCustomers, nil
 }
 
-func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
+func (c *VendorV3Client) GetCustomerByNameOrID(appID string, name string) (*types.Customer, error) {
 	allCustomers, err := c.ListCustomers(appID)
 	if err != nil {
 		return nil, err
