@@ -40,7 +40,17 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "get channel")
 	}
 
-	customer, err := r.api.CreateCustomer(r.appID, r.appType, r.args.customerCreateName, channel.ID, r.args.customerCreateExpiryDuration, r.args.customerCreateIsAirgapEnabled, r.args.customerCreateIsGitopsSupported, r.args.customerCreateIsSnapshotSupported)
+	customer, err := r.api.CreateCustomer(
+		r.appID,
+		r.appType,
+		r.args.customerCreateName,
+		channel.ID,
+		r.args.customerCreateExpiryDuration,
+		r.args.customerCreateIsAirgapEnabled,
+		r.args.customerCreateIsGitopsSupported,
+		r.args.customerCreateIsSnapshotSupported,
+		"dev",
+	)
 	if err != nil {
 		return errors.Wrap(err, "create customer")
 	}

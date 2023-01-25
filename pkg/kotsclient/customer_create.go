@@ -23,12 +23,21 @@ type CreateCustomerResponse struct {
 	Customer *types.Customer `json:"customer"`
 }
 
-func (c *VendorV3Client) CreateCustomer(name string, appID string, channelID string, expiresIn time.Duration, isAirgapEnabled bool, isGitopsSupported bool, isSnapshotSupported bool) (*types.Customer, error) {
+func (c *VendorV3Client) CreateCustomer(
+	name string,
+	appID string,
+	channelID string,
+	expiresIn time.Duration,
+	isAirgapEnabled bool,
+	isGitopsSupported bool,
+	isSnapshotSupported bool,
+	licenseType string,
+) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
 		Name:                name,
 		ChannelID:           channelID,
 		AppID:               appID,
-		Type:                "dev", // hardcode for now
+		Type:                licenseType,
 		IsAirgapEnabled:     isAirgapEnabled,
 		IsGitopsSupported:   isGitopsSupported,
 		IsSnapshotSupported: isSnapshotSupported,
