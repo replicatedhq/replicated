@@ -129,6 +129,14 @@ func (c *Client) UpdateRelease(appID string, appType string, sequence int64, yam
 	return errors.New("unknown app type")
 }
 
+func (c *Client) TestRelease(appID string, appType string, sequence int64) (string, error) {
+	if appType == "kots" {
+		return c.KotsClient.TestRelease(appID, sequence)
+	}
+
+	return "", errors.New("unsupported app type")
+}
+
 func (c *Client) GetRelease(appID string, appType string, sequence int64) (*releases.AppRelease, error) {
 
 	if appType == "platform" {
