@@ -30,9 +30,8 @@ func (r *runners) createApp(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
 	app, err := kotsRestClient.CreateKOTSApp(appName)
-
 	if err != nil {
-		return errors.Wrap(err, "list apps")
+		return errors.Wrap(err, "create app")
 	}
 
 	apps := []types.AppAndChannels{

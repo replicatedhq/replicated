@@ -76,6 +76,7 @@ func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, res
 		if err != nil {
 			return errors.Wrap(err, "read body")
 		}
+
 		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
 			return fmt.Errorf("%s %s response decoding: %w", method, endpoint, err)
 		}

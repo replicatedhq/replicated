@@ -149,6 +149,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleaseUpdate(releaseCmd)
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
+	runCmds.InitReleaseTest(releaseCmd)
 
 	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
 	runCmds.InitCollectorList(collectorsCmd)
@@ -213,6 +214,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitRegistryAddQuay(registryAddCmd)
 	runCmds.InitRegistryAddOther(registryAddCmd)
 
+	clusterCmd := runCmds.InitClusterCommand(runCmds.rootCmd)
+	runCmds.InitClusterCreate(clusterCmd)
+	runCmds.InitClusterList(clusterCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
@@ -276,6 +281,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	installerCmd.PersistentPreRunE = prerunCommand
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
+	clusterCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
 
