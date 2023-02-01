@@ -31,6 +31,7 @@ var platformOrigin = "https://api.replicated.com/vendor"
 var graphqlOrigin = "https://g.replicated.com/graphql"
 var kurlDotSHOrigin = "https://kurl.sh"
 var enterpriseOrigin = "https://api.replicated.com/enterprise"
+var unifiedAPIOrigin = "https://api.replicated.com"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -51,6 +52,11 @@ func init() {
 	graphqlOriginFromEnv := os.Getenv("REPLICATED_GRAPHQL_ORIGIN")
 	if graphqlOriginFromEnv != "" {
 		graphqlOrigin = graphqlOriginFromEnv
+	}
+
+	unifiedAPIOriginFromEnv := os.Getenv("REPLICATED_UNIFIED_API_ORIGIN")
+	if unifiedAPIOriginFromEnv != "" {
+		unifiedAPIOrigin = unifiedAPIOriginFromEnv
 	}
 }
 
@@ -103,6 +109,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds := &runners{
 		rootCmd: rootCmd,
 		stdin:   stdin,
+		stdout:  stdout,
 		w:       w,
 	}
 	if runCmds.rootCmd == nil {
@@ -165,6 +172,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersLSCommand(customersCmd)
 	runCmds.InitCustomersCreateCommand(customersCmd)
 	runCmds.InitCustomersDownloadLicenseCommand(customersCmd)
+
+	customerInstancesCmd := runCmds.InitCustomerInstancesCommand(customersCmd)
+	runCmds.InitCustomerInstancesLSCommand(customerInstancesCmd)
+	runCmds.InitCustomerInstancesInspectCommand(customerInstancesCmd)
 
 	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
 	runCmds.InitInstallerCreate(installerCmd)
@@ -237,7 +248,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		kotsAPI := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 		runCmds.kotsAPI = kotsAPI
 
-		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
+		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin, unifiedAPIOrigin)
 		runCmds.api = commonAPI
 		return nil
 	}

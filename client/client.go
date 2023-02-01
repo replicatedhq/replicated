@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/replicatedhq/replicated/pkg/instancesclient"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
@@ -8,17 +9,20 @@ import (
 )
 
 type Client struct {
-	PlatformClient *platformclient.HTTPClient
-	ShipClient     *shipclient.GraphQLClient
-	KotsClient     *kotsclient.VendorV3Client
+	PlatformClient  *platformclient.HTTPClient
+	ShipClient      *shipclient.GraphQLClient
+	KotsClient      *kotsclient.VendorV3Client
+	InstancesClient *instancesclient.InstancesClient
 }
 
-func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kurlOrigin string) Client {
+func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kurlOrigin string, unifiedAPIOrigin string) Client {
 	httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
+	unifiedClient := platformclient.NewHTTPClient(unifiedAPIOrigin, apiToken)
 	client := Client{
-		PlatformClient: httpClient,
-		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
-		KotsClient:     &kotsclient.VendorV3Client{HTTPClient: *httpClient},
+		PlatformClient:  httpClient,
+		ShipClient:      shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
+		KotsClient:      &kotsclient.VendorV3Client{HTTPClient: *httpClient},
+		InstancesClient: &instancesclient.InstancesClient{HTTPClient: *unifiedClient},
 	}
 
 	return client

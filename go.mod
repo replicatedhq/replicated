@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/fatih/color v1.7.0
+	github.com/gizak/termui/v3 v3.1.0
 	github.com/go-git/go-git/v5 v5.1.0
 	github.com/go-kit/kit v0.10.0
 	github.com/hashicorp/go-multierror v1.1.0
@@ -46,7 +47,10 @@ require (
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
+	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
