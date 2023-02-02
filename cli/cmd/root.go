@@ -10,6 +10,7 @@ import (
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
+	"github.com/replicatedhq/replicated/pkg/version"
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
@@ -59,7 +60,7 @@ func GetRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "replicated",
 		Short: "Manage channels, releases and collectors",
-		Long:  `The replicated CLI allows vendors to manage their apps' channels, releases and collectors.`,
+		Long:  `The replicated CLI allows vendors to manage their apps, channels, releases and collectors.`,
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
@@ -239,6 +240,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
+
+		version.PrintIfUpgradeAvailable()
+
 		return nil
 	}
 

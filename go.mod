@@ -15,12 +15,15 @@ require (
 	github.com/pact-foundation/pact-go v1.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.5.0
-	github.com/stretchr/testify v1.7.4
+	github.com/stretchr/testify v1.8.1
 	github.com/tj/go-spin v1.1.0
-	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
+	github.com/usrbinapp/usrbin-go v0.0.3
+	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
 )
 
 require (
+	aead.dev/minisign v0.2.0 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/andybalholm/brotli v0.0.0-20190621154722-5f990b63d2d6 // indirect
 	github.com/chzyer/logex v1.1.11-0.20160617073814-96a4d311aa9b // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
@@ -46,6 +49,7 @@ require (
 	github.com/klauspost/pgzip v1.2.1 // indirect
 	github.com/lunixbochs/vtclean v0.0.0-20180621232353-2d01aacdc34a // indirect
 	github.com/mattn/go-colorable v0.1.6 // indirect
+	github.com/minio/selfupdate v0.6.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/pierrec/lz4 v2.2.6+incompatible // indirect
@@ -56,7 +60,10 @@ require (
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/xanzy/ssh-agent v0.2.1 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/multierr v1.6.0 // indirect
+	go.uber.org/zap v1.24.0 // indirect
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
