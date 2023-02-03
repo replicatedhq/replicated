@@ -1,8 +1,12 @@
 package version
 
 import (
+	"fmt"
+	"os"
 	"runtime"
 	"time"
+
+	"github.com/usrbinapp/usrbin-go"
 )
 
 var (
@@ -11,11 +15,12 @@ var (
 
 // Build holds details about this build of the replicated cli binary
 type Build struct {
-	Version      string    `json:"version,omitempty"`
-	GitSHA       string    `json:"git,omitempty"`
-	BuildTime    time.Time `json:"buildTime,omitempty"`
-	TimeFallback string    `json:"buildTimeFallback,omitempty"`
-	GoInfo       GoInfo    `json:"go,omitempty"`
+	Version      string             `json:"version,omitempty"`
+	GitSHA       string             `json:"git,omitempty"`
+	BuildTime    time.Time          `json:"buildTime,omitempty"`
+	TimeFallback string             `json:"buildTimeFallback,omitempty"`
+	GoInfo       GoInfo             `json:"go,omitempty"`
+	UpdateInfo   *usrbin.UpdateInfo `json:"updateInfo,omitempty"`
 }
 
 type GoInfo struct {
@@ -38,6 +43,16 @@ func initBuild() {
 	}
 
 	build.GoInfo = getGoInfo()
+
+	usrbinsdk, err := NewUsrbinSDK(build.Version)
+	if err != nil {
+		return
+	}
+
+	build.UpdateInfo, err = usrbinsdk.GetUpdateInfo()
+	if err != nil {
+		fmt.Printf("Error getting update info: %s", err)
+	}
 }
 
 // GetBuild gets the build
@@ -66,5 +81,30 @@ func getGoInfo() GoInfo {
 		Compiler: runtime.Compiler,
 		OS:       runtime.GOOS,
 		Arch:     runtime.GOARCH,
+	}
+}
+
+func Print() {
+	fmt.Printf("replicated version %s\n", build.Version)
+
+	if build.UpdateInfo != nil {
+		fmt.Printf("Update available: %s\n", build.UpdateInfo.LatestVersion)
+		if build.UpdateInfo.CanUpgradeInPlace {
+			fmt.Printf("To automatically upgrade, run \"replicated version upgrade\"\n")
+		} else {
+			fmt.Printf("To upgrade, run \"%s\"\n", build.UpdateInfo.ExternalUpgradeCommand)
+		}
+	}
+}
+
+// PrintToStdErrIfUpgradeAvailable prints the update info to stderr if available
+func PrintIfUpgradeAvailable() {
+	if build.UpdateInfo != nil {
+		fmt.Fprintf(os.Stderr, "Update available: %s\n", build.UpdateInfo.LatestVersion)
+		if build.UpdateInfo.CanUpgradeInPlace {
+			fmt.Fprintf(os.Stderr, "To automatically upgrade, run \"replicated version upgrade\"\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "To upgrade, run \"%s\"\n", build.UpdateInfo.ExternalUpgradeCommand)
+		}
 	}
 }
