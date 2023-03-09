@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -130,7 +129,7 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 	}, nil
 }
 
-func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Channel, error) {
 	type getChannelResponse struct {
 		Channel types.KotsChannel `json:"channel"`
 	}
@@ -139,17 +138,18 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*channels.A
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "get app channel")
+		return nil, errors.Wrap(err, "get app channel")
 	}
 
-	channelDetail := channels.AppChannel{
-		Id:              response.Channel.Id,
+	return &types.Channel{
+		ID:              response.Channel.Id,
 		Name:            response.Channel.Name,
 		Description:     response.Channel.Description,
-		ReleaseLabel:    response.Channel.CurrentVersion,
+		Slug:            response.Channel.ChannelSlug,
 		ReleaseSequence: int64(response.Channel.ReleaseSequence),
-	}
-	return &channelDetail, nil, nil
+		ReleaseLabel:    response.Channel.CurrentVersion,
+		IsArchived:      response.Channel.IsArchived,
+	}, nil
 }
 
 func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
@@ -163,7 +163,7 @@ func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
 	return nil
 }
 
-func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *channels.AppChannel, enableSemver bool) error {
+func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *types.Channel, enableSemver bool) error {
 	request := types.UpdateChannelRequest{
 		Name:           channel.Name,
 		SemverRequired: enableSemver,
@@ -174,7 +174,7 @@ func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *channel
 	}
 	var response updateChannelResponse
 
-	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channel.Id)
+	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channel.ID)
 	err := c.DoJSON("PUT", url, http.StatusOK, request, &response)
 	if err != nil {
 		return errors.Wrap(err, "edit semantic versioning for channel")

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -41,16 +40,26 @@ func (c *Client) ListChannels(appID string, appType string, appSlug string, chan
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetChannel(appID string, appType string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+func (c *Client) GetChannel(appID string, appType string, channelID string) (*types.Channel, error) {
 	if appType == "platform" {
-		return c.PlatformClient.GetChannel(appID, channelID)
+		platformChannel, _, err := c.PlatformClient.GetChannel(appID, channelID)
+		if err != nil {
+			return nil, err
+		}
+		channel := types.Channel{
+			ID:              platformChannel.Id,
+			Name:            platformChannel.Name,
+			Description:     platformChannel.Description,
+			ReleaseSequence: platformChannel.ReleaseSequence,
+			ReleaseLabel:    platformChannel.ReleaseLabel,
+		}
+		return &channel, nil
 	} else if appType == "ship" {
 		return c.ShipClient.GetChannel(appID, channelID)
 	} else if appType == "kots" {
 		return c.KotsClient.GetChannel(appID, channelID)
 	}
-	return nil, nil, errors.New("unknown app type")
-
+	return nil, errors.New("unknown app type")
 }
 
 func (c *Client) ArchiveChannel(appID string, appType string, channelID string) error {
@@ -89,15 +98,9 @@ func (c *Client) CreateChannel(appID string, appType string, appSlug string, nam
 
 func (c *Client) GetOrCreateChannelByName(appID string, appType string, appSlug string, nameOrID string, description string, createIfAbsent bool) (*types.Channel, error) {
 	gqlNotFoundErr := fmt.Sprintf("channel %s not found", nameOrID)
-	channel, _, err := c.GetChannel(appID, appType, nameOrID)
+	channel, err := c.GetChannel(appID, appType, nameOrID)
 	if err == nil {
-		return &types.Channel{
-			ID:              channel.Id,
-			Name:            channel.Name,
-			Description:     channel.Description,
-			ReleaseSequence: channel.ReleaseSequence,
-			ReleaseLabel:    channel.ReleaseLabel,
-		}, nil
+		return channel, nil
 	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) {
 		return nil, errors.Wrap(err, "get channel")
 	}
@@ -150,7 +153,7 @@ func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string
 	} else if appType == "ship" {
 		return errors.New("This feature is not currently supported for Ship applications.")
 	} else if appType == "kots" {
-		channel, _, err := c.KotsClient.GetChannel(appID, chanID)
+		channel, err := c.KotsClient.GetChannel(appID, chanID)
 		if err != nil {
 			return err
 		}
