@@ -320,7 +320,6 @@ func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbs
 	channel, err := r.api.GetOrCreateChannelByName(
 		r.appID,
 		r.appType,
-		r.appSlug,
 		channelName,
 		description,
 		createIfAbsent,

@@ -1,35 +1,99 @@
 package print
 
 import (
-	"github.com/replicatedhq/replicated/pkg/types"
+	"fmt"
+	"os"
 	"text/tabwriter"
 	"text/template"
+
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var channelAttrsTmplSrc = `ID:	{{ .ID }}
-NAME:	{{ .Name }}
-DESCRIPTION:	{{ .Description }}
-RELEASE:	{{ if ge .ReleaseSequence 1 }}{{ .ReleaseSequence }}{{else}}	{{end}}
-VERSION:	{{ .ReleaseLabel }}{{ with .InstallCommands }}
+var channelAttrsTmplSrc = `ID:	{{ .Chan.ID }}
+NAME:	{{ .Chan.Name }}
+DESCRIPTION:	{{ .Chan.Description }}
+RELEASE:	{{ if ge .Chan.ReleaseSequence 1 }}{{ .Chan.ReleaseSequence }}{{else}}	{{end}}
+VERSION:	{{ .Chan.ReleaseLabel }}{{ with .Existing }}
 EXISTING:
 
-{{ .Existing }}
-
+{{ . }}
+{{end}}{{with .Embedded}}
 EMBEDDED:
 
-{{ .Embedded }}
-
+{{ . }}
+{{end}}{{with .Airgap}}
 AIRGAP:
 
-{{ .Airgap }}
+{{ . }}
 {{end}}
 `
 
 var channelAttrsTmpl = template.Must(template.New("ChannelAttributes").Parse(channelAttrsTmplSrc))
 
-func ChannelAttrs(w *tabwriter.Writer, appChan *types.Channel) error {
-	if err := channelAttrsTmpl.Execute(w, appChan); err != nil {
+func ChannelAttrs(w *tabwriter.Writer, appSlug string, appChan *types.Channel) error {
+	channelAttrs := struct {
+		Existing string
+		Embedded string
+		Airgap   string
+		Chan     *types.Channel
+	}{
+		existingInstallCommand(appSlug, appChan.Slug),
+		embeddedInstallCommand(appSlug, appChan.Slug),
+		embeddedAirgapInstallCommand(appSlug, appChan.Slug),
+		appChan,
+	}
+	if err := channelAttrsTmpl.Execute(w, channelAttrs); err != nil {
 		return err
 	}
 	return w.Flush()
+}
+
+const embeddedInstallBaseURL = "https://k8s.kurl.sh"
+
+var embeddedInstallOverrideURL = os.Getenv("EMBEDDED_INSTALL_BASE_URL")
+
+func embeddedInstallCommand(appSlug, chanSlug string) string {
+
+	kurlBaseURL := embeddedInstallBaseURL
+	if embeddedInstallOverrideURL != "" {
+		kurlBaseURL = embeddedInstallOverrideURL
+	}
+
+	kurlURL := fmt.Sprintf("%s/%s-%s", kurlBaseURL, appSlug, chanSlug)
+	if chanSlug == "stable" {
+		kurlURL = fmt.Sprintf("%s/%s", kurlBaseURL, appSlug)
+	}
+	return fmt.Sprintf(`    curl -fsSL %s | sudo bash`, kurlURL)
+
+}
+
+func embeddedAirgapInstallCommand(appSlug, chanSlug string) string {
+
+	kurlBaseURL := embeddedInstallBaseURL
+	if embeddedInstallOverrideURL != "" {
+		kurlBaseURL = embeddedInstallOverrideURL
+	}
+
+	slug := fmt.Sprintf("%s-%s", appSlug, chanSlug)
+	if chanSlug == "stable" {
+		slug = appSlug
+	}
+	kurlURL := fmt.Sprintf("%s/bundle/%s.tar.gz", kurlBaseURL, slug)
+
+	return fmt.Sprintf(`    curl -fSL -o %s.tar.gz %s
+    # ... scp or sneakernet %s.tar.gz to airgapped machine, then
+    tar xvf %s.tar.gz
+    sudo bash ./install.sh airgap`, slug, kurlURL, slug, slug)
+
+}
+
+func existingInstallCommand(appSlug, chanSlug string) string {
+
+	slug := appSlug
+	if chanSlug != "stable" {
+		slug = fmt.Sprintf("%s/%s", appSlug, chanSlug)
+	}
+
+	return fmt.Sprintf(`    curl -fsSL https://kots.io/install | bash
+    kubectl kots install %s`, slug)
 }

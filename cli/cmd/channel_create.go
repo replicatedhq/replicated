@@ -24,7 +24,7 @@ func (r *runners) InitChannelCreate(parent *cobra.Command) {
 }
 
 func (r *runners) channelCreate(cmd *cobra.Command, args []string) error {
-	allChannels, err := r.api.CreateChannel(r.appID, r.appType, r.appSlug, r.args.channelCreateName, r.args.channelCreateDescription)
+	allChannels, err := r.api.CreateChannel(r.appID, r.appType, r.args.channelCreateName, r.args.channelCreateDescription)
 	if err != nil {
 		return err
 	}

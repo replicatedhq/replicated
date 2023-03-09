@@ -25,12 +25,12 @@ func (r *runners) channelInspect(_ *cobra.Command, args []string) error {
 	}
 
 	channelNameOrID := args[0]
-	appChan, err := r.api.GetChannelByName(r.appID, r.appType, r.appSlug, channelNameOrID)
+	appChan, err := r.api.GetChannelByName(r.appID, r.appType, channelNameOrID)
 	if err != nil {
 		return err
 	}
 
-	if err = print.ChannelAttrs(r.w, appChan); err != nil {
+	if err = print.ChannelAttrs(r.w, r.appSlug, appChan); err != nil {
 		return err
 	}
 

@@ -66,7 +66,7 @@ func Test_ListChannels(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-channels-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		channels, err := client.ListChannels("replicated-cli-list-channels-app", "", "")
+		channels, err := client.ListChannels("replicated-cli-list-channels-app", "")
 		assert.Nil(t, err)
 
 		assert.Len(t, channels, 1)
@@ -159,7 +159,7 @@ func Test_RemoveChannels(t *testing.T) {
 		err = client.ArchiveChannel("replicated-cli-rm-channel-app", "replicated-cli-rm-channel-beta")
 		assert.Nil(t, err)
 
-		channels, err := client.ListChannels("replicated-cli-rm-channel-app", "", "")
+		channels, err := client.ListChannels("replicated-cli-rm-channel-app", "")
 		assert.Nil(t, err)
 
 		assert.Len(t, channels, 1)

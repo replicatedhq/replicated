@@ -41,7 +41,7 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 
 	if r.appType != "ship" {
 		// try to turn chanID into an actual id if it was a channel name
-		channelID, err := r.api.GetOrCreateChannelByName(r.appID, r.appType, r.appSlug, channelName, "", false)
+		channelID, err := r.api.GetOrCreateChannelByName(r.appID, r.appType, channelName, "", false)
 		if err != nil {
 			return errors.Wrapf(err, "unable to get channel ID from name")
 		}
