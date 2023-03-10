@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,11 +113,10 @@ func Test_GetChannel(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-get-channel-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		channel, releases, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable")
+		channel, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable")
 		assert.Nil(t, err)
 
 		assert.Equal(t, "Unstable", channel.Name)
-		assert.Len(t, releases, 0) // we don't return the releases
 
 		return nil
 	}
@@ -219,9 +218,9 @@ func Test_AddRemoveSemver(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-semver-channel-token")
 		client := VendorV3Client{HTTPClient: *api}
 
-		channel := channels.AppChannel{
+		channel := types.Channel{
 			Name: "Unstable",
-			Id:   "replicated-cli-semver-channel-unstable",
+			ID:   "replicated-cli-semver-channel-unstable",
 		}
 
 		err = client.UpdateSemanticVersioning("replicated-cli-semver-channel-app", &channel, true)
