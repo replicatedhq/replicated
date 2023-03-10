@@ -30,19 +30,26 @@ AIRGAP:
 
 var channelAttrsTmpl = template.Must(template.New("ChannelAttributes").Parse(channelAttrsTmplSrc))
 
-func ChannelAttrs(w *tabwriter.Writer, appSlug string, appChan *types.Channel) error {
-	channelAttrs := struct {
+func ChannelAttrs(
+	w *tabwriter.Writer,
+	appType string,
+	appSlug string,
+	appChan *types.Channel,
+) error {
+	attrs := struct {
 		Existing string
 		Embedded string
 		Airgap   string
 		Chan     *types.Channel
 	}{
-		existingInstallCommand(appSlug, appChan.Slug),
-		embeddedInstallCommand(appSlug, appChan.Slug),
-		embeddedAirgapInstallCommand(appSlug, appChan.Slug),
-		appChan,
+		Chan: appChan,
 	}
-	if err := channelAttrsTmpl.Execute(w, channelAttrs); err != nil {
+	if appType == "kots" {
+		attrs.Existing = existingInstallCommand(appSlug, appChan.Slug)
+		attrs.Embedded = embeddedInstallCommand(appSlug, appChan.Slug)
+		attrs.Airgap = embeddedAirgapInstallCommand(appSlug, appChan.Slug)
+	}
+	if err := channelAttrsTmpl.Execute(w, attrs); err != nil {
 		return err
 	}
 	return w.Flush()

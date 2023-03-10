@@ -30,7 +30,7 @@ func (r *runners) channelInspect(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err = print.ChannelAttrs(r.w, r.appSlug, appChan); err != nil {
+	if err = print.ChannelAttrs(r.w, r.appType, r.appSlug, appChan); err != nil {
 		return err
 	}
 
