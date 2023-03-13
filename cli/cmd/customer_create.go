@@ -31,7 +31,6 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 	channel, err := r.api.GetOrCreateChannelByName(
 		r.appID,
 		r.appType,
-		r.appSlug,
 		r.args.customerCreateChannel,
 		"",
 		r.args.customerCreateEnsureChannel,

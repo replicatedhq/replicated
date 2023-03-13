@@ -26,7 +26,7 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 
 	if r.appType == "platform" {
 
-		_, releases, err := r.api.GetChannel(r.appID, r.appType, chanID)
+		_, releases, err := r.platformAPI.GetChannel(r.appID, chanID)
 		if err != nil {
 			return err
 		}

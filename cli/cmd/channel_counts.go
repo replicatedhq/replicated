@@ -25,7 +25,7 @@ func (r *runners) channelCounts(cmd *cobra.Command, args []string) error {
 	chanID := args[0]
 
 	if r.appType == "platform" {
-		appChan, _, err := r.api.GetChannel(r.appID, r.appType, chanID)
+		appChan, _, err := r.platformAPI.GetChannel(r.appID, chanID)
 		if err != nil {
 			return err
 		}

@@ -75,8 +75,6 @@ type Channel struct {
 	ReleaseLabel    string
 
 	IsArchived bool `json:"isArchived"`
-
-	InstallCommands *InstallCommands
 }
 
 func (c *Channel) Copy() *Channel {
@@ -87,12 +85,5 @@ func (c *Channel) Copy() *Channel {
 		Slug:            c.Slug,
 		ReleaseSequence: c.ReleaseSequence,
 		ReleaseLabel:    c.ReleaseLabel,
-		InstallCommands: c.InstallCommands,
 	}
-}
-
-type InstallCommands struct {
-	Existing string
-	Embedded string
-	Airgap   string
 }

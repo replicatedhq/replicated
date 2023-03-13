@@ -1,7 +1,6 @@
 package shipclient
 
 import (
-	channels "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -155,7 +154,7 @@ var getShipChannel = `
   }
 `
 
-func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
+func (c *GraphQLClient) GetChannel(appID string, channelID string) (*types.Channel, error) {
 	response := GraphQLResponseGetChannel{}
 
 	request := graphql.Request{
@@ -166,14 +165,15 @@ func (c *GraphQLClient) GetChannel(appID string, channelID string) (*channels.Ap
 		},
 	}
 	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	channelDetail := channels.AppChannel{
-		Id:           response.Data.ShipChannel.ID,
-		Name:         response.Data.ShipChannel.Name,
-		Description:  response.Data.ShipChannel.Description,
-		ReleaseLabel: response.Data.ShipChannel.CurrentVersion,
+	channel := types.Channel{
+		ID:              response.Data.ShipChannel.ID,
+		Name:            response.Data.ShipChannel.Name,
+		Description:     response.Data.ShipChannel.Description,
+		ReleaseSequence: response.Data.ShipChannel.CurrentSequence,
+		ReleaseLabel:    response.Data.ShipChannel.CurrentVersion,
 	}
-	return &channelDetail, nil, nil
+	return &channel, nil
 }
