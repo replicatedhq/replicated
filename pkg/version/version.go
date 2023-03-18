@@ -2,7 +2,6 @@ package version
 
 import (
 	"fmt"
-	"os"
 	"runtime"
 	"time"
 
@@ -99,12 +98,12 @@ func Print() {
 
 // PrintToStdErrIfUpgradeAvailable prints the update info to stderr if available
 func PrintIfUpgradeAvailable() {
-	if build.UpdateInfo != nil {
-		fmt.Fprintf(os.Stderr, "Update available: %s\n", build.UpdateInfo.LatestVersion)
-		if build.UpdateInfo.CanUpgradeInPlace {
-			fmt.Fprintf(os.Stderr, "To automatically upgrade, run \"replicated version upgrade\"\n")
-		} else {
-			fmt.Fprintf(os.Stderr, "To upgrade, run \"%s\"\n", build.UpdateInfo.ExternalUpgradeCommand)
-		}
-	}
+	// if build.UpdateInfo != nil {
+	// 	fmt.Fprintf(os.Stderr, "Update available: %s\n", build.UpdateInfo.LatestVersion)
+	// 	if build.UpdateInfo.CanUpgradeInPlace {
+	// 		fmt.Fprintf(os.Stderr, "To automatically upgrade, run \"replicated version upgrade\"\n")
+	// 	} else {
+	// 		fmt.Fprintf(os.Stderr, "To upgrade, run \"%s\"\n", build.UpdateInfo.ExternalUpgradeCommand)
+	// 	}
+	// }
 }

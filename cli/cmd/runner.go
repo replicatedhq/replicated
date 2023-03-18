@@ -164,4 +164,11 @@ type runnerArgs struct {
 	addRegistryTokenFromStdIn             bool
 
 	testRegistryImage string
+
+	createClusterName         string
+	createClusterDistribution string
+	createClusterVersion      string
+	createClusterTTL          string
+
+	clusterKubeconfigID string
 }
