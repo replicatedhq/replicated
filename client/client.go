@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
@@ -25,8 +26,8 @@ func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kur
 }
 
 func (c *Client) GetAppType(appID string) (*types.App, string, error) {
-	platformSwaggerApp, err := c.PlatformClient.GetApp(appID)
-	if err == nil && platformSwaggerApp != nil {
+	platformSwaggerApp, err1 := c.PlatformClient.GetApp(appID)
+	if err1 == nil && platformSwaggerApp != nil {
 		platformApp := &types.App{
 			ID:        platformSwaggerApp.Id,
 			Name:      platformSwaggerApp.Name,
@@ -36,15 +37,11 @@ func (c *Client) GetAppType(appID string) (*types.App, string, error) {
 		return platformApp, "platform", nil
 	}
 
-	shipApp, err := c.ShipClient.GetApp(appID)
-	if err == nil && shipApp != nil {
-		return shipApp, "ship", nil
-	}
-
-	kotsApp, err := c.KotsClient.GetApp(appID)
-	if err == nil && kotsApp != nil {
+	kotsApp, err2 := c.KotsClient.GetApp(appID)
+	if err2 == nil && kotsApp != nil {
 		return kotsApp, "kots", nil
 	}
 
+	err := errors.Errorf("Following errors occurred while trying to get app type: error 1: %s, error 2: %s", err1, err2)
 	return nil, "", err
 }

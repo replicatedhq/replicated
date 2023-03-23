@@ -34,8 +34,6 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 		if err = print.ChannelReleases(r.w, releases); err != nil {
 			return err
 		}
-	} else if r.appType == "ship" {
-		return errors.New("This feature is not supported for Ship applications.")
 	} else if r.appType == "kots" {
 		return errors.New("This feature is not supported for Kots applications.")
 	}

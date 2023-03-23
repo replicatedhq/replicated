@@ -10,11 +10,6 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 		return nil, err
 	}
 
-	shipApps, err := c.ShipClient.ListApps()
-	if err != nil {
-		return nil, err
-	}
-
 	kotsApps, err := c.KotsClient.ListApps()
 	if err != nil {
 		return nil, err
@@ -46,7 +41,6 @@ func (c *Client) ListApps() ([]types.AppAndChannels, error) {
 		apps = append(apps, app)
 	}
 
-	apps = append(apps, shipApps...)
 	apps = append(apps, kotsApps...)
 
 	return apps, nil
