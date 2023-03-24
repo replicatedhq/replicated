@@ -170,5 +170,8 @@ type runnerArgs struct {
 	createClusterVersion      string
 	createClusterTTL          string
 
-	clusterKubeconfigID string
+	kubeconfigClusterID string
+
+	removeClusterID    string
+	removeClusterForce bool
 }

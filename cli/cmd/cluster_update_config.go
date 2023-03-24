@@ -29,7 +29,7 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.clusterKubeconfigID, "id", "", "cluster id")
+	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "cluster id")
 
 	return cmd
 }
@@ -37,7 +37,7 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(r.args.clusterKubeconfigID)
+	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(r.args.kubeconfigClusterID)
 	if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
@@ -58,7 +58,6 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "load kubeconfig")
 	}
 
-	fmt.Printf("%#v\n", replicatedConfig)
 	kubeconfigPaths := getKubeconfigPaths()
 	backupPaths := []string{}
 
