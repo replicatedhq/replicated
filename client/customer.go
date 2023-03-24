@@ -12,8 +12,6 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 
 	if appType == "platform" {
 		return nil, errors.New("listing customers is not supported for platform applications")
-	} else if appType == "ship" {
-		return nil, errors.New("listing customers is not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.ListCustomers(appID)
 	}
@@ -24,8 +22,6 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 func (c *Client) CreateCustomer(appID, appType string, name string, channelID string, expiresIn time.Duration, isAirgapEnabled bool, isGitopsSupported bool, isSnapshotSupported bool, licenseType string) (*types.Customer, error) {
 	if appType == "platform" {
 		return nil, errors.New("creating customers is not supported for platform applications")
-	} else if appType == "ship" {
-		return nil, errors.New("creating customers is not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.CreateCustomer(name, appID, channelID, expiresIn, isAirgapEnabled, isGitopsSupported, isSnapshotSupported, licenseType)
 	}
@@ -37,8 +33,6 @@ func (c *Client) CreateCustomer(appID, appType string, name string, channelID st
 func (c *Client) GetCustomerByName(appType string, appID, name string) (*types.Customer, error) {
 	if appType == "platform" {
 		return nil, errors.New("listing customers is not supported for platform applications")
-	} else if appType == "ship" {
-		return nil, errors.New("listing customers is not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.GetCustomerByName(appID, name)
 	}
@@ -50,8 +44,6 @@ func (c *Client) GetCustomerByName(appType string, appID, name string) (*types.C
 func (c *Client) DownloadLicense(appType string, appID string, customerID string) ([]byte, error) {
 	if appType == "platform" {
 		return nil, errors.New("downloading customer licenses is not supported for platform applications")
-	} else if appType == "ship" {
-		return nil, errors.New("downloading  customer licenses is not supported for ship applications")
 	} else if appType == "kots" {
 		return c.KotsClient.DownloadLicense(appID, customerID)
 	}

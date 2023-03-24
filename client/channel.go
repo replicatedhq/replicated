@@ -31,8 +31,6 @@ func (c *Client) ListChannels(appID string, appType string, channelName string) 
 		}
 
 		return channels, nil
-	} else if appType == "ship" {
-		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
 		return c.KotsClient.ListChannels(appID, channelName)
 	}
@@ -54,8 +52,6 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ty
 			ReleaseLabel:    platformChannel.ReleaseLabel,
 		}
 		return &channel, nil
-	} else if appType == "ship" {
-		return c.ShipClient.GetChannel(appID, channelID)
 	} else if appType == "kots" {
 		return c.KotsClient.GetChannel(appID, channelID)
 	}
@@ -65,8 +61,6 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ty
 func (c *Client) ArchiveChannel(appID string, appType string, channelID string) error {
 	if appType == "platform" {
 		return c.PlatformClient.ArchiveChannel(appID, channelID)
-	} else if appType == "ship" {
-		return errors.New("This feature is not currently supported for Ship applications.")
 	} else if appType == "kots" {
 		return c.KotsClient.ArchiveChannel(appID, channelID)
 	}
@@ -81,11 +75,6 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 			return nil, err
 		}
 		return c.ListChannels(appID, appType, name)
-	} else if appType == "ship" {
-		if _, err := c.ShipClient.CreateChannel(appID, name, description); err != nil {
-			return nil, err
-		}
-		return c.ShipClient.ListChannels(appID)
 	} else if appType == "kots" {
 		if _, err := c.KotsClient.CreateChannel(appID, name, description); err != nil {
 			return nil, err
@@ -150,8 +139,6 @@ func (c *Client) findChannel(channels []types.Channel, name string) (*types.Chan
 func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string, chanID string, enableSemver bool) error {
 	if appType == "platform" {
 		return errors.New("This feature is not currently supported for Platform applications.")
-	} else if appType == "ship" {
-		return errors.New("This feature is not currently supported for Ship applications.")
 	} else if appType == "kots" {
 		channel, err := c.KotsClient.GetChannel(appID, chanID)
 		if err != nil {

@@ -299,8 +299,8 @@ func (r *runners) validateReleaseCreateParams() error {
 	}
 
 	// we check this again below, but lets be explicit and fail fast
-	if r.args.createReleasePromoteEnsureChannel && !(r.appType == "ship" || r.appType == "kots") {
-		return errors.Errorf("the flag --ensure-channel is only supported for KOTS and Ship applications, app %q is of type %q", r.appID, r.appType)
+	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
+		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
 	}
 
 	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {

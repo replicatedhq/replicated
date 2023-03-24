@@ -157,11 +157,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCollectorCreate(collectorsCmd)
 	runCmds.InitCollectorInspect(collectorsCmd)
 
-	entitlementsCmd := runCmds.InitEntitlementsCommand(runCmds.rootCmd)
-	runCmds.InitEntitlementsDefineFields(entitlementsCmd)
-	runCmds.InitEntitlementsSetValueCommand(entitlementsCmd)
-	runCmds.InitEntitlementsGetCustomerReleaseCommand(entitlementsCmd)
-
 	customersCmd := runCmds.InitCustomersCommand(runCmds.rootCmd)
 	runCmds.InitCustomersLSCommand(customersCmd)
 	runCmds.InitCustomersCreateCommand(customersCmd)
@@ -271,7 +266,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	channelCmd.PersistentPreRunE = prerunCommand
 	releaseCmd.PersistentPreRunE = prerunCommand
 	collectorsCmd.PersistentPreRunE = prerunCommand
-	entitlementsCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
 	appCmd.PersistentPreRunE = preRunSetupAPIs
