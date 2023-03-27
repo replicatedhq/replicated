@@ -106,6 +106,10 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	for credentialName, credential := range replicatedConfig.AuthInfos {
 		mergedConfig.AuthInfos[credentialName] = credential
 	}
+	// add the replicated cluster
+	for clusterName, cluster := range replicatedConfig.Clusters {
+		mergedConfig.Clusters[clusterName] = cluster
+	}
 
 	mergedConfig.CurrentContext = replicatedConfig.CurrentContext
 
