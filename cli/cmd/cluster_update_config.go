@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -66,7 +67,11 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		backupPath := kubeconfigPath + ".replicated_backup"
 
 		fi, err := os.Stat(kubeconfigPath)
-		if err != nil {
+		var pathError *fs.PathError
+		if errors.As(err, &pathError) {
+			// file doesn't exist, nothing to backup
+			continue
+		} else if err != nil {
 			return errors.Wrap(err, "stat kubeconfig")
 		}
 		data, err := ioutil.ReadFile(kubeconfigPath)
