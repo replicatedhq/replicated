@@ -31,6 +31,7 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "cluster id")
+	cmd.MarkFlagRequired("id")
 
 	return cmd
 }

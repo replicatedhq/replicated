@@ -17,6 +17,8 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
+	cmd.MarkFlagRequired("name")
+
 	cmd.Flags().StringVar(&r.args.createClusterOSDistribution, "os-distribution", "ubuntu", "OS distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterOSVersion, "os-version", "jammy", "OS version of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "kubernetes-distribution", "kind", "Kubernetes distribution of the cluster to provision")
@@ -24,7 +26,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory-mib", int64(4096), "Memory (MiB) to request per node")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration)")
+	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration)")
 
 	return cmd
 }

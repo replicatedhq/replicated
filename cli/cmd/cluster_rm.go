@@ -17,6 +17,8 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.removeClusterID, "id", "", "cluster id")
+	cmd.MarkFlagRequired("id")
+
 	cmd.Flags().BoolVar(&r.args.removeClusterForce, "force", false, "force remove cluster")
 
 	return cmd
