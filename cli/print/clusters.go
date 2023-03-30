@@ -7,9 +7,10 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var clustersTmplSrc = `ID	NAME	DISTRO	VERSION	STATUS	CREATED	EXPIRES
+// TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
+var clustersTmplSrc = `ID	NAME	OS DISTRO	OS VERSION	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
 {{ range . -}}
-{{ .ID }}	{{ .Name }}	{{ .Distribution }}	{{ .Version }}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
+{{ .ID }}	{{ .Name }}	{{ .OSDistribution }}	{{ .OSVersion }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
 {{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
