@@ -17,9 +17,14 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
-	cmd.Flags().StringVar(&r.args.createClusterDistribution, "distribution", "", "cluster distribution")
-	cmd.Flags().StringVar(&r.args.createClusterVersion, "version", "", "cluster version")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "cluster ttl (duration)")
+	cmd.Flags().StringVar(&r.args.createClusterOSDistribution, "os-distribution", "ubuntu", "OS distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterOSVersion, "os-version", "jammy", "OS version of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "kubernetes-distribution", "kind", "Kubernetes distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "kubernetes-version", "latest", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
+	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
+	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory-mib", int64(4096), "Memory (MiB) to request per node")
+	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration)")
 
 	return cmd
 }
@@ -28,10 +33,15 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
 	opts := kotsclient.CreateClusterOpts{
-		Name:         r.args.createClusterName,
-		Distribution: r.args.createClusterDistribution,
-		Version:      r.args.createClusterVersion,
-		TTL:          r.args.createClusterTTL,
+		Name:                   r.args.createClusterName,
+		OSDistribution:         r.args.createClusterOSDistribution,
+		OSVersion:              r.args.createClusterOSVersion,
+		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
+		KubernetesVersion:      r.args.createClusterKubernetesVersion,
+		NodeCount:              r.args.createClusterNodeCount,
+		VCpus:                  r.args.createClusterVCpus,
+		MemoryMiB:              r.args.createClusterMemoryMiB,
+		TTL:                    r.args.createClusterTTL,
 	}
 	_, err := kotsRestClient.CreateCluster(opts)
 	if err != nil {

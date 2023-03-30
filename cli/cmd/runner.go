@@ -165,10 +165,15 @@ type runnerArgs struct {
 
 	testRegistryImage string
 
-	createClusterName         string
-	createClusterDistribution string
-	createClusterVersion      string
-	createClusterTTL          string
+	createClusterName                   string
+	createClusterOSDistribution         string
+	createClusterOSVersion              string
+	createClusterKubernetesDistribution string
+	createClusterKubernetesVersion      string
+	createClusterNodeCount              int
+	createClusterVCpus                  int64
+	createClusterMemoryMiB              int64
+	createClusterTTL                    string
 
 	kubeconfigClusterID string
 
