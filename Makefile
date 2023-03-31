@@ -81,6 +81,14 @@ record-release:
 		--environment production \
 		--verbose
 
+.PHONY: record-support-ended
+record-support-ended:
+	pact-broker record-support-ended \
+		--pacticipant replicated-cli \
+		--version ${PACT_VERSION} \
+		--environment production \
+		--verbose
+
 # fetch the swagger specs from the production Vendor API
 .PHONY: get-spec-prod
 get-spec-prod:

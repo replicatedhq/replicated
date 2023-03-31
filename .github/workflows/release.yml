@@ -54,3 +54,29 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
       - run: make record-release
+      - name: get previous release sha
+        id: previous-release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const {
+              data: [latest, previous],
+            } = await github.rest.repos.listReleases({
+              ...context.repo,
+              per_page: 2,
+              page: 1,
+            });
+            if (!previous) return;
+            const {
+              data: {
+                object: { sha },
+              },
+            } = await github.rest.git.getRef({
+              ...context.repo,
+              ref: `tags/${previous.tag_name}`,
+            });
+            core.setOutput("sha", sha);
+      - if: steps.previous-release.outputs.sha
+        env:
+          PACT_VERSION: ${{ steps.previous-release.outputs.sha }}
+        run: make record-support-ended
