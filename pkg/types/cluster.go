@@ -14,5 +14,5 @@ type Cluster struct {
 	MemoryMiB              int64     `json:"memory_mib"`
 	Status                 string    `json:"status"`
 	CreatedAt              time.Time `json:"created_at"`
-	ExpiresAt              time.Time `json:"expire_at"`
+	ExpiresAt              time.Time `json:"expires_at"`
 }
