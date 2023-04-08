@@ -40,6 +40,9 @@ type KotsGetReleaseResponse struct {
 	Release KotsAppRelease `json:"release"`
 }
 
+type KotsTestReleaseResponse struct {
+}
+
 type KotsUpdateReleaseRequest struct {
 	SpecGzip []byte `json:"spec_gzip"`
 }

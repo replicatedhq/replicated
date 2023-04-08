@@ -31,12 +31,24 @@ type KotsRelease struct {
 	Channels     []*types.KotsChannel `json:"channels"`
 }
 
+func (c *VendorV3Client) TestRelease(appID string, sequence int64) (string, error) {
+	resp := types.KotsTestReleaseResponse{}
+
+	path := fmt.Sprintf("/v3/app/%s/release/%v/test", appID, sequence)
+
+	err := c.DoJSON("POST", path, http.StatusOK, nil, &resp)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to test release")
+	}
+
+	return "", nil
+}
+
 func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
 	resp := types.KotsGetReleaseResponse{}
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v", appID, sequence)
 
-	fmt.Printf("path: %s\n", path)
 	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get release")
