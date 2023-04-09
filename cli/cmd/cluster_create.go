@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +44,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		MemoryMiB:              r.args.createClusterMemoryMiB,
 		TTL:                    r.args.createClusterTTL,
 	}
-	_, err := kotsRestClient.CreateCluster(opts)
+	cl, err := kotsRestClient.CreateCluster(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
@@ -50,5 +52,5 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "create cluster")
 	}
 
-	return nil
+	return print.Clusters(r.w, []*types.Cluster{cl})
 }

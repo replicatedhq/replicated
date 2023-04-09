@@ -75,5 +75,6 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if err != nil {
 		return nil, err
 	}
+
 	return cluster.Cluster, nil
 }
