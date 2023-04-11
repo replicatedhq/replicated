@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +23,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.MarkFlagRequired("name")
 
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "kubernetes-distribution", "kind", "Kubernetes distribution of the cluster to provision")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "kubernetes-version", "1.25.3", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "kubernetes-version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory-mib", int64(4096), "Memory (MiB) to request per node")
@@ -42,7 +44,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		MemoryMiB:              r.args.createClusterMemoryMiB,
 		TTL:                    r.args.createClusterTTL,
 	}
-	_, err := kotsRestClient.CreateCluster(opts)
+	cl, err := kotsRestClient.CreateCluster(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
@@ -50,5 +52,5 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "create cluster")
 	}
 
-	return nil
+	return print.Clusters(r.w, []*types.Cluster{cl})
 }

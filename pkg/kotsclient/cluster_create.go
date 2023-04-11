@@ -33,7 +33,7 @@ type CreateClusterOpts struct {
 var defaultCreateClusterOpts = CreateClusterOpts{
 	Name:                   "", // server will generate
 	KubernetesDistribution: "kind",
-	KubernetesVersion:      "1.25.3",
+	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryMiB:              int64(4096),
@@ -75,5 +75,6 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if err != nil {
 		return nil, err
 	}
+
 	return cluster.Cluster, nil
 }
