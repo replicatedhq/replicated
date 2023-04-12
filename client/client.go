@@ -4,13 +4,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 type Client struct {
 	PlatformClient *platformclient.HTTPClient
-	ShipClient     *shipclient.GraphQLClient
 	KotsClient     *kotsclient.VendorV3Client
 }
 
@@ -18,7 +16,6 @@ func NewClient(platformOrigin string, graphqlOrigin string, apiToken string, kur
 	httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
 	client := Client{
 		PlatformClient: httpClient,
-		ShipClient:     shipclient.NewGraphQLClient(graphqlOrigin, apiToken),
 		KotsClient:     &kotsclient.VendorV3Client{HTTPClient: *httpClient},
 	}
 

@@ -14,9 +14,9 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 			return nil, err
 		}
 
-		releaseInfos := make([]types.ReleaseInfo, 0, 0)
+		releaseInfos := make([]types.ReleaseInfo, 0)
 		for _, platformRelease := range platformReleases {
-			activeChannels := make([]types.Channel, 0, 0)
+			activeChannels := make([]types.Channel, 0)
 			for _, platformReleaseChannel := range platformRelease.ActiveChannels {
 				activeChannel := types.Channel{
 					ID:          platformReleaseChannel.Id,
@@ -56,7 +56,7 @@ func (c *Client) CreateRelease(appID string, appType string, yaml string) (*type
 			return nil, err
 		}
 
-		activeChannels := make([]types.Channel, 0, 0)
+		activeChannels := make([]types.Channel, 0)
 
 		for _, platformReleaseChannel := range platformReleaseInfo.ActiveChannels {
 			activeChannel := types.Channel{
@@ -125,7 +125,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 // this Client abstraction continue to spring more leaks :)
 func (c *Client) LintRelease(appType string, data []byte) ([]types.LintMessage, error) {
 	if appType == "platform" {
-		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
+		return nil, errors.New("linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
 	} else if appType == "kots" {
 		return c.KotsClient.LintRelease(data)
 	}

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/spf13/cobra"
 
 	"github.com/replicatedhq/replicated/client"
@@ -24,10 +23,8 @@ type runners struct {
 	api              client.Client
 	enterpriseClient *enterpriseclient.HTTPClient
 	platformAPI      *platformclient.HTTPClient
-	shipAPI          *shipclient.GraphQLClient
 	kotsAPI          *kotsclient.VendorV3Client
 	stdin            io.Reader
-	dir              string
 	w                *tabwriter.Writer
 
 	rootCmd *cobra.Command
@@ -48,13 +45,7 @@ type runnerArgs struct {
 	createReleaseYaml                 string
 	createReleaseYamlFile             string
 	createReleaseYamlDir              string
-	createReleaseConfigYaml           string
-	createReleaseDeploymentYaml       string
-	createReleaseServiceYaml          string
-	createReleasePreflightYaml        string
-	createReleaseSupportBundleYaml    string
 	createReleasePromote              string
-	createReleasePromoteDir           string
 	createReleasePromoteRequired      bool
 	createReleasePromoteNotes         string
 	createReleasePromoteVersion       string

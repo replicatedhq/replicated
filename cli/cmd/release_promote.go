@@ -34,7 +34,7 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
+		return fmt.Errorf("failed to parse sequence argument %s", args[0])
 	}
 	channelName := args[1]
 	newID := channelName
@@ -47,6 +47,7 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	newID = channelID.ID
 
 	required := false
+
 	if r.appType == "platform" {
 		required = !r.args.releaseOptional
 	} else if r.appType == "kots" {

@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/replicatedhq/replicated/pkg/version"
 
 	"github.com/replicatedhq/replicated/client"
@@ -37,11 +36,6 @@ func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {
 		platformOrigin = originFromEnv
-	}
-
-	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
-	if shipOriginFromEnv != "" {
-		graphqlOrigin = shipOriginFromEnv
 	}
 
 	enterpriseOriginFromEnv := os.Getenv("REPLICATED_ENTERPRISE_ORIGIN")
@@ -232,9 +226,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
-
-		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
-		runCmds.shipAPI = shipAPI
 
 		httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		kotsAPI := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
