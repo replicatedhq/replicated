@@ -179,4 +179,6 @@ type runnerArgs struct {
 	removeClusterForce bool
 
 	lsClusterHideTerminated bool
+
+	loginEndpoint string
 }

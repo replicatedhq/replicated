@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/replicatedhq/replicated/pkg/version"
@@ -215,14 +216,21 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterKubeconfig(clusterCmd)
 	runCmds.InitClusterRemove(clusterCmd)
 
+	runCmds.InitLoginCommand(runCmds.rootCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
 		if apiToken == "" {
-			apiToken = os.Getenv("REPLICATED_API_TOKEN")
-			if apiToken == "" {
-				return errors.New("Please provide your API token")
+			creds, err := credentials.GetCurrentCredentials()
+			if err != nil {
+				if err == credentials.ErrCredentialsNotFound {
+					return errors.New("Please provide your API token or log in with `replicated login`")
+				}
+				return errors.Wrap(err, "get current credentials")
 			}
+
+			apiToken = creds.APIToken
 		}
 
 		// allow override
