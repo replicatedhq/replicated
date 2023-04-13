@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/fatih/color v1.7.0
 	github.com/go-git/go-git/v5 v5.1.0
-	github.com/go-kit/kit v0.10.0
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/manifoldco/promptui v0.7.0
 	github.com/mattn/go-isatty v0.0.12
@@ -14,11 +13,12 @@ require (
 	github.com/onsi/gomega v1.23.0
 	github.com/pact-foundation/pact-go v1.7.0
 	github.com/pkg/errors v0.9.1
+	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tj/go-spin v1.1.0
 	github.com/usrbinapp/usrbin-go v0.0.3
-	golang.org/x/crypto v0.0.0-20211209193657-4570a0811e8b
+	golang.org/x/crypto v0.1.0
 	k8s.io/client-go v0.26.3
 )
 
@@ -35,7 +35,6 @@ require (
 	github.com/frankban/quicktest v1.7.2 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.0.0 // indirect
-	github.com/go-logfmt/logfmt v0.5.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/gddo v0.0.0-20190419222130-af0f2af80721 // indirect
@@ -65,7 +64,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/xanzy/ssh-agent v0.2.1 // indirect
