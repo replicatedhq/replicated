@@ -177,4 +177,6 @@ type runnerArgs struct {
 
 	removeClusterID    string
 	removeClusterForce bool
+
+	lsClusterHideTerminated bool
 }
