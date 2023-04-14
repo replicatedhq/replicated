@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/usrbinapp/usrbin-go"
+	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
 )
 
 var (
@@ -15,12 +15,12 @@ var (
 
 // Build holds details about this build of the replicated cli binary
 type Build struct {
-	Version      string             `json:"version,omitempty"`
-	GitSHA       string             `json:"git,omitempty"`
-	BuildTime    time.Time          `json:"buildTime,omitempty"`
-	TimeFallback string             `json:"buildTimeFallback,omitempty"`
-	GoInfo       GoInfo             `json:"go,omitempty"`
-	UpdateInfo   *usrbin.UpdateInfo `json:"updateInfo,omitempty"`
+	Version      string                    `json:"version,omitempty"`
+	GitSHA       string                    `json:"git,omitempty"`
+	BuildTime    time.Time                 `json:"buildTime,omitempty"`
+	TimeFallback string                    `json:"buildTimeFallback,omitempty"`
+	GoInfo       GoInfo                    `json:"go,omitempty"`
+	UpdateInfo   *updatechecker.UpdateInfo `json:"updateInfo,omitempty"`
 }
 
 type GoInfo struct {
