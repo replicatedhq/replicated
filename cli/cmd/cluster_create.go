@@ -5,7 +5,6 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -53,5 +52,5 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "create cluster")
 	}
 
-	return print.Clusters(r.outputFormat, r.w, []*types.Cluster{cl})
+	return print.Cluster(r.outputFormat, r.w, cl)
 }

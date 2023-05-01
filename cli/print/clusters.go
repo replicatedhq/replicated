@@ -27,11 +27,7 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 	if outputFormat == "json" {
 		defer w.Flush()
 		var cAsByte []byte
-		if len(clusters) == 1 {
-			cAsByte, _ = json.MarshalIndent(clusters[0], "", "  ")
-		} else {
-			cAsByte, _ = json.MarshalIndent(clusters, "", "  ")
-		}
+		cAsByte, _ = json.MarshalIndent(clusters, "", "  ")
 		_, err := w.Write(cAsByte)
 		return err
 	}
@@ -49,6 +45,24 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 	} else if outputFormat == "json" {
 		defer w.Flush()
 		_, err := w.Write([]byte("[]"))
+		return err
+	}
+	return nil
+}
+
+func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
+	if outputFormat == "table" {
+		if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
+			return err
+		}
+		return w.Flush()
+
+	}
+	if outputFormat == "json" {
+		defer w.Flush()
+		var cAsByte []byte
+		cAsByte, _ = json.MarshalIndent(cluster, "", "  ")
+		_, err := w.Write(cAsByte)
 		return err
 	}
 	return nil

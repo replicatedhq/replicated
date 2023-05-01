@@ -24,11 +24,23 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 	} else if outputFormat == "json" {
 		defer w.Flush()
 		var cAsByte []byte
-		if len(customers) == 1 {
-			cAsByte, _ = json.MarshalIndent(customers[0], "", "  ")
-		} else {
-			cAsByte, _ = json.MarshalIndent(customers, "", "  ")
+		cAsByte, _ = json.MarshalIndent(customers, "", "  ")
+		_, err := w.Write(cAsByte)
+		return err
+	}
+	return nil
+}
+
+func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer) error {
+	if outputFormat == "table" {
+		if err := customersTmpl.Execute(w, []types.Customer{*customer}); err != nil {
+			return err
 		}
+		return w.Flush()
+	} else if outputFormat == "json" {
+		defer w.Flush()
+		var cAsByte []byte
+		cAsByte, _ = json.MarshalIndent(customer, "", "  ")
 		_, err := w.Write(cAsByte)
 		return err
 	}

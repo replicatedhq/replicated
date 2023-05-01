@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -55,5 +54,5 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "create customer")
 	}
 
-	return print.Customers(r.outputFormat, r.w, []types.Customer{*customer})
+	return print.Customer(r.outputFormat, r.w, customer)
 }
