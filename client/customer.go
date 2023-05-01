@@ -1,10 +1,8 @@
 package client
 
 import (
-	"time"
-
 	"github.com/pkg/errors"
-
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -19,11 +17,11 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) CreateCustomer(appID, appType string, name string, channelID string, expiresIn time.Duration, isAirgapEnabled bool, isGitopsSupported bool, isSnapshotSupported bool, licenseType string) (*types.Customer, error) {
+func (c *Client) CreateCustomer(appType string, opts kotsclient.CreateCustomerOpts) (*types.Customer, error) {
 	if appType == "platform" {
 		return nil, errors.New("creating customers is not supported for platform applications")
 	} else if appType == "kots" {
-		return c.KotsClient.CreateCustomer(name, appID, channelID, expiresIn, isAirgapEnabled, isGitopsSupported, isSnapshotSupported, licenseType)
+		return c.KotsClient.CreateCustomer(opts)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
