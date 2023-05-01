@@ -21,8 +21,7 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 			return err
 		}
 		return w.Flush()
-	}
-	if outputFormat == "json" {
+	} else if outputFormat == "json" {
 		defer w.Flush()
 		var cAsByte []byte
 		if len(customers) == 1 {

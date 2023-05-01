@@ -46,8 +46,7 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 		}
 
 		return w.Flush()
-	}
-	if outputFormat == "json" {
+	} else if outputFormat == "json" {
 		defer w.Flush()
 		_, err := w.Write([]byte("[]"))
 		return err
