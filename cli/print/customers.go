@@ -20,15 +20,13 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 		if err := customersTmpl.Execute(w, customers); err != nil {
 			return err
 		}
-		return w.Flush()
 	} else if outputFormat == "json" {
-		defer w.Flush()
-		var cAsByte []byte
-		cAsByte, _ = json.MarshalIndent(customers, "", "  ")
-		_, err := w.Write(cAsByte)
-		return err
+		cAsByte, _ := json.MarshalIndent(customers, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
 	}
-	return nil
+	return w.Flush()
 }
 
 func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer) error {
@@ -36,13 +34,11 @@ func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer
 		if err := customersTmpl.Execute(w, []types.Customer{*customer}); err != nil {
 			return err
 		}
-		return w.Flush()
 	} else if outputFormat == "json" {
-		defer w.Flush()
-		var cAsByte []byte
-		cAsByte, _ = json.MarshalIndent(customer, "", "  ")
-		_, err := w.Write(cAsByte)
-		return err
+		cAsByte, _ := json.MarshalIndent(customer, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
 	}
-	return nil
+	return w.Flush()
 }
