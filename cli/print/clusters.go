@@ -1,6 +1,7 @@
 package print
 
 import (
+	"encoding/json"
 	"text/tabwriter"
 	"text/template"
 
@@ -15,19 +16,44 @@ var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
 
-func Clusters(w *tabwriter.Writer, clusters []*types.Cluster) error {
-	if err := clustersTmpl.Execute(w, clusters); err != nil {
-		return err
+func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster) error {
+	if outputFormat == "table" {
+		if err := clustersTmpl.Execute(w, clusters); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
 	}
-
 	return w.Flush()
 }
 
-func NoClusters(w *tabwriter.Writer) error {
-	_, err := w.Write([]byte(`No clusters found. Use the "replicated cluster create" command to create a new cluster.`))
-	if err != nil {
-		return err
+func NoClusters(outputFormat string, w *tabwriter.Writer) error {
+	if outputFormat == "table" {
+		_, err := w.Write([]byte(`No clusters found. Use the "replicated cluster create" command to create a new cluster.`))
+		if err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		if _, err := w.Write([]byte("[]")); err != nil {
+			return err
+		}
 	}
+	return w.Flush()
+}
 
+func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
+	if outputFormat == "table" {
+		if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
+	}
 	return w.Flush()
 }

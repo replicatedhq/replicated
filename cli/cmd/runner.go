@@ -28,6 +28,7 @@ type runners struct {
 	kotsAPI          *kotsclient.VendorV3Client
 	stdin            io.Reader
 	dir              string
+	outputFormat     string
 	w                *tabwriter.Writer
 
 	rootCmd *cobra.Command

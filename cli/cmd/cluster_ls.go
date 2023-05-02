@@ -19,6 +19,7 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().BoolVar(&r.args.lsClusterHideTerminated, "hide-terminated", false, "when set, do not show terminated clusters")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -35,8 +36,8 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 	}
 
 	if len(clusters) == 0 {
-		return print.NoClusters(r.w)
+		return print.NoClusters(r.outputFormat, r.w)
 	}
 
-	return print.Clusters(r.w, clusters)
+	return print.Clusters(r.outputFormat, r.w, clusters)
 }
