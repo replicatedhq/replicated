@@ -1,6 +1,7 @@
 package print
 
 import (
+	"encoding/json"
 	"text/tabwriter"
 	"text/template"
 
@@ -14,9 +15,30 @@ var customersTmplSrc = `ID	NAME	CHANNELS	EXPIRES	TYPE
 
 var customersTmpl = template.Must(template.New("channels").Parse(customersTmplSrc))
 
-func Customers(w *tabwriter.Writer, customers []types.Customer) error {
-	if err := customersTmpl.Execute(w, customers); err != nil {
-		return err
+func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Customer) error {
+	if outputFormat == "table" {
+		if err := customersTmpl.Execute(w, customers); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(customers, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
+	}
+	return w.Flush()
+}
+
+func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer) error {
+	if outputFormat == "table" {
+		if err := customersTmpl.Execute(w, []types.Customer{*customer}); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(customer, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }
