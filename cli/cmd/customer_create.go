@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +23,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	cmd.Flags().BoolVar(&r.args.customerCreateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
+	cmd.Flags().StringVar(&r.args.customerCreateEmail, "email", "", "Email address of the customer that is to be created.")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 	return cmd
 }
@@ -39,17 +41,19 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "get channel")
 	}
 
-	customer, err := r.api.CreateCustomer(
-		r.appID,
-		r.appType,
-		r.args.customerCreateName,
-		channel.ID,
-		r.args.customerCreateExpiryDuration,
-		r.args.customerCreateIsAirgapEnabled,
-		r.args.customerCreateIsGitopsSupported,
-		r.args.customerCreateIsSnapshotSupported,
-		"dev",
-	)
+	opts := kotsclient.CreateCustomerOpts{
+		Name:                r.args.customerCreateName,
+		ChannelID:           channel.ID,
+		AppID:               r.appID,
+		ExpiresAt:           r.args.customerCreateExpiryDuration,
+		IsAirgapEnabled:     r.args.customerCreateIsAirgapEnabled,
+		IsGitopsSupported:   r.args.customerCreateIsGitopsSupported,
+		IsSnapshotSupported: r.args.customerCreateIsSnapshotSupported,
+		LicenseType:         "dev",
+		Email:               r.args.customerCreateEmail,
+	}
+
+	customer, err := r.api.CreateCustomer(r.appType, opts)
 	if err != nil {
 		return errors.Wrap(err, "create customer")
 	}

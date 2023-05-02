@@ -17,34 +17,40 @@ type CreateCustomerRequest struct {
 	IsAirgapEnabled     bool   `json:"is_airgap_enabled"`
 	IsGitopsSupported   bool   `json:"is_gitops_supported"`
 	IsSnapshotSupported bool   `json:"is_snapshot_supported"`
+	Email               string `json:"email,omitempty"`
 }
 
 type CreateCustomerResponse struct {
 	Customer *types.Customer `json:"customer"`
 }
 
+type CreateCustomerOpts struct {
+	Name                string
+	ChannelID           string
+	AppID               string
+	ExpiresAt           time.Duration
+	IsAirgapEnabled     bool
+	IsGitopsSupported   bool
+	IsSnapshotSupported bool
+	LicenseType         string
+	Email               string
+}
+
 func (c *VendorV3Client) CreateCustomer(
-	name string,
-	appID string,
-	channelID string,
-	expiresIn time.Duration,
-	isAirgapEnabled bool,
-	isGitopsSupported bool,
-	isSnapshotSupported bool,
-	licenseType string,
-) (*types.Customer, error) {
+	opts CreateCustomerOpts) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
-		Name:                name,
-		ChannelID:           channelID,
-		AppID:               appID,
-		Type:                licenseType,
-		IsAirgapEnabled:     isAirgapEnabled,
-		IsGitopsSupported:   isGitopsSupported,
-		IsSnapshotSupported: isSnapshotSupported,
+		Name:                opts.Name,
+		ChannelID:           opts.ChannelID,
+		AppID:               opts.AppID,
+		Type:                opts.LicenseType,
+		IsAirgapEnabled:     opts.IsAirgapEnabled,
+		IsGitopsSupported:   opts.IsGitopsSupported,
+		IsSnapshotSupported: opts.IsSnapshotSupported,
+		Email:               opts.Email,
 	}
 
-	if expiresIn > 0 {
-		request.ExpiresAt = (time.Now().UTC().Add(expiresIn)).Format(time.RFC3339)
+	if opts.ExpiresAt > 0 {
+		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAt)).Format(time.RFC3339)
 	}
 	var response CreateCustomerResponse
 	err := c.DoJSON("POST", "/v3/customer", http.StatusCreated, request, &response)
