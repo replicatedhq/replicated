@@ -1,7 +1,7 @@
 name: Release CLI
 
 on:
-  create:
+  push:
     tags:
       - 'v*'
 
