@@ -1,7 +1,7 @@
 name: Release CLI
 
 on:
-  create:
+  push:
     tags:
       - 'v*'
 
@@ -69,11 +69,19 @@ jobs:
             if (!previous) return;
             const {
               data: {
-                object: { sha },
+                object: { sha: tag_sha },
               },
             } = await github.rest.git.getRef({
               ...context.repo,
               ref: `tags/${previous.tag_name}`,
+            });
+            const {
+              data: {
+                object: { sha },
+              },
+            } = await github.rest.git.getTag({
+              ...context.repo,
+              tag_sha,
             });
             core.setOutput("sha", sha);
       - if: steps.previous-release.outputs.sha
