@@ -14,8 +14,9 @@ func (r *runners) InitChannelInspect(parent *cobra.Command) {
 		Short: "Show full details for a channel",
 		Long:  "Show full details for a channel",
 	}
-	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "text", "The output format to use. One of: json|text (default: text)")
+
 	cmd.RunE = r.channelInspect
 }
 
@@ -30,7 +31,7 @@ func (r *runners) channelInspect(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err = print.ChannelAttrs(r.w, r.appType, r.appSlug, appChan); err != nil {
+	if err = print.ChannelAttrs(r.outputFormat, r.w, r.appType, r.appSlug, appChan); err != nil {
 		return err
 	}
 

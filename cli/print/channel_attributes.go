@@ -1,6 +1,7 @@
 package print
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -30,27 +31,34 @@ AIRGAP:
 
 var channelAttrsTmpl = template.Must(template.New("ChannelAttributes").Parse(channelAttrsTmplSrc))
 
-func ChannelAttrs(
+func ChannelAttrs(outputFormat string,
 	w *tabwriter.Writer,
 	appType string,
 	appSlug string,
 	appChan *types.Channel,
 ) error {
-	attrs := struct {
-		Existing string
-		Embedded string
-		Airgap   string
-		Chan     *types.Channel
-	}{
-		Chan: appChan,
-	}
-	if appType == "kots" {
-		attrs.Existing = existingInstallCommand(appSlug, appChan.Slug)
-		attrs.Embedded = embeddedInstallCommand(appSlug, appChan.Slug)
-		attrs.Airgap = embeddedAirgapInstallCommand(appSlug, appChan.Slug)
-	}
-	if err := channelAttrsTmpl.Execute(w, attrs); err != nil {
-		return err
+	if outputFormat == "text" {
+		attrs := struct {
+			Existing string
+			Embedded string
+			Airgap   string
+			Chan     *types.Channel
+		}{
+			Chan: appChan,
+		}
+		if appType == "kots" {
+			attrs.Existing = existingInstallCommand(appSlug, appChan.Slug)
+			attrs.Embedded = embeddedInstallCommand(appSlug, appChan.Slug)
+			attrs.Airgap = embeddedAirgapInstallCommand(appSlug, appChan.Slug)
+		}
+		if err := channelAttrsTmpl.Execute(w, attrs); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(appChan, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }
