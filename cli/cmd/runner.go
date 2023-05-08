@@ -177,7 +177,6 @@ type runnerArgs struct {
 
 	kubeconfigClusterID string
 
-	removeClusterID    string
 	removeClusterForce bool
 
 	lsClusterHideTerminated bool

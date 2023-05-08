@@ -13,11 +13,9 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 		Long:         `remove test clusters`,
 		RunE:         r.removeCluster,
 		SilenceUsage: true,
+		Args:         cobra.MinimumNArgs(1),
 	}
 	parent.AddCommand(cmd)
-
-	cmd.Flags().StringVar(&r.args.removeClusterID, "id", "", "cluster id")
-	cmd.MarkFlagRequired("id")
 
 	cmd.Flags().BoolVar(&r.args.removeClusterForce, "force", false, "force remove cluster")
 
@@ -27,9 +25,11 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 func (r *runners) removeCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	err := kotsRestClient.RemoveCluster(r.args.removeClusterID, r.args.removeClusterForce)
-	if err != nil {
-		return errors.Wrap(err, "remove cluster")
+	for _, arg := range args {
+		err := kotsRestClient.RemoveCluster(arg, r.args.removeClusterForce)
+		if err != nil {
+			return errors.Wrap(err, "remove cluster")
+		}
 	}
 
 	return nil

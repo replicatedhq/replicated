@@ -17,7 +17,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.1
 	github.com/tj/go-spin v1.1.0
-	github.com/usrbinapp/usrbin-go v0.0.4
+	github.com/usrbinapp/usrbin-go v0.0.5
 	golang.org/x/crypto v0.4.0
 	k8s.io/client-go v0.26.3
 )
