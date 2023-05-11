@@ -181,5 +181,8 @@ type runnerArgs struct {
 
 	lsClusterHideTerminated bool
 
+	// Application Version String
+	appVersion string
+
 	loginEndpoint string
 }
