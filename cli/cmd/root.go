@@ -165,6 +165,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersDownloadLicenseCommand(customersCmd)
 	runCmds.InitCustomersArchiveCommand(customersCmd)
 
+	runCmds.InitCustomersByAppVersionCommand(customersCmd)
+
 	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
 	runCmds.InitInstallerCreate(installerCmd)
 	runCmds.InitInstallerList(installerCmd)
