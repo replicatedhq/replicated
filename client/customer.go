@@ -17,6 +17,17 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
+func (c *Client) ListCustomersByAppVersion(appID string, appVersion string, appType string) ([]types.Customer, error) {
+
+	if appType == "platform" {
+		return nil, errors.New("searching customers by appId and vesion is not supported for platform applications")
+	} else if appType == "kots" {
+		return c.KotsClient.ListCustomersByAppVersion(appID, appVersion, appType)
+	}
+
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
 func (c *Client) CreateCustomer(appType string, opts kotsclient.CreateCustomerOpts) (*types.Customer, error) {
 	if appType == "platform" {
 		return nil, errors.New("creating customers is not supported for platform applications")
