@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"sort"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/spf13/cobra"
 )
 
-// replicated customer search-by-app-version APPID VERSION
 func (r *runners) InitCustomersByAppVersionCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "search-by-app-version VERSION --app APPID",
@@ -18,7 +19,6 @@ func (r *runners) InitCustomersByAppVersionCommand(parent *cobra.Command) *cobra
 		Args:         cobra.MinimumNArgs(1),
 	}
 	parent.AddCommand(cmd)
-	//cmd.Flags().StringVar(&r.args.appID, "AppId", "", "ID of the application")
 	cmd.Flags().StringVar(&r.args.appVersion, "AppVersion", "", "Version of the application")
 
 	return cmd
@@ -41,6 +41,8 @@ func (r *runners) ListCustomersByAppVersion(_ *cobra.Command, args []string) err
 	if err != nil {
 		return errors.Wrap(err, "search-by-app-version")
 	}
+	// sort by customer name to ensure they are grouped together
+	sort.SliceStable(customers, func(i, j int) bool { return customers[i].Name < customers[j].Name })
 
-	return print.Customers(r.outputFormat, r.w, customers)
+	return print.CustomersWithInstances(r.outputFormat, r.w, customers)
 }
