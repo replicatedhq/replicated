@@ -9,17 +9,12 @@ import (
 )
 
 type CustomerListWithInstancesResponse struct {
+	// Response from /v3/app/{appID}/customers
 	Customers      []types.Customer `json:"customers"`
 	TotalCustomers int              `json:"totalCustomers"`
 }
 
 func (c *VendorV3Client) ListCustomersByAppVersion(appID string, appVersion string, appType string) ([]types.Customer, error) {
-	println("--------------DEBUG-------------------------")
-	println("DEBUG: kotsclient:ListCustomersByAppVersion")
-	println("DEBUG: appID:      " + appID)
-	println("DEBUG: appVersion: " + appVersion)
-	println("DEBUG: appType:    " + appType)
-	println("\n")
 
 	matchingCustomers := []types.Customer{}
 	page := 0
@@ -31,44 +26,29 @@ func (c *VendorV3Client) ListCustomersByAppVersion(appID string, appVersion stri
 			return nil, errors.Wrapf(err, "List Customers By App Version page %d", page)
 		}
 
-		for customersIndex, customer := range resp.Customers {
-			fmt.Println("-----------------------------")
-			fmt.Printf("DEBUG: customer.Name:    %v\n", customer.Name)
-			fmt.Printf("DEBUG: customer.ID:      %v\n", customer.ID)
-			fmt.Printf("DEBUG: customersIndex:   %v\n", customersIndex)
+		for _, customer := range resp.Customers {
 			for _, instance := range customer.Instances {
-				fmt.Printf("      DEBUG: instance.InstanceId: %v\n", instance.InstanceId)
 				for versionIndex, versionHistory := range instance.VersionHistory {
-					fmt.Println("      DEBUG: versionHistory: ", versionHistory)
 					if versionHistory.VersionLabel == appVersion && versionIndex == 0 {
-						fmt.Printf("      DEBUG: versionHistory.VersionLabel: %v MATCH\n", versionHistory.VersionLabel)
-						// Append the customer to the matchingCustomers slice
-						// matchingCustomers = append(matchingCustomers, customer)
-						// Apppend the customer and
-						// the instance to the matchingCustomers slice
-						// matchingCustomers = append(matchingCustomers, customer, instance)
-						// Append the customer and
-						// the instance and
-						// the versionHistory to the matchingCustomers slice
+						// only add the customer if the version matches
+						// index[0] is the latest version
+						// There has to be a better way to do this without creating a tempCustomer
 						tempCustomer := customer
 						tempCustomer.Instances = []types.Instance{instance}
 						tempCustomer.Instances[0].VersionHistory = []types.VersionHistory{versionHistory}
 						matchingCustomers = append(matchingCustomers, tempCustomer)
-						//matchingCustomers = append(matchingCustomers, customer, instance, versionHistory)
 
-					} else {
-						fmt.Printf("      DEBUG: versionHistory.VersionLabel: %v\n", versionHistory.VersionLabel)
 					}
 				}
 			}
 		}
 		if len(matchingCustomers) == resp.TotalCustomers || len(resp.Customers) == 0 {
+			// We've reached the end of the customer pages
 			break
 		}
 		page = page + 1
 	}
 
-	println("--------------DEBUG-------------------------\n")
 	if len(matchingCustomers) == 0 {
 		return matchingCustomers, fmt.Errorf("no matching customers found for app %q and version %q ", appID, appVersion)
 	}
