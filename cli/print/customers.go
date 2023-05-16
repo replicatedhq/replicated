@@ -30,16 +30,13 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 }
 
 func CustomersWithInstances(outputFormat string, w *tabwriter.Writer, customers []types.Customer) error {
-	println("--------------DEBUG-------------------------\n")
-	println("DEBUG: print:CustomersWithInstances")
-
-	// Define a new template
-	var customersTmplSrc = `CUSTOMER_NAME	INSTANCES_IDs	CHANNELS	EXPIRES	TYPE
+	// Define a new template for use in this function
+	var customersTmplSrc = `CUSTOMER NAME	INSTANCE ID	LAST ACTIVE	VERSION	
 {{ range . -}}
-{{ .Name }}	{{range .Instances}},{{.InstanceId}}{{end}}	{{range .Channels}} {{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}
+{{ .Name }}	{{range .Instances}}{{.InstanceId}}	{{.LastActive}}	{{range .VersionHistory}}{{.VersionLabel}}{{end}}{{end}}
 {{ end }}`
 
-	var customersTmpl = template.Must(template.New("channels").Parse(customersTmplSrc))
+	var customersTmpl = template.Must(template.New("customers").Parse(customersTmplSrc))
 
 	if outputFormat == "table" {
 		if err := customersTmpl.Execute(w, customers); err != nil {
