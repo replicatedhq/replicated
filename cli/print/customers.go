@@ -29,6 +29,31 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 	return w.Flush()
 }
 
+func CustomersWithInstances(outputFormat string, w *tabwriter.Writer, customers []types.Customer) error {
+	println("--------------DEBUG-------------------------\n")
+	println("DEBUG: print:CustomersWithInstances")
+
+	// Define a new template
+	var customersTmplSrc = `CUSTOMER_NAME	INSTANCES_IDs	CHANNELS	EXPIRES	TYPE
+{{ range . -}}
+{{ .Name }}	{{range .Instances}},{{.InstanceId}}{{end}}	{{range .Channels}} {{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}
+{{ end }}`
+
+	var customersTmpl = template.Must(template.New("channels").Parse(customersTmplSrc))
+
+	if outputFormat == "table" {
+		if err := customersTmpl.Execute(w, customers); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(customers, "", "  ")
+		if _, err := w.Write(cAsByte); err != nil {
+			return err
+		}
+	}
+	return w.Flush()
+}
+
 func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer) error {
 	if outputFormat == "table" {
 		if err := customersTmpl.Execute(w, []types.Customer{*customer}); err != nil {
