@@ -25,7 +25,10 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "kubernetes-version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
+	cmd.Flags().StringVar(&r.args.createClusterVCpuType, "vcpus-class", "latest", "vCPUs performance type to request (not used on all distributions)")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory-mib", int64(4096), "Memory (MiB) to request per node")
+	cmd.Flags().Int64Var(&r.args.createClusterDiskMiB, "disk-mib", int64(4096), "Disk space (MiB) to request per node")
+	cmd.Flags().StringVar(&r.args.createClusterDiskType, "disk-class", "nvme", "Disk performance type to request (not used on all distributions)")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
@@ -41,7 +44,10 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		NodeCount:              r.args.createClusterNodeCount,
 		VCpus:                  r.args.createClusterVCpus,
+		VCpuType:               r.args.createClusterVCpuType,
 		MemoryMiB:              r.args.createClusterMemoryMiB,
+		DiskMiB:                r.args.createClusterDiskMiB,
+		DiskType:               r.args.createClusterDiskType,
 		TTL:                    r.args.createClusterTTL,
 	}
 	cl, err := kotsRestClient.CreateCluster(opts)

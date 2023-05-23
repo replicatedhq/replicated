@@ -12,8 +12,12 @@ type CreateClusterRequest struct {
 	KubernetesVersion      string `json:"kubernetes_version"`
 	NodeCount              int    `json:"node_count"`
 	VCpus                  int64  `json:"vcpus"`
+	VCpuType               string `json:"vcpu_type"`
 	MemoryMiB              int64  `json:"memory_mib"`
+	DiskMiB                int64  `json:"disk_mib"`
+	DiskType               string `json:"disk_type"`
 	TTL                    string `json:"ttl"`
+	DryRun                 bool   `json:"dry_run"`
 }
 
 type CreateClusterResponse struct {
@@ -26,8 +30,12 @@ type CreateClusterOpts struct {
 	KubernetesVersion      string
 	NodeCount              int
 	VCpus                  int64
+	VCpuType               string
 	MemoryMiB              int64
+	DiskMiB                int64
+	DiskType               string
 	TTL                    string
+	DryRun                 bool
 }
 
 var defaultCreateClusterOpts = CreateClusterOpts{
@@ -36,7 +44,10 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
+	VCpuType:               "latest",
 	MemoryMiB:              int64(4096),
+	DiskMiB:                int64(65536),
+	DiskType:               "nvme",
 	TTL:                    "2h",
 }
 
@@ -54,9 +65,18 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if opts.VCpus == int64(0) {
 		opts.VCpus = defaultCreateClusterOpts.VCpus
 	}
+	if opts.VCpuType == "" {
+		opts.VCpuType = defaultCreateClusterOpts.VCpuType
+	}
 	if opts.MemoryMiB == int64(0) {
 		opts.MemoryMiB = defaultCreateClusterOpts.MemoryMiB
 	}
+	if opts.DiskMiB == int64(0) {
+		opts.DiskMiB = defaultCreateClusterOpts.DiskMiB
+	}
+	if opts.DiskType == "" {
+		opts.DiskType = defaultCreateClusterOpts.DiskType
+		}
 	if opts.TTL == "" {
 		opts.TTL = defaultCreateClusterOpts.TTL
 	}
@@ -67,8 +87,12 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		KubernetesVersion:      opts.KubernetesVersion,
 		NodeCount:              opts.NodeCount,
 		VCpus:                  opts.VCpus,
+		VCpuType:               opts.VCpuType,
 		MemoryMiB:              opts.MemoryMiB,
+		DiskMiB:                opts.DiskMiB,
+		DiskType:               opts.DiskType,
 		TTL:                    opts.TTL,
+		DryRun:                 opts.DryRun,
 	}
 	cluster := CreateClusterResponse{}
 	err := c.DoJSON("POST", "/v3/cluster", http.StatusCreated, reqBody, &cluster)
