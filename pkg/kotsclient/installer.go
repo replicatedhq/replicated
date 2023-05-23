@@ -23,7 +23,7 @@ func (c *VendorV3Client) ListInstallers(appID string) ([]types.InstallerSpec, er
 		if err != nil {
 			return nil, errors.Wrap(err, "parsing time string to CreatedAt time")
 		}
-		response.Body[i].CreatedAt = util.Time{createdAtTime}
+		response.Body[i].CreatedAt = util.Time{Time: createdAtTime}
 	}
 
 	return response.Body, nil

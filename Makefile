@@ -56,7 +56,7 @@ test:
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicated-cli-test \
+		replicated-cli-test
 
 .PHONY: publish-pact
 publish-pact:
@@ -128,7 +128,7 @@ gen-models:
 		-Dmodels -DmodelsDocs=false \
 		-i /local/gen/spec/v3.json \
 		-l go \
-		-o /local/gen/go/v3; \
+		-o /local/gen/go/v3;
 
 .PHONY: build
 build:
@@ -136,6 +136,10 @@ build:
     		${LDFLAGS} \
     		-o bin/replicated \
     		cli/main.go
+
+.PHONY: vet
+vet:
+	go vet ${LDFLAGS} ./pkg/... ./cli/... ./client/...
 
 .PHONY: docs
 docs:
