@@ -20,6 +20,7 @@ func (r *runners) InitCustomersByAppVersionCommand(parent *cobra.Command) *cobra
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.appVersion, "AppVersion", "", "Version of the application")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
