@@ -186,7 +186,6 @@ type runnerArgs struct {
 	lsClusterHideTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string
-	lsClusterIDs            []string
 
 	loginEndpoint string
 }
