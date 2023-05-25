@@ -21,11 +21,11 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
 	cmd.MarkFlagRequired("name")
 
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "kubernetes-distribution", "kind", "Kubernetes distribution of the cluster to provision")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "kubernetes-version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory-mib", int64(4096), "Memory (MiB) to request per node")
+	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
