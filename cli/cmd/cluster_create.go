@@ -31,6 +31,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterDiskType, "disk-class", "nvme", "Disk performance type to request (not used on all distributions)")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Clusters will not be created")
 
 	return cmd
 }
@@ -48,6 +49,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		MemoryMiB:              r.args.createClusterMemoryMiB,
 		DiskMiB:                r.args.createClusterDiskMiB,
 		DiskType:               r.args.createClusterDiskType,
+		DryRun:                 r.args.createClusterDryRun,
 		TTL:                    r.args.createClusterTTL,
 	}
 	cl, err := kotsRestClient.CreateCluster(opts)

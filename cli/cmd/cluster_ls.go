@@ -21,8 +21,8 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().BoolVar(&r.args.lsClusterHideTerminated, "hide-terminated", false, "when set, do not show terminated clusters")
-	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "limit output to clusters that exist during or after this date time (optional)")
-	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "limit output to clusters that exist during or before this date time (optional)")
+	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "limit output to clusters that exist during or after this date time format: 2022-02-02T20:22:02Z RFC3339 (optional)")
+	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "limit output to clusters that exist during or before this date time format: 2022-02-02T20:22:02Z RFC3339 (optional)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
