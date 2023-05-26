@@ -17,7 +17,9 @@ func (r *runners) InitLoginCommand(parent *cobra.Command) *cobra.Command {
 		RunE:         r.login,
 	}
 	parent.AddCommand(cmd)
+
 	cmd.Flags().StringVar(&r.args.loginEndpoint, "endpoint", "https://vendor.replicated.com", "The endpoint to use for the login process. Defaults to https://vendor.replicated.com")
+	cmd.Flags().MarkHidden("endpoint")
 
 	return cmd
 }

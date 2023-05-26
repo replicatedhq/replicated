@@ -175,8 +175,6 @@ type runnerArgs struct {
 	createClusterMemoryMiB              int64
 	createClusterTTL                    string
 
-	kubeconfigClusterID string
-
 	removeClusterForce bool
 
 	lsClusterHideTerminated bool

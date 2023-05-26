@@ -27,11 +27,9 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 		Long:         `Download credentials for a test cluster`,
 		RunE:         r.kubeconfigCluster,
 		SilenceUsage: true,
+		Args:         cobra.MinimumNArgs(1),
 	}
 	parent.AddCommand(cmd)
-
-	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "cluster id")
-	cmd.MarkFlagRequired("id")
 
 	return cmd
 }
@@ -39,7 +37,7 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(r.args.kubeconfigClusterID)
+	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(args[0])
 	if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
