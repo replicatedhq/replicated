@@ -219,6 +219,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 
+	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
+	runCmds.InitAPIGet(apiCmd)
+	runCmds.InitAPIPost(apiCmd)
+	runCmds.InitAPIPut(apiCmd)
+
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
@@ -287,6 +292,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
 	clusterCmd.PersistentPreRunE = preRunSetupAPIs
+	apiCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
 
