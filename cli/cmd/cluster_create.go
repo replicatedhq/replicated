@@ -4,7 +4,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +25,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration)")
+	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
@@ -45,7 +44,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		TTL:                    r.args.createClusterTTL,
 	}
 	cl, err := kotsRestClient.CreateCluster(opts)
-	if errors.Cause(err) == platformclient.ErrForbidden {
+	if errors.Cause(err) == kotsclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
 	if err != nil {
