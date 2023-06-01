@@ -183,4 +183,6 @@ type runnerArgs struct {
 
 	apiPostBody string
 	apiPutBody  string
+
+	channelInspectOutputFormat string
 }
