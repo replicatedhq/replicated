@@ -180,4 +180,7 @@ type runnerArgs struct {
 	lsClusterHideTerminated bool
 
 	loginEndpoint string
+
+	apiPostBody string
+	apiPutBody  string
 }

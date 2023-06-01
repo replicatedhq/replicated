@@ -47,7 +47,46 @@ func NewHTTPClient(origin string, apiKey string) *HTTPClient {
 	return c
 }
 
-func (c *HTTPClient) DoJSON(method, path string, successStatus int, reqBody, respBody interface{}) error {
+func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody string) ([]byte, error) {
+	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
+	var buf *bytes.Buffer
+	if reqBody != "" {
+		buf = bytes.NewBuffer([]byte(reqBody))
+	} else {
+		buf = &bytes.Buffer{}
+	}
+	req, err := http.NewRequest(method, endpoint, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "read body")
+	}
+
+	// if the response code was NOT a 2xx code, then we either return what the server responded with
+	// or a static error if the server didn't respond with a body
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if len(bodyBytes) > 0 {
+			return nil, errors.Errorf("unexpected status code %d: %s", resp.StatusCode, string(bodyBytes))
+		}
+		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+	}
+
+	return bodyBytes, nil
+}
+
+func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {
