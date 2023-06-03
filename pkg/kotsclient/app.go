@@ -23,10 +23,11 @@ func (c *VendorV3Client) ListApps() ([]types.AppAndChannels, error) {
 	for _, kotsApp := range response.Apps {
 		app := types.AppAndChannels{
 			App: &types.App{
-				ID:        kotsApp.Id,
-				Name:      kotsApp.Name,
-				Slug:      kotsApp.Slug,
-				Scheduler: "kots",
+				ID:           kotsApp.Id,
+				Name:         kotsApp.Name,
+				Slug:         kotsApp.Slug,
+				IsFoundation: kotsApp.IsFoundation,
+				Scheduler:    "kots",
 			},
 			Channels: kotsApp.Channels,
 		}
@@ -45,10 +46,11 @@ func (c *VendorV3Client) GetApp(appID string) (*types.App, error) {
 	for _, app := range apps {
 		if app.App.ID == appID || app.App.Slug == appID {
 			return &types.App{
-				ID:        app.App.ID,
-				Name:      app.App.Name,
-				Slug:      app.App.Slug,
-				Scheduler: "kots",
+				ID:           app.App.ID,
+				Name:         app.App.Name,
+				Slug:         app.App.Slug,
+				IsFoundation: app.App.IsFoundation,
+				Scheduler:    "kots",
 			}, nil
 		}
 	}

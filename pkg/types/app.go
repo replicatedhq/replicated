@@ -3,10 +3,11 @@ package types
 import "time"
 
 type App struct {
-	ID        string
-	Name      string
-	Scheduler string
-	Slug      string
+	ID           string
+	Name         string
+	Scheduler    string
+	Slug         string
+	IsFoundation bool
 }
 
 type AppAndChannels struct {
@@ -15,16 +16,17 @@ type AppAndChannels struct {
 }
 
 type KotsAppWithChannels struct {
-	Channels    []Channel `json:"channels,omitempty"`
-	Created     time.Time `json:"created,omitempty"`
-	Description string    `json:"description,omitempty"`
-	Id          string    `json:"id,omitempty"`
-	IsArchived  bool      `json:"isArchived,omitempty"`
-	IsKotsApp   bool      `json:"isKotsApp,omitempty"`
-	Name        string    `json:"name,omitempty"`
-	RenamedAt   time.Time `json:"renamedAt,omitempty"`
-	Slug        string    `json:"slug,omitempty"`
-	TeamId      string    `json:"teamId,omitempty"`
+	Channels     []Channel `json:"channels,omitempty"`
+	Created      time.Time `json:"created,omitempty"`
+	Description  string    `json:"description,omitempty"`
+	Id           string    `json:"id,omitempty"`
+	IsArchived   bool      `json:"isArchived,omitempty"`
+	IsKotsApp    bool      `json:"isKotsApp,omitempty"`
+	IsFoundation bool      `json:"isFoundation,omitempty"`
+	Name         string    `json:"name,omitempty"`
+	RenamedAt    time.Time `json:"renamedAt,omitempty"`
+	Slug         string    `json:"slug,omitempty"`
+	TeamId       string    `json:"teamId,omitempty"`
 }
 
 type KotsAppChannel struct {

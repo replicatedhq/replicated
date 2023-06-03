@@ -280,6 +280,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		runCmds.appID = app.ID
 		runCmds.appSlug = app.Slug
+		runCmds.isFoundationApp = app.IsFoundation
 
 		return nil
 	}

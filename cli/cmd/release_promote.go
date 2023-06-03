@@ -53,6 +53,10 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 		required = r.args.releaseRequired
 	}
 
+	if r.isFoundationApp && r.args.releaseVersion != "" {
+		return errors.New("--version cannot be set for foundation apps")
+	}
+
 	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, required, newID); err != nil {
 		return err
 	}
