@@ -21,6 +21,7 @@ type runners struct {
 	appID            string
 	appSlug          string
 	appType          string
+	isFoundationApp  bool
 	api              client.Client
 	enterpriseClient *enterpriseclient.HTTPClient
 	platformAPI      *platformclient.HTTPClient
@@ -49,6 +50,7 @@ type runnerArgs struct {
 	createReleaseYaml                 string
 	createReleaseYamlFile             string
 	createReleaseYamlDir              string
+	createReleaseChart                string
 	createReleaseConfigYaml           string
 	createReleaseDeploymentYaml       string
 	createReleaseServiceYaml          string
@@ -71,6 +73,7 @@ type runnerArgs struct {
 	updateReleaseYaml     string
 	updateReleaseYamlDir  string
 	updateReleaseYamlFile string
+	updateReleaseChart    string
 
 	entitlementsAPIServer                string
 	entitlementsVerbose                  bool

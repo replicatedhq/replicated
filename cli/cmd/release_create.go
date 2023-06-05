@@ -37,6 +37,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVar(&r.args.createReleaseYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
 	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.createReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
+	cmd.Flags().StringVar(&r.args.createReleaseChart, "chart", "", "Helm chart to create the release from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
@@ -95,7 +96,7 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 }
 
 func (r *runners) setKOTSDefaultReleaseParams() error {
-	if r.args.createReleaseYamlDir == "" {
+	if !r.isFoundationApp && r.args.createReleaseYamlDir == "" {
 		r.args.createReleaseYamlDir = "./manifests"
 	}
 
@@ -138,12 +139,14 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 		}
 	}
 
-	if r.args.createReleasePromoteVersion == "" {
+	if !r.isFoundationApp && r.args.createReleasePromoteVersion == "" {
 		r.args.createReleasePromoteVersion = fmt.Sprintf("%s-%s%s", r.args.createReleasePromote, rev, dirtyStatus)
 	}
 
 	r.args.createReleasePromoteEnsureChannel = true
-	r.args.createReleaseLint = true
+	if !r.isFoundationApp {
+		r.args.createReleaseLint = true
+	}
 
 	return nil
 }
@@ -220,10 +223,22 @@ Prepared to create release with defaults:
 		fmt.Fprintln(r.w)
 		log.ActionWithSpinner("Reading manifests from %s", r.args.createReleaseYamlDir)
 		var err error
-		r.args.createReleaseYaml, err = readYAMLDir(r.args.createReleaseYamlDir)
+		r.args.createReleaseYaml, err = makeReleaseFromDir(r.args.createReleaseYamlDir)
 		if err != nil {
 			log.FinishSpinnerWithError()
-			return errors.Wrap(err, "read yaml dir")
+			return errors.Wrap(err, "make release from dir")
+		}
+		log.FinishSpinner()
+	}
+
+	if r.args.createReleaseChart != "" {
+		fmt.Fprintln(r.w)
+		log.ActionWithSpinner("Reading chart from %s", r.args.createReleaseChart)
+		var err error
+		r.args.createReleaseYaml, err = makeReleaseFromChart(r.args.createReleaseChart)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "make release from chart")
 		}
 		log.FinishSpinner()
 	}
@@ -276,21 +291,51 @@ Prepared to create release with defaults:
 }
 
 func (r *runners) validateReleaseCreateParams() error {
-	if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
-		return errors.New("one of --yaml or --yaml-file must be provided")
-	}
+	if r.isFoundationApp {
+		if r.args.createReleaseYaml != "" {
+			return errors.New("--yaml cannot be used with Builders KOTS app, use --chart instead")
+		}
 
-	if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-		return errors.New("only one of --yaml or --yaml-file may be specified")
-	}
+		if r.args.createReleaseYamlFile != "" {
+			return errors.New("--yaml-file cannot be used with Builders KOTS app, use --chart instead")
+		}
 
-	if (strings.HasSuffix(r.args.createReleaseYaml, ".yaml") || strings.HasSuffix(r.args.createReleaseYaml, ".yml")) &&
-		len(strings.Split(r.args.createReleaseYaml, " ")) == 1 {
-		return errors.New("use the --yaml-file flag when passing a yaml filename")
-	}
+		if r.args.createReleaseYamlDir != "" {
+			return errors.New("--yaml-dir cannot be used with Builders KOTS app, use --chart instead")
+		}
 
-	if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
-		return errors.New("--yaml-dir flag must be provided for KOTS applications")
+		if r.args.createReleaseChart == "" {
+			return errors.New("--chart flag must be provided for Builders KOTS applications")
+		}
+
+		if r.args.createReleaseLint {
+			return errors.New("--lint cannot be used with Builders KOTS app")
+		}
+	} else {
+		if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
+			return errors.New("one of --yaml or --yaml-file must be provided")
+		}
+
+		if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
+			return errors.New("only one of --yaml or --yaml-file may be specified")
+		}
+
+		if (strings.HasSuffix(r.args.createReleaseYaml, ".yaml") || strings.HasSuffix(r.args.createReleaseYaml, ".yml")) &&
+			len(strings.Split(r.args.createReleaseYaml, " ")) == 1 {
+			return errors.New("use the --yaml-file flag when passing a yaml filename")
+		}
+
+		if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
+			return errors.New("--yaml-dir flag must be provided for KOTS applications")
+		}
+
+		if r.args.createReleaseYaml != "" && r.appType == "kots" {
+			return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
+		}
+
+		if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
+			return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
+		}
 	}
 
 	// can't ensure a channel if you didn't pass one
@@ -301,14 +346,6 @@ func (r *runners) validateReleaseCreateParams() error {
 	// we check this again below, but lets be explicit and fail fast
 	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
 		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
-	}
-
-	if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
-		return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
-	}
-
-	if r.args.createReleaseYaml != "" && r.appType == "kots" {
-		return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 	}
 
 	return nil
@@ -370,10 +407,10 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstype
 	}, nil
 }
 
-func readYAMLDir(yamlDir string) (string, error) {
+func makeReleaseFromDir(fileDir string) (string, error) {
 	var allKotsReleaseSpecs []kotstypes.KotsSingleSpec
-	err := filepath.Walk(yamlDir, func(path string, info os.FileInfo, err error) error {
-		spec, err := encodeKotsFile(yamlDir, path, info, err)
+	err := filepath.Walk(fileDir, func(path string, info os.FileInfo, err error) error {
+		spec, err := encodeKotsFile(fileDir, path, info, err)
 		if err != nil {
 			return err
 		} else if spec == nil {
@@ -383,14 +420,46 @@ func readYAMLDir(yamlDir string) (string, error) {
 		return nil
 	})
 	if err != nil {
-		return "", errors.Wrapf(err, "walk %s", yamlDir)
+		return "", errors.Wrapf(err, "walk %s", fileDir)
 	}
 
-	jsonAllYamls, err := json.Marshal(allKotsReleaseSpecs)
+	jsonAllFiles, err := json.Marshal(allKotsReleaseSpecs)
 	if err != nil {
 		return "", errors.Wrap(err, "marshal spec")
 	}
-	return string(jsonAllYamls), nil
+	return string(jsonAllFiles), nil
+}
+
+func makeReleaseFromChart(chartFile string) (string, error) {
+	fileInfo, err := os.Stat(chartFile)
+	if err != nil {
+		return "", errors.Wrapf(err, "stat %s", chartFile)
+	}
+
+	if fileInfo.IsDir() {
+		return "", errors.Errorf("chart path %s is a directory", chartFile)
+	}
+
+	dirName, _ := filepath.Split(chartFile)
+	spec, err := encodeKotsFile(dirName, chartFile, fileInfo, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "encode chart file")
+	}
+
+	if spec == nil {
+		return "", errors.Errorf("chart file %s is not supported", chartFile)
+	}
+
+	allKotsReleaseSpecs := []kotstypes.KotsSingleSpec{
+		*spec,
+	}
+
+	jsonAllFiles, err := json.Marshal(allKotsReleaseSpecs)
+	if err != nil {
+		return "", errors.Wrap(err, "marshal spec")
+	}
+
+	return string(jsonAllFiles), nil
 }
 
 func promptForConfirm() (string, error) {
