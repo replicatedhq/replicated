@@ -82,7 +82,7 @@ func supportedDistributions(supportedDistributions map[string][]string) string {
 
 		supported = append(supported, fmt.Sprintf("  %s:", k))
 		for _, v := range vs {
-			supported = append(supported, fmt.Sprintf("    %s", v))
+			supported = append(supported, fmt.Sprintf("    %s", v.Original()))
 		}
 	}
 	return strings.Join(supported, "\n")
