@@ -2,6 +2,7 @@ package kotsclient
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -17,7 +18,9 @@ type CreateClusterRequest struct {
 }
 
 type CreateClusterResponse struct {
-	Cluster *types.Cluster `json:"cluster"`
+	Cluster                *types.Cluster    `json:"cluster"`
+	Errors                 []string          `json:"errors"`
+	SupportedDistributions map[string]string `json:"supported_distributions"`
 }
 
 type CreateClusterOpts struct {
@@ -30,6 +33,11 @@ type CreateClusterOpts struct {
 	TTL                    string
 }
 
+type ValidationError struct {
+	Errors                 []string            `json:"errors"`
+	SupportedDistributions map[string][]string `json:"supported_distributions"`
+}
+
 var defaultCreateClusterOpts = CreateClusterOpts{
 	Name:                   "", // server will generate
 	KubernetesDistribution: "kind",
@@ -40,7 +48,7 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	TTL:                    "2h",
 }
 
-func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, error) {
+func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
 	// merge opts with defaults
 	if opts.KubernetesDistribution == "" {
 		opts.KubernetesDistribution = defaultCreateClusterOpts.KubernetesDistribution
@@ -73,8 +81,19 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	cluster := CreateClusterResponse{}
 	err := c.DoJSON("POST", "/v3/cluster", http.StatusCreated, reqBody, &cluster)
 	if err != nil {
-		return nil, err
+		if strings.Contains(err.Error(), " 400: ") {
+			// to avoid a lot of brittle string parsing, we make the request again with
+			// a dry-run flag and expect to get the same result back
+			ve := ValidationError{}
+			err := c.DoJSON("POST", "/v3/cluster?dry-run=true", http.StatusOK, reqBody, &ve)
+			if err != nil {
+				return nil, nil, err
+			}
+
+			return nil, &ve, nil
+		}
+		return nil, nil, err
 	}
 
-	return cluster.Cluster, nil
+	return cluster.Cluster, nil, nil
 }
