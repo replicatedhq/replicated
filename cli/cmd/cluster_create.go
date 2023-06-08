@@ -1,6 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -43,7 +48,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		MemoryMiB:              r.args.createClusterMemoryMiB,
 		TTL:                    r.args.createClusterTTL,
 	}
-	cl, err := kotsRestClient.CreateCluster(opts)
+	cl, ve, err := kotsRestClient.CreateCluster(opts)
 	if errors.Cause(err) == kotsclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
@@ -51,5 +56,34 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "create cluster")
 	}
 
+	if ve != nil && len(ve.Errors) > 0 {
+		return fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
+	}
+
 	return print.Cluster(r.outputFormat, r.w, cl)
+}
+
+func supportedDistributions(supportedDistributions map[string][]string) string {
+	var supported []string
+	for k, vv := range supportedDistributions {
+		// assume that the vv is semver and sort
+		vs := make([]*semver.Version, len(vv))
+		for i, r := range vv {
+			v, err := semver.NewVersion(r)
+			if err != nil {
+				// just don't include it
+				continue
+			}
+
+			vs[i] = v
+		}
+
+		sort.Sort(semver.Collection(vs))
+
+		supported = append(supported, fmt.Sprintf("  %s:", k))
+		for _, v := range vs {
+			supported = append(supported, fmt.Sprintf("    %s", v.Original()))
+		}
+	}
+	return strings.Join(supported, "\n")
 }
