@@ -14,3 +14,8 @@ type Cluster struct {
 	CreatedAt              time.Time `json:"created_at"`
 	ExpiresAt              time.Time `json:"expires_at"`
 }
+
+type SupportedCluster struct {
+	Name     string   `json:"short_name"`
+	Versions []string `json:"versions"`
+}
