@@ -291,49 +291,51 @@ Prepared to create release with defaults:
 }
 
 func (r *runners) validateReleaseCreateParams() error {
-	if r.isFoundationApp {
-		if r.args.createReleaseYaml != "" {
-			return errors.New("--yaml cannot be used with Builders KOTS app, use --chart instead")
-		}
+	specSources := []string{
+		r.args.createReleaseYaml,
+		r.args.createReleaseYamlFile,
+		r.args.createReleaseYamlDir,
+		r.args.createReleaseChart,
+	}
 
-		if r.args.createReleaseYamlFile != "" {
-			return errors.New("--yaml-file cannot be used with Builders KOTS app, use --chart instead")
+	numSources := 0
+	for _, specSource := range specSources {
+		if specSource != "" {
+			numSources++
 		}
+	}
 
-		if r.args.createReleaseYamlDir != "" {
-			return errors.New("--yaml-dir cannot be used with Builders KOTS app, use --chart instead")
-		}
+	if numSources == 0 {
+		return errors.New("one of --yaml, --yaml-file, --yaml-dir, or --chart is required")
+	}
 
-		if r.args.createReleaseChart == "" {
-			return errors.New("--chart flag must be provided for Builders KOTS applications")
-		}
+	if numSources > 1 {
+		return errors.New("only one of --yaml, --yaml-file, --yaml-dir, or --chart may be specified")
+	}
 
-		if r.args.createReleaseLint {
-			return errors.New("--lint cannot be used with Builders KOTS app")
-		}
-	} else {
-		if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" && r.appType != "kots" {
+	if r.appType != "kots" {
+		if r.args.createReleaseYaml == "" && r.args.createReleaseYamlFile == "" {
 			return errors.New("one of --yaml or --yaml-file must be provided")
-		}
-
-		if r.args.createReleaseYaml != "" && r.args.createReleaseYamlFile != "" {
-			return errors.New("only one of --yaml or --yaml-file may be specified")
 		}
 
 		if (strings.HasSuffix(r.args.createReleaseYaml, ".yaml") || strings.HasSuffix(r.args.createReleaseYaml, ".yml")) &&
 			len(strings.Split(r.args.createReleaseYaml, " ")) == 1 {
 			return errors.New("use the --yaml-file flag when passing a yaml filename")
 		}
+	} else {
+		if r.isFoundationApp && r.args.createReleaseLint {
+			return errors.New("--lint cannot be used with Builders KOTS app")
+		}
 
-		if r.args.createReleaseYamlDir == "" && r.appType == "kots" {
+		if !r.isFoundationApp && r.args.createReleaseYamlDir == "" {
 			return errors.New("--yaml-dir flag must be provided for KOTS applications")
 		}
 
-		if r.args.createReleaseYaml != "" && r.appType == "kots" {
+		if r.args.createReleaseYaml != "" {
 			return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 		}
 
-		if r.args.createReleaseYamlFile != "" && r.appType == "kots" {
+		if r.args.createReleaseYamlFile != "" {
 			return errors.Errorf("the --yaml-file flag is not supported for KOTS applications, use --yaml-dir instead")
 		}
 	}
