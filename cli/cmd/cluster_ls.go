@@ -18,7 +18,9 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().BoolVar(&r.args.lsClusterHideTerminated, "hide-terminated", false, "when set, do not show terminated clusters")
+	cmd.Flags().BoolVar(&r.args.lsClusterShowTerminated, "show-terminated", false, "when set, also show terminated clusters")
+	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "start time for the query")
+	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "end time for the query")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
@@ -27,7 +29,7 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	clusters, err := kotsRestClient.ListClusters(!r.args.lsClusterHideTerminated)
+	clusters, err := kotsRestClient.ListClusters(r.args.lsClusterShowTerminated, r.args.lsClusterStartTime, r.args.lsClusterEndTime)
 	if err == platformclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
