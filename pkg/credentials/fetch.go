@@ -73,7 +73,7 @@ func startLocalWebServer(ctx context.Context, port int) (string, error) {
 
 		tokenChan <- token
 
-		w.Write([]byte("Authentication successful. You may close this window."))
+		fmt.Fprintln(w, "Authentication successful. You may close this window.")
 	})
 
 	go func() {

@@ -56,7 +56,7 @@ func ChannelAttrs(outputFormat string,
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(appChan, "", "  ")
-		if _, err := w.Write(append(cAsByte, "\n"...)); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}
