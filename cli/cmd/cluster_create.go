@@ -73,7 +73,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 
 	}
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Dry run succeeded\n")
+		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
 		return err
 	}
 	return print.Cluster(r.outputFormat, r.w, cl)
