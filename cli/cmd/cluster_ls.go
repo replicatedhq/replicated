@@ -18,7 +18,7 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().BoolVar(&r.args.lsClusterShowTerminated, "show-terminated", false, "when set, also show terminated clusters")
+	cmd.Flags().BoolVar(&r.args.lsClusterShowTerminated, "show-terminated", false, "when set, only show terminated clusters")
 	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "start time for the query")
 	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "end time for the query")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
