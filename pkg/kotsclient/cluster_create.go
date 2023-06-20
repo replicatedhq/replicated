@@ -52,7 +52,7 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryMiB:              int64(4096),
-	DiskGiB:                int64(51200),
+	DiskGiB:                int64(50),
 	TTL:                    "2h",
 }
 
