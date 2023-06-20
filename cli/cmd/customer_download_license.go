@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"io/ioutil"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 )
 
 func (r *runners) InitCustomersDownloadLicenseCommand(parent *cobra.Command) *cobra.Command {
@@ -41,7 +43,7 @@ func (r *runners) downloadCustomerLicense(_ *cobra.Command, _ []string) error {
 
 	defer r.w.Flush()
 	if r.args.customerLicenseInspectOutput == "-" {
-		_, err = r.w.Write(license)
+		_, err = fmt.Fprintln(r.w, string(license))
 		return err
 	}
 
