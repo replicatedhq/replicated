@@ -15,7 +15,7 @@ type CreateClusterRequest struct {
 	VCpus                  int64  `json:"vcpus"`
 	VCpuType               string `json:"vcpu_type"`
 	MemoryMiB              int64  `json:"memory_mib"`
-	DiskMiB                int64  `json:"disk_mib"`
+	DiskGiB                int64  `json:"disk_gib"`
 	DiskType               string `json:"disk_type"`
 	TTL                    string `json:"ttl"`
 }
@@ -34,7 +34,7 @@ type CreateClusterOpts struct {
 	VCpus                  int64
 	VCpuType               string
 	MemoryMiB              int64
-	DiskMiB                int64
+	DiskGiB                int64
 	DiskType               string
 	TTL                    string
 	DryRun                 bool
@@ -52,7 +52,7 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryMiB:              int64(4096),
-	DiskMiB:                int64(51200),
+	DiskGiB:                int64(51200),
 	TTL:                    "2h",
 }
 
@@ -73,8 +73,8 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if opts.MemoryMiB == int64(0) {
 		opts.MemoryMiB = defaultCreateClusterOpts.MemoryMiB
 	}
-	if opts.DiskMiB == int64(0) {
-		opts.DiskMiB = defaultCreateClusterOpts.DiskMiB
+	if opts.DiskGiB == int64(0) {
+		opts.DiskGiB = defaultCreateClusterOpts.DiskGiB
 	}
 	if opts.TTL == "" {
 		opts.TTL = defaultCreateClusterOpts.TTL
@@ -88,7 +88,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		VCpus:                  opts.VCpus,
 		VCpuType:               opts.VCpuType,
 		MemoryMiB:              opts.MemoryMiB,
-		DiskMiB:                opts.DiskMiB,
+		DiskGiB:                opts.DiskGiB,
 		DiskType:               opts.DiskType,
 		TTL:                    opts.TTL,
 	}

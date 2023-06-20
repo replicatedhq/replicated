@@ -31,7 +31,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterVCpuType, "vcpu-type", "", "vCPU type to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node (Default: 4096)")
-	cmd.Flags().Int64Var(&r.args.createClusterDiskMiB, "disk", int64(51200), "Disk Size (MiB) to request per node (Default: 51200)")
+	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
 	cmd.Flags().StringVar(&r.args.createClusterDiskType, "disk-type", "", "Disk type to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
@@ -51,7 +51,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		VCpus:                  r.args.createClusterVCpus,
 		VCpuType:               r.args.createClusterVCpuType,
 		MemoryMiB:              r.args.createClusterMemoryMiB,
-		DiskMiB:                r.args.createClusterDiskMiB,
+		DiskGiB:                r.args.createClusterDiskGiB,
 		DiskType:               r.args.createClusterDiskType,
 		TTL:                    r.args.createClusterTTL,
 		DryRun:                 r.args.createClusterDryRun,

@@ -11,7 +11,7 @@ type Cluster struct {
 	VCpus                  int64  `json:"vcpus"`
 	VCpuType               string `json:"vcpu_type"`
 	MemoryMiB              int64  `json:"memory_mib"`
-	DiskMiB                int64  `json:"disk_mib"`
+	DiskGiB                int64  `json:"disk_gib"`
 	DiskType               string `json:"disk_type"`
 
 	Status     string    `json:"status"`
