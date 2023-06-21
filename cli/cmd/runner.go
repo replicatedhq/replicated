@@ -181,12 +181,17 @@ type runnerArgs struct {
 	createClusterDiskType               string
 	createClusterDryRun                 bool
 	createClusterTTL                    string
+	createClusterWaitDuration           time.Duration
 
 	removeClusterForce bool
 
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string
+
+	kubeconfigClusterName string
+	kubeconfigClusterID   string
+	kubeconfigPath        string
 
 	loginEndpoint string
 

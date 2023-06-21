@@ -27,9 +27,12 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 		Long:         `Download credentials for a test cluster`,
 		RunE:         r.kubeconfigCluster,
 		SilenceUsage: true,
-		Args:         cobra.MinimumNArgs(1),
 	}
 	parent.AddCommand(cmd)
+
+	cmd.Flags().StringVar(&r.args.kubeconfigClusterName, "name", "", "name of the cluster to download credentials for (when id is not provided)")
+	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "id of the cluster to download credentials for (when name is not provided)")
+	cmd.Flags().StringVar(&r.args.kubeconfigPath, "output", "", "path to kubeconfig file to write to, if not provided, it will be merged into your existing kubeconfig")
 
 	return cmd
 }
@@ -37,10 +40,49 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(args[0])
+	// by default, we look at args[0] as the id
+	// but if it's not provided, we look for a viper flag named "name" and use it
+	// as the name of the cluster, not the id
+	clusterID := ""
+	if len(args) > 0 {
+		clusterID = args[0]
+	} else if r.args.kubeconfigClusterName != "" {
+		clusters, err := kotsRestClient.ListClusters(false)
+		if err != nil {
+			return errors.Wrap(err, "list clusters")
+		}
+		for _, cluster := range clusters {
+			if cluster.Name == r.args.kubeconfigClusterName {
+				clusterID = cluster.ID
+				break
+			}
+		}
+	} else if r.args.kubeconfigClusterID != "" {
+		clusterID = r.args.kubeconfigClusterID
+	} else {
+		return errors.New("must provide cluster id or name")
+	}
+
+	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(clusterID)
 	if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
+
+	if r.args.kubeconfigPath != "" {
+		dir := filepath.Dir(r.args.kubeconfigPath)
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return errors.Wrap(err, "create kubeconfig dir")
+			}
+		}
+		if err := ioutil.WriteFile(r.args.kubeconfigPath, kubeconfig, 0644); err != nil {
+			return errors.Wrap(err, "write kubeconfig")
+		}
+
+		fmt.Printf("kubeconfig written to %s\n", r.args.kubeconfigPath)
+		return nil
+	}
+
 	tmpFile, err := ioutil.TempFile("", "replicated-kubeconfig")
 	if err != nil {
 		return errors.Wrap(err, "create temp file")

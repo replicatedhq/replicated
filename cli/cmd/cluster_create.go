@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -35,6 +36,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterDiskType, "disk-type", "", "Disk type to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
+  cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
@@ -76,7 +78,41 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
 		return err
 	}
+
+	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
+	if r.args.createClusterWaitDuration > 0 {
+		return r.waitForCluster(cl.ID, r.args.createClusterWaitDuration)
+	}
+  
 	return print.Cluster(r.outputFormat, r.w, cl)
+}
+
+func (r *runners) waitForCluster(id string, duration time.Duration) error {
+	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
+
+	start := time.Now()
+	for {
+		clusters, err := kotsRestClient.ListClusters(false)
+		if err != nil {
+			return errors.Wrap(err, "list clusters")
+		}
+
+		for _, cluster := range clusters {
+			if cluster.ID == id {
+				if cluster.Status == "running" {
+					return print.Cluster(r.outputFormat, r.w, cluster)
+				} else if cluster.Status == "error" {
+					return errors.New("cluster failed to provision")
+				} else {
+					if time.Now().After(start.Add(duration)) {
+						return print.Cluster(r.outputFormat, r.w, cluster)
+					}
+				}
+			}
+		}
+
+		time.Sleep(time.Second * 5)
+	}
 }
 
 func supportedDistributions(supportedDistributions map[string][]string) string {
