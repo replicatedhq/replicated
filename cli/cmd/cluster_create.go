@@ -30,7 +30,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node")
+	cmd.Flags().Int64Var(&r.args.createClusterMemoryGiB, "memory", int64(4), "Memory (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
@@ -47,7 +47,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		NodeCount:              r.args.createClusterNodeCount,
 		VCpus:                  r.args.createClusterVCpus,
-		MemoryMiB:              r.args.createClusterMemoryMiB,
+		MemoryGiB:              r.args.createClusterMemoryGiB,
 		TTL:                    r.args.createClusterTTL,
 	}
 	cl, ve, err := kotsRestClient.CreateCluster(opts)
