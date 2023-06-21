@@ -3,6 +3,7 @@ package kotsclient
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -10,23 +11,28 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type ListClustersRequest struct {
-}
-
 type ListClustersResponse struct {
 	Clusters      []*types.Cluster `json:"clusters"`
 	TotalClusters int              `json:"totalClusters"`
 }
 
 func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime string, endTime string) ([]*types.Cluster, error) {
-	reqBody := &ListClustersRequest{}
-
 	allClusters := []*types.Cluster{}
 	page := 0
 	for {
 		clusters := ListClustersResponse{}
-		err := c.DoJSON("GET", fmt.Sprintf("/v3/clusters?currentPage=%d&show-terminated=%s&start-time=%s&end-time=%s", page, strconv.FormatBool(includeTerminated), startTime, endTime),
-			http.StatusOK, reqBody, &clusters)
+
+		v := url.Values{}
+		if startTime != "" {
+			v.Set("start-time", startTime)
+		}
+		if endTime != "" {
+			v.Set("end-time", endTime)
+		}
+		v.Set("currentPage", strconv.Itoa(page))
+		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
+		url := fmt.Sprintf("/v3/clusters?%s", v.Encode())
+		err := c.DoJSON("GET", url, http.StatusOK, nil, &clusters)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list clusters page %d", page)
 		}
