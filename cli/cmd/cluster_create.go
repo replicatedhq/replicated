@@ -59,7 +59,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if ve != nil && len(ve.Errors) > 0 {
-		return fmt.Errorf("%s\n\nSupported Kubernetes distributio	ns and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
+		return fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
