@@ -182,6 +182,10 @@ type runnerArgs struct {
 
 	lsClusterHideTerminated bool
 
+	kubeconfigClusterName string
+	kubeconfigClusterID   string
+	kubeconfigPath        string
+
 	loginEndpoint string
 
 	apiPostBody string
