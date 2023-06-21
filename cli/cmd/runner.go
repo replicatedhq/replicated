@@ -180,8 +180,8 @@ type runnerArgs struct {
 
 	removeClusterForce bool
 
-	lsClusterHideTerminated                  bool
-	lsSupportedClusterKubernetesDistribution string
+	lsClusterHideTerminated                 bool
+	lsVersionsClusterKubernetesDistribution string
 
 	loginEndpoint string
 

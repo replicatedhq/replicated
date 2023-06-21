@@ -6,17 +6,13 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type ListSupportedClustersRequest struct {
+type ListClusterVersionsResponse struct {
+	Clusters []*types.ClusterVersion `json:"cluster-versions"`
 }
 
-type ListSupportedClustersResponse struct {
-	Clusters []*types.SupportedCluster `json:"supported-clusters"`
-}
-
-func (c *VendorV3Client) ListSupportedClusters() ([]*types.SupportedCluster, error) {
-	reqBody := &ListSupportedClustersRequest{}
-	clusters := ListSupportedClustersResponse{}
-	err := c.DoJSON("GET", "/v3/supported-clusters", http.StatusOK, reqBody, &clusters)
+func (c *VendorV3Client) ListClusterVersions() ([]*types.ClusterVersion, error) {
+	clusters := ListClusterVersionsResponse{}
+	err := c.DoJSON("GET", "/v3/cluster/versions", http.StatusOK, nil, &clusters)
 	if err != nil {
 		return nil, err
 	}

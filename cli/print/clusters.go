@@ -14,13 +14,13 @@ var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
 {{ end }}`
 
-var supportedClustersTmplSrc = `K8S DISTRO	K8S VERSION
+var clusterVersionsTmplSrc = `K8S DISTRO	K8S VERSION
 {{ range $d := . -}}{{ range $v := $d.Versions -}}
 {{ $d.Name }}	{{ $v }} 
 {{ end }}{{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
-var supportedClustersTmpl = template.Must(template.New("supportedClusters").Funcs(funcs).Parse(supportedClustersTmplSrc))
+var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster) error {
 	if outputFormat == "table" {
@@ -64,9 +64,9 @@ func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) e
 	return w.Flush()
 }
 
-func NoSupportedClusters(outputFormat string, w *tabwriter.Writer) error {
+func NoClusterVersions(outputFormat string, w *tabwriter.Writer) error {
 	if outputFormat == "table" {
-		_, err := w.Write([]byte("No supported clusters found.\n"))
+		_, err := w.Write([]byte("No cluster versions found.\n"))
 		if err != nil {
 			return err
 		}
@@ -78,9 +78,9 @@ func NoSupportedClusters(outputFormat string, w *tabwriter.Writer) error {
 	return w.Flush()
 }
 
-func SupportedClusters(outputFormat string, w *tabwriter.Writer, clusters []*types.SupportedCluster) error {
+func ClusterVersions(outputFormat string, w *tabwriter.Writer, clusters []*types.ClusterVersion) error {
 	if outputFormat == "table" {
-		if err := supportedClustersTmpl.Execute(w, clusters); err != nil {
+		if err := clusterVersionsTmpl.Execute(w, clusters); err != nil {
 			return err
 		}
 	} else if outputFormat == "json" {
