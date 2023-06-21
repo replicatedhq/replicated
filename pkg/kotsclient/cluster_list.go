@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -16,18 +17,19 @@ type ListClustersResponse struct {
 	TotalClusters int              `json:"totalClusters"`
 }
 
-func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime string, endTime string) ([]*types.Cluster, error) {
+func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime *time.Time, endTime *time.Time) ([]*types.Cluster, error) {
 	allClusters := []*types.Cluster{}
 	page := 0
 	for {
 		clusters := ListClustersResponse{}
 
 		v := url.Values{}
-		if startTime != "" {
-			v.Set("start-time", startTime)
+		const longForm = "2006-01-02T15:04:05Z"
+		if startTime != nil {
+			v.Set("start-time", startTime.Format(longForm))
 		}
-		if endTime != "" {
-			v.Set("end-time", endTime)
+		if endTime != nil {
+			v.Set("end-time", endTime.Format(longForm))
 		}
 		v.Set("currentPage", strconv.Itoa(page))
 		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
