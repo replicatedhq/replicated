@@ -177,6 +177,7 @@ type runnerArgs struct {
 	createClusterVCpus                  int64
 	createClusterMemoryMiB              int64
 	createClusterTTL                    string
+	createClusterWaitDuration           time.Duration
 
 	removeClusterForce bool
 
