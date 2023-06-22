@@ -175,10 +175,8 @@ type runnerArgs struct {
 	createClusterKubernetesVersion      string
 	createClusterNodeCount              int
 	createClusterVCpus                  int64
-	createClusterVCpuType               string
 	createClusterMemoryMiB              int64
 	createClusterDiskGiB                int64
-	createClusterDiskType               string
 	createClusterDryRun                 bool
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration

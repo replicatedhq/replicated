@@ -13,10 +13,8 @@ type CreateClusterRequest struct {
 	KubernetesVersion      string `json:"kubernetes_version"`
 	NodeCount              int    `json:"node_count"`
 	VCpus                  int64  `json:"vcpus"`
-	VCpuType               string `json:"vcpu_type"`
 	MemoryMiB              int64  `json:"memory_mib"`
 	DiskGiB                int64  `json:"disk_gib"`
-	DiskType               string `json:"disk_type"`
 	TTL                    string `json:"ttl"`
 }
 
@@ -32,10 +30,8 @@ type CreateClusterOpts struct {
 	KubernetesVersion      string
 	NodeCount              int
 	VCpus                  int64
-	VCpuType               string
 	MemoryMiB              int64
 	DiskGiB                int64
-	DiskType               string
 	TTL                    string
 	DryRun                 bool
 }
@@ -86,10 +82,8 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		KubernetesVersion:      opts.KubernetesVersion,
 		NodeCount:              opts.NodeCount,
 		VCpus:                  opts.VCpus,
-		VCpuType:               opts.VCpuType,
 		MemoryMiB:              opts.MemoryMiB,
 		DiskGiB:                opts.DiskGiB,
-		DiskType:               opts.DiskType,
 		TTL:                    opts.TTL,
 	}
 	cluster := CreateClusterResponse{}
