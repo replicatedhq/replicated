@@ -10,14 +10,17 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
-var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
-{{ range . -}}
+var clustersSourceTmpHeader = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
+`
+
+var clustersTmplSrc = `{{ range . -}}
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
 {{ end }}`
 
-var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
+var clusterTmpNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
+var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersSourceTmpHeader + clustersTmplSrc))
 
-func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster) error {
+func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, includeHeader bool) error {
 	if outputFormat == "table" {
 		if err := clustersTmpl.Execute(w, clusters); err != nil {
 			return err
@@ -45,10 +48,16 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 	return w.Flush()
 }
 
-func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
+func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster, includerHeader bool) error {
 	if outputFormat == "table" {
-		if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
-			return err
+		if includerHeader {
+			if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
+				return err
+			}
+		} else {
+			if err := clusterTmpNoHeader.Execute(w, []types.Cluster{*cluster}); err != nil {
+				return err
+			}
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
