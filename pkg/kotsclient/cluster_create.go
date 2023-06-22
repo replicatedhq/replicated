@@ -15,6 +15,7 @@ type CreateClusterRequest struct {
 	VCpus                  int64  `json:"vcpus"`
 	MemoryMiB              int64  `json:"memory_mib"`
 	TTL                    string `json:"ttl"`
+	InstanceType           string `json:"instance_type"`
 }
 
 type CreateClusterResponse struct {
@@ -31,6 +32,7 @@ type CreateClusterOpts struct {
 	VCpus                  int64
 	MemoryMiB              int64
 	TTL                    string
+	InstanceType           string
 }
 
 type ValidationError struct {
@@ -39,13 +41,14 @@ type ValidationError struct {
 }
 
 var defaultCreateClusterOpts = CreateClusterOpts{
-	Name:                   "", // server will generate
+	Name:                   "",
 	KubernetesDistribution: "kind",
 	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryMiB:              int64(4096),
 	TTL:                    "2h",
+	InstanceType:           "",
 }
 
 func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
@@ -77,7 +80,9 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		VCpus:                  opts.VCpus,
 		MemoryMiB:              opts.MemoryMiB,
 		TTL:                    opts.TTL,
+		InstanceType:           opts.InstanceType,
 	}
+
 	cluster := CreateClusterResponse{}
 	err := c.DoJSON("POST", "/v3/cluster", http.StatusCreated, reqBody, &cluster)
 	if err != nil {

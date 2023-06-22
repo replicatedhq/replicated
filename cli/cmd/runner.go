@@ -178,6 +178,7 @@ type runnerArgs struct {
 	createClusterMemoryMiB              int64
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
+	createClusterInstanceType           string
 
 	removeClusterForce bool
 

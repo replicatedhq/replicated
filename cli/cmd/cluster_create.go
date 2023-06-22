@@ -28,11 +28,13 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node", int(1), "Node count")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
+	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use for cloud-based clusters (e.g. x5.xlarge)")
+
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
@@ -49,6 +51,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		VCpus:                  r.args.createClusterVCpus,
 		MemoryMiB:              r.args.createClusterMemoryMiB,
 		TTL:                    r.args.createClusterTTL,
+		InstanceType:           r.args.createClusterInstanceType,
 	}
 	cl, ve, err := kotsRestClient.CreateCluster(opts)
 	if errors.Cause(err) == kotsclient.ErrForbidden {
