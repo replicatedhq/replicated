@@ -36,7 +36,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterDiskType, "disk-type", "", "Disk type to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
-  cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
+	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
@@ -83,7 +83,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	if r.args.createClusterWaitDuration > 0 {
 		return r.waitForCluster(cl.ID, r.args.createClusterWaitDuration)
 	}
-  
+
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
@@ -92,7 +92,7 @@ func (r *runners) waitForCluster(id string, duration time.Duration) error {
 
 	start := time.Now()
 	for {
-		clusters, err := kotsRestClient.ListClusters(false)
+		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list clusters")
 		}
