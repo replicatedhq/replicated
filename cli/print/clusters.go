@@ -9,15 +9,14 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
-var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
+var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
 {{ range . -}}
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
 {{ end }}`
 
-var clusterVersionsTmplSrc = `K8S DISTRO	K8S VERSION
-{{ range $d := . -}}{{ range $v := $d.Versions -}}
-{{ $d.Name }}	{{ $v }} 
-{{ end }}{{ end }}`
+var clusterVersionsTmplSrc = `DISTRIBUTION	VERSION
+{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}},{{end}}{{ $v }}{{ end }}
+{{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
