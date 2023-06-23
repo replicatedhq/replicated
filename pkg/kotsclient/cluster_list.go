@@ -24,12 +24,11 @@ func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime *time.Ti
 		clusters := ListClustersResponse{}
 
 		v := url.Values{}
-		const longForm = "2006-01-02T15:04:05Z"
 		if startTime != nil {
-			v.Set("start-time", startTime.Format(longForm))
+			v.Set("start-time", startTime.Format(time.RFC3339))
 		}
 		if endTime != nil {
-			v.Set("end-time", endTime.Format(longForm))
+			v.Set("end-time", endTime.Format(time.RFC3339))
 		}
 		v.Set("currentPage", strconv.Itoa(page))
 		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
