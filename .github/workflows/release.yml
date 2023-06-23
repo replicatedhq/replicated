@@ -69,21 +69,26 @@ jobs:
             if (!previous) return;
             const {
               data: {
-                object: { sha: tag_sha },
+                object: { sha, type },
               },
             } = await github.rest.git.getRef({
               ...context.repo,
               ref: `tags/${previous.tag_name}`,
             });
-            const {
-              data: {
-                object: { sha },
-              },
-            } = await github.rest.git.getTag({
-              ...context.repo,
-              tag_sha,
-            });
-            core.setOutput("sha", sha);
+            if (type === "commit") {
+              core.setOutput("sha", sha);
+              return;
+            } else {
+              const {
+                data: {
+                  object: { sha: actual_sha },
+                },
+              } = await github.rest.git.getTag({
+                ...context.repo,
+                tag_sha: sha,
+              });
+              core.setOutput("sha", actual_sha);
+            }
       - if: steps.previous-release.outputs.sha
         env:
           PACT_VERSION: ${{ steps.previous-release.outputs.sha }}
