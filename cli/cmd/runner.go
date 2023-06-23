@@ -180,6 +180,7 @@ type runnerArgs struct {
 	createClusterDryRun                 bool
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
+	createClusterInstanceType           string
 
 	removeClusterForce bool
 

@@ -16,6 +16,7 @@ type CreateClusterRequest struct {
 	MemoryMiB              int64  `json:"memory_mib"`
 	DiskGiB                int64  `json:"disk_gib"`
 	TTL                    string `json:"ttl"`
+	InstanceType           string `json:"instance_type"`
 }
 
 type CreateClusterResponse struct {
@@ -34,6 +35,7 @@ type CreateClusterOpts struct {
 	DiskGiB                int64
 	TTL                    string
 	DryRun                 bool
+	InstanceType           string
 }
 
 type ValidationError struct {
@@ -42,7 +44,7 @@ type ValidationError struct {
 }
 
 var defaultCreateClusterOpts = CreateClusterOpts{
-	Name:                   "", // server will generate
+	Name:                   "",
 	KubernetesDistribution: "kind",
 	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
@@ -50,6 +52,7 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	MemoryMiB:              int64(4096),
 	DiskGiB:                int64(50),
 	TTL:                    "2h",
+	InstanceType:           "",
 }
 
 func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
@@ -85,7 +88,9 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		MemoryMiB:              opts.MemoryMiB,
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
+		InstanceType:           opts.InstanceType,
 	}
+
 	cluster := CreateClusterResponse{}
 	endpoint := "/v3/cluster"
 	if opts.DryRun {
