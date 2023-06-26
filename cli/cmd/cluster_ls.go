@@ -62,7 +62,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 	if r.args.lsClusterWatch {
 
-		var noInitialClusters bool = false
+		noInitialClusters := false
 		// Prints the intial list of clusters
 		if len(clusters) == 0 {
 			print.NoClusters(r.outputFormat, r.w)
