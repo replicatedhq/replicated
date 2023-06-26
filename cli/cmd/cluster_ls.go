@@ -123,8 +123,8 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 			clusters = newClusters
 
-			// Waits 2 seconds before running again]
-			time.Sleep(time.Second * 2)
+			// Waits 2 seconds before running again
+			time.Tick(2 * time.Second)
 		}
 	}
 
