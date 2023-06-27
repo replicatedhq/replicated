@@ -14,6 +14,7 @@ type CreateClusterRequest struct {
 	NodeCount              int    `json:"node_count"`
 	VCpus                  int64  `json:"vcpus"`
 	MemoryMiB              int64  `json:"memory_mib"`
+	DiskGiB                int64  `json:"disk_gib"`
 	TTL                    string `json:"ttl"`
 	InstanceType           string `json:"instance_type"`
 }
@@ -31,7 +32,9 @@ type CreateClusterOpts struct {
 	NodeCount              int
 	VCpus                  int64
 	MemoryMiB              int64
+	DiskGiB                int64
 	TTL                    string
+	DryRun                 bool
 	InstanceType           string
 }
 
@@ -47,6 +50,7 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryMiB:              int64(4096),
+	DiskGiB:                int64(50),
 	TTL:                    "2h",
 	InstanceType:           "",
 }
@@ -68,6 +72,9 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if opts.MemoryMiB == int64(0) {
 		opts.MemoryMiB = defaultCreateClusterOpts.MemoryMiB
 	}
+	if opts.DiskGiB == int64(0) {
+		opts.DiskGiB = defaultCreateClusterOpts.DiskGiB
+	}
 	if opts.TTL == "" {
 		opts.TTL = defaultCreateClusterOpts.TTL
 	}
@@ -79,12 +86,24 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		NodeCount:              opts.NodeCount,
 		VCpus:                  opts.VCpus,
 		MemoryMiB:              opts.MemoryMiB,
+		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
 		InstanceType:           opts.InstanceType,
 	}
 
 	cluster := CreateClusterResponse{}
-	err := c.DoJSON("POST", "/v3/cluster", http.StatusCreated, reqBody, &cluster)
+	endpoint := "/v3/cluster"
+	if opts.DryRun {
+		endpoint = "/v3/cluster?dry-run=true"
+		ve := ValidationError{}
+		err := c.DoJSON("POST", endpoint, http.StatusOK, reqBody, &ve)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return nil, &ve, nil
+	}
+	err := c.DoJSON("POST", endpoint, http.StatusCreated, reqBody, &cluster)
 	if err != nil {
 		if strings.Contains(err.Error(), " 400: ") {
 			// to avoid a lot of brittle string parsing, we make the request again with

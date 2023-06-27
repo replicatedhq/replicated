@@ -30,8 +30,10 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "1h", "Cluster TTL (duration, max 48h)")
+	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node (Default: 4096)")
+	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
+	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
+	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use for cloud-based clusters (e.g. x5.xlarge)")
 
@@ -50,7 +52,9 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		NodeCount:              r.args.createClusterNodeCount,
 		VCpus:                  r.args.createClusterVCpus,
 		MemoryMiB:              r.args.createClusterMemoryMiB,
+		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
+		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
 	}
 	cl, ve, err := kotsRestClient.CreateCluster(opts)
@@ -62,7 +66,16 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if ve != nil && len(ve.Errors) > 0 {
-		return fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
+		if len(ve.SupportedDistributions) > 0 {
+			return fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
+		} else {
+			return fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+		}
+
+	}
+	if opts.DryRun {
+		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
+		return err
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
@@ -78,7 +91,7 @@ func (r *runners) waitForCluster(id string, duration time.Duration) error {
 
 	start := time.Now()
 	for {
-		clusters, err := kotsRestClient.ListClusters(false)
+		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list clusters")
 		}
