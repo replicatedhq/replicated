@@ -18,7 +18,7 @@ var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
 
-func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, includeHeader bool) error {
+func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster) error {
 	if outputFormat == "table" {
 		if err := clustersTmpl.Execute(w, clusters); err != nil {
 			return err
@@ -46,6 +46,6 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 	return w.Flush()
 }
 
-func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster, includerHeader bool) error {
-	return Clusters(outputFormat, w, []*types.Cluster{cluster}, false)
+func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
+	return Clusters(outputFormat, w, []*types.Cluster{cluster})
 }

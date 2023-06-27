@@ -83,7 +83,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return r.waitForCluster(cl.ID, r.args.createClusterWaitDuration)
 	}
 
-	return print.Cluster(r.outputFormat, r.w, cl, true)
+	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
 func (r *runners) waitForCluster(id string, duration time.Duration) error {
@@ -99,12 +99,12 @@ func (r *runners) waitForCluster(id string, duration time.Duration) error {
 		for _, cluster := range clusters {
 			if cluster.ID == id {
 				if cluster.Status == "running" {
-					return print.Cluster(r.outputFormat, r.w, cluster, true)
+					return print.Cluster(r.outputFormat, r.w, cluster)
 				} else if cluster.Status == "error" {
 					return errors.New("cluster failed to provision")
 				} else {
 					if time.Now().After(start.Add(duration)) {
-						return print.Cluster(r.outputFormat, r.w, cluster, true)
+						return print.Cluster(r.outputFormat, r.w, cluster)
 					}
 				}
 			}

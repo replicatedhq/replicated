@@ -124,7 +124,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 			// Prints the clusters
 			if len(clustersToPrint) > 0 {
 				fmt.Print("\033[H\033[2J") // Clears the console
-				print.Clusters(r.outputFormat, r.w, clustersToPrint, true)
+				print.Clusters(r.outputFormat, r.w, clustersToPrint)
 			}
 
 			clusters = newClusters
@@ -135,5 +135,5 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 		return print.NoClusters(r.outputFormat, r.w)
 	}
 
-	return print.Clusters(r.outputFormat, r.w, clusters, true)
+	return print.Clusters(r.outputFormat, r.w, clusters)
 }
