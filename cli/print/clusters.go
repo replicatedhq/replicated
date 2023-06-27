@@ -21,8 +21,10 @@ var clusterTmpNoHeader = template.Must(template.New("clusters").Funcs(funcs).Par
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersSourceTmpHeader + clustersTmplSrc))
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, includeHeader bool) error {
+	tmpl := clustersTmpl
+
 	if outputFormat == "table" {
-		if err := clustersTmpl.Execute(w, clusters); err != nil {
+		if err := tmpl.Execute(w, clusters); err != nil {
 			return err
 		}
 	} else if outputFormat == "json" {
@@ -49,21 +51,5 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 }
 
 func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster, includerHeader bool) error {
-	if outputFormat == "table" {
-		if includerHeader {
-			if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
-				return err
-			}
-		} else {
-			if err := clusterTmpNoHeader.Execute(w, []types.Cluster{*cluster}); err != nil {
-				return err
-			}
-		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
-		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
-			return err
-		}
-	}
-	return w.Flush()
+	return Clusters(outputFormat, w, []*types.Cluster{cluster}, false)
 }

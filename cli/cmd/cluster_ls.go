@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -62,18 +63,22 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 	if r.args.lsClusterWatch {
 
-		noInitialClusters := false
+		// Checks to see if the outputFormat is table
+		if r.outputFormat != "table" {
+			return errors.New("watch is only supported for table output")
+		}
+
+		clustersToPrint := make([]*types.Cluster, 0)
+
 		// Prints the intial list of clusters
 		if len(clusters) == 0 {
 			print.NoClusters(r.outputFormat, r.w)
-			noInitialClusters = true
 		} else {
-			print.Clusters(r.outputFormat, r.w, clusters, true)
+			clustersToPrint = append(clustersToPrint, clusters...)
 		}
 
 		// Runs until ctrl C is recognized
-		for {
-
+		for range time.Tick(2 * time.Second) {
 			newClusters, err := kotsRestClient.ListClusters(!r.args.lsClusterHideTerminated)
 
 			if err != nil {
@@ -99,16 +104,11 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 			// Check for new clusters and print them
 			for id, newCluster := range newClusterMap {
 				if oldCluster, found := oldClusterMap[id]; !found {
-					if noInitialClusters {
-						noInitialClusters = false
-						print.Cluster(r.outputFormat, r.w, newCluster, true)
-					} else {
-						print.Cluster(r.outputFormat, r.w, newCluster, false)
-					}
+					clustersToPrint = append(clustersToPrint, newCluster)
 				} else {
 					// Check if properties of existing clusters have changed
 					if !reflect.DeepEqual(newCluster, oldCluster) {
-						print.Cluster(r.outputFormat, r.w, newCluster, false)
+						clustersToPrint = append(clustersToPrint, newCluster)
 					}
 				}
 			}
@@ -117,14 +117,17 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 			for id, cluster := range oldClusterMap {
 				if _, found := newClusterMap[id]; !found {
 					cluster.Status = "deleted"
-					print.Cluster(r.outputFormat, r.w, cluster, false)
+					clustersToPrint = append(clustersToPrint, cluster)
 				}
 			}
 
-			clusters = newClusters
+			// Prints the clusters
+			if len(clustersToPrint) > 0 {
+				fmt.Print("\033[H\033[2J")
+				print.Clusters(r.outputFormat, r.w, clustersToPrint, true)
+			}
 
-			// Waits 2 seconds before running again
-			time.Tick(2 * time.Second)
+			clusters = newClusters
 		}
 	}
 
