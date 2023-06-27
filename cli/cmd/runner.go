@@ -176,12 +176,17 @@ type runnerArgs struct {
 	createClusterNodeCount              int
 	createClusterVCpus                  int64
 	createClusterMemoryGiB              int64
+	createClusterDiskGiB                int64
+	createClusterDryRun                 bool
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
+	createClusterInstanceType           string
 
 	removeClusterForce bool
 
-	lsClusterHideTerminated bool
+	lsClusterShowTerminated bool
+	lsClusterStartTime      string
+	lsClusterEndTime        string
 
 	kubeconfigClusterName string
 	kubeconfigClusterID   string

@@ -13,8 +13,10 @@ type CreateClusterRequest struct {
 	KubernetesVersion      string `json:"kubernetes_version"`
 	NodeCount              int    `json:"node_count"`
 	VCpus                  int64  `json:"vcpus"`
-	MemoryMiB              int64  `json:"memory_gib"`
+	MemoryGiB              int64  `json:"memory_gib"`
+	DiskGiB                int64  `json:"disk_gib"`
 	TTL                    string `json:"ttl"`
+	InstanceType           string `json:"instance_type"`
 }
 
 type CreateClusterResponse struct {
@@ -30,7 +32,10 @@ type CreateClusterOpts struct {
 	NodeCount              int
 	VCpus                  int64
 	MemoryGiB              int64
+	DiskGiB                int64
 	TTL                    string
+	DryRun                 bool
+	InstanceType           string
 }
 
 type ValidationError struct {
@@ -39,13 +44,15 @@ type ValidationError struct {
 }
 
 var defaultCreateClusterOpts = CreateClusterOpts{
-	Name:                   "", // server will generate
+	Name:                   "",
 	KubernetesDistribution: "kind",
 	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
 	VCpus:                  int64(4),
 	MemoryGiB:              int64(4),
+	DiskGiB:                int64(50),
 	TTL:                    "2h",
+	InstanceType:           "",
 }
 
 func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
@@ -65,6 +72,9 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if opts.MemoryGiB == int64(0) {
 		opts.MemoryGiB = defaultCreateClusterOpts.MemoryGiB
 	}
+	if opts.DiskGiB == int64(0) {
+		opts.DiskGiB = defaultCreateClusterOpts.DiskGiB
+	}
 	if opts.TTL == "" {
 		opts.TTL = defaultCreateClusterOpts.TTL
 	}
@@ -75,11 +85,25 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		KubernetesVersion:      opts.KubernetesVersion,
 		NodeCount:              opts.NodeCount,
 		VCpus:                  opts.VCpus,
-		MemoryMiB:              opts.MemoryGiB,
+		MemoryGiB:              opts.MemoryGiB,
+		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
+		InstanceType:           opts.InstanceType,
 	}
+
 	cluster := CreateClusterResponse{}
-	err := c.DoJSON("POST", "/v3/cluster", http.StatusCreated, reqBody, &cluster)
+	endpoint := "/v3/cluster"
+	if opts.DryRun {
+		endpoint = "/v3/cluster?dry-run=true"
+		ve := ValidationError{}
+		err := c.DoJSON("POST", endpoint, http.StatusOK, reqBody, &ve)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return nil, &ve, nil
+	}
+	err := c.DoJSON("POST", endpoint, http.StatusCreated, reqBody, &cluster)
 	if err != nil {
 		if strings.Contains(err.Error(), " 400: ") {
 			// to avoid a lot of brittle string parsing, we make the request again with

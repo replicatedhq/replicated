@@ -47,7 +47,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		clusterID = args[0]
 	} else if r.args.kubeconfigClusterName != "" {
-		clusters, err := kotsRestClient.ListClusters(false)
+		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list clusters")
 		}
