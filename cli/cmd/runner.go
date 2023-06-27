@@ -187,6 +187,7 @@ type runnerArgs struct {
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string
+	lsClusterWatch          bool
 
 	kubeconfigClusterName string
 	kubeconfigClusterID   string

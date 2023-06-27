@@ -10,6 +10,7 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
+
 var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
 {{ range . -}}
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
@@ -46,15 +47,5 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 }
 
 func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
-	if outputFormat == "table" {
-		if err := clustersTmpl.Execute(w, []types.Cluster{*cluster}); err != nil {
-			return err
-		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
-		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
-			return err
-		}
-	}
-	return w.Flush()
+	return Clusters(outputFormat, w, []*types.Cluster{cluster})
 }
