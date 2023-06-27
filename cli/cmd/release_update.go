@@ -28,51 +28,47 @@ func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
 }
 
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
-	if r.isFoundationApp {
-		if r.args.updateReleaseYaml != "" {
-			return errors.New("--yaml cannot be used with Builders KOTS app, use --chart instead")
-		}
+	specSources := []string{
+		r.args.updateReleaseYaml,
+		r.args.updateReleaseYamlFile,
+		r.args.updateReleaseYamlDir,
+		r.args.updateReleaseChart,
+	}
 
-		if r.args.updateReleaseYamlFile != "" {
-			return errors.New("--yaml-file cannot be used with Builders KOTS app, use --chart instead")
+	numSources := 0
+	for _, specSource := range specSources {
+		if specSource != "" {
+			numSources++
 		}
+	}
 
-		if r.args.updateReleaseYamlDir != "" {
-			return errors.New("--yaml-dir cannot be used with Builders KOTS app, use --chart instead")
-		}
+	if numSources == 0 {
+		return errors.New("one of --yaml, --yaml-file, --yaml-dir, or --chart is required")
+	}
 
-		if r.args.updateReleaseChart == "" {
-			return errors.New("--chart flag must be provided for Builders KOTS applications")
-		}
-	} else {
-		if r.args.updateReleaseYaml == "" && r.args.updateReleaseYamlFile == "" && r.args.updateReleaseYamlDir == "" {
-			return errors.New("one of --yaml or --yaml-file is required")
-		}
+	if numSources > 1 {
+		return errors.New("only one of --yaml, --yaml-file, --yaml-dir, or --chart may be specified")
+	}
 
-		if r.args.updateReleaseYaml != "" && r.args.updateReleaseYamlFile != "" {
-			return errors.New("only one of --yaml or --yaml-file may be specified")
-		}
+	if (strings.HasSuffix(r.args.updateReleaseYaml, ".yaml") || strings.HasSuffix(r.args.updateReleaseYaml, ".yml")) &&
+		len(strings.Split(r.args.updateReleaseYaml, " ")) == 1 {
+		return errors.New("use the --yaml-file flag when passing a yaml filename")
+	}
 
-		if (strings.HasSuffix(r.args.updateReleaseYaml, ".yaml") || strings.HasSuffix(r.args.updateReleaseYaml, ".yml")) &&
-			len(strings.Split(r.args.updateReleaseYaml, " ")) == 1 {
-			return errors.New("use the --yaml-file flag when passing a yaml filename")
+	if r.args.updateReleaseYaml == "-" {
+		bytes, err := ioutil.ReadAll(r.stdin)
+		if err != nil {
+			return err
 		}
+		r.args.updateReleaseYaml = string(bytes)
+	}
 
-		if r.args.updateReleaseYaml == "-" {
-			bytes, err := ioutil.ReadAll(r.stdin)
-			if err != nil {
-				return err
-			}
-			r.args.updateReleaseYaml = string(bytes)
+	if r.args.updateReleaseYamlFile != "" {
+		bytes, err := ioutil.ReadFile(r.args.updateReleaseYamlFile)
+		if err != nil {
+			return err
 		}
-
-		if r.args.updateReleaseYamlFile != "" {
-			bytes, err := ioutil.ReadFile(r.args.updateReleaseYamlFile)
-			if err != nil {
-				return err
-			}
-			r.args.updateReleaseYaml = string(bytes)
-		}
+		r.args.updateReleaseYaml = string(bytes)
 	}
 
 	if len(args) < 1 {
@@ -83,15 +79,15 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("invalid release sequence: %s", args[0])
 	}
 
-	if r.isFoundationApp {
-		r.args.updateReleaseYaml, err = makeReleaseFromChart(r.args.updateReleaseChart)
-		if err != nil {
-			return errors.Wrap(err, "make release from chart")
-		}
-	} else if r.args.updateReleaseYamlDir != "" {
+	if r.args.updateReleaseYamlDir != "" {
 		r.args.updateReleaseYaml, err = makeReleaseFromDir(r.args.updateReleaseYamlDir)
 		if err != nil {
 			return errors.Wrap(err, "make release from dir")
+		}
+	} else if r.args.updateReleaseChart != "" {
+		r.args.updateReleaseYaml, err = makeReleaseFromChart(r.args.updateReleaseChart)
+		if err != nil {
+			return errors.Wrap(err, "make release from chart")
 		}
 	}
 

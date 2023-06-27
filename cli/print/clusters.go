@@ -2,6 +2,7 @@ package print
 
 import (
 	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -28,7 +29,7 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")
-		if _, err := w.Write(cAsByte); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}
@@ -37,12 +38,12 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 
 func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 	if outputFormat == "table" {
-		_, err := w.Write([]byte(`No clusters found. Use the "replicated cluster create" command to create a new cluster.`))
+		_, err := fmt.Fprintln(w, "No clusters found. Use the `replicated cluster create` command to create a new cluster.")
 		if err != nil {
 			return err
 		}
 	} else if outputFormat == "json" {
-		if _, err := w.Write([]byte("[]")); err != nil {
+		if _, err := fmt.Fprintln(w, "[]"); err != nil {
 			return err
 		}
 	}
@@ -56,7 +57,7 @@ func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) e
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
-		if _, err := w.Write(cAsByte); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}

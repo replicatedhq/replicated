@@ -3,24 +3,48 @@ package kotsclient
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
+	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type ListClustersRequest struct {
-}
-
 type ListClustersResponse struct {
-	Clusters []*types.Cluster `json:"clusters"`
+	Clusters      []*types.Cluster `json:"clusters"`
+	TotalClusters int              `json:"totalClusters"`
 }
 
-func (c *VendorV3Client) ListClusters(includeTerminated bool) ([]*types.Cluster, error) {
-	reqBody := &ListClustersRequest{}
-	clusters := ListClustersResponse{}
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/clusters?include-terminated=%s", strconv.FormatBool(includeTerminated)), http.StatusOK, reqBody, &clusters)
-	if err != nil {
-		return nil, err
+func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime *time.Time, endTime *time.Time) ([]*types.Cluster, error) {
+	allClusters := []*types.Cluster{}
+	page := 0
+	for {
+		clusters := ListClustersResponse{}
+
+		v := url.Values{}
+		if startTime != nil {
+			v.Set("start-time", startTime.Format(time.RFC3339))
+		}
+		if endTime != nil {
+			v.Set("end-time", endTime.Format(time.RFC3339))
+		}
+		v.Set("currentPage", strconv.Itoa(page))
+		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
+		url := fmt.Sprintf("/v3/clusters?%s", v.Encode())
+		err := c.DoJSON("GET", url, http.StatusOK, nil, &clusters)
+		if err != nil {
+			return nil, errors.Wrapf(err, "list clusters page %d", page)
+		}
+
+		if len(allClusters) == clusters.TotalClusters || len(clusters.Clusters) == 0 {
+			break
+		}
+
+		allClusters = append(allClusters, clusters.Clusters...)
+
+		page = page + 1
 	}
-	return clusters.Clusters, nil
+	return allClusters, nil
 }

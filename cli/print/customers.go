@@ -2,6 +2,7 @@ package print
 
 import (
 	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -22,7 +23,7 @@ func Customers(outputFormat string, w *tabwriter.Writer, customers []types.Custo
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(customers, "", "  ")
-		if _, err := w.Write(cAsByte); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}
@@ -36,7 +37,7 @@ func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(customer, "", "  ")
-		if _, err := w.Write(cAsByte); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}

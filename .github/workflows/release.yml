@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
-          go-version: '^1.18'
+          go-version: '^1.20'
       - uses: replicatedhq/action-install-pact@v1
       - run: make test
       - run: make publish-pact
@@ -41,7 +41,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: '^1.18'
+          go-version: '^1.20'
       - name: docker login
         run:  docker login -u="$DOCKERHUB_DOCKER_USER" -p="$DOCKERHUB_DOCKER_PASS"
         env:
@@ -69,21 +69,26 @@ jobs:
             if (!previous) return;
             const {
               data: {
-                object: { sha: tag_sha },
+                object: { sha, type },
               },
             } = await github.rest.git.getRef({
               ...context.repo,
               ref: `tags/${previous.tag_name}`,
             });
-            const {
-              data: {
-                object: { sha },
-              },
-            } = await github.rest.git.getTag({
-              ...context.repo,
-              tag_sha,
-            });
-            core.setOutput("sha", sha);
+            if (type === "commit") {
+              core.setOutput("sha", sha);
+              return;
+            } else {
+              const {
+                data: {
+                  object: { sha: actual_sha },
+                },
+              } = await github.rest.git.getTag({
+                ...context.repo,
+                tag_sha: sha,
+              });
+              core.setOutput("sha", actual_sha);
+            }
       - if: steps.previous-release.outputs.sha
         env:
           PACT_VERSION: ${{ steps.previous-release.outputs.sha }}
