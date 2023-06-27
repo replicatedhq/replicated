@@ -79,7 +79,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 		// Runs until ctrl C is recognized
 		for range time.Tick(2 * time.Second) {
-			newClusters, err := kotsRestClient.ListClusters(!r.args.lsClusterHideTerminated)
+			newClusters, err := kotsRestClient.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
 
 			if err != nil {
 				if err == promptui.ErrInterrupt {
