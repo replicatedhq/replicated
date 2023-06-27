@@ -10,21 +10,17 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
-var clustersSourceTmpHeader = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
-`
 
-var clustersTmplSrc = `{{ range . -}}
+var clustersTmplSrc = `ID	NAME	K8S DISTRO	K8S VERSION	STATUS	CREATED	EXPIRES
+{{ range . -}}
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{ .ExpiresAt }}
 {{ end }}`
 
-var clusterTmpNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
-var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersSourceTmpHeader + clustersTmplSrc))
+var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, includeHeader bool) error {
-	tmpl := clustersTmpl
-
 	if outputFormat == "table" {
-		if err := tmpl.Execute(w, clusters); err != nil {
+		if err := clustersTmpl.Execute(w, clusters); err != nil {
 			return err
 		}
 	} else if outputFormat == "json" {
