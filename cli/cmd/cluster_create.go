@@ -30,7 +30,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.createClusterMemoryMiB, "memory", int64(4096), "Memory (MiB) to request per node (Default: 4096)")
+	cmd.Flags().Int64Var(&r.args.createClusterMemoryGiB, "memory", int64(4), "Memory (GiB) to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
@@ -51,7 +51,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		NodeCount:              r.args.createClusterNodeCount,
 		VCpus:                  r.args.createClusterVCpus,
-		MemoryMiB:              r.args.createClusterMemoryMiB,
+		MemoryGiB:              r.args.createClusterMemoryGiB,
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		DryRun:                 r.args.createClusterDryRun,
