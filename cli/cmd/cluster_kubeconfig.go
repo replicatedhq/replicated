@@ -32,7 +32,8 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterName, "name", "", "name of the cluster to download credentials for (when id is not provided)")
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "id of the cluster to download credentials for (when name is not provided)")
-	cmd.Flags().StringVar(&r.args.kubeconfigPath, "output", "", "path to kubeconfig file to write to, if not provided, it will be merged into your existing kubeconfig")
+	cmd.Flags().StringVar(&r.args.kubeconfigPath, "output-path", "", "path to kubeconfig file to write to, if not provided, it will be merged into your existing kubeconfig")
+	cmd.Flags().BoolVar(&r.args.kubeconfigStdout, "stdout", false, "write kubeconfig to stdout")
 
 	return cmd
 }
@@ -66,6 +67,15 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(clusterID)
 	if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
+	}
+
+	if r.args.kubeconfigStdout && r.args.kubeconfigPath != "" {
+		return errors.New("cannot use both --stdout and --output-path")
+	}
+
+	if r.args.kubeconfigStdout {
+		fmt.Println(string(kubeconfig))
+		return nil
 	}
 
 	if r.args.kubeconfigPath != "" {

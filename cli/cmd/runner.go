@@ -175,7 +175,7 @@ type runnerArgs struct {
 	createClusterKubernetesVersion      string
 	createClusterNodeCount              int
 	createClusterVCpus                  int64
-	createClusterMemoryMiB              int64
+	createClusterMemoryGiB              int64
 	createClusterDiskGiB                int64
 	createClusterDryRun                 bool
 	createClusterTTL                    string
@@ -190,10 +190,12 @@ type runnerArgs struct {
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string
+	lsClusterWatch          bool
 
 	kubeconfigClusterName string
 	kubeconfigClusterID   string
 	kubeconfigPath        string
+	kubeconfigStdout      bool
 
 	loginEndpoint string
 
