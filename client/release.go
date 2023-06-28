@@ -123,11 +123,11 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 
 // data is a []byte describing a tarred yaml-dir, created by tarYAMLDir()
 // this Client abstraction continue to spring more leaks :)
-func (c *Client) LintRelease(appType string, data []byte) ([]types.LintMessage, error) {
+func (c *Client) LintRelease(appType string, data []byte, isBuildersRelease bool, contentType string) ([]types.LintMessage, error) {
 	if appType == "platform" {
 		return nil, errors.New("Linting is not yet supported in this CLI, please install github.com/replicatedhq/replicated-lint to lint this application")
 	} else if appType == "kots" {
-		return c.KotsClient.LintRelease(data)
+		return c.KotsClient.LintRelease(data, isBuildersRelease, contentType)
 	}
 
 	return nil, errors.New("unknown app type")
