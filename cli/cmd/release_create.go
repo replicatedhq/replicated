@@ -410,8 +410,17 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstype
 }
 
 func makeReleaseFromDir(fileDir string) (string, error) {
+	fileInfo, err := os.Stat(fileDir)
+	if err != nil {
+		return "", errors.Wrapf(err, "stat %s", fileDir)
+	}
+
+	if !fileInfo.IsDir() {
+		return "", errors.Errorf("chart path %s is not a directory", fileDir)
+	}
+
 	var allKotsReleaseSpecs []kotstypes.KotsSingleSpec
-	err := filepath.Walk(fileDir, func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk(fileDir, func(path string, info os.FileInfo, err error) error {
 		spec, err := encodeKotsFile(fileDir, path, info, err)
 		if err != nil {
 			return err
