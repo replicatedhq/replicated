@@ -192,6 +192,7 @@ type runnerArgs struct {
 	kubeconfigClusterName string
 	kubeconfigClusterID   string
 	kubeconfigPath        string
+	kubeconfigStdout      bool
 
 	loginEndpoint string
 
