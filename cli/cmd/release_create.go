@@ -416,7 +416,7 @@ func makeReleaseFromDir(fileDir string) (string, error) {
 	}
 
 	if !fileInfo.IsDir() {
-		return "", errors.Errorf("chart path %s is not a directory", fileDir)
+		return "", errors.Errorf("path %s is not a directory", fileDir)
 	}
 
 	var allKotsReleaseSpecs []kotstypes.KotsSingleSpec
