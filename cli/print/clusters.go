@@ -47,5 +47,15 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 }
 
 func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
-	return Clusters(outputFormat, w, []*types.Cluster{cluster})
+	if outputFormat == "table" {
+		if err := clustersTmpl.Execute(w, cluster); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
+	}
+	return w.Flush()
 }
