@@ -29,7 +29,7 @@ func (r *runners) listClusterVersions(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
 	cv, err := kotsRestClient.ListClusterVersions()
-	if err == platformclient.ErrForbidden {
+	if errors.Cause(err) == platformclient.ErrForbidden {
 		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
 	}
 	if err != nil {

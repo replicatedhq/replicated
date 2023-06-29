@@ -71,7 +71,7 @@ func NoClusterVersions(outputFormat string, w *tabwriter.Writer) error {
 			return err
 		}
 	} else if outputFormat == "json" {
-		if _, err := w.Write([]byte("[]\n")); err != nil {
+		if _, err := fmt.Fprintln(w, "[]"); err != nil {
 			return err
 		}
 	}
@@ -85,7 +85,7 @@ func ClusterVersions(outputFormat string, w *tabwriter.Writer, clusters []*types
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")
-		if _, err := w.Write(append(cAsByte, "\n"...)); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	}
