@@ -184,6 +184,7 @@ type runnerArgs struct {
 
 	removeClusterForce bool
 
+	lsAppVersion            string
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string
