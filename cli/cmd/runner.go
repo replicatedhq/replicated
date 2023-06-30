@@ -65,6 +65,7 @@ type runnerArgs struct {
 	// Add Create Release Lint
 	createReleaseLint     bool
 	lintReleaseYamlDir    string
+	lintReleaseChart      string
 	lintReleaseFailOn     string
 	releaseOptional       bool
 	releaseRequired       bool
