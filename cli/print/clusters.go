@@ -66,7 +66,7 @@ func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) e
 
 func NoClusterVersions(outputFormat string, w *tabwriter.Writer) error {
 	if outputFormat == "table" {
-		_, err := w.Write([]byte("No cluster versions found.\n"))
+		_, err := fmt.Fprintln(w, "No cluster versions found.")
 		if err != nil {
 			return err
 		}
