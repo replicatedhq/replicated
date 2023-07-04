@@ -21,7 +21,7 @@ func (c *Client) ListCustomers(appID string, appType string) ([]types.Customer, 
 func (c *Client) ListCustomersByAppAndVersion(appID string, appVersion string, appType string) ([]types.Customer, error) {
 
 	if appType == "platform" {
-		return nil, errors.New("listing customers is not supported for platform applications")
+		return nil, errors.New("listing customers by app version is not supported for native scheduler applications")
 	} else if appType == "kots" {
 		return c.KotsClient.ListCustomersByAppAndVersion(appID, appVersion, appType)
 	}

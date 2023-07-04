@@ -35,7 +35,11 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 	} else {
 		// call ListCustomersByAppAndVersion
 		customers, err := r.api.ListCustomersByAppAndVersion(r.appID, lsappVersion, r.appType)
-		if err != nil {
+		// if err and outputFormat is json, customers should be a blank struct and print will return []
+		if err != nil && r.outputFormat == "json" {
+			return print.CustomersWithInstances(r.outputFormat, r.w, customers)
+			// error and outputFormat is table, print error
+		} else if err != nil {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
 		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
