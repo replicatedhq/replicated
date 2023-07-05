@@ -17,3 +17,8 @@ type Cluster struct {
 	ExpiresAt  time.Time `json:"expires_at"`
 	CreditRate float64   `json:"credit_rate"`
 }
+
+type ClusterVersion struct {
+	Name     string   `json:"short_name"`
+	Versions []string `json:"versions"`
+}
