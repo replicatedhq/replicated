@@ -29,7 +29,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
-	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpus", int64(4), "vCPUs to request per node")
+	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpu", int64(4), "Number of vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryGiB, "memory", int64(4), "Memory (GiB) to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
