@@ -14,6 +14,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/client"
 	kotstypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
@@ -353,13 +354,14 @@ func (r *runners) validateReleaseCreateParams() error {
 func (r *runners) getOrCreateChannelForPromotion(channelName string, createIfAbsent bool) (string, error) {
 	description := "" // todo: do we want a flag for the desired channel description
 
-	channel, err := r.api.GetOrCreateChannelByName(
-		r.appID,
-		r.appType,
-		channelName,
-		description,
-		createIfAbsent,
-	)
+	opts := client.GetOrCreateChannelOptions{
+		AppID:          r.appID,
+		AppType:        r.appType,
+		NameOrID:       channelName,
+		Description:    description,
+		CreateIfAbsent: createIfAbsent,
+	}
+	channel, err := r.api.GetOrCreateChannelByName(opts)
 	if err != nil {
 		return "", errors.Wrapf(err, "get-or-create channel %q", channelName)
 	}
