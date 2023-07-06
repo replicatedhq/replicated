@@ -216,6 +216,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterList(clusterCmd)
 	runCmds.InitClusterKubeconfig(clusterCmd)
 	runCmds.InitClusterRemove(clusterCmd)
+	runCmds.InitClusterVersions(clusterCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 

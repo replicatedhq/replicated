@@ -32,6 +32,7 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.lintReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
+	cmd.Flags().StringVar(&r.args.lintReleaseChart, "chart", "", "Helm chart to lint from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
 
 	cmd.RunE = r.releaseLint
@@ -41,26 +42,40 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 // the hosted version (lint.replicated.com). There are not changes and no auth required or sent.
 // This could be vendored in and run locally (respecting the size of the polcy files)
 func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
-	if r.args.lintReleaseYamlDir == "" {
-		return errors.Errorf("yaml is required")
+	var isBuildersRelease bool
+	var lintReleaseData []byte
+	var contentType string
+	if r.args.lintReleaseYamlDir != "" {
+		data, err := tarYAMLDir(r.args.lintReleaseYamlDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to read yaml dir")
+		}
+		lintReleaseData = data
+		isBuildersRelease = r.isFoundationApp
+		contentType = "application/tar"
+	} else if r.args.lintReleaseChart != "" {
+		data, err := ioutil.ReadFile(r.args.lintReleaseChart)
+		if err != nil {
+			return errors.Wrap(err, "faile to read chart file")
+		}
+		lintReleaseData = data
+		isBuildersRelease = true
+		contentType = "application/gzip"
+	} else {
+		return errors.Errorf("a yaml directory or a chart file is required")
 	}
 
 	if _, ok := validFailOnValues[r.args.lintReleaseFailOn]; !ok {
 		return errors.Errorf("fail-on value %q not supported, supported values are [info, warn, error, none]", r.args.lintReleaseFailOn)
 	}
 
-	lintReleaseYAML, err := tarYAMLDir(r.args.lintReleaseYamlDir)
+	lintResult, err := r.api.LintRelease(r.appType, lintReleaseData, isBuildersRelease, contentType)
 	if err != nil {
-		return errors.Wrap(err, "failed to read yaml dir")
-	}
-
-	lintResult, err := r.api.LintRelease(r.appType, lintReleaseYAML)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "faile to lint release")
 	}
 
 	if err := print.LintErrors(r.w, lintResult); err != nil {
-		return err
+		return errors.Wrap(err, "failed to print lint errors")
 	}
 
 	if hasError := shouldFail(lintResult, r.args.lintReleaseFailOn); hasError {

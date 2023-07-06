@@ -65,6 +65,7 @@ type runnerArgs struct {
 	// Add Create Release Lint
 	createReleaseLint     bool
 	lintReleaseYamlDir    string
+	lintReleaseChart      string
 	lintReleaseFailOn     string
 	releaseOptional       bool
 	releaseRequired       bool
@@ -184,7 +185,9 @@ type runnerArgs struct {
 
 	removeClusterForce bool
 
+
 	lsAppVersion            string
+	lsVersionsClusterKubernetesDistribution string
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string

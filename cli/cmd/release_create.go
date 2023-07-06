@@ -196,6 +196,7 @@ Prepared to create release with defaults:
 	if r.args.createReleaseLint {
 		// Request lint release yaml directory to check
 		r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
+		r.args.lintReleaseChart = r.args.createReleaseChart
 		// Call release_lint.go releaseLint function
 		err := r.releaseLint(cmd, args)
 		if err != nil {
@@ -323,10 +324,6 @@ func (r *runners) validateReleaseCreateParams() error {
 			return errors.New("use the --yaml-file flag when passing a yaml filename")
 		}
 	} else {
-		if r.isFoundationApp && r.args.createReleaseLint {
-			return errors.New("--lint cannot be used with Builders KOTS app")
-		}
-
 		if !r.isFoundationApp && r.args.createReleaseYamlDir == "" {
 			return errors.New("--yaml-dir flag must be provided for KOTS applications")
 		}
