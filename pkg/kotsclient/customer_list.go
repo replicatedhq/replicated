@@ -23,12 +23,15 @@ type CustomerListResponse struct {
 	TotalCustomers int              `json:"totalCustomers"`
 }
 
-func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
+func (c *VendorV3Client) ListCustomers(appID string, includeTest bool) ([]types.Customer, error) {
 	allCustomers := []types.Customer{}
 	page := 0
 	for {
 		resp := CustomerListResponse{}
 		path := fmt.Sprintf("/v3/app/%s/customers?currentPage=%d", appID, page)
+		if includeTest {
+			path = fmt.Sprintf("%s&includeTest=true", path)
+		}
 		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list customers page %d", page)
@@ -47,7 +50,7 @@ func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 }
 
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
-	allCustomers, err := c.ListCustomers(appID)
+	allCustomers, err := c.ListCustomers(appID, false)
 	if err != nil {
 		return nil, err
 	}
