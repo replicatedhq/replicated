@@ -17,6 +17,7 @@ func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
 	// replicated customer ls --app <appID> --appVersion <appVersion>
 	parent.AddCommand(customersCmd)
 	customersCmd.Flags().StringVar(&r.args.lsAppVersion, "appversion", "", "List customers and their instances by app version")
+	customersCmd.Flags().BoolVar(&r.args.customerLsIncludeTest, "include-test", false, "Include test customers in the list")
 	customersCmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return customersCmd
@@ -27,7 +28,7 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 	// get appVersion from flags
 	lsappVersion := r.args.lsAppVersion
 	if lsappVersion == "" {
-		customers, err := r.api.ListCustomers(r.appID, r.appType)
+		customers, err := r.api.ListCustomers(r.appID, r.appType, r.args.customerLsIncludeTest)
 		if err != nil {
 			return errors.Wrap(err, "list customers")
 		}
@@ -43,6 +44,9 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
 		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
+	customers, err := r.api.ListCustomers(r.appID, r.appType, r.args.customerLsIncludeTest)
+	if err != nil {
+		return errors.Wrap(err, "list customers")
 	}
 	return errors.New("Failed to list customers")
 

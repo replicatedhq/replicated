@@ -76,18 +76,7 @@ type runnerArgs struct {
 	updateReleaseYamlFile string
 	updateReleaseChart    string
 
-	entitlementsAPIServer                string
-	entitlementsVerbose                  bool
-	entitlementsDefineFieldsFile         string
-	entitlementsDefineFieldsName         string
-	entitlementsGetReleaseCustomerID     string
-	entitlementsGetReleaseInstallationID string
-	entitlementsGetReleaseAPIServer      string
-	entitlementsSetValueCustomerID       string
-	entitlementsSetValueDefinitionsID    string
-	entitlementsSetValueKey              string
-	entitlementsSetValueValue            string
-	entitlementsSetValueType             string
+	customerLsIncludeTest bool
 
 	customerCreateName                string
 	customerCreateChannel             string
@@ -97,6 +86,7 @@ type runnerArgs struct {
 	customerCreateIsGitopsSupported   bool
 	customerCreateIsSnapshotSupported bool
 	customerCreateEmail               string
+	customerCreateType                string
 
 	createInstallerYaml                 string
 	createInstallerYamlFile             string
@@ -185,9 +175,9 @@ type runnerArgs struct {
 
 	removeClusterForce bool
 
-
-	lsAppVersion            string
+	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
+
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string
 	lsClusterEndTime        string

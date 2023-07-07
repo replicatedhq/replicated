@@ -85,38 +85,52 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 	return nil, errors.New("unknown app type")
 }
 
-func (c *Client) GetOrCreateChannelByName(appID string, appType string, nameOrID string, description string, createIfAbsent bool) (*types.Channel, error) {
-	gqlNotFoundErr := fmt.Sprintf("channel %s not found", nameOrID)
-	channel, err := c.GetChannel(appID, appType, nameOrID)
+type GetOrCreateChannelOptions struct {
+	AppID          string
+	AppType        string
+	NameOrID       string
+	Description    string
+	CreateIfAbsent bool
+}
+
+func (c *Client) GetOrCreateChannelByName(opts GetOrCreateChannelOptions) (*types.Channel, error) {
+	gqlNotFoundErr := fmt.Sprintf("channel %s not found", opts.NameOrID)
+	channel, err := c.GetChannel(opts.AppID, opts.AppType, opts.NameOrID)
 	if err == nil {
 		return channel, nil
 	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) {
 		return nil, errors.Wrap(err, "get channel")
 	}
 
-	allChannels, err := c.ListChannels(appID, appType, nameOrID)
+	allChannels, err := c.ListChannels(opts.AppID, opts.AppType, opts.NameOrID)
 	if err != nil {
 		return nil, err
 	}
 
-	foundChannel, numMatching, err := c.findChannel(allChannels, nameOrID)
+	foundChannel, numMatching, err := c.findChannel(allChannels, opts.NameOrID)
 
-	if numMatching == 0 && createIfAbsent {
-		updatedListOfChannels, err := c.CreateChannel(appID, appType, nameOrID, description)
+	if numMatching == 0 && opts.CreateIfAbsent {
+		updatedListOfChannels, err := c.CreateChannel(opts.AppID, opts.AppType, opts.NameOrID, opts.Description)
 		if err != nil {
-			return nil, errors.Wrapf(err, "create channel %q ", nameOrID)
+			return nil, errors.Wrapf(err, "create channel %q ", opts.NameOrID)
 		}
 		// for some reason CreateChannel returns the list of all channels,
 		// so now we gotta go find the channel we just created
-		channel, _, err := c.findChannel(updatedListOfChannels, nameOrID)
-		return channel, errors.Wrapf(err, "find channel %q", nameOrID)
+		channel, _, err := c.findChannel(updatedListOfChannels, opts.NameOrID)
+		return channel, errors.Wrapf(err, "find channel %q", opts.NameOrID)
 	}
 
-	return foundChannel, errors.Wrapf(err, "find channel %q", nameOrID)
+	return foundChannel, errors.Wrapf(err, "find channel %q", opts.NameOrID)
 }
 
 func (c *Client) GetChannelByName(appID string, appType string, name string) (*types.Channel, error) {
-	return c.GetOrCreateChannelByName(appID, appType, name, "", false)
+	opts := GetOrCreateChannelOptions{
+		AppID:          appID,
+		AppType:        appType,
+		NameOrID:       name,
+		CreateIfAbsent: false,
+	}
+	return c.GetOrCreateChannelByName(opts)
 }
 
 func (c *Client) findChannel(channels []types.Channel, name string) (*types.Channel, int, error) {

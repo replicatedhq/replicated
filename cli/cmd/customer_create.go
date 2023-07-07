@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/spf13/cobra"
 )
@@ -24,19 +27,30 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	cmd.Flags().BoolVar(&r.args.customerCreateIsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
 	cmd.Flags().StringVar(&r.args.customerCreateEmail, "email", "", "Email address of the customer that is to be created.")
+	cmd.Flags().StringVar(&r.args.customerCreateType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 	return cmd
 }
 
 func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
+	// all of the following validation occurs in the API also, but
+	// we want to fail fast if the user has provided invalid input
+	if err := validateCustomerType(r.args.customerCreateType); err != nil {
+		return err
+	}
+	if r.args.customerCreateType == "test" && r.args.customerCreateExpiryDuration > time.Hour*48 {
+		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
+	}
 
-	channel, err := r.api.GetOrCreateChannelByName(
-		r.appID,
-		r.appType,
-		r.args.customerCreateChannel,
-		"",
-		r.args.customerCreateEnsureChannel,
-	)
+	getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
+		AppID:          r.appID,
+		AppType:        r.appType,
+		NameOrID:       r.args.customerCreateChannel,
+		Description:    "",
+		CreateIfAbsent: r.args.customerCreateEnsureChannel,
+	}
+
+	channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
 	if err != nil {
 		return errors.Wrap(err, "get channel")
 	}
@@ -49,7 +63,7 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		IsAirgapEnabled:     r.args.customerCreateIsAirgapEnabled,
 		IsGitopsSupported:   r.args.customerCreateIsGitopsSupported,
 		IsSnapshotSupported: r.args.customerCreateIsSnapshotSupported,
-		LicenseType:         "dev",
+		LicenseType:         r.args.customerCreateType,
 		Email:               r.args.customerCreateEmail,
 	}
 
@@ -59,4 +73,13 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 	}
 
 	return print.Customer(r.outputFormat, r.w, customer)
+}
+
+func validateCustomerType(customerType string) error {
+	switch customerType {
+	case "dev", "trial", "paid", "community", "test":
+		return nil
+	default:
+		return errors.Errorf("invalid customer type: %s", customerType)
+	}
 }

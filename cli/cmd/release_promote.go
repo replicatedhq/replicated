@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,13 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 	newID := channelName
 
 	// try to turn chanID into an actual id if it was a channel name
-	channelID, err := r.api.GetOrCreateChannelByName(r.appID, r.appType, channelName, "", false)
+	opts := client.GetOrCreateChannelOptions{
+		AppID:          r.appID,
+		AppType:        r.appType,
+		NameOrID:       channelName,
+		CreateIfAbsent: false,
+	}
+	channelID, err := r.api.GetOrCreateChannelByName(opts)
 	if err != nil {
 		return errors.Wrapf(err, "unable to get channel ID from name")
 	}
