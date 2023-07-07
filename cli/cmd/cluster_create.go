@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -24,8 +26,6 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
-	cmd.MarkFlagRequired("name")
-
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
@@ -45,6 +45,10 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
+	if r.args.createClusterName == "" {
+		r.args.createClusterName = generateClusterName()
+	}
+
 	opts := kotsclient.CreateClusterOpts{
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
@@ -57,54 +61,70 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
 	}
-	cl, ve, err := kotsRestClient.CreateCluster(opts)
-	if errors.Cause(err) == kotsclient.ErrForbidden {
-		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
-	}
+	cl, err := createCluster(kotsRestClient, opts, r.args.createClusterWaitDuration)
 	if err != nil {
 		return errors.Wrap(err, "create cluster")
 	}
 
-	if ve != nil && len(ve.Errors) > 0 {
-		if len(ve.SupportedDistributions) > 0 {
-			return fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
-		} else {
-			return fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
-		}
-
-	}
 	if opts.DryRun {
 		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
 		return err
 	}
 
-	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
-	if r.args.createClusterWaitDuration > 0 {
-		return r.waitForCluster(cl.ID, r.args.createClusterWaitDuration)
-	}
-
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
-func (r *runners) waitForCluster(id string, duration time.Duration) error {
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
+func createCluster(kotsRestClient kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
+	cl, ve, err := kotsRestClient.CreateCluster(opts)
+	if errors.Cause(err) == kotsclient.ErrForbidden {
+		return nil, errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
+	}
+	if err != nil {
+		return nil, errors.Wrap(err, "create cluster")
+	}
 
+	if ve != nil && len(ve.Errors) > 0 {
+		if len(ve.SupportedDistributions) > 0 {
+			return nil, fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
+		} else {
+			return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+		}
+
+	}
+
+	if opts.DryRun {
+		return nil, nil
+	}
+
+	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
+	if waitDuration > 0 {
+		return waitForCluster(kotsRestClient, cl.ID, waitDuration)
+	}
+
+	return cl, nil
+}
+
+func generateClusterName() string {
+	return namesgenerator.GetRandomName(0)
+}
+
+func waitForCluster(kotsRestClient kotsclient.VendorV3Client, id string, duration time.Duration) (*types.Cluster, error) {
 	start := time.Now()
 	for {
 		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "list clusters")
+			return nil, errors.Wrap(err, "list clusters")
 		}
 
 		for _, cluster := range clusters {
 			if cluster.ID == id {
 				if cluster.Status == "running" {
-					return print.Cluster(r.outputFormat, r.w, cluster)
+					return cluster, nil
 				} else if cluster.Status == "error" {
-					return errors.New("cluster failed to provision")
+					return nil, errors.New("cluster failed to provision")
 				} else {
 					if time.Now().After(start.Add(duration)) {
-						return print.Cluster(r.outputFormat, r.w, cluster)
+						return cluster, nil
 					}
 				}
 			}

@@ -49,7 +49,6 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 }
 
 func (c *Client) CreateRelease(appID string, appType string, yaml string) (*types.ReleaseInfo, error) {
-
 	if appType == "platform" {
 		platformReleaseInfo, err := c.PlatformClient.CreateRelease(appID, yaml)
 		if err != nil {
