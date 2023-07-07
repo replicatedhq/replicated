@@ -27,6 +27,7 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 
 	// get appVersion from flags
 	lsappVersion := r.args.lsAppVersion
+	// if appVersion is blank, call ListCustomers
 	if lsappVersion == "" {
 		customers, err := r.api.ListCustomers(r.appID, r.appType, r.args.customerLsIncludeTest)
 		if err != nil {
@@ -44,10 +45,10 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
 		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
-	customers, err := r.api.ListCustomers(r.appID, r.appType, r.args.customerLsIncludeTest)
-	if err != nil {
-		return errors.Wrap(err, "list customers")
-	}
-	return errors.New("Failed to list customers")
+		if err != nil {
+			return errors.Wrap(err, "list customers")
+		}
+		return errors.New("Failed to list customers")
 
+	}
 }
