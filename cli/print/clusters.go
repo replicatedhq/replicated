@@ -16,7 +16,7 @@ var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
 {{ end }}`
 
 var clusterVersionsTmplSrc = `DISTRIBUTION	VERSION
-{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}},{{end}}{{ $v }}{{ end }}
+{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}},{{end}} {{ $v }}{{ end }}
 {{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
