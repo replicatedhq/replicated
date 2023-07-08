@@ -36,8 +36,7 @@ type CreateCustomerOpts struct {
 	Email               string
 }
 
-func (c *VendorV3Client) CreateCustomer(
-	opts CreateCustomerOpts) (*types.Customer, error) {
+func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
 		Name:                opts.Name,
 		ChannelID:           opts.ChannelID,
