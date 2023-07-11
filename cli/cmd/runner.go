@@ -175,6 +175,7 @@ type runnerArgs struct {
 
 	removeClusterForce bool
 
+	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
 
 	lsClusterShowTerminated bool
