@@ -10,6 +10,7 @@ type ReleaseInfo struct {
 	Editable       bool
 	Sequence       int64
 	Version        string
+	ChartNames     []string
 }
 
 type LintMessage struct {
@@ -69,6 +70,7 @@ type KotsAppRelease struct {
 	ReleaseNotes         string     `json:"releaseNotes"`
 	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
 	Channels             []*Channel `json:"channels"`
+	ChartNames           []string   `json:"chartNames"`
 }
 
 type EntitlementValue struct {

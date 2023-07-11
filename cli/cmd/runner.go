@@ -173,6 +173,24 @@ type runnerArgs struct {
 	createClusterWaitDuration           time.Duration
 	createClusterInstanceType           string
 
+	prepareClusterID                     string
+	prepareClusterName                   string
+	prepareClusterKubernetesDistribution string
+	prepareClusterKubernetesVersion      string
+	prepareClusterNodeCount              int
+	prepareClusterVCpus                  int64
+	prepareClusterMemoryGiB              int64
+	prepareClusterDiskGiB                int64
+	prepareClusterTTL                    string
+	prepareClusterInstanceType           string
+	prepareClusterEntitlements           []string
+	prepareClusterYaml                   string
+	prepareClusterYamlFile               string
+	prepareClusterYamlDir                string
+	prepareClusterChart                  string
+	prepareClusterValuesPath             []string
+	prepareClusterValueItems             []string
+
 	removeClusterForce bool
 
 	lsAppVersion                            string

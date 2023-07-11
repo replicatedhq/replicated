@@ -90,8 +90,9 @@ func (c *VendorV3Client) CreateRelease(appID string, multiyaml string) (*types.R
 	}
 
 	releaseInfo := types.ReleaseInfo{
-		AppID:    response.Release.AppID,
-		Sequence: response.Release.Sequence,
+		AppID:      response.Release.AppID,
+		Sequence:   response.Release.Sequence,
+		ChartNames: response.Release.ChartNames,
 	}
 
 	return &releaseInfo, nil
