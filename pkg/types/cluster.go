@@ -12,10 +12,9 @@ type Cluster struct {
 	MemoryGiB              int64  `json:"memory_gib"`
 	DiskGiB                int64  `json:"disk_gib"`
 
-	Status     string    `json:"status"`
-	CreatedAt  time.Time `json:"created_at"`
-	ExpiresAt  time.Time `json:"expires_at"`
-	CreditRate float64   `json:"credit_rate"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 type ClusterVersion struct {
