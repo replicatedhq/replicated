@@ -42,22 +42,27 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
 	}
 
-	getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
-		AppID:          r.appID,
-		AppType:        r.appType,
-		NameOrID:       r.args.customerCreateChannel,
-		Description:    "",
-		CreateIfAbsent: r.args.customerCreateEnsureChannel,
-	}
+	channelID := ""
+	if r.args.customerCreateChannel != "" {
+		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
+			AppID:          r.appID,
+			AppType:        r.appType,
+			NameOrID:       r.args.customerCreateChannel,
+			Description:    "",
+			CreateIfAbsent: r.args.customerCreateEnsureChannel,
+		}
 
-	channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
-	if err != nil {
-		return errors.Wrap(err, "get channel")
+		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
+		if err != nil {
+			return errors.Wrap(err, "get channel")
+		}
+
+		channelID = channel.ID
 	}
 
 	opts := kotsclient.CreateCustomerOpts{
 		Name:                r.args.customerCreateName,
-		ChannelID:           channel.ID,
+		ChannelID:           channelID,
 		AppID:               r.appID,
 		ExpiresAt:           r.args.customerCreateExpiryDuration,
 		IsAirgapEnabled:     r.args.customerCreateIsAirgapEnabled,
