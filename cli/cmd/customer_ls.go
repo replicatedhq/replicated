@@ -14,9 +14,9 @@ func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
 		RunE:  r.listCustomers,
 	}
 	// Example to list customers by app version and app
-	// replicated customer ls --app <appID> --appVersion <appVersion>
+	// replicated customer ls --app <appID> --app-version <appVersion>
 	parent.AddCommand(customersCmd)
-	customersCmd.Flags().StringVar(&r.args.lsAppVersion, "appversion", "", "List customers and their instances by app version")
+	customersCmd.Flags().StringVar(&r.args.lsAppVersion, "app-version", "", "List customers and their instances by app version")
 	customersCmd.Flags().BoolVar(&r.args.customerLsIncludeTest, "include-test", false, "Include test customers in the list")
 	customersCmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
