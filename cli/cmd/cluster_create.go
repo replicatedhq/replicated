@@ -32,12 +32,15 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpu", int64(4), "Number of vCPUs to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterMemoryGiB, "memory", int64(4), "Memory (GiB) to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
+	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use for cloud-based clusters (e.g. x5.xlarge)")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
+	cmd.MarkFlagRequired("distribution")
+	cmd.MarkFlagRequired("version")
 
 	return cmd
 }
