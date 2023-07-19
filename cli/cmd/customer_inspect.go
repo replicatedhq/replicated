@@ -80,7 +80,7 @@ func (r *runners) customerChannel(customer *types.Customer) (*types.KotsChannel,
 }
 
 func (r *runners) registryHostname(customer *types.Customer, ch *types.KotsChannel) (string, error) {
-	if ch.CustomHostNameOverrides.Registry.Hostname != "" {
+	if ch != nil && ch.CustomHostNameOverrides.Registry.Hostname != "" {
 		return ch.CustomHostNameOverrides.Registry.Hostname, nil
 	}
 
@@ -93,7 +93,7 @@ func (r *runners) registryHostname(customer *types.Customer, ch *types.KotsChann
 		return defaultCustomHostName, nil
 	}
 
-	if ch.ReplicatedRegistryDomain != "" {
+	if ch != nil && ch.ReplicatedRegistryDomain != "" {
 		return ch.ReplicatedRegistryDomain, nil
 	}
 
