@@ -13,14 +13,15 @@ type ListChannelsResponse struct {
 	Channels []*types.KotsChannel `json:"channels"`
 }
 
-func (c *VendorV3Client) ListChannels(appID string, channelName string) ([]types.Channel, error) {
+func (c *VendorV3Client) ListKotsChannels(appID string, channelName string, excludeDetails bool) ([]*types.KotsChannel, error) {
 	var response = ListChannelsResponse{}
-
 	v := url.Values{}
 	if channelName != "" {
 		v.Set("channelName", channelName)
 	}
-	v.Set("excludeDetail", "true")
+	if excludeDetails {
+		v.Set("excludeDetail", "true")
+	}
 
 	url := fmt.Sprintf("/v3/app/%s/channels?%s", appID, v.Encode())
 	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
@@ -28,8 +29,17 @@ func (c *VendorV3Client) ListChannels(appID string, channelName string) ([]types
 		return nil, errors.Wrap(err, "list channels")
 	}
 
+	return response.Channels, nil
+}
+
+func (c *VendorV3Client) ListChannels(appID string, channelName string) ([]types.Channel, error) {
+	kotsChannels, err := c.ListKotsChannels(appID, channelName, true)
+	if err != nil {
+		return nil, err
+	}
+
 	channels := make([]types.Channel, 0)
-	for _, kotsChannel := range response.Channels {
+	for _, kotsChannel := range kotsChannels {
 		channel := types.Channel{
 			ID:              kotsChannel.Id,
 			Name:            kotsChannel.Name,

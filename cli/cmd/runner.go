@@ -212,4 +212,7 @@ type runnerArgs struct {
 	apiPutBody  string
 
 	channelInspectOutputFormat string
+
+	customerInspectOutputFormat string
+	customerInspectCustomer     string
 }

@@ -1,6 +1,8 @@
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type KotsChannel struct {
 	AdoptionRate               []CustomerAdoption            `json:"adoptionRate,omitempty"`
@@ -21,9 +23,20 @@ type KotsChannel struct {
 	NumReleases                int32                         `json:"numReleases,omitempty"`
 	ReleaseNotes               string                        `json:"releaseNotes,omitempty"`
 	// TODO: set these (see kotsChannelToSchema function)
-	ReleaseSequence int32            `json:"releaseSequence,omitempty"`
-	Releases        []ChannelRelease `json:"releases,omitempty"`
-	Updated         time.Time        `json:"updated,omitempty"`
+	ReleaseSequence          int32                   `json:"releaseSequence,omitempty"`
+	Releases                 []ChannelRelease        `json:"releases,omitempty"`
+	Updated                  time.Time               `json:"updated,omitempty"`
+	ReplicatedRegistryDomain string                  `json:"replicatedRegistryDomain"`
+	CustomHostNameOverrides  CustomHostNameOverrides `json:"customHostNameOverrides"`
+	ChartReleases            []ChartRelease          `json:"chartReleases"`
+}
+
+type ChartRelease struct {
+	Name             string `json:"name"`
+	Version          string `json:"version"`
+	Weight           int    `json:"weight"`
+	Error            string `json:"error"`
+	HasPreflightSpec bool   `json:"hasPreflightSpec"`
 }
 
 type CustomerAdoption struct {
@@ -75,6 +88,24 @@ type Channel struct {
 	ReleaseLabel    string `json:"releaseLabel"`
 
 	IsArchived bool `json:"isArchived"`
+}
+
+type CustomHostNameOverrides struct {
+	Registry struct {
+		Hostname string `json:"hostname"`
+	} `json:"registry"`
+
+	Proxy struct {
+		Hostname string `json:"hostname"`
+	} `json:"proxy"`
+
+	DownloadPortal struct {
+		Hostname string `json:"hostname"`
+	} `json:"downloadPortal"`
+
+	ReplicatedApp struct {
+		Hostname string `json:"hostname"`
+	} `json:"replicatedApp"`
 }
 
 func (c *Channel) Copy() *Channel {
