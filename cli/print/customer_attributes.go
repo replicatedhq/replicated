@@ -3,6 +3,7 @@ package print
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/tabwriter"
 	"text/template"
 
@@ -93,37 +94,31 @@ func preflightCommand(host, appSlug string, ch *types.KotsChannel) string {
 		return "No preflight checks found"
 	}
 
-	var cmd string
-	for i, chart := range preflightReleases {
-		var delim string
-		if i < len(preflightReleases)-1 {
-			delim = " &&\n"
-		}
+	cmds := []string{}
+	for _, chart := range preflightReleases {
 		if ch.ChannelSlug == "stable" {
-			cmd += fmt.Sprintf(`    helm template %s oci://%s/%s/%s | kubectl preflight -%s`,
-				chart.Name, host, appSlug, chart.Name, delim)
+			cmds = append(cmds, fmt.Sprintf(`    helm template %s oci://%s/%s/%s | kubectl preflight -`,
+				chart.Name, host, appSlug, chart.Name))
 		} else {
-			cmd += fmt.Sprintf(`    helm template %s oci://%s/%s/%s/%s | kubectl preflight -%s`,
-				chart.Name, host, appSlug, ch.ChannelSlug, chart.Name, delim)
+			cmds = append(cmds, fmt.Sprintf(`    helm template %s oci://%s/%s/%s/%s | kubectl preflight -`,
+				chart.Name, host, appSlug, ch.ChannelSlug, chart.Name))
 		}
 	}
 
-	return cmd
+	return strings.Join(cmds, " &&\n")
 }
 
 func installCommand(host, appSlug string, ch *types.KotsChannel) string {
-	var cmd string
-	for i, chart := range ch.ChartReleases {
-		var delim string
-		if i < len(ch.ChartReleases)-1 {
-			delim = " &&\n"
-		}
+	cmds := []string{}
+	for _, chart := range ch.ChartReleases {
 		if ch.ChannelSlug == "stable" {
-			cmd += fmt.Sprintf(`    helm install %s oci://%s/%s/%s%s`, chart.Name, host, appSlug, chart.Name, delim)
+			cmds = append(cmds, fmt.Sprintf(`    helm install %s oci://%s/%s/%s`,
+				chart.Name, host, appSlug, chart.Name))
 		} else {
-			cmd += fmt.Sprintf(`    helm install %s oci://%s/%s/%s/%s%s`, chart.Name, host, appSlug, ch.ChannelSlug, chart.Name, delim)
+			cmds = append(cmds, fmt.Sprintf(`    helm install %s oci://%s/%s/%s/%s`,
+				chart.Name, host, appSlug, ch.ChannelSlug, chart.Name))
 		}
 	}
 
-	return cmd
+	return strings.Join(cmds, " &&\n")
 }

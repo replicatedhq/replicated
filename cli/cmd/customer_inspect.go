@@ -59,7 +59,7 @@ func (r *runners) customerChannel(customer *types.Customer) (*types.KotsChannel,
 		return nil, nil
 	}
 	if len(customer.Channels) > 1 {
-		fmt.Println("WARNING: customer has multiple channels, using first channel")
+		fmt.Fprintln(os.Stderr, "WARNING: customer has multiple channels, using first channel")
 	}
 	ch = &customer.Channels[0]
 
