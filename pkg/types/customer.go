@@ -8,6 +8,7 @@ import (
 type Customer struct {
 	ID             string     `json:"id"`
 	Name           string     `json:"name"`
+	Email          string     `json:"email"`
 	Channels       []Channel  `json:"channels"`
 	Type           string     `json:"type"`
 	Expires        *util.Time `json:"expiresAt"`
