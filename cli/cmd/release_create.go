@@ -234,6 +234,11 @@ Prepared to create release with defaults:
 	}
 
 	if r.args.createReleaseChart != "" {
+		if !r.isFoundationApp {
+			fmt.Fprint(r.w, "You are creating a release that will only be installable with the helm CLI.\n"+
+				"For more information, see \n"+
+				"https://docs.replicated.com/vendor/helm-install#about-helm-installations-with-replicated\n")
+		}
 		fmt.Fprintln(r.w)
 		log.ActionWithSpinner("Reading chart from %s", r.args.createReleaseChart)
 		var err error
@@ -325,10 +330,6 @@ func (r *runners) validateReleaseCreateParams() error {
 			return errors.New("use the --yaml-file flag when passing a yaml filename")
 		}
 	} else {
-		if !r.isFoundationApp && r.args.createReleaseYamlDir == "" {
-			return errors.New("--yaml-dir flag must be provided for KOTS applications")
-		}
-
 		if r.args.createReleaseYaml != "" {
 			return errors.Errorf("the --yaml flag is not supported for KOTS applications, use --yaml-dir instead")
 		}
