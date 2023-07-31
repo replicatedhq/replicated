@@ -1,0 +1,24 @@
+package kotsclient
+
+import (
+	"fmt"
+	"net/http"
+
+	"github.com/replicatedhq/replicated/pkg/types"
+)
+
+type ListClusterResponse struct {
+	Cluster *types.Cluster `json:"cluster"`
+	Error   string         `json:"error"`
+}
+
+func (c *VendorV3Client) GetCluster(id string) (*types.Cluster, error) {
+	cluster := ListClusterResponse{}
+
+	err := c.DoJSON("GET", fmt.Sprintf("/v3/cluster/%s", id), http.StatusOK, nil, &cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return cluster.Cluster, nil
+}

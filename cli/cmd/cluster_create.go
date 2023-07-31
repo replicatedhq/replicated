@@ -114,22 +114,18 @@ func generateClusterName() string {
 func waitForCluster(kotsRestClient kotsclient.VendorV3Client, id string, duration time.Duration) (*types.Cluster, error) {
 	start := time.Now()
 	for {
-		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
+		cluster, err := kotsRestClient.GetCluster(id)
 		if err != nil {
-			return nil, errors.Wrap(err, "list clusters")
+			return nil, errors.Wrap(err, "get cluster")
 		}
 
-		for _, cluster := range clusters {
-			if cluster.ID == id {
-				if cluster.Status == "running" {
-					return cluster, nil
-				} else if cluster.Status == "error" {
-					return nil, errors.New("cluster failed to provision")
-				} else {
-					if time.Now().After(start.Add(duration)) {
-						return cluster, nil
-					}
-				}
+		if cluster.Status == "running" {
+			return cluster, nil
+		} else if cluster.Status == "error" {
+			return nil, errors.New("cluster failed to provision")
+		} else {
+			if time.Now().After(start.Add(duration)) {
+				return cluster, nil
 			}
 		}
 
