@@ -18,6 +18,7 @@ const (
 )
 
 type cache struct {
+	CachedVersion     string                    `json:"cachedVersion,omitempty"`
 	UpdateCheckerInfo *updatechecker.UpdateInfo `json:"updateCheckerInfo,omitempty"`
 }
 
@@ -33,20 +34,33 @@ func init() {
 	}
 }
 
-func (c *cache) SaveUpdateCheckerInfo(updateCheckerInfo *updatechecker.UpdateInfo) error {
+func DeleteCacheFile() error {
+	return os.Remove(cacheFilePath())
+}
+
+func (c *cache) SaveUpdateCheckerInfo(currentVersion string, updateCheckerInfo *updatechecker.UpdateInfo) error {
 	if c == nil {
 		c = &cache{}
 	}
+	c.CachedVersion = currentVersion
 	c.UpdateCheckerInfo = updateCheckerInfo
 	return c.save()
 }
 
-func (c *cache) IsUpdateCheckerInfoExpired() bool {
+func (c *cache) IsUpdateCheckerInfoExpired(currentVersion string) bool {
 	if c == nil || c.UpdateCheckerInfo == nil {
 		return true
 	}
 
-	return c.UpdateCheckerInfo.CheckedAt.Add(time.Duration(cacheTTLInHours) * time.Hour).Before(time.Now())
+	if c.UpdateCheckerInfo.CheckedAt.Add(time.Duration(cacheTTLInHours) * time.Hour).Before(time.Now()) {
+		return true
+	}
+
+	if currentVersion != c.CachedVersion {
+		return true
+	}
+
+	return false
 }
 
 func (u *cache) GetUpdateCheckerInfo() *updatechecker.UpdateInfo {

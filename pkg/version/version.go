@@ -45,7 +45,7 @@ func initBuild() {
 
 	build.GoInfo = getGoInfo()
 
-	if !replicatedfile.Cache.IsUpdateCheckerInfoExpired() {
+	if !replicatedfile.Cache.IsUpdateCheckerInfoExpired(build.Version) {
 		build.UpdateInfo = replicatedfile.Cache.GetUpdateCheckerInfo()
 		return
 	}
@@ -60,7 +60,7 @@ func initBuild() {
 		fmt.Printf("Error getting update info: %s", err)
 	}
 
-	if err := replicatedfile.Cache.SaveUpdateCheckerInfo(build.UpdateInfo); err != nil {
+	if err := replicatedfile.Cache.SaveUpdateCheckerInfo(build.Version, build.UpdateInfo); err != nil {
 		fmt.Printf("Error saving update checker cache: %s", err)
 	}
 }
