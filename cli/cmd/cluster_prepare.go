@@ -40,7 +40,7 @@ Example:
 
 replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 \
 	  --entitlement seat_count=100 --entitlement license_type=enterprise \
-	  --values ./values.yaml --helm-chart-path ./my-helm-chart --set chart-key=value --set chart-key2=value2`,
+	  --chart ./my-helm-chart --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
 		RunE:         r.prepareCluster,
 		SilenceUsage: true,
 
