@@ -1,0 +1,105 @@
+package replicatedfile
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path"
+	"time"
+
+	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
+)
+
+const (
+	cacheTTLInHours = 4
+
+	replicatedDir = ".replicated"
+	cacheFile     = "cache.json"
+)
+
+type cache struct {
+	UpdateCheckerInfo *updatechecker.UpdateInfo `json:"updateCheckerInfo,omitempty"`
+}
+
+var (
+	Cache *cache
+)
+
+func init() {
+	var err error
+	Cache, err = loadCache()
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+func (c *cache) SaveUpdateCheckerInfo(updateCheckerInfo *updatechecker.UpdateInfo) error {
+	if c == nil {
+		c = &cache{}
+	}
+	c.UpdateCheckerInfo = updateCheckerInfo
+	return c.save()
+}
+
+func (c *cache) IsUpdateCheckerInfoExpired() bool {
+	if c == nil || c.UpdateCheckerInfo == nil {
+		return true
+	}
+
+	return c.UpdateCheckerInfo.CheckedAt.Add(time.Duration(cacheTTLInHours) * time.Hour).Before(time.Now())
+}
+
+func (u *cache) GetUpdateCheckerInfo() *updatechecker.UpdateInfo {
+	if u == nil {
+		return nil
+	}
+
+	return u.UpdateCheckerInfo
+}
+
+func (c *cache) save() error {
+	cacheFile := cacheFilePath()
+	if err := os.MkdirAll(path.Dir(cacheFile), 0755); err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(cacheFile, b, 0600)
+}
+
+func loadCache() (*cache, error) {
+	updateCacheFile := cacheFilePath()
+	if _, err := os.Stat(updateCacheFile); err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	b, err := os.ReadFile(updateCacheFile)
+	if err != nil {
+		return nil, err
+	}
+
+	updateCache := cache{}
+	if err := json.Unmarshal(b, &updateCache); err != nil {
+		return nil, err
+	}
+
+	return &updateCache, nil
+}
+
+func cacheFilePath() string {
+	return path.Join(homeDir(), replicatedDir, cacheFile)
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
+}

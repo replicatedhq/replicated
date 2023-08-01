@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/replicatedhq/replicated/pkg/replicatedfile"
 	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
 )
 
@@ -44,6 +45,11 @@ func initBuild() {
 
 	build.GoInfo = getGoInfo()
 
+	if !replicatedfile.Cache.IsUpdateCheckerInfoExpired() {
+		build.UpdateInfo = replicatedfile.Cache.GetUpdateCheckerInfo()
+		return
+	}
+
 	usrbinsdk, err := NewUsrbinSDK(build.Version)
 	if err != nil {
 		return
@@ -52,6 +58,10 @@ func initBuild() {
 	build.UpdateInfo, err = usrbinsdk.GetUpdateInfo()
 	if err != nil {
 		fmt.Printf("Error getting update info: %s", err)
+	}
+
+	if err := replicatedfile.Cache.SaveUpdateCheckerInfo(build.UpdateInfo); err != nil {
+		fmt.Printf("Error saving update checker cache: %s", err)
 	}
 }
 
