@@ -30,7 +30,7 @@ func init() {
 	var err error
 	Cache, err = loadCache()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Failed to load cache file: %v\n", err)
 	}
 }
 
