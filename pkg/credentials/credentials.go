@@ -3,9 +3,9 @@ package credentials
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/credentials/types"
 )
@@ -29,7 +29,7 @@ func SetCurrentCredentials(token string) error {
 		return err
 	}
 
-	if err := ioutil.WriteFile(configFile, b, 0600); err != nil {
+	if err := os.WriteFile(configFile, b, 0600); err != nil {
 		return err
 	}
 
@@ -82,7 +82,7 @@ func getConfigFileCredentials() (*types.Credentials, error) {
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(configFile)
+	b, err := os.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func getConfigFileCredentials() (*types.Credentials, error) {
 }
 
 func configFilePath() string {
-	return path.Join(homeDir(), ".replicated", "config.yaml")
+	return filepath.Join(homeDir(), ".replicated", "config.yaml")
 }
 
 func homeDir() string {

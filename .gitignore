@@ -6,3 +6,4 @@ logs/
 bin/
 vendor/
 .idea
+.vscode
