@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -49,7 +50,9 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		clusterID = args[0]
 	} else if r.args.kubeconfigClusterName != "" {
 		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
-		if err != nil {
+		if errors.Cause(err) == platformclient.ErrForbidden {
+			return ErrCompatibilityMatrixTermsNotAccepted
+		} else if err != nil {
 			return errors.Wrap(err, "list clusters")
 		}
 		for _, cluster := range clusters {
@@ -65,7 +68,9 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	}
 
 	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(clusterID)
-	if err != nil {
+	if errors.Cause(err) == platformclient.ErrForbidden {
+		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 

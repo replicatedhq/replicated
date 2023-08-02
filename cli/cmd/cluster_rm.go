@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -27,7 +28,9 @@ func (r *runners) removeCluster(_ *cobra.Command, args []string) error {
 
 	for _, arg := range args {
 		err := kotsRestClient.RemoveCluster(arg, r.args.removeClusterForce)
-		if err != nil {
+		if errors.Cause(err) == platformclient.ErrForbidden {
+			return ErrCompatibilityMatrixTermsNotAccepted
+		} else if err != nil {
 			return errors.Wrap(err, "remove cluster")
 		}
 	}

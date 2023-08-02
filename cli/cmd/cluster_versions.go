@@ -30,9 +30,8 @@ func (r *runners) listClusterVersions(_ *cobra.Command, args []string) error {
 
 	cv, err := kotsRestClient.ListClusterVersions()
 	if errors.Cause(err) == platformclient.ErrForbidden {
-		return errors.New("This command is not available for your account or team. Please contact your customer success representative for more information.")
-	}
-	if err != nil {
+		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
 		return errors.Wrap(err, "list cluster versions")
 	}
 
