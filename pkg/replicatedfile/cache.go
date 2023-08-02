@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
@@ -108,7 +109,7 @@ func loadCache() (*cache, error) {
 }
 
 func cacheFilePath() string {
-	return path.Join(homeDir(), replicatedDir, cacheFile)
+	return filepath.Join(homeDir(), replicatedDir, cacheFile)
 }
 
 func homeDir() string {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/credentials/types"
 )
@@ -96,7 +97,7 @@ func getConfigFileCredentials() (*types.Credentials, error) {
 }
 
 func configFilePath() string {
-	return path.Join(homeDir(), ".replicated", "config.yaml")
+	return filepath.Join(homeDir(), ".replicated", "config.yaml")
 }
 
 func homeDir() string {
