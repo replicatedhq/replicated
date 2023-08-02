@@ -17,6 +17,17 @@ var (
 	ErrForbidden = errors.New("the action is not allowed for the current user or team")
 )
 
+type APIError struct {
+	Method     string
+	Endpoint   string
+	StatusCode int
+	Message    string
+}
+
+func (e APIError) Error() string {
+	return fmt.Sprintf("%s %s %d: %s", e.Method, e.Endpoint, e.StatusCode, e.Message)
+}
+
 type AppOptions struct {
 	Name string
 }
@@ -115,7 +126,12 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 			return ErrForbidden
 		}
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("%s %s %d: %s", method, endpoint, resp.StatusCode, body)
+		return APIError{
+			Method:     method,
+			Endpoint:   endpoint,
+			StatusCode: resp.StatusCode,
+			Message:    responseBodyToErrorMessage(body),
+		}
 	}
 	if respBody != nil {
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -156,4 +172,17 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 	}
 
 	return ioutil.ReadAll(resp.Body)
+}
+
+func responseBodyToErrorMessage(body []byte) string {
+	u := map[string]interface{}{}
+	if err := json.Unmarshal(body, &u); err != nil {
+		return string(body)
+	}
+
+	if m, ok := u["message"].(string); ok && m != "" {
+		return m
+	}
+
+	return string(body)
 }
