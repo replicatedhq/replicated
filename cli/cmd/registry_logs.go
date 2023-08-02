@@ -12,6 +12,7 @@ func (r *runners) InitRegistryLogs(parent *cobra.Command) *cobra.Command {
 		Short:        "show registry logs",
 		Long:         `show registry logs for a single registry`,
 		RunE:         r.logsRegistry,
+		Hidden:       true,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
