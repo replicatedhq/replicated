@@ -16,6 +16,7 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 		Long: `Set the release for a channel
 
   Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
+		SilenceErrors: true, // this command uses custom error printing
 	}
 
 	parent.AddCommand(cmd)
@@ -28,7 +29,11 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 	cmd.RunE = r.releasePromote
 }
 
-func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
+func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) {
+	defer func() {
+		printIfError(err)
+	}()
+
 	// parse sequence and channel ID positional arguments
 	if len(args) != 2 {
 		return errors.New("release sequence and channel ID are required")
@@ -60,8 +65,8 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) error {
 		required = r.args.releaseRequired
 	}
 
-	if err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, required, newID); err != nil {
-		return err
+	if err = r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, required, newID); err != nil {
+		return errors.Wrapf(err, "failed to promote release")
 	}
 
 	// ignore error since operation was successful

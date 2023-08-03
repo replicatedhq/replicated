@@ -17,6 +17,7 @@ import (
 	"github.com/replicatedhq/replicated/client"
 	kotstypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/logger"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +31,8 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 		Short: "Create a new release",
 		Long: `Create a new release by providing YAML configuration for the next release in
   your sequence.`,
-		SilenceUsage: true,
+		SilenceUsage:  true,
+		SilenceErrors: true, // this command uses custom error printing
 	}
 
 	parent.AddCommand(cmd)
@@ -152,12 +154,16 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 	return nil
 }
 
-func (r *runners) releaseCreate(cmd *cobra.Command, args []string) error {
+func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
+	defer func() {
+		printIfError(err)
+	}()
+
 	log := logger.NewLogger(r.w)
 
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
-		err := r.setKOTSDefaultReleaseParams()
+		err = r.setKOTSDefaultReleaseParams()
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "resolve kots defaults")
@@ -177,9 +183,10 @@ Prepared to create release with defaults:
 
 `, r.args.createReleaseYamlDir, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel, r.args.createReleaseLint)
 		if !r.args.createReleaseAutoDefaultsAccept {
-			confirmed, err := promptForConfirm()
+			var confirmed string
+			confirmed, err = promptForConfirm()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "prompt for confirm")
 			}
 			if strings.ToLower(confirmed) != "y" {
 				return errors.New("configuration declined")
@@ -188,7 +195,7 @@ Prepared to create release with defaults:
 		}
 	}
 
-	err := r.validateReleaseCreateParams()
+	err = r.validateReleaseCreateParams()
 	if err != nil {
 		return errors.Wrap(err, "validate params")
 	}
@@ -199,14 +206,15 @@ Prepared to create release with defaults:
 		r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
 		r.args.lintReleaseChart = r.args.createReleaseChart
 		// Call release_lint.go releaseLint function
-		err := r.releaseLint(cmd, args)
+		err = r.releaseLint(cmd, args)
 		if err != nil {
 			return errors.Wrap(err, "lint yaml")
 		}
 	}
 
 	if r.args.createReleaseYaml == "-" {
-		bytes, err := ioutil.ReadAll(r.stdin)
+		var bytes []byte
+		bytes, err = ioutil.ReadAll(r.stdin)
 		if err != nil {
 			return errors.Wrap(err, "read from stdin")
 		}
@@ -214,7 +222,8 @@ Prepared to create release with defaults:
 	}
 
 	if r.args.createReleaseYamlFile != "" {
-		bytes, err := ioutil.ReadFile(r.args.createReleaseYamlFile)
+		var bytes []byte
+		bytes, err = ioutil.ReadFile(r.args.createReleaseYamlFile)
 		if err != nil {
 			return errors.Wrap(err, "read file yaml")
 		}
@@ -241,7 +250,6 @@ Prepared to create release with defaults:
 		}
 		fmt.Fprintln(r.w)
 		log.ActionWithSpinner("Reading chart from %s", r.args.createReleaseChart)
-		var err error
 		r.args.createReleaseYaml, err = makeReleaseFromChart(r.args.createReleaseChart)
 		if err != nil {
 			log.FinishSpinnerWithError()
@@ -265,10 +273,11 @@ Prepared to create release with defaults:
 	}
 
 	log.ActionWithSpinner("Creating Release")
-	release, err := r.api.CreateRelease(r.appID, r.appType, r.args.createReleaseYaml)
+	var release *types.ReleaseInfo
+	release, err = r.api.CreateRelease(r.appID, r.appType, r.args.createReleaseYaml)
 	if err != nil {
 		log.FinishSpinnerWithError()
-		return err
+		return errors.Wrap(err, "create release")
 	}
 	log.FinishSpinner()
 
@@ -276,7 +285,7 @@ Prepared to create release with defaults:
 
 	if promoteChanID != "" {
 		log.ActionWithSpinner("Promoting")
-		if err := r.api.PromoteRelease(
+		if err = r.api.PromoteRelease(
 			r.appID,
 			r.appType,
 			release.Sequence,
@@ -286,7 +295,7 @@ Prepared to create release with defaults:
 			promoteChanID,
 		); err != nil {
 			log.FinishSpinnerWithError()
-			return err
+			return errors.Wrap(err, "promote release")
 		}
 		log.FinishSpinner()
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -265,8 +266,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		return nil
 	}
 
-	prerunCommand := func(cmd *cobra.Command, args []string) error {
-		if err := preRunSetupAPIs(cmd, args); err != nil {
+	prerunCommand := func(cmd *cobra.Command, args []string) (err error) {
+		if cmd.SilenceErrors { // when SilenceErrors is set, command wants to use custom error printer
+			defer func() {
+				printIfError(err)
+			}()
+		}
+
+		if err = preRunSetupAPIs(cmd, args); err != nil {
 			return errors.Wrap(err, "set up APIs")
 		}
 
@@ -276,7 +283,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		app, appType, err := runCmds.api.GetAppType(appSlugOrID)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "get app type")
 		}
 
 		runCmds.appType = appType
@@ -303,4 +310,20 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.rootCmd.AddCommand(Version())
 
 	return runCmds.rootCmd.Execute()
+}
+
+func printIfError(err error) {
+	if err == nil {
+		return
+	}
+
+	switch err := errors.Cause(err).(type) {
+	case platformclient.APIError:
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("ERROR: %d", err.StatusCode))
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("METHOD: %s", err.Method))
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("ENDPOINT: %s", err.Endpoint))
+		fmt.Fprintln(os.Stderr, err.Message) // note that this can have multiple lines
+	default:
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+	}
 }
