@@ -185,7 +185,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	// to be pushed to the oci registry. this is a terrible hack working
 	// around that part. a pr is in progress to deliver this status
 
-	if len(release.ChartNames) == 0 {
+	if len(release.Charts) == 0 {
 		return errors.New("no charts found in release")
 	}
 
@@ -194,8 +194,8 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	// run preflights
 
 	// install the chart or application
-	for _, chartName := range release.ChartNames {
-		output, err := installChartRelease(a.Slug, release.Sequence, chartName, email, customer.InstallationID, kubeconfig, r.args.prepareClusterValuesPath, r.args.prepareClusterValueItems)
+	for _, chart := range release.Charts {
+		output, err := installChartRelease(a.Slug, release.Sequence, chart.Name, email, customer.InstallationID, kubeconfig, r.args.prepareClusterValuesPath, r.args.prepareClusterValueItems)
 		if err != nil {
 			return errors.Wrap(err, "install release")
 		}

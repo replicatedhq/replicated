@@ -2,6 +2,15 @@ package types
 
 import "time"
 
+type ChartStatus string
+
+var (
+	ChartStatusUnknown ChartStatus = "unknown"
+	ChartStatusPushing ChartStatus = "pushing"
+	ChartStatusPushed  ChartStatus = "pushed"
+	ChartStatusError   ChartStatus = "error"
+)
+
 type ReleaseInfo struct {
 	ActiveChannels []Channel
 	AppID          string
@@ -10,7 +19,7 @@ type ReleaseInfo struct {
 	Editable       bool
 	Sequence       int64
 	Version        string
-	ChartNames     []string
+	Charts         []Chart
 }
 
 type LintMessage struct {
@@ -70,7 +79,15 @@ type KotsAppRelease struct {
 	ReleaseNotes         string     `json:"releaseNotes"`
 	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
 	Channels             []*Channel `json:"channels"`
-	ChartNames           []string   `json:"chartNames"`
+	Charts               []Chart    `json:"charts"`
+}
+
+type Chart struct {
+	Name      string      `json:"name"`
+	Version   string      `json:"version"`
+	Status    ChartStatus `json:"status"`
+	Error     string      `json:"error,omitempty"`
+	UpdatedAt *time.Time  `json:"updatedAt,omitempty"`
 }
 
 type EntitlementValue struct {
