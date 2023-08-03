@@ -45,6 +45,10 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 		SilenceUsage: true,
 
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if appSlugOrID == "" {
+				appSlugOrID = os.Getenv("REPLICATED_APP")
+			}
+
 			app, appType, err := r.api.GetAppType(appSlugOrID)
 			if err != nil {
 				return err

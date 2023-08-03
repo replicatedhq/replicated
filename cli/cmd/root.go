@@ -293,9 +293,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	collectorsCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
-	clusterCmd.PersistentPreRunE = prerunCommand
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
+	clusterCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
