@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
@@ -24,10 +23,8 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) removeCluster(_ *cobra.Command, args []string) error {
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-
 	for _, arg := range args {
-		err := kotsRestClient.RemoveCluster(arg, r.args.removeClusterForce)
+		err := r.kotsAPI.RemoveCluster(arg, r.args.removeClusterForce)
 		if errors.Cause(err) == platformclient.ErrForbidden {
 			return ErrCompatibilityMatrixTermsNotAccepted
 		} else if err != nil {

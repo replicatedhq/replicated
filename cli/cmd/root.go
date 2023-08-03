@@ -218,7 +218,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterKubeconfig(clusterCmd)
 	runCmds.InitClusterRemove(clusterCmd)
 	runCmds.InitClusterVersions(clusterCmd)
-	runCmds.InitClusterPrepare(clusterCmd)
+	clusterPrepareCmd := runCmds.InitClusterPrepare(clusterCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 
@@ -291,11 +291,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	channelCmd.PersistentPreRunE = prerunCommand
 	releaseCmd.PersistentPreRunE = prerunCommand
 	collectorsCmd.PersistentPreRunE = prerunCommand
-	customersCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
-	clusterCmd.PersistentPreRunE = prerunCommand
+	customersCmd.PersistentPreRunE = prerunCommand
+	clusterPrepareCmd.PersistentPreRunE = prerunCommand
+
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
+	clusterCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())

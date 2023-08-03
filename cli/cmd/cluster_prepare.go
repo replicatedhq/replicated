@@ -43,21 +43,6 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	  --chart ./my-helm-chart --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
 		RunE:         r.prepareCluster,
 		SilenceUsage: true,
-
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			app, appType, err := r.api.GetAppType(appSlugOrID)
-			if err != nil {
-				return err
-			}
-
-			r.appType = appType
-
-			r.appID = app.ID
-			r.appSlug = app.Slug
-			r.isFoundationApp = app.IsFoundation
-
-			return nil
-		},
 	}
 	parent.AddCommand(cmd)
 
@@ -94,8 +79,6 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	log := logger.NewLogger(r.w)
 
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-
 	// this only supports charts and builders teams for now (no kots&kurl)
 	if r.args.prepareClusterChart == "" {
 		return errors.New(`The "cluster prepare" command only supports builders plan (direct helm install) at this time.`)
@@ -130,7 +113,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		}
 		clusterName = r.args.prepareClusterName
 
-		cl, err := createCluster(kotsRestClient, clusterOpts, r.args.createClusterWaitDuration)
+		cl, err := createCluster(r.kotsAPI, clusterOpts, r.args.createClusterWaitDuration)
 		if err != nil {
 			return errors.Wrap(err, "create cluster")
 		}
@@ -140,7 +123,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
 			// TODO should this 5 minutes be confiugrable?
-			if _, err := waitForCluster(kotsRestClient, cl.ID, time.Minute*5); err != nil {
+			if _, err := waitForCluster(r.kotsAPI, cl.ID, time.Minute*5); err != nil {
 				fmt.Printf("Failed to wait for cluster %s to be ready: %v\n", cl.ID, err)
 			}
 
@@ -148,7 +131,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		}(&wg)
 	} else {
 		// need to get the cluster info to get the name to pass to the customer
-		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
+		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list clusters")
 		}
@@ -165,7 +148,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.New("failed to find cluster")
 	}
 
-	a, err := kotsRestClient.GetApp(r.appID)
+	a, err := r.kotsAPI.GetApp(r.appID)
 	if err != nil {
 		return errors.Wrap(err, "get app")
 	}
@@ -193,7 +176,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	wg.Wait()
 
 	// get the kubeconfig
-	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(clusterID)
+	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
