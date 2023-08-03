@@ -3,7 +3,6 @@ package client
 import (
 	"errors"
 
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -100,10 +99,20 @@ func (c *Client) TestRelease(appID string, appType string, sequence int64) (stri
 	return "", errors.New("unsupported app type")
 }
 
-func (c *Client) GetRelease(appID string, appType string, sequence int64) (*releases.AppRelease, error) {
+func (c *Client) GetRelease(appID string, appType string, sequence int64) (*types.AppRelease, error) {
 
 	if appType == "platform" {
-		return c.PlatformClient.GetRelease(appID, sequence)
+		release, err := c.PlatformClient.GetRelease(appID, sequence)
+		if err != nil {
+			return nil, err
+		}
+		return &types.AppRelease{
+			Config:    release.Config,
+			CreatedAt: release.CreatedAt,
+			Editable:  release.Editable,
+			EditedAt:  release.EditedAt,
+			Sequence:  release.Sequence,
+		}, nil
 	} else if appType == "kots" {
 		return c.KotsClient.GetRelease(appID, sequence)
 	}

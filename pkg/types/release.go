@@ -94,3 +94,12 @@ type EntitlementValue struct {
 	Name  string `json:"name,omitempty"`
 	Value string `json:"value,omitempty"`
 }
+
+type AppRelease struct {
+	Config    string    `json:"config,omitempty"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	Editable  bool      `json:"editable,omitempty"`
+	EditedAt  time.Time `json:"editedAt,omitempty"`
+	Sequence  int64     `json:"sequence,omitempty"`
+	Charts    []Chart   `json:"charts,omitempty"`
+}

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -44,7 +43,7 @@ func (c *VendorV3Client) TestRelease(appID string, sequence int64) (string, erro
 	return "", nil
 }
 
-func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*releases.AppRelease, error) {
+func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*types.AppRelease, error) {
 	resp := types.KotsGetReleaseResponse{}
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v", appID, sequence)
@@ -54,11 +53,12 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*releases.App
 		return nil, errors.Wrap(err, "failed to get release")
 	}
 
-	appRelease := releases.AppRelease{
+	appRelease := types.AppRelease{
 		Config:    resp.Release.Spec,
 		CreatedAt: resp.Release.CreatedAt,
 		Editable:  !resp.Release.IsReleaseNotEditable,
 		Sequence:  resp.Release.Sequence,
+		Charts:    resp.Release.Charts,
 	}
 
 	return &appRelease, nil

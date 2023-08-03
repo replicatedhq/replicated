@@ -4,7 +4,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 var releaseTmplSrc = `SEQUENCE:	{{ .Sequence }}
@@ -16,7 +16,7 @@ CONFIG:
 
 var releaseTmpl = template.Must(template.New("Release").Funcs(funcs).Parse(releaseTmplSrc))
 
-func Release(w *tabwriter.Writer, release *releases.AppRelease) error {
+func Release(w *tabwriter.Writer, release *types.AppRelease) error {
 	if err := releaseTmpl.Execute(w, release); err != nil {
 		return err
 	}

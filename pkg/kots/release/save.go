@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
-	"github.com/replicatedhq/replicated/pkg/kots/release/types"
+	releaseTypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/logger"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func Save(dstDir string, release *releases.AppRelease, log *logger.Logger) error {
-	var releaseYamls []types.KotsSingleSpec
+func Save(dstDir string, release *types.AppRelease, log *logger.Logger) error {
+	var releaseYamls []releaseTypes.KotsSingleSpec
 	if err := json.Unmarshal([]byte(release.Config), &releaseYamls); err != nil {
 		return errors.Wrap(err, "unmarshal release yamls")
 	}
@@ -31,7 +31,7 @@ func Save(dstDir string, release *releases.AppRelease, log *logger.Logger) error
 
 }
 
-func writeReleaseFiles(dstDir string, specs []types.KotsSingleSpec, log *logger.Logger) error {
+func writeReleaseFiles(dstDir string, specs []releaseTypes.KotsSingleSpec, log *logger.Logger) error {
 	for _, spec := range specs {
 		if len(spec.Children) > 0 {
 			err := writeReleaseDirectory(dstDir, spec, log)
@@ -49,7 +49,7 @@ func writeReleaseFiles(dstDir string, specs []types.KotsSingleSpec, log *logger.
 	return nil
 }
 
-func writeReleaseDirectory(dstDir string, spec types.KotsSingleSpec, log *logger.Logger) error {
+func writeReleaseDirectory(dstDir string, spec releaseTypes.KotsSingleSpec, log *logger.Logger) error {
 	log.ChildActionWithoutSpinner(spec.Path)
 
 	if err := os.Mkdir(filepath.Join(dstDir, spec.Path), 0755); err != nil && !os.IsExist(err) {
@@ -64,7 +64,7 @@ func writeReleaseDirectory(dstDir string, spec types.KotsSingleSpec, log *logger
 	return nil
 }
 
-func writeReleaseFile(dstDir string, spec types.KotsSingleSpec, log *logger.Logger) error {
+func writeReleaseFile(dstDir string, spec releaseTypes.KotsSingleSpec, log *logger.Logger) error {
 	log.ChildActionWithoutSpinner(spec.Path)
 
 	var content []byte
