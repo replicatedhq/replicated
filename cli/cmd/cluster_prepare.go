@@ -181,15 +181,14 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 
-	// we need to have a status on the release so that we can wait for it
-	// to be pushed to the oci registry. this is a terrible hack working
-	// around that part. a pr is in progress to deliver this status
-
 	if len(release.Charts) == 0 {
 		return errors.New("no charts found in release")
 	}
 
-	time.Sleep(time.Second * 30)
+	isReleaseReady, err := isReleaseReady(r, log, *release)
+	if err != nil || !isReleaseReady {
+		return errors.Wrap(err, "release not ready")
+	}
 
 	// run preflights
 
@@ -370,4 +369,48 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	log.FinishSpinner()
 
 	return release, nil
+}
+
+func isReleaseReady(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
+	isReleaseReady := false
+	for !isReleaseReady {
+		appRelease, err := r.api.GetRelease(r.appID, r.appType, release.Sequence)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get release")
+		}
+
+		if len(appRelease.Charts) == 0 {
+			return false, errors.New("no charts found in release")
+		}
+
+		releaseChartsReady, err := areReleaseChartsReady(appRelease.Charts)
+		if err != nil {
+			return false, errors.Wrap(err, "failed to get release")
+		}
+		if !releaseChartsReady {
+			time.Sleep(time.Second * 2)
+			continue
+		}
+
+		isReleaseReady = true
+	}
+
+	return true, nil
+}
+
+func areReleaseChartsReady(charts []types.Chart) (bool, error) {
+	areChartsPushed := false
+	for _, chart := range charts {
+		if chart.Status == types.ChartStatusPushing || chart.Status == types.ChartStatusUnknown {
+			areChartsPushed = false
+			continue
+		} else if chart.Status == types.ChartStatusPushed {
+			areChartsPushed = true
+		} else if chart.Status == types.ChartStatusError {
+			return false, errors.Errorf("chart %q failed to push: %s", chart.Name, chart.Error)
+		} else {
+			return false, errors.Errorf("unknown release chart status %q", chart.Status)
+		}
+	}
+	return areChartsPushed, nil
 }
