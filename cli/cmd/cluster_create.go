@@ -46,8 +46,6 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) createCluster(_ *cobra.Command, args []string) error {
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-
 	if r.args.createClusterName == "" {
 		r.args.createClusterName = generateClusterName()
 	}
@@ -64,7 +62,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
 	}
-	cl, err := createCluster(kotsRestClient, opts, r.args.createClusterWaitDuration)
+	cl, err := createCluster(r.kotsAPI, opts, r.args.createClusterWaitDuration)
 	if err != nil {
 		return errors.Wrap(err, "create cluster")
 	}
@@ -77,7 +75,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
-func createCluster(kotsRestClient kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
+func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
 	cl, ve, err := kotsRestClient.CreateCluster(opts)
 	if errors.Cause(err) == kotsclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
@@ -110,7 +108,7 @@ func generateClusterName() string {
 	return namesgenerator.GetRandomName(0)
 }
 
-func waitForCluster(kotsRestClient kotsclient.VendorV3Client, id string, duration time.Duration) (*types.Cluster, error) {
+func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, duration time.Duration) (*types.Cluster, error) {
 	start := time.Now()
 	for {
 		cluster, err := kotsRestClient.GetCluster(id)

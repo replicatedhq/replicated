@@ -8,7 +8,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -34,8 +33,6 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) listClusters(_ *cobra.Command, args []string) error {
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-
 	const longForm = "2006-01-02T15:04:05Z"
 	var startTime, endTime *time.Time
 	if r.args.lsClusterStartTime != "" {
@@ -53,7 +50,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 		endTime = &et
 	}
 
-	clusters, err := kotsRestClient.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
+	clusters, err := r.kotsAPI.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -78,7 +75,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 		// Runs until ctrl C is recognized
 		for range time.Tick(2 * time.Second) {
-			newClusters, err := kotsRestClient.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
+			newClusters, err := r.kotsAPI.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
 
 			if err != nil {
 				if err == promptui.ErrInterrupt {

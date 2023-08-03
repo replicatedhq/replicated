@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
@@ -40,8 +39,6 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
-	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-
 	// by default, we look at args[0] as the id
 	// but if it's not provided, we look for a viper flag named "name" and use it
 	// as the name of the cluster, not the id
@@ -49,7 +46,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		clusterID = args[0]
 	} else if r.args.kubeconfigClusterName != "" {
-		clusters, err := kotsRestClient.ListClusters(false, nil, nil)
+		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {
 			return ErrCompatibilityMatrixTermsNotAccepted
 		} else if err != nil {
@@ -67,7 +64,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		return errors.New("must provide cluster id or name")
 	}
 
-	kubeconfig, err := kotsRestClient.GetClusterKubeconfig(clusterID)
+	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
