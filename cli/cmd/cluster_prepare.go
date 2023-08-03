@@ -181,7 +181,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 
-	isReleaseReady, err := isReleaseReady(r, log, *release)
+	isReleaseReady, err := isReleaseReadyToInstall(r, log, *release)
 	if err != nil || !isReleaseReady {
 		return errors.Wrap(err, "release not ready")
 	}
@@ -220,7 +220,7 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 
 	configJSON := fmt.Sprintf(`{"auths":{"%s":%s}}`, registryHostname, encodedAuthConfigJSON)
 
-	credentialsFile, err := ioutil.TempFile("", "credentials")
+	credentialsFile, err := os.CreateTemp("", "credentials")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create credentials file")
 	}
@@ -233,12 +233,12 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 
 	settings := cli.New()
 
-	kubeconfigFile, err := ioutil.TempFile("", "kubeconfig")
+	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create kubeconfig file")
 	}
 	defer os.RemoveAll(kubeconfigFile.Name())
-	if err := ioutil.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
+	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write kubeconfig file")
 	}
 	settings.KubeConfig = kubeconfigFile.Name()
@@ -367,7 +367,7 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	return release, nil
 }
 
-func isReleaseReady(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
+func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
 	if len(release.Charts) == 0 {
 		return false, errors.New("no charts found in release")
 	}
