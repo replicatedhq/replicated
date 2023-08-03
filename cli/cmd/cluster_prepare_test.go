@@ -13,8 +13,8 @@ func Test_areReleaseChartsReady(t *testing.T) {
 		want    bool
 		wantErr bool
 	}{
-		{"nil charts", nil, false, false},
-		{"no charts", []types.Chart{}, false, false},
+		{"nil charts", nil, false, true},
+		{"no charts", []types.Chart{}, false, true},
 		{"one chart, no status", []types.Chart{{}}, false, true},
 		{"one chart, status unkown", []types.Chart{{Status: types.ChartStatusUnknown}}, false, false},
 		{"one chart, status pushing", []types.Chart{{Status: types.ChartStatusPushing}}, false, false},
@@ -35,7 +35,7 @@ func Test_areReleaseChartsReady(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := areReleaseChartsReady(tt.charts)
+			got, err := areReleaseChartsPushed(tt.charts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("areReleaseChartsReady() error = %v, wantErr %v", err, tt.wantErr)
 				return

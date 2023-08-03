@@ -181,10 +181,6 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 
-	if len(release.Charts) == 0 {
-		return errors.New("no charts found in release")
-	}
-
 	isReleaseReady, err := isReleaseReady(r, log, *release)
 	if err != nil || !isReleaseReady {
 		return errors.Wrap(err, "release not ready")
@@ -372,45 +368,54 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 }
 
 func isReleaseReady(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
-	isReleaseReady := false
-	for !isReleaseReady {
-		appRelease, err := r.api.GetRelease(r.appID, r.appType, release.Sequence)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get release")
-		}
-
-		if len(appRelease.Charts) == 0 {
-			return false, errors.New("no charts found in release")
-		}
-
-		releaseChartsReady, err := areReleaseChartsReady(appRelease.Charts)
-		if err != nil {
-			return false, errors.Wrap(err, "failed to get release")
-		}
-		if !releaseChartsReady {
-			time.Sleep(time.Second * 2)
-			continue
-		}
-
-		isReleaseReady = true
+	if len(release.Charts) == 0 {
+		return false, errors.New("no charts found in release")
 	}
 
-	return true, nil
+	timeout := time.Duration(10*len(release.Charts)) * time.Second
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-timer.C:
+			return false, errors.Errorf("timed out waiting for release to be ready after %s", timeout)
+		default:
+			appRelease, err := r.api.GetRelease(r.appID, r.appType, release.Sequence)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to get release")
+			}
+
+			ready, err := areReleaseChartsPushed(appRelease.Charts)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to check release charts")
+			} else if ready {
+				return true, nil
+			}
+
+			time.Sleep(time.Second * 2)
+		}
+	}
 }
 
-func areReleaseChartsReady(charts []types.Chart) (bool, error) {
-	areChartsPushed := false
+func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
+	if len(charts) == 0 {
+		return false, errors.New("no charts found in release")
+	}
+
+	pushedChartsCount := 0
 	for _, chart := range charts {
-		if chart.Status == types.ChartStatusPushing || chart.Status == types.ChartStatusUnknown {
-			areChartsPushed = false
-			continue
-		} else if chart.Status == types.ChartStatusPushed {
-			areChartsPushed = true
-		} else if chart.Status == types.ChartStatusError {
+		switch chart.Status {
+		case types.ChartStatusPushed:
+			pushedChartsCount++
+		case types.ChartStatusUnknown, types.ChartStatusPushing:
+			// wait for the chart to be pushed
+		case types.ChartStatusError:
 			return false, errors.Errorf("chart %q failed to push: %s", chart.Name, chart.Error)
-		} else {
+		default:
 			return false, errors.Errorf("unknown release chart status %q", chart.Status)
 		}
 	}
-	return areChartsPushed, nil
+
+	return pushedChartsCount == len(charts), nil
 }
