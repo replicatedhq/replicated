@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-// TODO: implement a -o wide, and expose nodecount, vcpus and memory also?
+// TODO: implement a -o wide, and expose nodecount also?
 var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
 {{ range . -}}
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}

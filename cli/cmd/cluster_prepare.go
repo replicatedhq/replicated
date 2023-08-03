@@ -50,11 +50,9 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.prepareClusterNodeCount, "node-count", int(1), "Node count")
-	cmd.Flags().Int64Var(&r.args.prepareClusterVCpus, "vcpu", int64(4), "Number of vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.prepareClusterMemoryGiB, "memory", int64(4), "Memory (GiB) to request per node")
 	cmd.Flags().Int64Var(&r.args.prepareClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
 	cmd.Flags().StringVar(&r.args.prepareClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
-	cmd.Flags().StringVar(&r.args.prepareClusterInstanceType, "instance-type", "", "the type of instance to use for cloud-based clusters (e.g. x5.xlarge)")
+	cmd.Flags().StringVar(&r.args.prepareClusterInstanceType, "instance-type", "", "the type of instance to use clusters (e.g. x5.xlarge)")
 
 	// todo maybe remove
 	cmd.Flags().StringVar(&r.args.prepareClusterID, "cluster-id", "", "cluster id")
@@ -105,8 +103,6 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 			KubernetesDistribution: r.args.prepareClusterKubernetesDistribution,
 			KubernetesVersion:      r.args.prepareClusterKubernetesVersion,
 			NodeCount:              r.args.prepareClusterNodeCount,
-			VCpus:                  r.args.prepareClusterVCpus,
-			MemoryGiB:              r.args.prepareClusterMemoryGiB,
 			DiskGiB:                r.args.prepareClusterDiskGiB,
 			TTL:                    r.args.prepareClusterTTL,
 			InstanceType:           r.args.prepareClusterInstanceType,

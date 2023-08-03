@@ -8,8 +8,6 @@ type Cluster struct {
 	KubernetesDistribution string `json:"kubernetes_distribution"`
 	KubernetesVersion      string `json:"kubernetes_version"`
 	NodeCount              int    `json:"node_count"`
-	VCpus                  int64  `json:"vcpus"`
-	MemoryGiB              int64  `json:"memory_gib"`
 	DiskGiB                int64  `json:"disk_gib"`
 
 	Status    string    `json:"status"`

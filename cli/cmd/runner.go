@@ -165,8 +165,6 @@ type runnerArgs struct {
 	createClusterKubernetesDistribution string
 	createClusterKubernetesVersion      string
 	createClusterNodeCount              int
-	createClusterVCpus                  int64
-	createClusterMemoryGiB              int64
 	createClusterDiskGiB                int64
 	createClusterDryRun                 bool
 	createClusterTTL                    string
@@ -178,8 +176,6 @@ type runnerArgs struct {
 	prepareClusterKubernetesDistribution string
 	prepareClusterKubernetesVersion      string
 	prepareClusterNodeCount              int
-	prepareClusterVCpus                  int64
-	prepareClusterMemoryGiB              int64
 	prepareClusterDiskGiB                int64
 	prepareClusterTTL                    string
 	prepareClusterInstanceType           string
