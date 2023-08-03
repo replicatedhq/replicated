@@ -8,8 +8,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	releases "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/logger"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +26,7 @@ func Test_Save(t *testing.T) {
 
 		defer os.RemoveAll(dstDir)
 
-		release := &releases.AppRelease{
+		release := &types.AppRelease{
 			Config: string(releaseToSave),
 		}
 		err = Save(dstDir, release, logger.NewLogger(os.Stdout))
