@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -64,7 +65,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 	cl, err := createCluster(r.kotsAPI, opts, r.args.createClusterWaitDuration)
 	if err != nil {
-		return errors.Wrap(err, "create cluster")
+		return err
 	}
 
 	if opts.DryRun {
@@ -77,7 +78,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 
 func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
 	cl, ve, err := kotsRestClient.CreateCluster(opts)
-	if errors.Cause(err) == kotsclient.ErrForbidden {
+	if errors.Cause(err) == platformclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return nil, errors.Wrap(err, "create cluster")
