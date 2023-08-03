@@ -29,13 +29,11 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
-	cmd.Flags().Int64Var(&r.args.createClusterVCpus, "vcpu", int64(4), "Number of vCPUs to request per node")
-	cmd.Flags().Int64Var(&r.args.createClusterMemoryGiB, "memory", int64(16), "Memory (GiB) to request per node")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
-	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use for cloud-based clusters (e.g. x5.xlarge)")
+	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use (e.g. x5.xlarge)")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
@@ -57,8 +55,6 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		NodeCount:              r.args.createClusterNodeCount,
-		VCpus:                  r.args.createClusterVCpus,
-		MemoryGiB:              r.args.createClusterMemoryGiB,
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		DryRun:                 r.args.createClusterDryRun,

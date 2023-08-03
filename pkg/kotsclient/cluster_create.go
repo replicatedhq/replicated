@@ -12,8 +12,6 @@ type CreateClusterRequest struct {
 	KubernetesDistribution string `json:"kubernetes_distribution"`
 	KubernetesVersion      string `json:"kubernetes_version"`
 	NodeCount              int    `json:"node_count"`
-	VCpus                  int64  `json:"vcpus"`
-	MemoryGiB              int64  `json:"memory_gib"`
 	DiskGiB                int64  `json:"disk_gib"`
 	TTL                    string `json:"ttl"`
 	InstanceType           string `json:"instance_type"`
@@ -30,8 +28,6 @@ type CreateClusterOpts struct {
 	KubernetesDistribution string
 	KubernetesVersion      string
 	NodeCount              int
-	VCpus                  int64
-	MemoryGiB              int64
 	DiskGiB                int64
 	TTL                    string
 	DryRun                 bool
@@ -48,8 +44,6 @@ var defaultCreateClusterOpts = CreateClusterOpts{
 	KubernetesDistribution: "kind",
 	KubernetesVersion:      "v1.25.3",
 	NodeCount:              int(1),
-	VCpus:                  int64(4),
-	MemoryGiB:              int64(4),
 	DiskGiB:                int64(50),
 	TTL:                    "2h",
 	InstanceType:           "",
@@ -66,12 +60,6 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	if opts.NodeCount == int(0) {
 		opts.NodeCount = defaultCreateClusterOpts.NodeCount
 	}
-	if opts.VCpus == int64(0) {
-		opts.VCpus = defaultCreateClusterOpts.VCpus
-	}
-	if opts.MemoryGiB == int64(0) {
-		opts.MemoryGiB = defaultCreateClusterOpts.MemoryGiB
-	}
 	if opts.DiskGiB == int64(0) {
 		opts.DiskGiB = defaultCreateClusterOpts.DiskGiB
 	}
@@ -84,8 +72,6 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		KubernetesDistribution: opts.KubernetesDistribution,
 		KubernetesVersion:      opts.KubernetesVersion,
 		NodeCount:              opts.NodeCount,
-		VCpus:                  opts.VCpus,
-		MemoryGiB:              opts.MemoryGiB,
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
 		InstanceType:           opts.InstanceType,
