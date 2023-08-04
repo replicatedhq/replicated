@@ -39,34 +39,7 @@ type ValidationError struct {
 	SupportedDistributions map[string][]string `json:"supported_distributions"`
 }
 
-var defaultCreateClusterOpts = CreateClusterOpts{
-	Name:                   "",
-	KubernetesDistribution: "kind",
-	KubernetesVersion:      "v1.25.3",
-	NodeCount:              int(1),
-	DiskGiB:                int64(50),
-	TTL:                    "2h",
-	InstanceType:           "",
-}
-
 func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
-	// merge opts with defaults
-	if opts.KubernetesDistribution == "" {
-		opts.KubernetesDistribution = defaultCreateClusterOpts.KubernetesDistribution
-	}
-	if opts.KubernetesVersion == "" {
-		opts.KubernetesVersion = defaultCreateClusterOpts.KubernetesVersion
-	}
-	if opts.NodeCount == int(0) {
-		opts.NodeCount = defaultCreateClusterOpts.NodeCount
-	}
-	if opts.DiskGiB == int64(0) {
-		opts.DiskGiB = defaultCreateClusterOpts.DiskGiB
-	}
-	if opts.TTL == "" {
-		opts.TTL = defaultCreateClusterOpts.TTL
-	}
-
 	reqBody := &CreateClusterRequest{
 		Name:                   opts.Name,
 		KubernetesDistribution: opts.KubernetesDistribution,
