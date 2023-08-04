@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -16,11 +17,15 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
+	tsloader "github.com/replicatedhq/troubleshoot/pkg/loader"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
+	// troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/registry"
+	"helm.sh/helm/v3/pkg/release"
 )
 
 func (r *runners) InitClusterPrepare(parent *cobra.Command) *cobra.Command {
@@ -186,31 +191,25 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "release not ready")
 	}
 
-	// run preflights
-
-	// install the chart or application
-	for _, chart := range release.Charts {
-		output, err := installChartRelease(a.Slug, release.Sequence, chart.Name, email, customer.InstallationID, kubeconfig, r.args.prepareClusterValuesPath, r.args.prepareClusterValueItems)
-		if err != nil {
-			return errors.Wrap(err, "install release")
-		}
-
-		// print the output
-		fmt.Fprintf(r.w, "%s\n", output)
+	// write the kubeconfig to a file
+	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
+	if err != nil {
+		return errors.Wrap(err, "create kubeconfig file")
+	}
+	defer os.Remove(kubeconfigFile.Name())
+	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
+		return errors.Wrap(err, "write kubeconfig file")
 	}
 
-	return nil
-}
-
-func installChartRelease(appSlug string, releaseSequence int64, chartName string, username string, password string, kubeconfig []byte, valuesPath []string, valueItems []string) (string, error) {
+	// write registry credentials to a file
 	authConfig := dockertypes.AuthConfig{
-		Username: username,
-		Password: password,
-		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+		Username: email,
+		Password: customer.InstallationID,
+		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", email, customer.InstallationID))),
 	}
 	encodedAuthConfigJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return "", errors.Wrap(err, "marshal auth config")
+		return errors.Wrap(err, "failed to marshal auth config")
 	}
 
 	registryHostname := `registry.replicated.com`
@@ -222,25 +221,88 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 
 	credentialsFile, err := os.CreateTemp("", "credentials")
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create credentials file")
+		return errors.Wrap(err, "failed to create credentials file")
 	}
-
 	defer os.Remove(credentialsFile.Name())
 
 	if _, err := credentialsFile.Write([]byte(configJSON)); err != nil {
-		return "", errors.Wrap(err, "failed to write credentials file")
+		return errors.Wrap(err, "failed to write credentials file")
 	}
 
-	settings := cli.New()
+	//  TODO: implement valuesPath 
 
-	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
+	// build the values map
+	vals, err := buildValuesMap(r.args.prepareClusterValueItems)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubeconfig file")
+		return errors.Wrap(err, "build values map")
 	}
-	defer os.RemoveAll(kubeconfigFile.Name())
-	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
-		return "", errors.Wrap(err, "failed to write kubeconfig file")
+
+	// install the chart or application
+	for _, chart := range release.Charts {
+
+		//  dry run and get manifest
+		dryRunRelease, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, true)
+		if err != nil {
+			return errors.Wrap(err, "dry run release")
+		}
+
+		ctx := context.Background()
+		kinds, err := tsloader.LoadSpecs(ctx, tsloader.LoadOptions{
+			RawSpec: string(dryRunRelease.Manifest),
+		})
+		if err != nil {
+			return err
+		}
+
+		p := preflight.PreflightSpecs{}
+		for _, kind := range kinds.PreflightsV1Beta2 {
+			p.PreflightSpec = preflight.ConcatPreflightSpec(p.PreflightSpec, &kind)
+		}
+
+		// run the preflights
+		if p.PreflightSpec != nil {
+			fmt.Fprintln(r.w)
+			log.ActionWithSpinner("Running preflights")
+			// results, err := preflight.Run(p.PreflightSpec, preflight.RunOptions{
+			// 	Namespace: "default",
+			// 	Timeout:   time.Minute * 5,
+			// 	Kubectl:   r.kubectl,
+			// 	ProgressChan: func(progress string) {
+			// 		fmt.Fprintf(r.w, "%s\n", progress)
+			// 	},
+			// })
+			// if err != nil {
+			// 	log.FinishSpinnerWithError()
+			// 	return errors.Wrap(err, "run preflights")
+			// }
+			log.FinishSpinner()
+
+			// if results.IsFail() {
+			// 	return errors.New("preflights failed")
+			// }
+		}
+
+
+
+		
+		
+
+
+
+		release, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, false)
+		if err != nil {
+			return errors.Wrap(err, "install release")
+		}
+
+		// print the output
+		fmt.Fprintf(r.w, "%s\n", release.Info.Notes)
 	}
+
+	return nil
+}
+
+func installChartRelease(appSlug string, releaseSequence int64, chartName string,  values map[string]interface{}, kubeconfigFile  *os.File, credentialsFile *os.File, registryHostname string, dryRun bool) (*release.Release, error) {
+	settings := cli.New()
 	settings.KubeConfig = kubeconfigFile.Name()
 
 	registryClient, err := registry.NewClient(
@@ -249,12 +311,12 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 		registry.ClientOptCredentialsFile(credentialsFile.Name()),
 	)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create registry client")
+		return nil, errors.Wrap(err, "failed to create registry client")
 	}
 
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", golog.Printf); err != nil {
-		return "", errors.Wrap(err, "init action config")
+		return nil, errors.Wrap(err, "init action config")
 	}
 	actionConfig.RegistryClient = registryClient
 
@@ -263,54 +325,24 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 	client.Namespace = "default"
 	client.Wait = true
 	client.Timeout = 5 * time.Minute
+	client.DryRun = dryRun
 
 	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName), settings)
 	if err != nil {
-		return "", errors.Wrap(err, "locate chart")
+		return nil, errors.Wrap(err, "locate chart")
 	}
 
 	chartReq, err := loader.Load(cp)
 	if err != nil {
-		return "", errors.Wrap(err, "load chart")
+		return nil, errors.Wrap(err, "load chart")
 	}
 
-	vals := map[string]interface{}{}
-	for _, set := range valueItems {
-		setParts := strings.SplitN(set, "=", 2)
-		if len(setParts) != 2 {
-			return "", errors.Errorf("invalid set %q", set)
-		}
-
-		key := setParts[0]
-		val := setParts[1]
-		if !strings.Contains(key, ".") {
-			vals[key] = setParts[1]
-			continue
-		}
-
-		// convert the key.part set command to a map[string]interface{}
-		parts := strings.Split(key, ".")
-		m := vals
-		for i, part := range parts {
-			if i == len(parts)-1 {
-				m[part] = val
-				continue
-			}
-
-			if _, ok := m[part]; !ok {
-				m[part] = map[string]interface{}{}
-			}
-
-			m = m[part].(map[string]interface{})
-		}
-	}
-
-	helmRelease, err := client.Run(chartReq, vals)
+	helmRelease, err := client.Run(chartReq, values)
 	if err != nil {
-		return "", errors.Wrap(err, "run helm install")
+		return nil, errors.Wrap(err, "run helm install")
 	}
 
-	return helmRelease.Info.Notes, nil
+	return helmRelease, nil
 }
 
 func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) {
@@ -418,4 +450,42 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	}
 
 	return pushedChartsCount == len(charts), nil
+}
+
+// good to use helm library for this
+// https://github.com/helm/helm/blob/main/pkg/cli/values/options.go
+func buildValuesMap(valueItems []string) (map[string]interface{}, error){
+
+	vals := map[string]interface{}{}
+	for _, set := range valueItems {
+		setParts := strings.SplitN(set, "=", 2)
+		if len(setParts) != 2 {
+			return nil, errors.Errorf("invalid set %q", set)
+		}
+
+		key := setParts[0]
+		val := setParts[1]
+		if !strings.Contains(key, ".") {
+			vals[key] = setParts[1]
+			continue
+		}
+
+		// convert the key.part set command to a map[string]interface{}
+		parts := strings.Split(key, ".")
+		m := vals
+		for i, part := range parts {
+			if i == len(parts)-1 {
+				m[part] = val
+				continue
+			}
+
+			if _, ok := m[part]; !ok {
+				m[part] = map[string]interface{}{}
+			}
+
+			m = m[part].(map[string]interface{})
+		}
+	}
+
+	return vals, nil
 }
