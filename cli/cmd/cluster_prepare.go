@@ -177,15 +177,10 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 
-	// we need to have a status on the release so that we can wait for it
-	// to be pushed to the oci registry. this is a terrible hack working
-	// around that part. a pr is in progress to deliver this status
-
-	if len(release.Charts) == 0 {
-		return errors.New("no charts found in release")
+	isReleaseReady, err := isReleaseReadyToInstall(r, log, *release)
+	if err != nil || !isReleaseReady {
+		return errors.Wrap(err, "release not ready")
 	}
-
-	time.Sleep(time.Second * 30)
 
 	// run preflights
 
@@ -221,7 +216,7 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 
 	configJSON := fmt.Sprintf(`{"auths":{"%s":%s}}`, registryHostname, encodedAuthConfigJSON)
 
-	credentialsFile, err := ioutil.TempFile("", "credentials")
+	credentialsFile, err := os.CreateTemp("", "credentials")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create credentials file")
 	}
@@ -234,12 +229,12 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 
 	settings := cli.New()
 
-	kubeconfigFile, err := ioutil.TempFile("", "kubeconfig")
+	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create kubeconfig file")
 	}
 	defer os.RemoveAll(kubeconfigFile.Name())
-	if err := ioutil.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
+	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
 		return "", errors.Wrap(err, "failed to write kubeconfig file")
 	}
 	settings.KubeConfig = kubeconfigFile.Name()
@@ -366,4 +361,57 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	log.FinishSpinner()
 
 	return release, nil
+}
+
+func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
+	if len(release.Charts) == 0 {
+		return false, errors.New("no charts found in release")
+	}
+
+	timeout := time.Duration(10*len(release.Charts)) * time.Second
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-timer.C:
+			return false, errors.Errorf("timed out waiting for release to be ready after %s", timeout)
+		default:
+			appRelease, err := r.api.GetRelease(r.appID, r.appType, release.Sequence)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to get release")
+			}
+
+			ready, err := areReleaseChartsPushed(appRelease.Charts)
+			if err != nil {
+				return false, errors.Wrap(err, "failed to check release charts")
+			} else if ready {
+				return true, nil
+			}
+
+			time.Sleep(time.Second * 2)
+		}
+	}
+}
+
+func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
+	if len(charts) == 0 {
+		return false, errors.New("no charts found in release")
+	}
+
+	pushedChartsCount := 0
+	for _, chart := range charts {
+		switch chart.Status {
+		case types.ChartStatusPushed:
+			pushedChartsCount++
+		case types.ChartStatusUnknown, types.ChartStatusPushing:
+			// wait for the chart to be pushed
+		case types.ChartStatusError:
+			return false, errors.Errorf("chart %q failed to push: %s", chart.Name, chart.Error)
+		default:
+			return false, errors.Errorf("unknown release chart status %q", chart.Status)
+		}
+	}
+
+	return pushedChartsCount == len(charts), nil
 }
