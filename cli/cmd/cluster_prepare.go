@@ -426,7 +426,6 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 // TODO: use helm value options instead of this
 // https://github.com/helm/helm/blob/main/pkg/cli/values/options.go
 func buildValuesMap(valueItems []string) (map[string]interface{}, error) {
-
 	vals := map[string]interface{}{}
 	for _, set := range valueItems {
 		setParts := strings.SplitN(set, "=", 2)
@@ -478,7 +477,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 		return nil
 	}
 
-	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
+	progressChan := make(chan interface{}, 0)
 	defer close(progressChan)
 
 	completeMx := sync.Mutex{}
@@ -501,7 +500,6 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 				continue
 			}
 
-			// TODO: We need a nice title to display
 			progressBytes, err := json.Marshal(map[string]interface{}{
 				"completedCount": progress.CompletedCount,
 				"totalCount":     progress.TotalCount,
@@ -526,7 +524,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 
 	collectOpts := troubleshootpreflight.CollectOpts{
 		Namespace:              "",
-		IgnorePermissionErrors: true, // TODO: make this configurable
+		IgnorePermissionErrors: true,
 		ProgressChan:           progressChan,
 		KubernetesRestConfig:   kubeConfig,
 	}
