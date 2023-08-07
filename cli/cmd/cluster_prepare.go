@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	golog "log"
 	"os"
 	"strings"
@@ -16,11 +18,20 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
+	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
+	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
+	troubleshootloader "github.com/replicatedhq/troubleshoot/pkg/loader"
+	"github.com/replicatedhq/troubleshoot/pkg/preflight"
+	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/registry"
+	"helm.sh/helm/v3/pkg/release"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 func (r *runners) InitClusterPrepare(parent *cobra.Command) *cobra.Command {
@@ -171,42 +182,39 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	// wait for the wait group
 	wg.Wait()
 
-	// get the kubeconfig
-	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
-	if err != nil {
-		return errors.Wrap(err, "get cluster kubeconfig")
-	}
-
 	isReleaseReady, err := isReleaseReadyToInstall(r, log, *release)
 	if err != nil || !isReleaseReady {
 		return errors.Wrap(err, "release not ready")
 	}
 
-	// run preflights
-
-	// install the chart or application
-	for _, chart := range release.Charts {
-		output, err := installChartRelease(a.Slug, release.Sequence, chart.Name, email, customer.InstallationID, kubeconfig, r.args.prepareClusterValuesPath, r.args.prepareClusterValueItems)
-		if err != nil {
-			return errors.Wrap(err, "install release")
-		}
-
-		// print the output
-		fmt.Fprintf(r.w, "%s\n", output)
+	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
+	if err != nil {
+		return errors.Wrap(err, "get cluster kubeconfig")
 	}
 
-	return nil
-}
+	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
+	if err != nil {
+		return errors.Wrap(err, "create kubeconfig file")
+	}
+	defer os.Remove(kubeconfigFile.Name())
+	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
+		return errors.Wrap(err, "write kubeconfig file")
+	}
 
-func installChartRelease(appSlug string, releaseSequence int64, chartName string, username string, password string, kubeconfig []byte, valuesPath []string, valueItems []string) (string, error) {
+	kubeconfigFlag := flag.String("kubeconfig", kubeconfigFile.Name(), "kubeconfig file")
+	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
+	if err != nil {
+		return errors.Wrap(err, "build config from flags")
+	}
+
 	authConfig := dockertypes.AuthConfig{
-		Username: username,
-		Password: password,
-		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password))),
+		Username: email,
+		Password: customer.InstallationID,
+		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", email, customer.InstallationID))),
 	}
 	encodedAuthConfigJSON, err := json.Marshal(authConfig)
 	if err != nil {
-		return "", errors.Wrap(err, "marshal auth config")
+		return errors.Wrap(err, "failed to marshal auth config")
 	}
 
 	registryHostname := `registry.replicated.com`
@@ -215,28 +223,47 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 	}
 
 	configJSON := fmt.Sprintf(`{"auths":{"%s":%s}}`, registryHostname, encodedAuthConfigJSON)
-
 	credentialsFile, err := os.CreateTemp("", "credentials")
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create credentials file")
+		return errors.Wrap(err, "failed to create credentials file")
 	}
-
 	defer os.Remove(credentialsFile.Name())
 
 	if _, err := credentialsFile.Write([]byte(configJSON)); err != nil {
-		return "", errors.Wrap(err, "failed to write credentials file")
+		return errors.Wrap(err, "failed to write credentials file")
 	}
 
-	settings := cli.New()
-
-	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
+	//  TODO: implement valuesPath
+	// build the values map
+	vals, err := buildValuesMap(r.args.prepareClusterValueItems)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create kubeconfig file")
+		return errors.Wrap(err, "build values map")
 	}
-	defer os.RemoveAll(kubeconfigFile.Name())
-	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
-		return "", errors.Wrap(err, "failed to write kubeconfig file")
+
+	for _, chart := range release.Charts {
+		dryRunRelease, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, true)
+		if err != nil {
+			return errors.Wrap(err, "dry run release")
+		}
+
+		ctx := context.Background()
+		if err = runPreflights(ctx, log, restKubeConfig, dryRunRelease); err != nil {
+			return errors.Wrap(err, "run preflights")
+		}
+
+		release, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, false)
+		if err != nil {
+			return errors.Wrap(err, "install release")
+		}
+
+		fmt.Fprintf(r.w, "%s\n", release.Info.Notes)
 	}
+
+	return nil
+}
+
+func installChartRelease(appSlug string, releaseSequence int64, chartName string, values map[string]interface{}, kubeconfigFile *os.File, credentialsFile *os.File, registryHostname string, dryRun bool) (*release.Release, error) {
+	settings := cli.New()
 	settings.KubeConfig = kubeconfigFile.Name()
 
 	registryClient, err := registry.NewClient(
@@ -245,12 +272,12 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 		registry.ClientOptCredentialsFile(credentialsFile.Name()),
 	)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create registry client")
+		return nil, errors.Wrap(err, "failed to create registry client")
 	}
 
 	actionConfig := new(action.Configuration)
 	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", golog.Printf); err != nil {
-		return "", errors.Wrap(err, "init action config")
+		return nil, errors.Wrap(err, "init action config")
 	}
 	actionConfig.RegistryClient = registryClient
 
@@ -259,61 +286,34 @@ func installChartRelease(appSlug string, releaseSequence int64, chartName string
 	client.Namespace = "default"
 	client.Wait = true
 	client.Timeout = 5 * time.Minute
+	if dryRun {
+		client.DryRun = true
+		client.ClientOnly = true
+	}
 
 	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName), settings)
 	if err != nil {
-		return "", errors.Wrap(err, "locate chart")
+		return nil, errors.Wrap(err, "locate chart")
 	}
 
 	chartReq, err := loader.Load(cp)
 	if err != nil {
-		return "", errors.Wrap(err, "load chart")
+		return nil, errors.Wrap(err, "load chart")
 	}
 
-	vals := map[string]interface{}{}
-	for _, set := range valueItems {
-		setParts := strings.SplitN(set, "=", 2)
-		if len(setParts) != 2 {
-			return "", errors.Errorf("invalid set %q", set)
-		}
-
-		key := setParts[0]
-		val := setParts[1]
-		if !strings.Contains(key, ".") {
-			vals[key] = setParts[1]
-			continue
-		}
-
-		// convert the key.part set command to a map[string]interface{}
-		parts := strings.Split(key, ".")
-		m := vals
-		for i, part := range parts {
-			if i == len(parts)-1 {
-				m[part] = val
-				continue
-			}
-
-			if _, ok := m[part]; !ok {
-				m[part] = map[string]interface{}{}
-			}
-
-			m = m[part].(map[string]interface{})
-		}
-	}
-
-	helmRelease, err := client.Run(chartReq, vals)
+	helmRelease, err := client.Run(chartReq, values)
 	if err != nil {
-		return "", errors.Wrap(err, "run helm install")
+		return nil, errors.Wrap(err, "run helm install")
 	}
 
-	return helmRelease.Info.Notes, nil
+	return helmRelease, nil
 }
 
 func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) {
 	// create the release first because we want to fail early if there are linting issues
 	// or if it's a builder plan team submitting a kots app or the other way around
 	if r.args.prepareClusterYaml == "-" {
-		bytes, err := ioutil.ReadAll(r.stdin)
+		bytes, err := io.ReadAll(r.stdin)
 		if err != nil {
 			return nil, errors.Wrap(err, "read stdin")
 		}
@@ -321,7 +321,7 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	}
 
 	if r.args.prepareClusterYamlFile != "" {
-		bytes, err := ioutil.ReadFile(r.args.prepareClusterYamlFile)
+		bytes, err := os.ReadFile(r.args.prepareClusterYamlFile)
 		if err != nil {
 			return nil, errors.Wrap(err, "read release yaml file")
 		}
@@ -414,4 +414,211 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	}
 
 	return pushedChartsCount == len(charts), nil
+}
+
+// TODO: use helm value options instead of this
+// https://github.com/helm/helm/blob/main/pkg/cli/values/options.go
+func buildValuesMap(valueItems []string) (map[string]interface{}, error) {
+
+	vals := map[string]interface{}{}
+	for _, set := range valueItems {
+		setParts := strings.SplitN(set, "=", 2)
+		if len(setParts) != 2 {
+			return nil, errors.Errorf("invalid set %q", set)
+		}
+
+		key := setParts[0]
+		val := setParts[1]
+		if !strings.Contains(key, ".") {
+			vals[key] = setParts[1]
+			continue
+		}
+
+		// convert the key.part set command to a map[string]interface{}
+		parts := strings.Split(key, ".")
+		m := vals
+		for i, part := range parts {
+			if i == len(parts)-1 {
+				m[part] = val
+				continue
+			}
+
+			if _, ok := m[part]; !ok {
+				m[part] = map[string]interface{}{}
+			}
+
+			m = m[part].(map[string]interface{})
+		}
+	}
+
+	return vals, nil
+}
+
+func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Config, release *release.Release) error {
+	tsKinds, err := troubleshootloader.LoadSpecs(ctx, troubleshootloader.LoadOptions{
+		RawSpec: string(release.Manifest),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to load specs from helm chart release %s", release.Name)
+	}
+
+	var preflightSpec = new(troubleshootv1beta2.Preflight)
+	for _, kind := range tsKinds.PreflightsV1Beta2 {
+		preflightSpec = preflight.ConcatPreflightSpec(preflightSpec, &kind)
+	}
+
+	if preflightSpec == nil {
+		log.Info("no preflight spec found in release")
+		return nil
+	}
+
+	log.ActionWithSpinner("Running preflights\n")
+	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
+	defer close(progressChan)
+
+	completeMx := sync.Mutex{}
+	isComplete := false
+	go func() {
+		for {
+			msg, ok := <-progressChan
+			if !ok {
+				return
+			}
+
+			if err, ok := msg.(error); ok {
+				log.FinishSpinnerWithError()
+				log.Info("error while running preflights: %v", err)
+			} else {
+				log.Info("preflight progress: %v", msg)
+			}
+
+			progress, ok := msg.(preflight.CollectProgress)
+			if !ok {
+				continue
+			}
+
+			// TODO: We need a nice title to display
+			progressBytes, err := json.Marshal(map[string]interface{}{
+				"completedCount": progress.CompletedCount,
+				"totalCount":     progress.TotalCount,
+				"currentName":    progress.CurrentName,
+				"currentStatus":  progress.CurrentStatus,
+				"updatedAt":      time.Now().Format(time.RFC3339),
+			})
+			if err != nil {
+				continue
+			}
+
+			completeMx.Lock()
+			if !isComplete {
+				log.Info("preflight progress: %v", string(progressBytes))
+			}
+			completeMx.Unlock()
+		}
+	}()
+
+	preflightSpec.Spec.Collectors = troubleshootcollect.DedupCollectors(preflightSpec.Spec.Collectors)
+	preflightSpec.Spec.Analyzers = troubleshootanalyze.DedupAnalyzers(preflightSpec.Spec.Analyzers)
+
+	collectOpts := troubleshootpreflight.CollectOpts{
+		Namespace:              "",
+		IgnorePermissionErrors: true, // TODO: make this configurable
+		ProgressChan:           progressChan,
+		KubernetesRestConfig:   kubeConfig,
+	}
+
+	log.ChildActionWithoutSpinner("Running preflight collectors")
+	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
+	if err != nil && !isCollectorPermissionsError(err) {
+		return errors.Wrap(err, "failed to collect")
+	}
+
+	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
+	if !ok {
+		return errors.Errorf("unexpected preflight collector result type: %T", collectResults)
+	}
+
+	if isCollectorPermissionsError(err) {
+		log.Info("skipping analyze due to RBAC errors")
+		for _, collector := range clusterCollectResult.Collectors {
+			for _, e := range collector.GetRBACErrors() {
+				log.Info("rbac error: %v", e.Error())
+			}
+		}
+		return errors.Errorf("insufficient permissions to run all collectors")
+	}
+
+	log.ChildActionWithSpinner("Running preflight analyzers")
+	analyzeResults := collectResults.Analyze()
+	analyzeOutput := buildStructuredPreflightResults(preflightSpec.Name, analyzeResults)
+	analyzeOutputJSON, err := json.MarshalIndent(analyzeOutput, "", "  ")
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal analyze output")
+	}
+
+	log.Info("Preflight results: %s", string(analyzeOutputJSON))
+	failedStrictPreflights := []string{}
+	for _, analyzeResult := range analyzeResults {
+		if analyzeResult.IsFail && analyzeResult.Strict {
+			failedStrictPreflights = append(failedStrictPreflights, analyzeResult.Title)
+		}
+	}
+	if len(failedStrictPreflights) > 0 {
+		return errors.Errorf("Strict preflights failed: %s", strings.Join(failedStrictPreflights, ", "))
+	}
+
+	log.FinishSpinner()
+	return nil
+}
+
+func isCollectorPermissionsError(err error) bool {
+	// TODO: make an error type in troubleshoot for this instead of hardcoding the message
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "insufficient permissions to run all collectors")
+}
+
+type textResultOutput struct {
+	Title   string `json:"title" yaml:"title"`
+	Message string `json:"message" yaml:"message"`
+	URI     string `json:"uri,omitempty" yaml:"uri,omitempty"`
+	Strict  bool   `json:"strict,omitempty" yaml:"strict,omitempty"`
+}
+
+type textOutput struct {
+	Pass []textResultOutput `json:"pass,omitempty" yaml:"pass,omitempty"`
+	Warn []textResultOutput `json:"warn,omitempty" yaml:"warn,omitempty"`
+	Fail []textResultOutput `json:"fail,omitempty" yaml:"fail,omitempty"`
+}
+
+// TODO: move to troubleshoot pkg
+func buildStructuredPreflightResults(preflightName string, analyzeResults []*troubleshootanalyze.AnalyzeResult) *textOutput {
+	output := textOutput{
+		Pass: []textResultOutput{},
+		Warn: []textResultOutput{},
+		Fail: []textResultOutput{},
+	}
+
+	for _, analyzeResult := range analyzeResults {
+		resultOutput := textResultOutput{
+			Title:   analyzeResult.Title,
+			Message: analyzeResult.Message,
+			URI:     analyzeResult.URI,
+		}
+
+		if analyzeResult.Strict {
+			resultOutput.Strict = analyzeResult.Strict
+		}
+
+		if analyzeResult.IsPass {
+			output.Pass = append(output.Pass, resultOutput)
+		} else if analyzeResult.IsWarn {
+			output.Warn = append(output.Warn, resultOutput)
+		} else if analyzeResult.IsFail {
+			output.Fail = append(output.Fail, resultOutput)
+		}
+	}
+
+	return &output
 }
