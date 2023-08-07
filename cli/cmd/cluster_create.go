@@ -131,23 +131,55 @@ func supportedDistributions(supportedDistributions map[string][]string) string {
 	var supported []string
 	for k, vv := range supportedDistributions {
 		// assume that the vv is semver and sort
-		vs := make([]*semver.Version, len(vv))
+		vs := make([]*clusterVersion, len(vv))
 		for i, r := range vv {
-			v, err := semver.NewVersion(r)
-			if err != nil {
-				// just don't include it
-				continue
+			v := &clusterVersion{
+				original: r,
+			}
+			sv, err := semver.NewVersion(r)
+			if err == nil {
+				v.semver = sv
 			}
 
 			vs[i] = v
 		}
 
-		sort.Sort(semver.Collection(vs))
+		sort.Sort(clusterVersionCollection(vs))
 
 		supported = append(supported, fmt.Sprintf("  %s:", k))
 		for _, v := range vs {
-			supported = append(supported, fmt.Sprintf("    %s", v.Original()))
+			supported = append(supported, fmt.Sprintf("    %s", v.original))
 		}
 	}
 	return strings.Join(supported, "\n")
+}
+
+type clusterVersionCollection []*clusterVersion
+
+type clusterVersion struct {
+	semver   *semver.Version
+	original string
+}
+
+func (c *clusterVersion) String() string {
+	return c.original
+}
+
+func (c *clusterVersion) LessThan(other *clusterVersion) bool {
+	if c.semver == nil || other.semver == nil {
+		return c.original < other.original
+	}
+	return c.semver.LessThan(other.semver)
+}
+
+func (c clusterVersionCollection) Len() int {
+	return len(c)
+}
+
+func (c clusterVersionCollection) Less(i, j int) bool {
+	return c[i].LessThan(c[j])
+}
+
+func (c clusterVersionCollection) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
 }
