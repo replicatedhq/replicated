@@ -182,10 +182,13 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	// wait for the wait group
 	wg.Wait()
 
+	log.ActionWithSpinner("Waiting for release to be ready")
 	isReleaseReady, err := isReleaseReadyToInstall(r, log, *release)
 	if err != nil || !isReleaseReady {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "release not ready")
 	}
+	log.FinishSpinner()
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if err != nil {
@@ -247,9 +250,13 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		}
 
 		ctx := context.Background()
-		if err = runPreflights(ctx, log, restKubeConfig, dryRunRelease); err != nil {
+
+		log.ActionWithSpinner("Running preflights")
+		if err = runPreflights(ctx, r, log, restKubeConfig, dryRunRelease); err != nil {
+			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "run preflights")
 		}
+		log.FinishSpinner()
 
 		release, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, false)
 		if err != nil {
@@ -371,7 +378,6 @@ func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.Relea
 	timeout := time.Duration(10*len(release.Charts)) * time.Second
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
-
 	for {
 		select {
 		case <-timer.C:
@@ -389,6 +395,7 @@ func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.Relea
 				return true, nil
 			}
 
+			fmt.Fprintf(r.w, "Release %d is not ready yet\n", release.Sequence)
 			time.Sleep(time.Second * 2)
 		}
 	}
@@ -454,7 +461,7 @@ func buildValuesMap(valueItems []string) (map[string]interface{}, error) {
 	return vals, nil
 }
 
-func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Config, release *release.Release) error {
+func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConfig *rest.Config, release *release.Release) error {
 	tsKinds, err := troubleshootloader.LoadSpecs(ctx, troubleshootloader.LoadOptions{
 		RawSpec: string(release.Manifest),
 	})
@@ -467,12 +474,10 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 		preflightSpec = preflight.ConcatPreflightSpec(preflightSpec, &kind)
 	}
 
-	if preflightSpec == nil {
-		log.Info("no preflight spec found in release")
+	if preflightSpec == nil || len(preflightSpec.Spec.Analyzers) == 0 {
 		return nil
 	}
 
-	log.ActionWithSpinner("Running preflights\n")
 	progressChan := make(chan interface{}, 0) // non-zero buffer will result in missed messages
 	defer close(progressChan)
 
@@ -486,10 +491,9 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 			}
 
 			if err, ok := msg.(error); ok {
-				log.FinishSpinnerWithError()
-				log.Info("error while running preflights: %v", err)
+				fmt.Fprintf(r.w, "Error running preflights: %v\n", err)
 			} else {
-				log.Info("preflight progress: %v", msg)
+				fmt.Fprintf(r.w, "Preflight progress: %v\n", msg)
 			}
 
 			progress, ok := msg.(preflight.CollectProgress)
@@ -511,7 +515,7 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 
 			completeMx.Lock()
 			if !isComplete {
-				log.Info("preflight progress: %v", string(progressBytes))
+				fmt.Fprintf(r.w, "Preflight progress: %v\n", string(progressBytes))
 			}
 			completeMx.Unlock()
 		}
@@ -527,10 +531,9 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 		KubernetesRestConfig:   kubeConfig,
 	}
 
-	log.ChildActionWithoutSpinner("Running preflight collectors")
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
 	if err != nil && !isCollectorPermissionsError(err) {
-		return errors.Wrap(err, "failed to collect")
+		return errors.Wrap(err, "failed to collect preflight data")
 	}
 
 	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
@@ -548,7 +551,6 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 		return errors.Errorf("insufficient permissions to run all collectors")
 	}
 
-	log.ChildActionWithSpinner("Running preflight analyzers")
 	analyzeResults := collectResults.Analyze()
 	analyzeOutput := buildStructuredPreflightResults(preflightSpec.Name, analyzeResults)
 	analyzeOutputJSON, err := json.MarshalIndent(analyzeOutput, "", "  ")
@@ -567,7 +569,6 @@ func runPreflights(ctx context.Context, log *logger.Logger, kubeConfig *rest.Con
 		return errors.Errorf("Strict preflights failed: %s", strings.Join(failedStrictPreflights, ", "))
 	}
 
-	log.FinishSpinner()
 	return nil
 }
 
