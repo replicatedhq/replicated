@@ -85,6 +85,7 @@ type runnerArgs struct {
 	customerCreateIsAirgapEnabled     bool
 	customerCreateIsGitopsSupported   bool
 	customerCreateIsSnapshotSupported bool
+	customerCreateIsKotInstallEnabled bool
 	customerCreateEmail               string
 	customerCreateType                string
 

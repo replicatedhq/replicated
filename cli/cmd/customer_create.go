@@ -26,6 +26,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	cmd.Flags().BoolVar(&r.args.customerCreateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
+	cmd.Flags().BoolVar(&r.args.customerCreateIsKotInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
 	cmd.Flags().StringVar(&r.args.customerCreateEmail, "email", "", "Email address of the customer that is to be created.")
 	cmd.Flags().StringVar(&r.args.customerCreateType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
@@ -68,6 +69,7 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		IsAirgapEnabled:     r.args.customerCreateIsAirgapEnabled,
 		IsGitopsSupported:   r.args.customerCreateIsGitopsSupported,
 		IsSnapshotSupported: r.args.customerCreateIsSnapshotSupported,
+		IsKotInstallEnabled: r.args.customerCreateIsKotInstallEnabled,
 		LicenseType:         r.args.customerCreateType,
 		Email:               r.args.customerCreateEmail,
 	}
