@@ -17,6 +17,7 @@ type CreateCustomerRequest struct {
 	IsAirgapEnabled     bool   `json:"is_airgap_enabled"`
 	IsGitopsSupported   bool   `json:"is_gitops_supported"`
 	IsSnapshotSupported bool   `json:"is_snapshot_supported"`
+	IsKotInstallEnabled bool   `json:"is_kots_install_enabled"`
 	Email               string `json:"email,omitempty"`
 }
 
@@ -32,6 +33,7 @@ type CreateCustomerOpts struct {
 	IsAirgapEnabled     bool
 	IsGitopsSupported   bool
 	IsSnapshotSupported bool
+	IsKotInstallEnabled bool
 	LicenseType         string
 	Email               string
 }
@@ -45,6 +47,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsAirgapEnabled:     opts.IsAirgapEnabled,
 		IsGitopsSupported:   opts.IsGitopsSupported,
 		IsSnapshotSupported: opts.IsSnapshotSupported,
+		IsKotInstallEnabled: opts.IsKotInstallEnabled,
 		Email:               opts.Email,
 	}
 
