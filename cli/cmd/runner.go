@@ -187,7 +187,7 @@ type runnerArgs struct {
 	prepareClusterValuesPath             []string
 	prepareClusterValueItems             []string
 
-	removeClusterForce bool
+	removeClusterAll bool
 
 	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
