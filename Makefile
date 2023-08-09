@@ -135,10 +135,10 @@ gen-models:
 .PHONY: build
 build:
 	go build \
-    		${LDFLAGS} \
-				-tags "$(BUILDTAGS)" \
-    		-o bin/replicated \
-    		cli/main.go
+		${LDFLAGS} \
+		-tags "$(BUILDTAGS)" \
+		-o bin/replicated \
+		cli/main.go
 
 .PHONY: docs
 docs:

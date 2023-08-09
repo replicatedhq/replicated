@@ -199,10 +199,14 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "create kubeconfig file")
 	}
-	defer os.Remove(kubeconfigFile.Name())
-	if err := os.WriteFile(kubeconfigFile.Name(), kubeconfig, 0644); err != nil {
+	defer func() {
+		kubeconfigFile.Close()
+		os.Remove(kubeconfigFile.Name())
+	}()
+	if _, err := kubeconfigFile.Write([]byte(kubeconfig)); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
+	kubeconfigFile.Chmod(0644)
 
 	kubeconfigFlag := flag.String("kubeconfig", kubeconfigFile.Name(), "kubeconfig file")
 	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
@@ -230,8 +234,10 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create credentials file")
 	}
-	defer os.Remove(credentialsFile.Name())
-
+	defer func() {
+		credentialsFile.Close()
+		os.Remove(credentialsFile.Name())
+	}()
 	if _, err := credentialsFile.Write([]byte(configJSON)); err != nil {
 		return errors.Wrap(err, "failed to write credentials file")
 	}
@@ -246,7 +252,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	for _, chart := range release.Charts {
 		dryRunRelease, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, true)
 		if err != nil {
-			return errors.Wrap(err, "dry run release")
+			return errors.Wrapf(err, "dry run release %s", chart.Name)
 		}
 
 		ctx := context.Background()
@@ -254,13 +260,13 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		log.ActionWithSpinner("Running preflights")
 		if err = runPreflights(ctx, r, log, restKubeConfig, dryRunRelease); err != nil {
 			log.FinishSpinnerWithError()
-			return errors.Wrap(err, "run preflights")
+			return errors.Wrapf(err, "run preflights for release %s", chart.Name)
 		}
 		log.FinishSpinner()
 
 		release, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, false)
 		if err != nil {
-			return errors.Wrap(err, "install release")
+			return errors.Wrapf(err, "install release %s", chart.Name)
 		}
 
 		fmt.Fprintf(r.w, "%s\n", release.Info.Notes)
