@@ -32,25 +32,15 @@ func (c *VendorV3Client) ListKotsChannels(appID string, channelName string, excl
 	return response.Channels, nil
 }
 
-func (c *VendorV3Client) ListChannels(appID string, channelName string) ([]types.Channel, error) {
+func (c *VendorV3Client) ListChannels(appID string, channelName string) ([]*types.Channel, error) {
 	kotsChannels, err := c.ListKotsChannels(appID, channelName, true)
 	if err != nil {
 		return nil, err
 	}
 
-	channels := make([]types.Channel, 0)
+	channels := make([]*types.Channel, 0)
 	for _, kotsChannel := range kotsChannels {
-		channel := types.Channel{
-			ID:              kotsChannel.Id,
-			Name:            kotsChannel.Name,
-			Description:     kotsChannel.Description,
-			Slug:            kotsChannel.ChannelSlug,
-			ReleaseSequence: int64(kotsChannel.ReleaseSequence),
-			ReleaseLabel:    kotsChannel.CurrentVersion,
-			IsArchived:      kotsChannel.IsArchived,
-		}
-
-		channels = append(channels, channel)
+		channels = append(channels, kotsChannel.ToChannel())
 	}
 
 	return channels, nil
@@ -73,15 +63,7 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 		return nil, errors.Wrap(err, "create channel")
 	}
 
-	return &types.Channel{
-		ID:              response.Channel.Id,
-		Name:            response.Channel.Name,
-		Description:     response.Channel.Description,
-		Slug:            response.Channel.ChannelSlug,
-		ReleaseSequence: int64(response.Channel.ReleaseSequence),
-		ReleaseLabel:    response.Channel.CurrentVersion,
-		IsArchived:      response.Channel.IsArchived,
-	}, nil
+	return response.Channel.ToChannel(), nil
 }
 
 func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Channel, error) {
@@ -96,15 +78,7 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Chan
 		return nil, errors.Wrap(err, "get app channel")
 	}
 
-	return &types.Channel{
-		ID:              response.Channel.Id,
-		Name:            response.Channel.Name,
-		Description:     response.Channel.Description,
-		Slug:            response.Channel.ChannelSlug,
-		ReleaseSequence: int64(response.Channel.ReleaseSequence),
-		ReleaseLabel:    response.Channel.CurrentVersion,
-		IsArchived:      response.Channel.IsArchived,
-	}, nil
+	return response.Channel.ToChannel(), nil
 }
 
 func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {

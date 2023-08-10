@@ -13,20 +13,25 @@ import (
 var channelAttrsTmplSrc = `ID:	{{ .Chan.ID }}
 NAME:	{{ .Chan.Name }}
 DESCRIPTION:	{{ .Chan.Description }}
-RELEASE:	{{ if ge .Chan.ReleaseSequence 1 }}{{ .Chan.ReleaseSequence }}{{else}}	{{end}}
-VERSION:	{{ .Chan.ReleaseLabel }}{{ with .Existing }}
+RELEASE:	{{ if ge .Chan.ReleaseSequence 1 }}{{ .Chan.ReleaseSequence }}{{ else }}	{{ end }}
+VERSION:	{{ .Chan.ReleaseLabel }}
+{{ if not .Chan.IsHelmOnly -}}
+{{ with .Existing -}}
 EXISTING:
 
 {{ . }}
-{{end}}{{with .Embedded}}
+{{ end }}
+{{ with .Embedded -}}
 EMBEDDED:
 
 {{ . }}
-{{end}}{{with .Airgap}}
+{{ end }}
+{{ with .Airgap -}}
 AIRGAP:
 
 {{ . }}
-{{end}}
+{{ end -}}
+{{ end -}}
 `
 
 var channelAttrsTmpl = template.Must(template.New("ChannelAttributes").Parse(channelAttrsTmplSrc))
