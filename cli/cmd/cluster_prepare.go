@@ -87,15 +87,15 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringVar(&r.args.prepareClusterYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlFile, "yaml-file", "", "The YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
-	cmd.Flags().StringVar(&r.args.prepareClusterKotsConfigValuesFile, "config-values-file", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
-	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "shared password for the kots admin console. defaults to 'password'")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsConfigValuesFile, "config-values-file", "", "Path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues).")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the kots admin console (defaults to 'password').")
 
 	// for builders plan (chart only)
 	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "path to the helm chart to deploy")
 	addValueOptionsFlags(cmd.Flags(), &r.args.prepareClusterValueOpts)
 
-	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace scope for kots CLI request or helm install request. The default value is 'default'.")
-	cmd.Flags().DurationVar(&r.args.prepareClusterAppReadyTimeout, "app-ready-timeout", time.Minute*5, "Timeout to wait for the application to be ready. Must be in Go duration format (e.g., 10s, 2m). Defaults to 5 minutes.")
+	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace into which to deploy the KOTS application or Helm chart.")
+	cmd.Flags().DurationVar(&r.args.prepareClusterAppReadyTimeout, "app-ready-timeout", time.Minute*5, "Timeout to wait for the application to be ready. Must be in Go duration format (e.g., 10s, 2m).")
 
 	// TODO add json output
 	return cmd
@@ -239,6 +239,9 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	appRelease, err := getReadyAppRelease(r, log, *release)
 	if err != nil || appRelease == nil {
 		log.FinishSpinnerWithError()
+		if err == nil {
+			return errors.New("release not ready")
+		}
 		return errors.Wrap(err, "release not ready")
 	}
 	log.FinishSpinner()
@@ -249,7 +252,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	}
 
 	// create a test customer with the correct entitlement values
-	email := fmt.Sprintf("%s@relicated.com", clusterName)
+	email := fmt.Sprintf("%s@replicated.com", clusterName)
 	customerOpts := kotsclient.CreateCustomerOpts{
 		Name:                clusterName,
 		ChannelID:           "",
