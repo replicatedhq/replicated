@@ -31,6 +31,7 @@ type runners struct {
 	dir              string
 	outputFormat     string
 	w                *tabwriter.Writer
+	werr             *tabwriter.Writer
 
 	rootCmd *cobra.Command
 	args    runnerArgs

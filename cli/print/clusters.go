@@ -15,7 +15,8 @@ var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
 {{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}
 {{ end }}`
 
-var clusterVersionsTmplSrc = `DISTRIBUTION	VERSION
+var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
+DISTRIBUTION	VERSION
 {{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}},{{end}} {{ $v }}{{ end }}
 {{ end }}`
 

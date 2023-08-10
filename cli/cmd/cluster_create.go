@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
@@ -59,7 +57,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
 	}
-	cl, err := createCluster(r.kotsAPI, opts, r.args.createClusterWaitDuration)
+	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
 		return err
 	}
@@ -72,8 +70,8 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
-func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
-	cl, ve, err := kotsRestClient.CreateCluster(opts)
+func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*types.Cluster, error) {
+	cl, ve, err := r.kotsAPI.CreateCluster(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -82,11 +80,9 @@ func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.Cr
 
 	if ve != nil && len(ve.Errors) > 0 {
 		if len(ve.SupportedDistributions) > 0 {
-			return nil, fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
-		} else {
-			return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+			print.ClusterVersions("table", r.werr, ve.SupportedDistributions)
 		}
-
+		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
 	}
 
 	if opts.DryRun {
@@ -94,8 +90,8 @@ func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.Cr
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
-	if waitDuration > 0 {
-		return waitForCluster(kotsRestClient, cl.ID, waitDuration)
+	if r.args.createClusterWaitDuration > 0 {
+		return waitForCluster(r.kotsAPI, cl.ID, r.args.createClusterWaitDuration)
 	}
 
 	return cl, nil
@@ -125,61 +121,4 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 
 		time.Sleep(time.Second * 5)
 	}
-}
-
-func supportedDistributions(supportedDistributions map[string][]string) string {
-	var supported []string
-	for k, vv := range supportedDistributions {
-		// assume that the vv is semver and sort
-		vs := make([]*clusterVersion, len(vv))
-		for i, r := range vv {
-			v := &clusterVersion{
-				original: r,
-			}
-			sv, err := semver.NewVersion(r)
-			if err == nil {
-				v.semver = sv
-			}
-
-			vs[i] = v
-		}
-
-		sort.Sort(clusterVersionCollection(vs))
-
-		supported = append(supported, fmt.Sprintf("  %s:", k))
-		for _, v := range vs {
-			supported = append(supported, fmt.Sprintf("    %s", v.original))
-		}
-	}
-	return strings.Join(supported, "\n")
-}
-
-type clusterVersionCollection []*clusterVersion
-
-type clusterVersion struct {
-	semver   *semver.Version
-	original string
-}
-
-func (c *clusterVersion) String() string {
-	return c.original
-}
-
-func (c *clusterVersion) LessThan(other *clusterVersion) bool {
-	if c.semver == nil || other.semver == nil {
-		return c.original < other.original
-	}
-	return c.semver.LessThan(other.semver)
-}
-
-func (c clusterVersionCollection) Len() int {
-	return len(c)
-}
-
-func (c clusterVersionCollection) Less(i, j int) bool {
-	return c[i].LessThan(c[j])
-}
-
-func (c clusterVersionCollection) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
 }
