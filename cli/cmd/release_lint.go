@@ -51,12 +51,13 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to read yaml dir")
 		}
 		lintReleaseData = data
-		isBuildersRelease = r.isFoundationApp
+		// TODO: all specfiles are charts => isBuildersRelease
+		isBuildersRelease = false
 		contentType = "application/tar"
 	} else if r.args.lintReleaseChart != "" {
 		data, err := ioutil.ReadFile(r.args.lintReleaseChart)
 		if err != nil {
-			return errors.Wrap(err, "faile to read chart file")
+			return errors.Wrap(err, "failed to read chart file")
 		}
 		lintReleaseData = data
 		isBuildersRelease = true
@@ -71,7 +72,7 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 
 	lintResult, err := r.api.LintRelease(r.appType, lintReleaseData, isBuildersRelease, contentType)
 	if err != nil {
-		return errors.Wrap(err, "faile to lint release")
+		return errors.Wrap(err, "failed to lint release")
 	}
 
 	if err := print.LintErrors(r.w, lintResult); err != nil {
