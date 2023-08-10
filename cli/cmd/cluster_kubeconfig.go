@@ -98,9 +98,15 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "create temp file")
 	}
-	defer os.Remove(tmpFile.Name())
-	if err := os.WriteFile(tmpFile.Name(), kubeconfig, 0644); err != nil {
-		return errors.Wrap(err, "write temp file")
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
+	if _, err := tmpFile.Write(kubeconfig); err != nil {
+		return errors.Wrap(err, "write kubeconfig file")
+	}
+	if err := tmpFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
 	replicatedLoadingRules := clientcmd.ClientConfigLoadingRules{

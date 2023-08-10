@@ -88,7 +88,7 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlFile, "yaml-file", "", "The YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterKotsConfigValuesFile, "config-values-file", "", "Path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues).")
-	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the kots admin console (defaults to 'password').")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the kots admin console.")
 
 	// for builders plan (chart only)
 	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "path to the helm chart to deploy")
@@ -103,12 +103,12 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 
 // https://github.com/helm/helm/blob/37cc2fa5cefb7f5bb97905b09a2a19b8c05c989f/cmd/helm/flags.go#L45
 func addValueOptionsFlags(f *pflag.FlagSet, v *values.Options) {
-	f.StringSliceVar(&v.ValueFiles, "values", []string{}, "specify values in a YAML file or a URL (can specify multiple)")
-	f.StringArrayVar(&v.Values, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	f.StringArrayVar(&v.StringValues, "set-string", []string{}, "set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	f.StringArrayVar(&v.FileValues, "set-file", []string{}, "set values from respective files specified via the command line (can specify multiple or separate values with commas: key1=path1,key2=path2)")
-	f.StringArrayVar(&v.JSONValues, "set-json", []string{}, "set JSON values on the command line (can specify multiple or separate values with commas: key1=jsonval1,key2=jsonval2)")
-	f.StringArrayVar(&v.LiteralValues, "set-literal", []string{}, "set a literal STRING value on the command line")
+	f.StringSliceVar(&v.ValueFiles, "values", []string{}, "Specify values in a YAML file or a URL (can specify multiple).")
+	f.StringArrayVar(&v.Values, "set", []string{}, "Set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2).")
+	f.StringArrayVar(&v.StringValues, "set-string", []string{}, "Set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2).")
+	f.StringArrayVar(&v.FileValues, "set-file", []string{}, "Set values from respective files specified via the command line (can specify multiple or separate values with commas: key1=path1,key2=path2).")
+	f.StringArrayVar(&v.JSONValues, "set-json", []string{}, "Set JSON values on the command line (can specify multiple or separate values with commas: key1=jsonval1,key2=jsonval2).")
+	f.StringArrayVar(&v.LiteralValues, "set-literal", []string{}, "Set a literal STRING value on the command line.")
 }
 
 func validateClusterPrepareFlags(args runnerArgs) error {
@@ -505,22 +505,22 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 }
 
 func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
-	kubeConfigFile, err := os.CreateTemp("", "kubeconfig")
+	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
 	if err != nil {
 		return errors.Wrap(err, "failed to create kubeConfigFile file")
 	}
 	defer func() {
-		kubeConfigFile.Close()
-		os.Remove(kubeConfigFile.Name())
+		kubeconfigFile.Close()
+		os.Remove(kubeconfigFile.Name())
 	}()
-	if err := kubeConfigFile.Chmod(0644); err != nil {
-		return errors.Wrap(err, "chmod kubeConfigFile file")
+	if _, err := kubeconfigFile.Write(kubeConfig); err != nil {
+		return errors.Wrap(err, "write kubeConfig file")
 	}
-	if _, err := kubeConfigFile.Write(kubeConfig); err != nil {
-		return errors.Wrap(err, "write kubeConfigFile file")
+	if err := kubeconfigFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeConfig file")
 	}
 
-	kubeconfigFlag := flag.String("kubeconfig", kubeConfigFile.Name(), "kubeconfig file")
+	kubeconfigFlag := flag.String("kubeconfig", kubeconfigFile.Name(), "kubeconfig file")
 	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
 	if err != nil {
 		return errors.Wrap(err, "build config from flags")
@@ -556,7 +556,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 
 	ctx := context.Background()
 	for _, chart := range release.Charts {
-		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeConfigFile.Name(), credentialsFile.Name(), true)
+		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), true)
 		if err != nil {
 			return errors.Wrap(err, "dry run release")
 		}
@@ -568,7 +568,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 		}
 		log.FinishSpinner()
 
-		release, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeConfigFile.Name(), credentialsFile.Name(), false)
+		release, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), false)
 		if err != nil {
 			return errors.Wrap(err, "install release")
 		}
@@ -683,8 +683,11 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		kubeconfigFile.Close()
 		os.Remove(kubeconfigFile.Name())
 	}()
-	if err := os.WriteFile(kubeconfigFile.Name(), kubeConfig, 0644); err != nil {
-		return errors.Wrap(err, "failed to write kubeconfig file")
+	if _, err := kubeconfigFile.Write(kubeConfig); err != nil {
+		return errors.Wrap(err, "write kubeconfig file")
+	}
+	if err := kubeconfigFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
 	cmd := exec.Command(kotCLI, "install",
