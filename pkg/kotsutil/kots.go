@@ -18,7 +18,7 @@ type OverlySimpleGVK struct {
 	Kind       string `yaml:"kind"`
 }
 
-func GetKotsApplication(releaseSpecs []releaseTypes.KotsSingleSpec) (*kotsv1beta1.Application, error) {
+func GetKotsApplicationSpec(releaseSpecs []releaseTypes.KotsSingleSpec) (*kotsv1beta1.Application, error) {
 	for _, r := range releaseSpecs {
 		b := []byte(r.Content)
 		o := OverlySimpleGVK{}

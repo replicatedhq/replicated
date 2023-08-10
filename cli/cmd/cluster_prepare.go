@@ -84,7 +84,6 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringSliceVar(&r.args.prepareClusterEntitlements, "entitlements", []string{}, "entitlements to add to the application when deploying")
 
 	// for premium plans (kots etc)
-	// TODO: should we check for entitlement for premium plans?
 	cmd.Flags().StringVar(&r.args.prepareClusterYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlFile, "yaml-file", "", "The YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
@@ -97,8 +96,8 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 
 	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace scope for kots CLI request or helm install request. The default value is 'default'.")
 	cmd.Flags().DurationVar(&r.args.prepareClusterAppReadyTimeout, "app-ready-timeout", time.Minute*5, "Timeout to wait for the application to be ready. Must be in Go duration format (e.g., 10s, 2m). Defaults to 5 minutes.")
-	// TODO add json output
 
+	// TODO add json output
 	return cmd
 }
 
@@ -190,7 +189,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			// TODO should this 5 minutes be confiugrable?
+			// TODO should this 5 minutes be configurable?
 			if _, err := waitForCluster(r.kotsAPI, cl.ID, time.Minute*5); err != nil {
 				fmt.Printf("Failed to wait for cluster %s to be ready: %v\n", cl.ID, err)
 			}
@@ -233,29 +232,6 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		})
 	}
 
-	// create a test customer with the correct entitlement values
-	email := fmt.Sprintf("%s@relicated.com", clusterName)
-	customerOpts := kotsclient.CreateCustomerOpts{
-		Name:              clusterName,
-		ChannelID:         "",
-		AppID:             a.ID,
-		LicenseType:       "test",
-		Email:             email,
-		EntitlementValues: entitlements,
-	}
-	if r.args.prepareClusterChart == "" { // TODO: check if yaml/dirs/charts have sdlk or the release has sdk charts
-		customerOpts.IsKotInstallEnabled = true
-	}
-	customer, err := r.api.CreateCustomer(r.appType, customerOpts)
-	if err != nil {
-		return errors.Wrap(err, "failed to create customer")
-	}
-
-	_, err = fmt.Fprintf(r.w, "Customer %s (%s) created.\n", customer.Name, customer.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to write to stdout")
-	}
-
 	// wait for the wait group
 	wg.Wait()
 
@@ -272,7 +248,32 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to get cluster kubeconfig")
 	}
 
-	if r.args.prepareClusterChart != "" {
+	// create a test customer with the correct entitlement values
+	email := fmt.Sprintf("%s@relicated.com", clusterName)
+	customerOpts := kotsclient.CreateCustomerOpts{
+		Name:                clusterName,
+		ChannelID:           "",
+		AppID:               a.ID,
+		LicenseType:         "test",
+		Email:               email,
+		EntitlementValues:   entitlements,
+		IsKotInstallEnabled: true,
+	}
+
+	if appRelease.IsHelmOnly {
+		customerOpts.IsKotInstallEnabled = false
+	}
+	customer, err := r.api.CreateCustomer(r.appType, customerOpts)
+	if err != nil {
+		return errors.Wrap(err, "failed to create customer")
+	}
+
+	_, err = fmt.Fprintf(r.w, "Customer %s (%s) created.\n", customer.Name, customer.ID)
+	if err != nil {
+		return errors.Wrap(err, "failed to write to stdout")
+	}
+
+	if appRelease.IsHelmOnly {
 		if err := installBuilderApp(r, log, kubeConfig, customer, appRelease); err != nil {
 			return errors.Wrap(err, "failed to install builder app")
 		}
@@ -460,7 +461,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	}
 
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
-	if err != nil && !errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
+	if !errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
 		return errors.Wrap(err, "failed to collect preflight data")
 	}
 
@@ -469,7 +470,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 		return errors.Errorf("unexpected preflight collector result type: %T", collectResults)
 	}
 
-	if err != nil && errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
+	if errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
 		log.Info("skipping analyze due to RBAC errors")
 		for _, collector := range clusterCollectResult.Collectors {
 			for _, e := range collector.GetRBACErrors() {
@@ -651,7 +652,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		return errors.Wrap(err, "failed to unmarshal release yamls")
 	}
 
-	kotsApp, err := kotsutil.GetKotsApplication(releaseYamls)
+	kotsApp, err := kotsutil.GetKotsApplicationSpec(releaseYamls)
 	if err != nil {
 		return errors.Wrap(err, "failed to get kots application")
 	}
@@ -717,6 +718,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		cmd.Args = append(cmd.Args, "--config-values", r.args.prepareClusterKotsConfigValuesFile)
 	}
 
+	log.Verbose()
 	log.Debug(cmd.String())
 	cmd.Stdout = r.w
 	cmd.Stderr = r.w

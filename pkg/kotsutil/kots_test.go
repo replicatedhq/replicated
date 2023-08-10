@@ -9,7 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestGetKotsApplication(t *testing.T) {
+func TestGetKotsApplicationSpec(t *testing.T) {
 	tests := []struct {
 		name         string
 		releaseSpecs []releaseTypes.KotsSingleSpec
@@ -82,13 +82,13 @@ func TestGetKotsApplication(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetKotsApplication(tt.releaseSpecs)
+			got, err := GetKotsApplicationSpec(tt.releaseSpecs)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetKotsApplication() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetKotsApplicationSpec() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetKotsApplication() = %v, want %v", got, tt.want)
+				t.Errorf("GetKotsApplicationSpec() = %v, want %v", got, tt.want)
 			}
 		})
 	}
