@@ -630,23 +630,6 @@ func installHelmChart(r *runners, appSlug string, chartName string, releaseSeque
 }
 
 func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
-	// TODO: this is a hack to tie release to the test channel
-	testChanneID := ""
-	for _, channel := range customer.Channels {
-		if channel.Slug == "test-channel" {
-			testChanneID = channel.ID
-			break
-		}
-	}
-
-	if testChanneID != "" {
-		err := r.api.PromoteRelease(r.appID, r.appType, release.Sequence, "", "", false, testChanneID)
-		if err != nil {
-			return errors.Wrap(err, "failed to promote release")
-		}
-	}
-	// TODO: this is a hack to tie release to the test channel - end
-
 	var releaseYamls []releaseTypes.KotsSingleSpec
 	if err := json.Unmarshal([]byte(release.Config), &releaseYamls); err != nil {
 		return errors.Wrap(err, "failed to unmarshal release yamls")
@@ -708,6 +691,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		"--namespace", r.args.prepareClusterNamespace,
 		"--wait-duration", r.args.prepareClusterAppReadyTimeout.String(),
 		"--shared-password", r.args.prepareClusterKotsSharedPassword,
+		"--app-version-label", fmt.Sprintf("release__%d", release.Sequence),
 		"--no-port-forward",
 	)
 	if r.args.prepareClusterKotsConfigValuesFile != "" {
