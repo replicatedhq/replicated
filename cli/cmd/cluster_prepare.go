@@ -206,7 +206,9 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	if _, err := kubeconfigFile.Write([]byte(kubeconfig)); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
-	kubeconfigFile.Chmod(0644)
+	if err := kubeconfigFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeconfig file")
+	}
 
 	kubeconfigFlag := flag.String("kubeconfig", kubeconfigFile.Name(), "kubeconfig file")
 	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
