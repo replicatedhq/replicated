@@ -8,17 +8,23 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
+type EntitlementValue struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 type CreateCustomerRequest struct {
-	Name                string `json:"name"`
-	ChannelID           string `json:"channel_id"`
-	AppID               string `json:"app_id"`
-	Type                string `json:"type"`
-	ExpiresAt           string `json:"expires_at"`
-	IsAirgapEnabled     bool   `json:"is_airgap_enabled"`
-	IsGitopsSupported   bool   `json:"is_gitops_supported"`
-	IsSnapshotSupported bool   `json:"is_snapshot_supported"`
-	IsKotInstallEnabled bool   `json:"is_kots_install_enabled"`
-	Email               string `json:"email,omitempty"`
+	Name                string             `json:"name"`
+	ChannelID           string             `json:"channel_id"`
+	AppID               string             `json:"app_id"`
+	Type                string             `json:"type"`
+	ExpiresAt           string             `json:"expires_at"`
+	IsAirgapEnabled     bool               `json:"is_airgap_enabled"`
+	IsGitopsSupported   bool               `json:"is_gitops_supported"`
+	IsSnapshotSupported bool               `json:"is_snapshot_supported"`
+	IsKotInstallEnabled bool               `json:"is_kots_install_enabled"`
+	Email               string             `json:"email,omitempty"`
+	EntitlementValues   []EntitlementValue `json:"entitlementValues"`
 }
 
 type CreateCustomerResponse struct {
@@ -36,6 +42,7 @@ type CreateCustomerOpts struct {
 	IsKotInstallEnabled bool
 	LicenseType         string
 	Email               string
+	EntitlementValues   []EntitlementValue
 }
 
 func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Customer, error) {
@@ -49,6 +56,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsSnapshotSupported: opts.IsSnapshotSupported,
 		IsKotInstallEnabled: opts.IsKotInstallEnabled,
 		Email:               opts.Email,
+		EntitlementValues:   opts.EntitlementValues,
 	}
 
 	if opts.ExpiresAt > 0 {

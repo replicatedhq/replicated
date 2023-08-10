@@ -8,14 +8,19 @@ import (
 	"fmt"
 	"io"
 	golog "log"
+	"net/http"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/pkg/errors"
+	releaseTypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/kotsutil"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
@@ -25,9 +30,12 @@ import (
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
 	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/cli/values"
+	"helm.sh/helm/v3/pkg/getter"
 	"helm.sh/helm/v3/pkg/registry"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/client-go/rest"
@@ -55,6 +63,11 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 		RunE:         r.prepareCluster,
 		SilenceUsage: true,
 	}
+
+	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		return validateClusterPrepareFlags(r.args)
+	}
+
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.prepareClusterName, "name", "", "cluster name")
@@ -68,30 +81,78 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	// todo maybe remove
 	cmd.Flags().StringVar(&r.args.prepareClusterID, "cluster-id", "", "cluster id")
 
-	cmd.Flags().StringArrayVar(&r.args.prepareClusterEntitlements, "entitlement", []string{}, "entitlements to add to the application when deploying")
+	cmd.Flags().StringSliceVar(&r.args.prepareClusterEntitlements, "entitlements", []string{}, "entitlements to add to the application when deploying")
 
 	// for premium plans (kots etc)
+	// TODO: should we check for entitlement for premium plans?
 	cmd.Flags().StringVar(&r.args.prepareClusterYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlFile, "yaml-file", "", "The YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsConfigValuesFile, "config-values-file", "", "path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues)")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "shared password for the kots admin console. defaults to 'password'")
 
 	// for builders plan (chart only)
 	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "path to the helm chart to deploy")
-	cmd.Flags().StringArrayVar(&r.args.prepareClusterValuesPath, "values", []string{}, "path to the values.yaml file to use when deploying the chart")
-	cmd.Flags().StringArrayVar(&r.args.prepareClusterValueItems, "set", []string{}, "set a helm value (e.g. --set foo=bar)")
+	addValueOptionsFlags(cmd.Flags(), &r.args.prepareClusterValueOpts)
 
+	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace scope for kots CLI request or helm install request. The default value is 'default'.")
+	cmd.Flags().DurationVar(&r.args.prepareClusterAppReadyTimeout, "app-ready-timeout", time.Minute*5, "Timeout to wait for the application to be ready. Must be in Go duration format (e.g., 10s, 2m). Defaults to 5 minutes.")
 	// TODO add json output
 
 	return cmd
 }
 
+// https://github.com/helm/helm/blob/37cc2fa5cefb7f5bb97905b09a2a19b8c05c989f/cmd/helm/flags.go#L45
+func addValueOptionsFlags(f *pflag.FlagSet, v *values.Options) {
+	f.StringSliceVar(&v.ValueFiles, "values", []string{}, "specify values in a YAML file or a URL (can specify multiple)")
+	f.StringArrayVar(&v.Values, "set", []string{}, "set values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	f.StringArrayVar(&v.StringValues, "set-string", []string{}, "set STRING values on the command line (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+	f.StringArrayVar(&v.FileValues, "set-file", []string{}, "set values from respective files specified via the command line (can specify multiple or separate values with commas: key1=path1,key2=path2)")
+	f.StringArrayVar(&v.JSONValues, "set-json", []string{}, "set JSON values on the command line (can specify multiple or separate values with commas: key1=jsonval1,key2=jsonval2)")
+	f.StringArrayVar(&v.LiteralValues, "set-literal", []string{}, "set a literal STRING value on the command line")
+}
+
+func validateClusterPrepareFlags(args runnerArgs) error {
+	if args.prepareClusterChart == "" && args.prepareClusterYaml == "" && args.prepareClusterYamlFile == "" && args.prepareClusterYamlDir == "" {
+		return errors.New("The --chart, --yaml, --yaml-file, or --yaml-dir flag is required")
+	}
+
+	if args.prepareClusterChart != "" && (args.prepareClusterYaml != "" || args.prepareClusterYamlFile != "" || args.prepareClusterYamlDir != "") {
+		return errors.New("The --chart flag cannot be used with the --yaml, --yaml-file, or --yaml-dir flag")
+	}
+
+	if args.prepareClusterYaml != "" && (args.prepareClusterYamlFile != "" || args.prepareClusterYamlDir != "") {
+		return errors.New("The --yaml flag cannot be used with the --yaml-file or --yaml-dir flag")
+	}
+
+	if args.prepareClusterYamlFile != "" && args.prepareClusterYamlDir != "" {
+		return errors.New("The --yaml-file flag cannot be used with the --yaml-dir flag")
+	}
+
+	if args.prepareClusterChart != "" {
+		if args.prepareClusterKotsSharedPassword != "" {
+			return errors.New("The --shared-password flag cannot be used when deploying a Helm chart")
+		}
+
+		if args.prepareClusterKotsConfigValuesFile != "" {
+			return errors.New("The --config-values-file flag cannot be used when deploying a Helm chart")
+		}
+	} else {
+		if args.prepareClusterKotsSharedPassword == "" {
+			return errors.New("The --shared-password flag is required when deploying a Kots app")
+		}
+
+		if len(args.prepareClusterValueOpts.FileValues) > 0 || len(args.prepareClusterValueOpts.JSONValues) > 0 || len(args.prepareClusterValueOpts.LiteralValues) > 0 ||
+			len(args.prepareClusterValueOpts.StringValues) > 0 || len(args.prepareClusterValueOpts.Values) > 0 || len(args.prepareClusterValueOpts.ValueFiles) > 0 {
+			return errors.New("The --set, --set-file, --set-json, --set-literal, --set-string, and --values flags cannot be used when deploying a Kots app")
+		}
+	}
+
+	return nil
+}
+
 func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	log := logger.NewLogger(r.w)
-
-	// this only supports charts and builders teams for now (no kots&kurl)
-	if r.args.prepareClusterChart == "" {
-		return errors.New(`The "cluster prepare" command only supports builders plan (direct helm install) at this time.`)
-	}
 
 	release, err := prepareRelease(r, log)
 	if err != nil {
@@ -160,168 +221,68 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get app")
 	}
 
+	var entitlements []kotsclient.EntitlementValue
+	for _, set := range r.args.prepareClusterEntitlements {
+		setParts := strings.SplitN(set, "=", 2)
+		if len(setParts) != 2 {
+			return errors.Errorf("invalid entitlement %q", set)
+		}
+		entitlements = append(entitlements, kotsclient.EntitlementValue{
+			Name:  setParts[0],
+			Value: setParts[1],
+		})
+	}
+
 	// create a test customer with the correct entitlement values
 	email := fmt.Sprintf("%s@relicated.com", clusterName)
 	customerOpts := kotsclient.CreateCustomerOpts{
-		Name:        clusterName,
-		ChannelID:   "",
-		AppID:       a.ID,
-		LicenseType: "test",
-		Email:       email,
+		Name:              clusterName,
+		ChannelID:         "",
+		AppID:             a.ID,
+		LicenseType:       "test",
+		Email:             email,
+		EntitlementValues: entitlements,
+	}
+	if r.args.prepareClusterChart == "" { // TODO: check if yaml/dirs/charts have sdlk or the release has sdk charts
+		customerOpts.IsKotInstallEnabled = true
 	}
 	customer, err := r.api.CreateCustomer(r.appType, customerOpts)
 	if err != nil {
-		return errors.Wrap(err, "create customer")
+		return errors.Wrap(err, "failed to create customer")
 	}
 
 	_, err = fmt.Fprintf(r.w, "Customer %s (%s) created.\n", customer.Name, customer.ID)
 	if err != nil {
-		return errors.Wrap(err, "write to stdout")
+		return errors.Wrap(err, "failed to write to stdout")
 	}
 
 	// wait for the wait group
 	wg.Wait()
 
 	log.ActionWithSpinner("Waiting for release to be ready")
-	isReleaseReady, err := isReleaseReadyToInstall(r, log, *release)
-	if err != nil || !isReleaseReady {
+	appRelease, err := getReadyAppRelease(r, log, *release)
+	if err != nil || appRelease == nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "release not ready")
 	}
 	log.FinishSpinner()
 
-	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
+	kubeConfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if err != nil {
-		return errors.Wrap(err, "get cluster kubeconfig")
+		return errors.Wrap(err, "failed to get cluster kubeconfig")
 	}
 
-	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
-	if err != nil {
-		return errors.Wrap(err, "create kubeconfig file")
-	}
-	defer func() {
-		kubeconfigFile.Close()
-		os.Remove(kubeconfigFile.Name())
-	}()
-	if _, err := kubeconfigFile.Write([]byte(kubeconfig)); err != nil {
-		return errors.Wrap(err, "write kubeconfig file")
-	}
-	if err := kubeconfigFile.Chmod(0644); err != nil {
-		return errors.Wrap(err, "chmod kubeconfig file")
-	}
-
-	kubeconfigFlag := flag.String("kubeconfig", kubeconfigFile.Name(), "kubeconfig file")
-	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
-	if err != nil {
-		return errors.Wrap(err, "build config from flags")
-	}
-
-	authConfig := dockertypes.AuthConfig{
-		Username: email,
-		Password: customer.InstallationID,
-		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", email, customer.InstallationID))),
-	}
-	encodedAuthConfigJSON, err := json.Marshal(authConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal auth config")
-	}
-
-	registryHostname := `registry.replicated.com`
-	if os.Getenv("REPLICATED_REGISTRY_ORIGIN") != "" {
-		registryHostname = os.Getenv("REPLICATED_REGISTRY_ORIGIN")
-	}
-
-	configJSON := fmt.Sprintf(`{"auths":{"%s":%s}}`, registryHostname, encodedAuthConfigJSON)
-	credentialsFile, err := os.CreateTemp("", "credentials")
-	if err != nil {
-		return errors.Wrap(err, "failed to create credentials file")
-	}
-	defer func() {
-		credentialsFile.Close()
-		os.Remove(credentialsFile.Name())
-	}()
-	if _, err := credentialsFile.Write([]byte(configJSON)); err != nil {
-		return errors.Wrap(err, "failed to write credentials file")
-	}
-
-	//  TODO: implement valuesPath
-	// build the values map
-	vals, err := buildValuesMap(r.args.prepareClusterValueItems)
-	if err != nil {
-		return errors.Wrap(err, "build values map")
-	}
-
-	for _, chart := range release.Charts {
-		dryRunRelease, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, true)
-		if err != nil {
-			return errors.Wrapf(err, "dry run release %s", chart.Name)
+	if r.args.prepareClusterChart != "" {
+		if err := installBuilderApp(r, log, kubeConfig, customer, appRelease); err != nil {
+			return errors.Wrap(err, "failed to install builder app")
 		}
-
-		ctx := context.Background()
-
-		log.ActionWithSpinner("Running preflights")
-		if err = runPreflights(ctx, r, log, restKubeConfig, dryRunRelease); err != nil {
-			log.FinishSpinnerWithError()
-			return errors.Wrapf(err, "run preflights for release %s", chart.Name)
+	} else {
+		if err := installKotsApp(r, log, kubeConfig, customer, appRelease); err != nil {
+			return errors.Wrap(err, "failed to install kots")
 		}
-		log.FinishSpinner()
-
-		release, err := installChartRelease(a.Slug, release.Sequence, chart.Name, vals, kubeconfigFile, credentialsFile, registryHostname, false)
-		if err != nil {
-			return errors.Wrapf(err, "install release %s", chart.Name)
-		}
-
-		fmt.Fprintf(r.w, "%s\n", release.Info.Notes)
 	}
 
 	return nil
-}
-
-func installChartRelease(appSlug string, releaseSequence int64, chartName string, values map[string]interface{}, kubeconfigFile *os.File, credentialsFile *os.File, registryHostname string, dryRun bool) (*release.Release, error) {
-	settings := cli.New()
-	settings.KubeConfig = kubeconfigFile.Name()
-
-	registryClient, err := registry.NewClient(
-		registry.ClientOptDebug(settings.Debug),
-		registry.ClientOptWriter(os.Stdout),
-		registry.ClientOptCredentialsFile(credentialsFile.Name()),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create registry client")
-	}
-
-	actionConfig := new(action.Configuration)
-	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", golog.Printf); err != nil {
-		return nil, errors.Wrap(err, "init action config")
-	}
-	actionConfig.RegistryClient = registryClient
-
-	client := action.NewInstall(actionConfig)
-	client.ReleaseName = fmt.Sprintf("%s-%d", appSlug, releaseSequence)
-	client.Namespace = "default"
-	client.Wait = true
-	client.Timeout = 5 * time.Minute
-	if dryRun {
-		client.DryRun = true
-		client.ClientOnly = true
-	}
-
-	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName), settings)
-	if err != nil {
-		return nil, errors.Wrap(err, "locate chart")
-	}
-
-	chartReq, err := loader.Load(cp)
-	if err != nil {
-		return nil, errors.Wrap(err, "load chart")
-	}
-
-	helmRelease, err := client.Run(chartReq, values)
-	if err != nil {
-		return nil, errors.Wrap(err, "run helm install")
-	}
-
-	return helmRelease, nil
 }
 
 func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) {
@@ -378,29 +339,31 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	return release, nil
 }
 
-func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.ReleaseInfo) (bool, error) {
-	if len(release.Charts) == 0 {
-		return false, errors.New("no charts found in release")
+func getReadyAppRelease(r *runners, log *logger.Logger, release types.ReleaseInfo) (*types.AppRelease, error) {
+	timeout := time.Duration(10 * time.Second)
+	if len(release.Charts) > 0 {
+		timeout = time.Duration(10*len(release.Charts)) * time.Second
 	}
 
-	timeout := time.Duration(10*len(release.Charts)) * time.Second
 	timer := time.NewTimer(timeout)
 	defer timer.Stop()
 	for {
 		select {
 		case <-timer.C:
-			return false, errors.Errorf("timed out waiting for release to be ready after %s", timeout)
+			return nil, errors.Errorf("timed out waiting for release to be ready after %s", timeout)
 		default:
 			appRelease, err := r.api.GetRelease(r.appID, r.appType, release.Sequence)
 			if err != nil {
-				return false, errors.Wrap(err, "failed to get release")
+				return nil, errors.Wrap(err, "failed to get release")
 			}
 
 			ready, err := areReleaseChartsPushed(appRelease.Charts)
 			if err != nil {
-				return false, errors.Wrap(err, "failed to check release charts")
-			} else if ready {
-				return true, nil
+				return nil, errors.Wrap(err, "failed to check release charts")
+			}
+
+			if ready {
+				return appRelease, nil
 			}
 
 			fmt.Fprintf(r.w, "Release %d is not ready yet\n", release.Sequence)
@@ -410,10 +373,6 @@ func isReleaseReadyToInstall(r *runners, log *logger.Logger, release types.Relea
 }
 
 func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
-	if len(charts) == 0 {
-		return false, errors.New("no charts found in release")
-	}
-
 	pushedChartsCount := 0
 	for _, chart := range charts {
 		switch chart.Status {
@@ -429,43 +388,6 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	}
 
 	return pushedChartsCount == len(charts), nil
-}
-
-// TODO: use helm value options instead of this
-// https://github.com/helm/helm/blob/main/pkg/cli/values/options.go
-func buildValuesMap(valueItems []string) (map[string]interface{}, error) {
-	vals := map[string]interface{}{}
-	for _, set := range valueItems {
-		setParts := strings.SplitN(set, "=", 2)
-		if len(setParts) != 2 {
-			return nil, errors.Errorf("invalid set %q", set)
-		}
-
-		key := setParts[0]
-		val := setParts[1]
-		if !strings.Contains(key, ".") {
-			vals[key] = setParts[1]
-			continue
-		}
-
-		// convert the key.part set command to a map[string]interface{}
-		parts := strings.Split(key, ".")
-		m := vals
-		for i, part := range parts {
-			if i == len(parts)-1 {
-				m[part] = val
-				continue
-			}
-
-			if _, ok := m[part]; !ok {
-				m[part] = map[string]interface{}{}
-			}
-
-			m = m[part].(map[string]interface{})
-		}
-	}
-
-	return vals, nil
 }
 
 func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConfig *rest.Config, release *release.Release) error {
@@ -538,7 +460,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	}
 
 	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
-	if err != nil && !isCollectorPermissionsError(err) {
+	if err != nil && !errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
 		return errors.Wrap(err, "failed to collect preflight data")
 	}
 
@@ -547,7 +469,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 		return errors.Errorf("unexpected preflight collector result type: %T", collectResults)
 	}
 
-	if isCollectorPermissionsError(err) {
+	if err != nil && errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
 		log.Info("skipping analyze due to RBAC errors")
 		for _, collector := range clusterCollectResult.Collectors {
 			for _, e := range collector.GetRBACErrors() {
@@ -558,7 +480,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	}
 
 	analyzeResults := collectResults.Analyze()
-	analyzeOutput := buildStructuredPreflightResults(preflightSpec.Name, analyzeResults)
+	analyzeOutput := troubleshootpreflight.ShowTextResultsStructured(preflightSpec.Name, analyzeResults)
 	analyzeOutputJSON, err := json.MarshalIndent(analyzeOutput, "", "  ")
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal analyze output")
@@ -578,54 +500,272 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	return nil
 }
 
-func isCollectorPermissionsError(err error) bool {
-	// TODO: make an error type in troubleshoot for this instead of hardcoding the message
-	if err == nil {
-		return false
+func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
+	kubeConfigFile, err := os.CreateTemp("", "kubeconfig")
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubeConfigFile file")
 	}
-	return strings.Contains(err.Error(), "insufficient permissions to run all collectors")
-}
-
-type textResultOutput struct {
-	Title   string `json:"title" yaml:"title"`
-	Message string `json:"message" yaml:"message"`
-	URI     string `json:"uri,omitempty" yaml:"uri,omitempty"`
-	Strict  bool   `json:"strict,omitempty" yaml:"strict,omitempty"`
-}
-
-type textOutput struct {
-	Pass []textResultOutput `json:"pass,omitempty" yaml:"pass,omitempty"`
-	Warn []textResultOutput `json:"warn,omitempty" yaml:"warn,omitempty"`
-	Fail []textResultOutput `json:"fail,omitempty" yaml:"fail,omitempty"`
-}
-
-// TODO: move to troubleshoot pkg
-func buildStructuredPreflightResults(preflightName string, analyzeResults []*troubleshootanalyze.AnalyzeResult) *textOutput {
-	output := textOutput{
-		Pass: []textResultOutput{},
-		Warn: []textResultOutput{},
-		Fail: []textResultOutput{},
+	defer func() {
+		kubeConfigFile.Close()
+		os.Remove(kubeConfigFile.Name())
+	}()
+	if err := kubeConfigFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeConfigFile file")
+	}
+	if _, err := kubeConfigFile.Write(kubeConfig); err != nil {
+		return errors.Wrap(err, "write kubeConfigFile file")
 	}
 
-	for _, analyzeResult := range analyzeResults {
-		resultOutput := textResultOutput{
-			Title:   analyzeResult.Title,
-			Message: analyzeResult.Message,
-			URI:     analyzeResult.URI,
+	kubeconfigFlag := flag.String("kubeconfig", kubeConfigFile.Name(), "kubeconfig file")
+	restKubeConfig, err := clientcmd.BuildConfigFromFlags("", *kubeconfigFlag)
+	if err != nil {
+		return errors.Wrap(err, "build config from flags")
+	}
+
+	authConfig := dockertypes.AuthConfig{
+		Username: customer.Email,
+		Password: customer.InstallationID,
+		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", customer.Email, customer.InstallationID))),
+	}
+	encodedAuthConfigJSON, err := json.Marshal(authConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshal auth config")
+	}
+
+	registryHostname := `registry.replicated.com`
+	if os.Getenv("REPLICATED_REGISTRY_ORIGIN") != "" {
+		registryHostname = os.Getenv("REPLICATED_REGISTRY_ORIGIN")
+	}
+
+	configJSON := fmt.Sprintf(`{"auths":{"%s":%s}}`, registryHostname, encodedAuthConfigJSON)
+	credentialsFile, err := os.CreateTemp("", "credentials")
+	if err != nil {
+		return errors.Wrap(err, "failed to create credentials file")
+	}
+	defer func() {
+		credentialsFile.Close()
+		os.Remove(credentialsFile.Name())
+	}()
+	if _, err := credentialsFile.Write([]byte(configJSON)); err != nil {
+		return errors.Wrap(err, "failed to write credentials file")
+	}
+
+	ctx := context.Background()
+	for _, chart := range release.Charts {
+		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeConfigFile.Name(), credentialsFile.Name(), true)
+		if err != nil {
+			return errors.Wrap(err, "dry run release")
 		}
 
-		if analyzeResult.Strict {
-			resultOutput.Strict = analyzeResult.Strict
+		log.ActionWithSpinner("Running preflights")
+		if err = runPreflights(ctx, r, log, restKubeConfig, dryRunRelease); err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "run preflights")
+		}
+		log.FinishSpinner()
+
+		release, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeConfigFile.Name(), credentialsFile.Name(), false)
+		if err != nil {
+			return errors.Wrap(err, "install release")
 		}
 
-		if analyzeResult.IsPass {
-			output.Pass = append(output.Pass, resultOutput)
-		} else if analyzeResult.IsWarn {
-			output.Warn = append(output.Warn, resultOutput)
-		} else if analyzeResult.IsFail {
-			output.Fail = append(output.Fail, resultOutput)
+		fmt.Fprintf(r.w, "%s\n", release.Info.Notes)
+	}
+
+	return nil
+}
+
+func installHelmChart(r *runners, appSlug string, chartName string, releaseSequence int64, registryHostname string, kubeconfigFile string, credentialsFile string, dryRun bool) (*release.Release, error) {
+	settings := cli.New()
+	settings.KubeConfig = kubeconfigFile
+
+	values, err := r.args.prepareClusterValueOpts.MergeValues(getter.All(settings))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to merge values")
+	}
+
+	registryClient, err := registry.NewClient(
+		registry.ClientOptDebug(settings.Debug),
+		registry.ClientOptWriter(r.w),
+		registry.ClientOptCredentialsFile(credentialsFile),
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create registry client")
+	}
+
+	actionConfig := new(action.Configuration)
+	if err := actionConfig.Init(settings.RESTClientGetter(), settings.Namespace(), "secret", golog.Printf); err != nil {
+		return nil, errors.Wrap(err, "init action config")
+	}
+	actionConfig.RegistryClient = registryClient
+
+	client := action.NewInstall(actionConfig)
+	client.ReleaseName = fmt.Sprintf("%s-%d", appSlug, releaseSequence)
+	client.Namespace = r.args.prepareClusterNamespace
+	client.Timeout = r.args.prepareClusterAppReadyTimeout
+	client.Wait = true
+
+	if dryRun {
+		client.DryRun = true
+		client.ClientOnly = true
+	}
+
+	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName), settings)
+	if err != nil {
+		return nil, errors.Wrap(err, "locate chart")
+	}
+
+	chartReq, err := loader.Load(cp)
+	if err != nil {
+		return nil, errors.Wrap(err, "load chart")
+	}
+
+	helmRelease, err := client.Run(chartReq, values)
+	if err != nil {
+		return nil, errors.Wrap(err, "run helm install")
+	}
+
+	return helmRelease, nil
+}
+
+func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
+	// TODO: this is a hack to tie release to the test channel
+	testChanneID := ""
+	for _, channel := range customer.Channels {
+		if channel.Slug == "test-channel" {
+			testChanneID = channel.ID
+			break
 		}
 	}
 
-	return &output
+	if testChanneID != "" {
+		err := r.api.PromoteRelease(r.appID, r.appType, release.Sequence, "", "", false, testChanneID)
+		if err != nil {
+			return errors.Wrap(err, "failed to promote release")
+		}
+	}
+	// TODO: this is a hack to tie release to the test channel - end
+
+	var releaseYamls []releaseTypes.KotsSingleSpec
+	if err := json.Unmarshal([]byte(release.Config), &releaseYamls); err != nil {
+		return errors.Wrap(err, "failed to unmarshal release yamls")
+	}
+
+	kotsApp, err := kotsutil.GetKotsApplication(releaseYamls)
+	if err != nil {
+		return errors.Wrap(err, "failed to get kots application")
+	}
+
+	kotsCliVersion := ""
+	if kotsApp != nil && kotsApp.Spec.TargetKotsVersion != "" {
+		kotsCliVersion = kotsApp.Spec.TargetKotsVersion
+	}
+
+	kotsDir, err := os.MkdirTemp("", "kots")
+	if err != nil {
+		return errors.Wrap(err, "failed to create temp dir")
+	}
+	defer os.RemoveAll(kotsDir)
+	kotCLI, err := installKotsCLI(r, kotsCliVersion, kotsDir)
+	if err != nil {
+		return errors.Wrap(err, "failed to install kots cli")
+	}
+
+	license, err := r.api.DownloadLicense(r.appType, r.appID, customer.ID)
+	if err != nil {
+		return errors.Wrapf(err, "failed to download license for customer %q", customer.Name)
+	}
+
+	licenseFile, err := os.CreateTemp(kotsDir, "license")
+	if err != nil {
+		return errors.Wrap(err, "failed to create license file")
+	}
+	defer func() {
+		licenseFile.Close()
+		os.Remove(licenseFile.Name())
+	}()
+	if _, err := licenseFile.Write(license); err != nil {
+		return errors.Wrap(err, "failed to write license file")
+	}
+
+	kubeconfigFile, err := os.CreateTemp(kotsDir, "kubeconfig")
+	if err != nil {
+		return errors.Wrap(err, "failed to create kubeconfig file")
+	}
+	defer func() {
+		kubeconfigFile.Close()
+		os.Remove(kubeconfigFile.Name())
+	}()
+	if err := os.WriteFile(kubeconfigFile.Name(), kubeConfig, 0644); err != nil {
+		return errors.Wrap(err, "failed to write kubeconfig file")
+	}
+
+	cmd := exec.Command(kotCLI, "install",
+		fmt.Sprintf("%s/%s", r.appSlug, "test-channel"),
+		"--kubeconfig", kubeconfigFile.Name(),
+		"--license-file", licenseFile.Name(),
+		"--namespace", r.args.prepareClusterNamespace,
+		"--wait-duration", r.args.prepareClusterAppReadyTimeout.String(),
+		"--shared-password", r.args.prepareClusterKotsSharedPassword,
+		"--no-port-forward",
+	)
+	if r.args.prepareClusterKotsConfigValuesFile != "" {
+		if _, err := os.Stat(r.args.prepareClusterKotsConfigValuesFile); os.IsNotExist(err) {
+			return errors.Wrapf(err, "config values file %q does not exist", r.args.prepareClusterKotsConfigValuesFile)
+		}
+
+		cmd.Args = append(cmd.Args, "--config-values", r.args.prepareClusterKotsConfigValuesFile)
+	}
+
+	log.Debug(cmd.String())
+	cmd.Stdout = r.w
+	cmd.Stderr = r.w
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, "failed to install kots and deploy app")
+	}
+
+	return nil
+}
+
+func installKotsCLI(r *runners, version string, kotsDir string) (string, error) {
+	kotsInstallURL := "https://kots.io/install"
+	if version != "" {
+		kotsInstallURL = fmt.Sprintf("%s/%s", kotsInstallURL, version)
+	}
+
+	resp, err := http.Get(kotsInstallURL)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to download kots")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", errors.Errorf("failed to download kots: %s", resp.Status)
+	}
+
+	installScript, err := os.CreateTemp(kotsDir, "kots")
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create temp file")
+	}
+	defer func() {
+		installScript.Close()
+		os.Remove(installScript.Name())
+	}()
+	if _, err := io.Copy(installScript, resp.Body); err != nil {
+		return "", errors.Wrap(err, "failed to write kots binary")
+	}
+	if err := installScript.Chmod(0755); err != nil {
+		return "", errors.Wrap(err, "chmod kots install script")
+	}
+
+	cmd := exec.Command(installScript.Name())
+	cmd.Env = append(cmd.Env, fmt.Sprintf("REPL_INSTALL_PATH=%s", kotsDir))
+	cmd.Stdout = r.w
+	cmd.Stderr = r.w
+	if err := cmd.Run(); err != nil {
+		return "", errors.Wrap(err, "failed to run kots cli install")
+	}
+
+	kotsInstallPath := filepath.Join(kotsDir, "kubectl-kots")
+	return kotsInstallPath, nil
 }
