@@ -9,7 +9,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListChannels(appID string, appType string, channelName string) ([]types.Channel, error) {
+func (c *Client) ListChannels(appID string, appType string, channelName string) ([]*types.Channel, error) {
 
 	if appType == "platform" {
 		platformChannels, err := c.PlatformClient.ListChannels(appID)
@@ -17,9 +17,9 @@ func (c *Client) ListChannels(appID string, appType string, channelName string) 
 			return nil, err
 		}
 
-		channels := make([]types.Channel, 0, 0)
+		channels := make([]*types.Channel, 0, 0)
 		for _, platformChannel := range platformChannels {
-			channel := types.Channel{
+			channel := &types.Channel{
 				ID:              platformChannel.Id,
 				Name:            platformChannel.Name,
 				Description:     platformChannel.Description,
@@ -68,7 +68,7 @@ func (c *Client) ArchiveChannel(appID string, appType string, channelID string) 
 
 }
 
-func (c *Client) CreateChannel(appID string, appType string, name string, description string) ([]types.Channel, error) {
+func (c *Client) CreateChannel(appID string, appType string, name string, description string) ([]*types.Channel, error) {
 
 	if appType == "platform" {
 		if err := c.PlatformClient.CreateChannel(appID, name, description); err != nil {
@@ -133,19 +133,19 @@ func (c *Client) GetChannelByName(appID string, appType string, name string) (*t
 	return c.GetOrCreateChannelByName(opts)
 }
 
-func (c *Client) findChannel(channels []types.Channel, name string) (*types.Channel, int, error) {
+func (c *Client) findChannel(channels []*types.Channel, nameOrID string) (*types.Channel, int, error) {
 	matchingChannels := make([]*types.Channel, 0)
 	for _, channel := range channels {
-		if channel.ID == name || channel.Name == name {
-			matchingChannels = append(matchingChannels, channel.Copy())
+		if channel.ID == nameOrID || channel.Name == nameOrID {
+			matchingChannels = append(matchingChannels, channel)
 		}
 	}
 	if len(matchingChannels) == 0 {
-		return nil, 0, errors.Errorf("No channel %q ", name)
+		return nil, 0, errors.Errorf("No channel %q ", nameOrID)
 	}
 
 	if len(matchingChannels) > 1 {
-		return nil, len(matchingChannels), fmt.Errorf("channel %q is ambiguous, please use channel ID", name)
+		return nil, len(matchingChannels), fmt.Errorf("channel %q is ambiguous, please use channel ID", nameOrID)
 	}
 	return matchingChannels[0], 1, nil
 }
