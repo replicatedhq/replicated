@@ -87,9 +87,9 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	// for premium plans (kots etc)
 	cmd.Flags().StringVar(&r.args.prepareClusterYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterYamlFile, "yaml-file", "", "The YAML config for this release. Cannot be used with the --yaml flag.")
-	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
+	cmd.Flags().StringVar(&r.args.prepareClusterYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a KOTS release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.prepareClusterKotsConfigValuesFile, "config-values-file", "", "Path to a manifest containing config values (must be apiVersion: kots.io/v1beta1, kind: ConfigValues).")
-	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the kots admin console.")
+	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the KOTS admin console.")
 
 	// for builders plan (chart only)
 	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "Path to the helm chart to deploy")
@@ -139,12 +139,12 @@ func validateClusterPrepareFlags(args runnerArgs) error {
 		}
 	} else {
 		if args.prepareClusterKotsSharedPassword == "" {
-			return errors.New("The --shared-password flag is required when deploying a Kots app")
+			return errors.New("The --shared-password flag is required when deploying a KOTS app")
 		}
 
 		if len(args.prepareClusterValueOpts.FileValues) > 0 || len(args.prepareClusterValueOpts.JSONValues) > 0 || len(args.prepareClusterValueOpts.LiteralValues) > 0 ||
 			len(args.prepareClusterValueOpts.StringValues) > 0 || len(args.prepareClusterValueOpts.Values) > 0 || len(args.prepareClusterValueOpts.ValueFiles) > 0 {
-			return errors.New("The --set, --set-file, --set-json, --set-literal, --set-string, and --values flags cannot be used when deploying a Kots app")
+			return errors.New("The --set, --set-file, --set-json, --set-literal, --set-string, and --values flags cannot be used when deploying a KOTS app")
 		}
 	}
 
@@ -633,7 +633,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 
 	kotsApp, err := kotsutil.GetKotsApplicationSpec(releaseYamls)
 	if err != nil {
-		return errors.Wrap(err, "failed to get kots application")
+		return errors.Wrap(err, "failed to get KOTS application")
 	}
 
 	kotsCliVersion := ""
@@ -648,7 +648,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 	defer os.RemoveAll(kotsDir)
 	kotCLI, err := installKotsCLI(r, kotsCliVersion, kotsDir)
 	if err != nil {
-		return errors.Wrap(err, "failed to install kots cli")
+		return errors.Wrap(err, "failed to install KOTS cli")
 	}
 
 	license, err := r.api.DownloadLicense(r.appType, r.appID, customer.ID)
@@ -706,7 +706,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 	cmd.Stdout = r.w
 	cmd.Stderr = r.w
 	if err := cmd.Run(); err != nil {
-		return errors.Wrap(err, "failed to install kots and deploy app")
+		return errors.Wrap(err, "failed to install KOTS and deploy app")
 	}
 
 	return nil
@@ -737,10 +737,10 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 		os.Remove(installScript.Name())
 	}()
 	if _, err := io.Copy(installScript, resp.Body); err != nil {
-		return "", errors.Wrap(err, "failed to write kots binary")
+		return "", errors.Wrap(err, "failed to write KOTS binary")
 	}
 	if err := installScript.Chmod(0755); err != nil {
-		return "", errors.Wrap(err, "chmod kots install script")
+		return "", errors.Wrap(err, "chmod KOTS install script")
 	}
 
 	cmd := exec.Command(installScript.Name())
@@ -748,7 +748,7 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 	cmd.Stdout = r.w
 	cmd.Stderr = r.w
 	if err := cmd.Run(); err != nil {
-		return "", errors.Wrap(err, "failed to run kots cli install")
+		return "", errors.Wrap(err, "failed to run KOTS cli install")
 	}
 
 	kotsInstallPath := filepath.Join(kotsDir, "kubectl-kots")
