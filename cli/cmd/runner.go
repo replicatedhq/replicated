@@ -179,6 +179,7 @@ type runnerArgs struct {
 	prepareClusterDiskGiB                int64
 	prepareClusterTTL                    string
 	prepareClusterInstanceType           string
+	prepareClusterWaitDuration           time.Duration
 	prepareClusterEntitlements           []string
 	prepareClusterYaml                   string
 	prepareClusterYamlFile               string

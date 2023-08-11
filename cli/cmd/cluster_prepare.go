@@ -70,18 +70,19 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.prepareClusterName, "name", "", "cluster name")
+	cmd.Flags().StringVar(&r.args.prepareClusterName, "name", "", "Cluster name")
 	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.prepareClusterNodeCount, "node-count", int(1), "Node count")
-	cmd.Flags().Int64Var(&r.args.prepareClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node (Default: 50)")
+	cmd.Flags().IntVar(&r.args.prepareClusterNodeCount, "node-count", int(1), "Node count.")
+	cmd.Flags().Int64Var(&r.args.prepareClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node.")
 	cmd.Flags().StringVar(&r.args.prepareClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().StringVar(&r.args.prepareClusterInstanceType, "instance-type", "", "the type of instance to use clusters (e.g. x5.xlarge)")
+	cmd.Flags().DurationVar(&r.args.prepareClusterWaitDuration, "wait", time.Minute*5, "Wait duration for cluster to be ready.")
 
 	// todo maybe remove
 	cmd.Flags().StringVar(&r.args.prepareClusterID, "cluster-id", "", "cluster id")
 
-	cmd.Flags().StringSliceVar(&r.args.prepareClusterEntitlements, "entitlements", []string{}, "entitlements to add to the application when deploying")
+	cmd.Flags().StringSliceVar(&r.args.prepareClusterEntitlements, "entitlements", []string{}, "The entitlements to set on the customer. Can be specified multiple times.")
 
 	// for premium plans (kots etc)
 	cmd.Flags().StringVar(&r.args.prepareClusterYaml, "yaml", "", "The YAML config for this release. Use '-' to read from stdin. Cannot be used with the --yaml-file flag.")
@@ -165,7 +166,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	if r.args.prepareClusterID == "" {
 		log.ChildActionWithoutSpinner("SEQUENCE: %d", release.Sequence)
 
-		if r.args.createClusterName == "" {
+		if r.args.prepareClusterName == "" {
 			r.args.prepareClusterName = generateClusterName()
 		}
 
@@ -189,8 +190,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup) {
 			defer wg.Done()
-			// TODO should this 5 minutes be configurable?
-			if _, err := waitForCluster(r.kotsAPI, cl.ID, time.Minute*5); err != nil {
+			if _, err := waitForCluster(r.kotsAPI, cl.ID, r.args.prepareClusterWaitDuration); err != nil {
 				fmt.Printf("Failed to wait for cluster %s to be ready: %v\n", cl.ID, err)
 			}
 
@@ -215,10 +215,16 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.New("failed to find cluster")
 	}
 
-	a, err := r.kotsAPI.GetApp(r.appID)
-	if err != nil {
-		return errors.Wrap(err, "get app")
+	log.ActionWithSpinner("Waiting for release to be ready")
+	appRelease, err := getReadyAppRelease(r, log, *release)
+	if err != nil || appRelease == nil {
+		log.FinishSpinnerWithError()
+		if err == nil {
+			return errors.New("release not ready")
+		}
+		return errors.Wrap(err, "release not ready")
 	}
+	log.FinishSpinner()
 
 	var entitlements []kotsclient.EntitlementValue
 	for _, set := range r.args.prepareClusterEntitlements {
@@ -232,31 +238,12 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		})
 	}
 
-	// wait for the wait group
-	wg.Wait()
-
-	log.ActionWithSpinner("Waiting for release to be ready")
-	appRelease, err := getReadyAppRelease(r, log, *release)
-	if err != nil || appRelease == nil {
-		log.FinishSpinnerWithError()
-		if err == nil {
-			return errors.New("release not ready")
-		}
-		return errors.Wrap(err, "release not ready")
-	}
-	log.FinishSpinner()
-
-	kubeConfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
-	if err != nil {
-		return errors.Wrap(err, "failed to get cluster kubeconfig")
-	}
-
 	// create a test customer with the correct entitlement values
 	email := fmt.Sprintf("%s@replicated.com", clusterName)
 	customerOpts := kotsclient.CreateCustomerOpts{
 		Name:                clusterName,
 		ChannelID:           "",
-		AppID:               a.ID,
+		AppID:               r.appID,
 		LicenseType:         "test",
 		Email:               email,
 		EntitlementValues:   entitlements,
@@ -274,6 +261,14 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	_, err = fmt.Fprintf(r.w, "Customer %s (%s) created.\n", customer.Name, customer.ID)
 	if err != nil {
 		return errors.Wrap(err, "failed to write to stdout")
+	}
+
+	// wait for the wait group
+	wg.Wait()
+
+	kubeConfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
+	if err != nil {
+		return errors.Wrap(err, "failed to get cluster kubeconfig")
 	}
 
 	if appRelease.IsHelmOnly {
@@ -425,8 +420,6 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 
 			if err, ok := msg.(error); ok {
 				fmt.Fprintf(r.w, "Error running preflights: %v\n", err)
-			} else {
-				fmt.Fprintf(r.w, "Preflight progress: %v\n", msg)
 			}
 
 			progress, ok := msg.(preflight.CollectProgress)
