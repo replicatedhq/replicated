@@ -112,7 +112,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 			// Check for removed clusters and print them, changing their status to be "deleted"
 			for id, cluster := range oldClusterMap {
 				if _, found := newClusterMap[id]; !found {
-					cluster.Status = "deleted"
+					cluster.Status = types.ClusterStatusDeleted
 					clustersToPrint = append(clustersToPrint, cluster)
 				}
 			}

@@ -113,9 +113,9 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 			return nil, errors.Wrap(err, "get cluster")
 		}
 
-		if cluster.Status == "running" {
+		if cluster.Status == types.ClusterStatusRunning {
 			return cluster, nil
-		} else if cluster.Status == "error" {
+		} else if cluster.Status == types.ClusterStatusError {
 			return nil, errors.New("cluster failed to provision")
 		} else {
 			if time.Now().After(start.Add(duration)) {
