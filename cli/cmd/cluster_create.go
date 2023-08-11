@@ -80,7 +80,7 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 
 	if ve != nil && len(ve.Errors) > 0 {
 		if len(ve.SupportedDistributions) > 0 {
-			print.ClusterVersions("table", r.werr, ve.SupportedDistributions)
+			print.ClusterVersions("table", r.w, ve.SupportedDistributions)
 		}
 		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
 	}

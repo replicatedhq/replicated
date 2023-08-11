@@ -101,14 +101,12 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	w := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
-	werr := tabwriter.NewWriter(stderr, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
 
 	// get api client and app ID after flags are parsed
 	runCmds := &runners{
 		rootCmd: rootCmd,
 		stdin:   stdin,
 		w:       w,
-		werr:    werr,
 	}
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
