@@ -120,7 +120,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		}
 		clusterName = r.args.prepareClusterName
 
-		cl, err := createCluster(r.kotsAPI, clusterOpts, r.args.createClusterWaitDuration)
+		cl, err := r.createAndWaitForCluster(clusterOpts)
 		if err != nil {
 			return errors.Wrap(err, "create cluster")
 		}
