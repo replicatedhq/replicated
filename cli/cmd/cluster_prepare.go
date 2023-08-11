@@ -80,7 +80,7 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().DurationVar(&r.args.prepareClusterWaitDuration, "wait", time.Minute*5, "Wait duration for cluster to be ready.")
 
 	// todo maybe remove
-	cmd.Flags().StringVar(&r.args.prepareClusterID, "cluster-id", "", "cluster id")
+	cmd.Flags().StringVar(&r.args.prepareClusterID, "cluster-id", "", "The ID of an existing cluster to use instead of creating a new one.")
 
 	cmd.Flags().StringSliceVar(&r.args.prepareClusterEntitlements, "entitlements", []string{}, "The entitlements to set on the customer. Can be specified multiple times.")
 
@@ -92,7 +92,7 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the kots admin console.")
 
 	// for builders plan (chart only)
-	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "path to the helm chart to deploy")
+	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "Path to the helm chart to deploy")
 	addValueOptionsFlags(cmd.Flags(), &r.args.prepareClusterValueOpts)
 
 	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace into which to deploy the KOTS application or Helm chart.")
