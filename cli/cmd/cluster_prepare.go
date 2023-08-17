@@ -28,7 +28,6 @@ import (
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
 	troubleshootloader "github.com/replicatedhq/troubleshoot/pkg/loader"
 	"github.com/replicatedhq/troubleshoot/pkg/preflight"
-	troubleshootpreflight "github.com/replicatedhq/troubleshoot/pkg/preflight"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"helm.sh/helm/v3/pkg/action"
@@ -198,17 +197,12 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		}(&wg)
 	} else {
 		// need to get the cluster info to get the name to pass to the customer
-		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
+		cluster, err := r.kotsAPI.GetCluster(r.args.prepareClusterID)
 		if err != nil {
-			return errors.Wrap(err, "list clusters")
+			return errors.Wrap(err, "get cluster")
 		}
-		for _, cl := range clusters {
-			if cl.ID == r.args.prepareClusterID {
-				clusterName = cl.Name
-				clusterID = cl.ID
-				break
-			}
-		}
+		clusterName = cluster.Name
+		clusterID = cluster.ID
 	}
 
 	if clusterID == "" {
@@ -365,7 +359,6 @@ func getReadyAppRelease(r *runners, log *logger.Logger, release types.ReleaseInf
 				return appRelease, nil
 			}
 
-			fmt.Fprintf(r.w, "Release %d is not ready yet\n", release.Sequence)
 			time.Sleep(time.Second * 2)
 		}
 	}
@@ -409,8 +402,6 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	progressChan := make(chan interface{}, 0)
 	defer close(progressChan)
 
-	completeMx := sync.Mutex{}
-	isComplete := false
 	go func() {
 		for {
 			msg, ok := <-progressChan
@@ -421,69 +412,43 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 			if err, ok := msg.(error); ok {
 				fmt.Fprintf(r.w, "Error running preflights: %v\n", err)
 			}
-
-			progress, ok := msg.(preflight.CollectProgress)
-			if !ok {
-				continue
-			}
-
-			progressBytes, err := json.Marshal(map[string]interface{}{
-				"completedCount": progress.CompletedCount,
-				"totalCount":     progress.TotalCount,
-				"currentName":    progress.CurrentName,
-				"currentStatus":  progress.CurrentStatus,
-				"updatedAt":      time.Now().Format(time.RFC3339),
-			})
-			if err != nil {
-				continue
-			}
-
-			completeMx.Lock()
-			if !isComplete {
-				fmt.Fprintf(r.w, "Preflight progress: %v\n", string(progressBytes))
-			}
-			completeMx.Unlock()
 		}
 	}()
 
 	preflightSpec.Spec.Collectors = troubleshootcollect.DedupCollectors(preflightSpec.Spec.Collectors)
 	preflightSpec.Spec.Analyzers = troubleshootanalyze.DedupAnalyzers(preflightSpec.Spec.Analyzers)
 
-	collectOpts := troubleshootpreflight.CollectOpts{
+	collectOpts := preflight.CollectOpts{
 		Namespace:              "",
 		IgnorePermissionErrors: true,
 		ProgressChan:           progressChan,
 		KubernetesRestConfig:   kubeConfig,
 	}
 
-	collectResults, err := troubleshootpreflight.Collect(collectOpts, preflightSpec)
-	if !errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
-		return errors.Wrap(err, "failed to collect preflight data")
-	}
-
-	clusterCollectResult, ok := collectResults.(troubleshootpreflight.ClusterCollectResult)
-	if !ok {
-		return errors.Errorf("unexpected preflight collector result type: %T", collectResults)
-	}
-
-	if errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
-		log.Info("skipping analyze due to RBAC errors")
-		for _, collector := range clusterCollectResult.Collectors {
-			for _, e := range collector.GetRBACErrors() {
-				log.Info("rbac error: %v", e.Error())
-			}
+	collectResults, err := preflight.Collect(collectOpts, preflightSpec)
+	if err != nil {
+		if !errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
+			return errors.Wrap(err, "failed to collect preflight data")
 		}
-		return errors.Errorf("insufficient permissions to run all collectors")
+
+		clusterCollectResult, ok := collectResults.(preflight.ClusterCollectResult)
+		if !ok {
+			return errors.Errorf("unexpected preflight collector result type: %T", collectResults)
+		}
+
+		if errors.Is(err, troubleshootcollect.ErrInsufficientPermissionsToRun) {
+			log.Info("skipping analyze due to RBAC errors")
+			for _, collector := range clusterCollectResult.Collectors {
+				for _, e := range collector.GetRBACErrors() {
+					log.Info("rbac error: %v", e.Error())
+				}
+			}
+			return errors.Errorf("insufficient permissions to run all collectors")
+		}
 	}
 
 	analyzeResults := collectResults.Analyze()
-	analyzeOutput := troubleshootpreflight.ShowTextResultsStructured(preflightSpec.Name, analyzeResults)
-	analyzeOutputJSON, err := json.MarshalIndent(analyzeOutput, "", "  ")
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal analyze output")
-	}
 
-	log.Info("Preflight results: %s", string(analyzeOutputJSON))
 	failedStrictPreflights := []string{}
 	for _, analyzeResult := range analyzeResults {
 		if analyzeResult.IsFail && analyzeResult.Strict {
@@ -692,6 +657,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		"--shared-password", r.args.prepareClusterKotsSharedPassword,
 		"--app-version-label", fmt.Sprintf("release__%d", release.Sequence),
 		"--no-port-forward",
+		"--skip-preflights",
 	)
 	if r.args.prepareClusterKotsConfigValuesFile != "" {
 		if _, err := os.Stat(r.args.prepareClusterKotsConfigValuesFile); os.IsNotExist(err) {
