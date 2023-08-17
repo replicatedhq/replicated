@@ -96,7 +96,7 @@ type Channel struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Slug        string `json:"slug"`
+	Slug        string `json:"channelSlug"`
 
 	ReleaseSequence int64  `json:"releaseSequence"`
 	ReleaseLabel    string `json:"releaseLabel"`

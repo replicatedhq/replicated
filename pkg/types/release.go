@@ -20,6 +20,7 @@ type ReleaseInfo struct {
 	Sequence       int64
 	Version        string
 	Charts         []Chart
+	IsHelmOnly     bool
 }
 
 type LintMessage struct {
@@ -80,6 +81,7 @@ type KotsAppRelease struct {
 	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
 	Channels             []*Channel `json:"channels"`
 	Charts               []Chart    `json:"charts"`
+	IsHelmOnly           bool       `json:"isHelmOnly"`
 }
 
 type Chart struct {
@@ -96,10 +98,11 @@ type EntitlementValue struct {
 }
 
 type AppRelease struct {
-	Config    string    `json:"config,omitempty"`
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	Editable  bool      `json:"editable,omitempty"`
-	EditedAt  time.Time `json:"editedAt,omitempty"`
-	Sequence  int64     `json:"sequence,omitempty"`
-	Charts    []Chart   `json:"charts,omitempty"`
+	Config     string    `json:"config,omitempty"`
+	CreatedAt  time.Time `json:"createdAt,omitempty"`
+	Editable   bool      `json:"editable,omitempty"`
+	EditedAt   time.Time `json:"editedAt,omitempty"`
+	Sequence   int64     `json:"sequence,omitempty"`
+	Charts     []Chart   `json:"charts,omitempty"`
+	IsHelmOnly bool      `json:"isHelmOnly,omitempty"`
 }

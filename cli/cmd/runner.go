@@ -5,14 +5,13 @@ import (
 	"text/tabwriter"
 	"time"
 
+	"github.com/replicatedhq/replicated/client"
+	"github.com/replicatedhq/replicated/pkg/enterpriseclient"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/spf13/cobra"
-
-	"github.com/replicatedhq/replicated/client"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
-
-	"github.com/replicatedhq/replicated/pkg/enterpriseclient"
+	"helm.sh/helm/v3/pkg/cli/values"
 )
 
 // Runner holds the I/O dependencies and configurations used by individual
@@ -180,13 +179,17 @@ type runnerArgs struct {
 	prepareClusterDiskGiB                int64
 	prepareClusterTTL                    string
 	prepareClusterInstanceType           string
+	prepareClusterWaitDuration           time.Duration
 	prepareClusterEntitlements           []string
 	prepareClusterYaml                   string
 	prepareClusterYamlFile               string
 	prepareClusterYamlDir                string
 	prepareClusterChart                  string
-	prepareClusterValuesPath             []string
-	prepareClusterValueItems             []string
+	prepareClusterValueOpts              values.Options
+	prepareClusterNamespace              string
+	prepareClusterKotsConfigValuesFile   string
+	prepareClusterKotsSharedPassword     string
+	prepareClusterAppReadyTimeout        time.Duration
 
 	removeClusterAll bool
 
