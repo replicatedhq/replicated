@@ -164,8 +164,6 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	clusterID := ""
 
 	if r.args.prepareClusterID == "" {
-		log.ChildActionWithoutSpinner("SEQUENCE: %d", release.Sequence)
-
 		if r.args.prepareClusterName == "" {
 			r.args.prepareClusterName = generateClusterName()
 		}
@@ -194,7 +192,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 				fmt.Printf("Failed to wait for cluster %s to be ready: %v\n", cl.ID, err)
 			}
 
-			fmt.Fprintf(r.w, "Cluster %s (%s) created.\n", cl.Name, cl.ID)
+			log.ActionWithoutSpinner("Cluster %s (%s) created.\n", cl.Name, cl.ID)
 		}(&wg)
 	} else {
 		// need to get the cluster info to get the name to pass to the customer
@@ -253,15 +251,15 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	if appRelease.IsHelmOnly {
 		customerOpts.IsKotInstallEnabled = false
 	}
+	log.ActionWithSpinner("Creating Customer")
 	customer, err := r.api.CreateCustomer(r.appType, customerOpts)
 	if err != nil {
+		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "failed to create customer")
 	}
+	log.FinishSpinner()
 
-	_, err = fmt.Fprintf(r.w, "Customer %s (%s) created.\n", customer.Name, customer.ID)
-	if err != nil {
-		return errors.Wrap(err, "failed to write to stdout")
-	}
+	log.ChildActionWithoutSpinner("Customer %s (%s) created.\n", customer.Name, customer.ID)
 
 	// wait for the wait group
 	wg.Wait()
@@ -334,6 +332,8 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 		return nil, errors.Wrap(err, "create release")
 	}
 	log.FinishSpinner()
+
+	log.ChildActionWithoutSpinner("SEQUENCE: %d", release.Sequence)
 
 	return release, nil
 }
@@ -583,7 +583,7 @@ func installHelmChart(r *runners, appSlug string, chartName string, releaseSeque
 
 	registryClient, err := registry.NewClient(
 		registry.ClientOptDebug(settings.Debug),
-		registry.ClientOptWriter(r.w),
+		registry.ClientOptWriter(io.Discard),
 		registry.ClientOptCredentialsFile(credentialsFile),
 	)
 	if err != nil {
