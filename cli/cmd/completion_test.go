@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"os"
-	"strings"
+	"bytes"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -36,20 +35,17 @@ func TestShellCompletions(t *testing.T) {
 		{
 			name: "no args",
 			args: []string{},
-			expectedError: `Shell not specified.
-See 'kubectl completion -h' for help and examples`,
+			expectedError: `Shell not specified.`,
 		},
 		{
 			name: "too many args",
 			args: []string{"bash", "zsh"},
-			expectedError: `Too many arguments. Expected only the shell type.
-See 'kubectl completion -h' for help and examples`,
+			expectedError: `Too many arguments. Expected only the shell type.`,
 		},
 		{
 			name: "unsupported shell",
 			args: []string{"foo"},
-			expectedError: `Unsupported shell type "foo".
-See 'kubectl completion -h' for help and examples`,
+			expectedError: `Unsupported shell type "foo".`,
 		},
 	}
 
@@ -58,8 +54,8 @@ See 'kubectl completion -h' for help and examples`,
 			parentCmd := &cobra.Command{
 				Use: "replicated",
 			}
-			out := os.Stdout
-			cmd := NewCmdCompletion(out, defaultBoilerPlate)
+			out := bytes.NewBufferString("")
+			cmd := NewCmdCompletion(out, parentCmd.Name())
 			parentCmd.AddCommand(cmd)
 			err := RunCompletion(out, cmd, tc.args)
 			if tc.expectedError == "" {
@@ -68,9 +64,6 @@ See 'kubectl completion -h' for help and examples`,
 				}
 				if out.Len() == 0 {
 					tt.Fatalf("Output was not written")
-				}
-				if !strings.Contains(out.String(), defaultBoilerPlate) {
-					tt.Fatalf("Output does not contain boilerplate:\n%s", out.String())
 				}
 			} else {
 				if err == nil {

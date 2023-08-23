@@ -4,13 +4,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/spf13/cobra"
 )
 
 func (r *runners) InitCompletionCommand(parent *cobra.Command) *cobra.Command {
-	cmd := &cobra.Command{
+	cmd := NewCmdCompletion(r.w, parent.Name())
+	parent.AddCommand(cmd)
+	return cmd
+}
+
+var (
+	ErrCompletionShellNotSpecified = errors.New("Shell not specified.")
+	ErrCompletionTooMayArguments = errors.New("Too many arguments. Expected only the shell type.")
+)
+
+func NewCmdCompletion(out io.Writer, parentName string) *cobra.Command {
+
+ return &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
 		Short: "Generate completion script",
 		Long: fmt.Sprintf(`To load completions:
@@ -51,23 +62,17 @@ func (r *runners) InitCompletionCommand(parent *cobra.Command) *cobra.Command {
 	  # To load completions for every new session, run:
 	  PS> %[1]s completion powershell > %[1]s.ps1
 	  # and source this file from your PowerShell profile.
-	`, parent.Name()),
+	`, parentName),
+
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		Run: func(cmd *cobra.Command, args []string) {
-			RunCompletion(os.Stdout, cmd, args)
+			RunCompletion(out, cmd, args)
 		},
 	}
-	parent.AddCommand(cmd)
 
-	return cmd
 }
-
-var (
-	ErrCompletionShellNotSpecified = errors.New("Shell not specified.")
-	ErrCompletionTooMayArguments = errors.New("Too many arguments. Expected only the shell type.")
-)
 
 func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error{
 		if len(args) == 0 {
@@ -80,7 +85,7 @@ func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error{
 
 		switch args[0] {
 			case "bash":
-				return cmd.Root().GenBashCompletion(os.Stdout)
+				return cmd.Root().GenBashCompletion(out)
 			case "zsh":
 				zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
 				out.Write([]byte(zshHead))
