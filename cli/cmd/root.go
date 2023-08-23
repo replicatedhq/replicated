@@ -129,6 +129,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		Long:  `The release command allows vendors to create, display, and promote their releases.`,
 	}
 
+	runCmds.InitCompletionCommand(runCmds.rootCmd)
+
 	runCmds.rootCmd.AddCommand(channelCmd)
 	runCmds.InitChannelCreate(channelCmd)
 	runCmds.InitChannelInspect(channelCmd)
