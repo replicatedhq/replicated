@@ -16,12 +16,12 @@ func (r *runners) InitCompletionCommand(parent *cobra.Command) *cobra.Command {
 
 var (
 	ErrCompletionShellNotSpecified = errors.New("Shell not specified.")
-	ErrCompletionTooMayArguments = errors.New("Too many arguments. Expected only the shell type.")
+	ErrCompletionTooMayArguments   = errors.New("Too many arguments. Expected only the shell type.")
 )
 
 func NewCmdCompletion(out io.Writer, parentName string) *cobra.Command {
 
- return &cobra.Command{
+	return &cobra.Command{
 		Use:   "completion [bash|zsh|fish|powershell]",
 		Short: "Generate completion script",
 		Long: fmt.Sprintf(`To load completions:
@@ -74,28 +74,28 @@ func NewCmdCompletion(out io.Writer, parentName string) *cobra.Command {
 
 }
 
-func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error{
-		if len(args) == 0 {
-			return ErrCompletionShellNotSpecified
-		}
+func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return ErrCompletionShellNotSpecified
+	}
 
-		if len(args) > 1 {
-			return ErrCompletionTooMayArguments
-		}
+	if len(args) > 1 {
+		return ErrCompletionTooMayArguments
+	}
 
-		switch args[0] {
-			case "bash":
-				return cmd.Root().GenBashCompletion(out)
-			case "zsh":
-				zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
-				out.Write([]byte(zshHead))
-				return cmd.Root().GenZshCompletion(out)
-			case "fish":
-				return cmd.Root().GenFishCompletion(out, true)
-			case "powershell":
-				return cmd.Root().GenPowerShellCompletionWithDesc(out)
-			default:
-				return fmt.Errorf("Unsupported shell type %q.", args[0])
-		}
+	switch args[0] {
+	case "bash":
+		return cmd.Root().GenBashCompletion(out)
+	case "zsh":
+		zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
+		out.Write([]byte(zshHead))
+		return cmd.Root().GenZshCompletion(out)
+	case "fish":
+		return cmd.Root().GenFishCompletion(out, true)
+	case "powershell":
+		return cmd.Root().GenPowerShellCompletionWithDesc(out)
+	default:
+		return fmt.Errorf("Unsupported shell type %q.", args[0])
+	}
 
 }
