@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -54,21 +56,40 @@ func (r *runners) InitCompletionCommand(parent *cobra.Command) *cobra.Command {
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.MatchAll(cobra.ExactArgs(1), cobra.OnlyValidArgs),
 		Run: func(cmd *cobra.Command, args []string) {
-			switch args[0] {
-			case "bash":
-				cmd.Root().GenBashCompletion(os.Stdout)
-			case "zsh":
-				zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
-				os.Stdout.Write([]byte(zshHead))
-				cmd.Root().GenZshCompletion(os.Stdout)
-			case "fish":
-				cmd.Root().GenFishCompletion(os.Stdout, true)
-			case "powershell":
-				cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
-			}
+			RunCompletion(os.Stdout, cmd, args)
 		},
 	}
 	parent.AddCommand(cmd)
 
 	return cmd
+}
+
+var (
+	ErrCompletionShellNotSpecified = errors.New("Shell not specified.")
+	ErrCompletionTooMayArguments = errors.New("Too many arguments. Expected only the shell type.")
+)
+
+func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error{
+		if len(args) == 0 {
+			return ErrCompletionShellNotSpecified
+		}
+
+		if len(args) > 1 {
+			return ErrCompletionTooMayArguments
+		}
+
+		switch args[0] {
+			case "bash":
+				return cmd.Root().GenBashCompletion(os.Stdout)
+			case "zsh":
+				zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
+				os.Stdout.Write([]byte(zshHead))
+				return cmd.Root().GenZshCompletion(os.Stdout)
+			case "fish":
+				return cmd.Root().GenFishCompletion(os.Stdout, true)
+			case "powershell":
+				return cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+			default:
+				return fmt.Errorf("Unsupported shell type %q.", args[0])
+		}
 }
