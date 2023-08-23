@@ -83,13 +83,14 @@ func RunCompletion(out io.Writer, cmd *cobra.Command, args []string) error{
 				return cmd.Root().GenBashCompletion(os.Stdout)
 			case "zsh":
 				zshHead := fmt.Sprintf("#compdef %[1]s\ncompdef _%[1]s %[1]s\n", cmd.Root().Name())
-				os.Stdout.Write([]byte(zshHead))
-				return cmd.Root().GenZshCompletion(os.Stdout)
+				out.Write([]byte(zshHead))
+				return cmd.Root().GenZshCompletion(out)
 			case "fish":
-				return cmd.Root().GenFishCompletion(os.Stdout, true)
+				return cmd.Root().GenFishCompletion(out, true)
 			case "powershell":
-				return cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+				return cmd.Root().GenPowerShellCompletionWithDesc(out)
 			default:
 				return fmt.Errorf("Unsupported shell type %q.", args[0])
 		}
+
 }
