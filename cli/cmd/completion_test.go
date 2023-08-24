@@ -33,18 +33,18 @@ func TestShellCompletions(t *testing.T) {
 			args: []string{"powershell"},
 		},
 		{
-			name: "no args",
-			args: []string{},
-			expectedError: `Shell not specified.`,
+			name:          "no args",
+			args:          []string{},
+			expectedError: ErrCompletionShellNotSpecified.Error(),
 		},
 		{
-			name: "too many args",
-			args: []string{"bash", "zsh"},
-			expectedError: `Too many arguments. Expected only the shell type.`,
+			name:          "too many args",
+			args:          []string{"bash", "zsh"},
+			expectedError: ErrCompletionTooMayArguments.Error(),
 		},
 		{
-			name: "unsupported shell",
-			args: []string{"foo"},
+			name:          "unsupported shell",
+			args:          []string{"foo"},
 			expectedError: `Unsupported shell type "foo".`,
 		},
 	}
