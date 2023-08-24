@@ -215,4 +215,10 @@ type runnerArgs struct {
 
 	customerInspectOutputFormat string
 	customerInspectCustomer     string
+
+	compatibilityKubernetesDistribution string
+	compatibilityKubernetesVersion      string
+	compatibilitySuccess                bool
+	compatibilityFailure                bool
+	compatibilityNotes                  string
 }

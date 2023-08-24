@@ -20,7 +20,6 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 		Short:        "create test clusters",
 		Long:         `create test clusters`,
 		RunE:         r.createCluster,
-		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 

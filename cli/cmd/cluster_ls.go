@@ -19,7 +19,6 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 		Short:        "list test clusters",
 		Long:         `list test clusters`,
 		RunE:         r.listClusters,
-		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
