@@ -28,8 +28,8 @@ func NewCmdCompletion(out io.Writer, parentName string) *cobra.Command {
 
 	Bash:
 
-		This script depends on the 'bash-completion' package.
-		If it is not installed already, you can install it via your OS's package manager.
+	  This script depends on the 'bash-completion' package.
+	  If it is not installed already, you can install it via your OS's package manager.
 
 	  $ source <(%[1]s completion bash)
 
