@@ -18,7 +18,7 @@ func (r *runners) InitReleaseCompatibility(parent *cobra.Command) *cobra.Command
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.compatibilityKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to report on.")
-	cmd.Flags().StringVar(&r.args.compatibilityKubernetesVersion, "version", "v1.25.3", "Kubernetes version of the cluster to report on (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.compatibilityKubernetesVersion, "version", "1.25.3", "Kubernetes version of the cluster to report on (format is distribution dependent)")
 	cmd.Flags().BoolVar(&r.args.compatibilitySuccess, "success", false, "If set, the compatibility will be reported as a success.")
 	cmd.Flags().BoolVar(&r.args.compatibilityFailure, "failure", false, "If set, the compatibility will be reported as a failure.")
 	cmd.Flags().StringVar(&r.args.compatibilityNotes, "notes", "", "Additional notes to report.")
@@ -36,7 +36,7 @@ func (r *runners) reportReleaseCompatibility(_ *cobra.Command, args []string) er
 	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
-		return fmt.Errorf("Failed to parse sequence argument %s", args[0])
+		return fmt.Errorf("failed to parse sequence argument %s", args[0])
 	}
 
 	//Check if one of success or failure is set
@@ -47,9 +47,14 @@ func (r *runners) reportReleaseCompatibility(_ *cobra.Command, args []string) er
 		return fmt.Errorf("must set either success or failure")
 	}
 
-	err = r.kotsAPI.ReportReleaseCompatibility(r.appID, seq)
+	success := false
+	if r.args.compatibilitySuccess {
+		success = true
+	}
+
+	err = r.kotsAPI.ReportReleaseCompatibility(r.appID, seq, r.args.compatibilityKubernetesDistribution, r.args.compatibilityKubernetesVersion, success, r.args.compatibilityNotes)
 	if err != nil {
-		return fmt.Errorf("report release compatibility")
+		return err
 	}
 
 	return nil
