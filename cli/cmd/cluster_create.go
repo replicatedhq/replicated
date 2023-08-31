@@ -16,18 +16,17 @@ import (
 
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "create",
-		Short:        "Create test clusters",
-		Long:         `Create test clusters`,
-		RunE:         r.createCluster,
-		SilenceUsage: true,
+		Use:   "create",
+		Short: "Create test clusters",
+		Long:  `Create test clusters`,
+		RunE:  r.createCluster,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")

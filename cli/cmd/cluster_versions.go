@@ -14,7 +14,6 @@ func (r *runners) InitClusterVersions(parent *cobra.Command) *cobra.Command {
 		Short:        "list cluster versions",
 		Long:         `list cluster versions`,
 		RunE:         r.listClusterVersions,
-		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 

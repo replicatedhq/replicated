@@ -54,12 +54,13 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*types.AppRel
 	}
 
 	appRelease := types.AppRelease{
-		Config:     resp.Release.Spec,
-		CreatedAt:  resp.Release.CreatedAt,
-		Editable:   !resp.Release.IsReleaseNotEditable,
-		Sequence:   resp.Release.Sequence,
-		Charts:     resp.Release.Charts,
-		IsHelmOnly: resp.Release.IsHelmOnly,
+		Config:               resp.Release.Spec,
+		CreatedAt:            resp.Release.CreatedAt,
+		Editable:             !resp.Release.IsReleaseNotEditable,
+		Sequence:             resp.Release.Sequence,
+		Charts:               resp.Release.Charts,
+		CompatibilityResults: resp.Release.CompatibilityResults,
+		IsHelmOnly:           resp.Release.IsHelmOnly,
 	}
 
 	return &appRelease, nil

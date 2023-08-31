@@ -60,7 +60,6 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	  --entitlement seat_count=100 --entitlement license_type=enterprise \
 	  --chart ./my-helm-chart --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
 		RunE:         r.prepareCluster,
-		SilenceUsage: true,
 	}
 
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
