@@ -171,6 +171,10 @@ type runnerArgs struct {
 	createClusterWaitDuration           time.Duration
 	createClusterInstanceType           string
 
+	upgradeClusterKubernetesVersion string
+	upgradeClusterDryRun            bool
+	upgradeClusterWaitDuration      time.Duration
+
 	prepareClusterID                     string
 	prepareClusterName                   string
 	prepareClusterKubernetesDistribution string
