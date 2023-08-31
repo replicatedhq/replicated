@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
 
@@ -52,7 +54,13 @@ func (r *runners) reportReleaseCompatibility(_ *cobra.Command, args []string) er
 		success = true
 	}
 
-	err = r.kotsAPI.ReportReleaseCompatibility(r.appID, seq, r.args.compatibilityKubernetesDistribution, r.args.compatibilityKubernetesVersion, success, r.args.compatibilityNotes)
+	ve, err := r.kotsAPI.ReportReleaseCompatibility(r.appID, seq, r.args.compatibilityKubernetesDistribution, r.args.compatibilityKubernetesVersion, success, r.args.compatibilityNotes)
+	if ve != nil && len(ve.Errors) > 0 {
+		if len(ve.SupportedDistributions) > 0 {
+			print.ClusterVersions("table", r.w, ve.SupportedDistributions)
+		}
+		return fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+	}
 	if err != nil {
 		return err
 	}
