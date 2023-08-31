@@ -16,8 +16,8 @@ var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
 {{ end }}`
 
 var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
-DISTRIBUTION	VERSION
-{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}},{{end}} {{ $v }}{{ end }}
+DISTRIBUTION	VERSION	INSTANCE_TYPES
+{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}	{{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
 {{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))

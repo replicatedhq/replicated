@@ -29,6 +29,7 @@ type Cluster struct {
 }
 
 type ClusterVersion struct {
-	Name     string   `json:"short_name"`
-	Versions []string `json:"versions"`
+	Name          string   `json:"short_name"`
+	Versions      []string `json:"versions"`
+	InstanceTypes []string `json:"instance_types"`
 }
