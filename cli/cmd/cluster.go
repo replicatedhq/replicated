@@ -14,7 +14,6 @@ func (r *runners) InitClusterCommand(parent *cobra.Command) *cobra.Command {
 		Use:    "cluster",
 		Short:  "Manage test clusters",
 		Long:   ``,
-		Hidden: true,
 	}
 	parent.AddCommand(cmd)
 
