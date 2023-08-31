@@ -16,22 +16,23 @@ import (
 
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "create test clusters",
-		Long:  `create test clusters`,
-		RunE:  r.createCluster,
+		Use:          "create",
+		Short:        "Create test clusters",
+		Long:         `Create test clusters`,
+		RunE:         r.createCluster,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "1.25.3", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
+	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
-	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use (e.g. x5.xlarge)")
+	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. x5.xlarge)")
+	cmd.Flags()
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
