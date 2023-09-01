@@ -10,6 +10,11 @@ import (
 var releaseTmplSrc = `SEQUENCE:	{{ .Sequence }}
 CREATED:	{{ time .CreatedAt }}
 EDITED:	{{ time .EditedAt }}
+{{if .CompatibilityResults}}COMPATIBILITY RESULTS:
+	DISTRIBUTION	VERSION	SUCCESS_AT	SUCCESS_NOTES	FAILURE_AT	FAILURE_NOTES
+	{{ range .CompatibilityResults -}}
+	{{ .Distribution }}	{{ .Version }}	{{if .SuccessAt}}{{ time .SuccessAt }}{{else}}-{{end}}	{{ .SuccessNotes }}	{{if .FailureAt}}{{ time .FailureAt }}{{else}}-{{end}}	{{ .FailureNotes }}
+	{{ end }}{{end}}
 CONFIG:
 {{ .Config }}
 `

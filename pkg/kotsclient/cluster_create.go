@@ -35,8 +35,8 @@ type CreateClusterOpts struct {
 }
 
 type ValidationError struct {
-	Errors                 []string            `json:"errors"`
-	SupportedDistributions map[string][]string `json:"supported_distributions"`
+	Errors                 []string                `json:"errors"`
+	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
 }
 
 func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {

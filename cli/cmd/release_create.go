@@ -99,7 +99,7 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 }
 
 func (r *runners) setKOTSDefaultReleaseParams() error {
-	if !r.isFoundationApp && r.args.createReleaseYamlDir == "" {
+	if r.args.createReleaseYamlDir == "" {
 		r.args.createReleaseYamlDir = "./manifests"
 	}
 
@@ -142,14 +142,12 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 		}
 	}
 
-	if !r.isFoundationApp && r.args.createReleasePromoteVersion == "" {
+	if r.args.createReleasePromoteVersion == "" {
 		r.args.createReleasePromoteVersion = fmt.Sprintf("%s-%s%s", r.args.createReleasePromote, rev, dirtyStatus)
 	}
 
 	r.args.createReleasePromoteEnsureChannel = true
-	if !r.isFoundationApp {
-		r.args.createReleaseLint = true
-	}
+	r.args.createReleaseLint = true
 
 	return nil
 }
@@ -243,11 +241,9 @@ Prepared to create release with defaults:
 	}
 
 	if r.args.createReleaseChart != "" {
-		if !r.isFoundationApp {
-			fmt.Fprint(r.w, "You are creating a release that will only be installable with the helm CLI.\n"+
-				"For more information, see \n"+
-				"https://docs.replicated.com/vendor/helm-install#about-helm-installations-with-replicated\n")
-		}
+		fmt.Fprint(r.w, "You are creating a release that will only be installable with the helm CLI.\n"+
+			"For more information, see \n"+
+			"https://docs.replicated.com/vendor/helm-install#about-helm-installations-with-replicated\n")
 		fmt.Fprintln(r.w)
 		log.ActionWithSpinner("Reading chart from %s", r.args.createReleaseChart)
 		r.args.createReleaseYaml, err = makeReleaseFromChart(r.args.createReleaseChart)

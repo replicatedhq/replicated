@@ -15,7 +15,7 @@ var channelsTmplSrc = `ID	NAME	RELEASE	VERSION
 
 var channelsTmpl = template.Must(template.New("channels").Parse(channelsTmplSrc))
 
-func Channels(w *tabwriter.Writer, channels []types.Channel) error {
+func Channels(w *tabwriter.Writer, channels []*types.Channel) error {
 	if err := channelsTmpl.Execute(w, channels); err != nil {
 		return err
 	}

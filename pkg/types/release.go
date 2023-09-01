@@ -20,6 +20,7 @@ type ReleaseInfo struct {
 	Sequence       int64
 	Version        string
 	Charts         []Chart
+	IsHelmOnly     bool
 }
 
 type LintMessage struct {
@@ -71,15 +72,17 @@ type KotsPromoteReleaseRequest struct {
 }
 
 type KotsAppRelease struct {
-	AppID                string     `json:"appId"`
-	Sequence             int64      `json:"sequence"`
-	CreatedAt            time.Time  `json:"created"`
-	IsArchived           bool       `json:"isArchived"`
-	Spec                 string     `json:"spec"`
-	ReleaseNotes         string     `json:"releaseNotes"`
-	IsReleaseNotEditable bool       `json:"isReleaseNotEditable"`
-	Channels             []*Channel `json:"channels"`
-	Charts               []Chart    `json:"charts"`
+	AppID                string                `json:"appId"`
+	Sequence             int64                 `json:"sequence"`
+	CreatedAt            time.Time             `json:"created"`
+	IsArchived           bool                  `json:"isArchived"`
+	Spec                 string                `json:"spec"`
+	ReleaseNotes         string                `json:"releaseNotes"`
+	IsReleaseNotEditable bool                  `json:"isReleaseNotEditable"`
+	Channels             []*Channel            `json:"channels"`
+	Charts               []Chart               `json:"charts"`
+	CompatibilityResults []CompatibilityResult `json:"compatibilityResults"`
+	IsHelmOnly           bool                  `json:"isHelmOnly"`
 }
 
 type Chart struct {
@@ -95,11 +98,22 @@ type EntitlementValue struct {
 	Value string `json:"value,omitempty"`
 }
 
+type CompatibilityResult struct {
+	Distribution string     `json:"distribution"`
+	Version      string     `json:"version"`
+	SuccessAt    *time.Time `json:"successAt,omitempty"`
+	SuccessNotes string     `json:"successNotes,omitempty"`
+	FailureAt    *time.Time `json:"failureAt,omitempty"`
+	FailureNotes string     `json:"failureNotes,omitempty"`
+}
+
 type AppRelease struct {
-	Config    string    `json:"config,omitempty"`
-	CreatedAt time.Time `json:"createdAt,omitempty"`
-	Editable  bool      `json:"editable,omitempty"`
-	EditedAt  time.Time `json:"editedAt,omitempty"`
-	Sequence  int64     `json:"sequence,omitempty"`
-	Charts    []Chart   `json:"charts,omitempty"`
+	Config               string                `json:"config,omitempty"`
+	CreatedAt            time.Time             `json:"createdAt,omitempty"`
+	Editable             bool                  `json:"editable,omitempty"`
+	EditedAt             time.Time             `json:"editedAt,omitempty"`
+	Sequence             int64                 `json:"sequence,omitempty"`
+	Charts               []Chart               `json:"charts,omitempty"`
+	CompatibilityResults []CompatibilityResult `json:"compatibilityResults,omitempty"`
+	IsHelmOnly           bool                  `json:"isHelmOnly,omitempty"`
 }

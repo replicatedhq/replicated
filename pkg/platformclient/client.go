@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -22,6 +22,7 @@ type APIError struct {
 	Endpoint   string
 	StatusCode int
 	Message    string
+	Body       []byte
 }
 
 func (e APIError) Error() string {
@@ -80,7 +81,7 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "read body")
 	}
@@ -125,16 +126,17 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 		if resp.StatusCode == http.StatusForbidden {
 			return ErrForbidden
 		}
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return APIError{
 			Method:     method,
 			Endpoint:   endpoint,
 			StatusCode: resp.StatusCode,
 			Message:    responseBodyToErrorMessage(body),
+			Body:       body,
 		}
 	}
 	if respBody != nil {
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "read body")
 		}
@@ -167,11 +169,11 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 		return nil, ErrNotFound
 	}
 	if resp.StatusCode != successStatus {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("GET %s %d: %s", endpoint, resp.StatusCode, body)
 	}
 
-	return ioutil.ReadAll(resp.Body)
+	return io.ReadAll(resp.Body)
 }
 
 func responseBodyToErrorMessage(body []byte) string {

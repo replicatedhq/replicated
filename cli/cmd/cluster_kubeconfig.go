@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -26,7 +26,6 @@ func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 		Short:        "Download credentials for a test cluster",
 		Long:         `Download credentials for a test cluster`,
 		RunE:         r.kubeconfigCluster,
-		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
@@ -64,6 +63,17 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		return errors.New("must provide cluster id or name")
 	}
 
+	cluster, err := r.kotsAPI.GetCluster(clusterID)
+	if errors.Cause(err) == platformclient.ErrForbidden {
+		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
+		return errors.Wrap(err, "get cluster")
+	}
+
+	if cluster.Status != types.ClusterStatusRunning {
+		return errors.Errorf("cluster %s is not %s, please check the cluster status", clusterID, types.ClusterStatusRunning)
+	}
+
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
@@ -87,7 +97,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 				return errors.Wrap(err, "create kubeconfig dir")
 			}
 		}
-		if err := ioutil.WriteFile(r.args.kubeconfigPath, kubeconfig, 0644); err != nil {
+		if err := os.WriteFile(r.args.kubeconfigPath, kubeconfig, 0644); err != nil {
 			return errors.Wrap(err, "write kubeconfig")
 		}
 
@@ -95,13 +105,19 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		return nil
 	}
 
-	tmpFile, err := ioutil.TempFile("", "replicated-kubeconfig")
+	tmpFile, err := os.CreateTemp("", "replicated-kubeconfig")
 	if err != nil {
 		return errors.Wrap(err, "create temp file")
 	}
-	defer os.Remove(tmpFile.Name())
-	if err := ioutil.WriteFile(tmpFile.Name(), kubeconfig, 0644); err != nil {
-		return errors.Wrap(err, "write temp file")
+	defer func() {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+	}()
+	if _, err := tmpFile.Write(kubeconfig); err != nil {
+		return errors.Wrap(err, "write kubeconfig file")
+	}
+	if err := tmpFile.Chmod(0644); err != nil {
+		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
 	replicatedLoadingRules := clientcmd.ClientConfigLoadingRules{
@@ -127,12 +143,12 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		} else if err != nil {
 			return errors.Wrap(err, "stat kubeconfig")
 		}
-		data, err := ioutil.ReadFile(kubeconfigPath)
+		data, err := os.ReadFile(kubeconfigPath)
 		if err != nil {
 			return errors.Wrap(err, "read kubeconfig")
 		}
 
-		if err := ioutil.WriteFile(backupPath, data, fi.Mode()); err != nil {
+		if err := os.WriteFile(backupPath, data, fi.Mode()); err != nil {
 			return errors.Wrap(err, "write backup kubeconfig")
 		}
 

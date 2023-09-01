@@ -7,13 +7,13 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type ListClusterResponse struct {
+type GetClusterResponse struct {
 	Cluster *types.Cluster `json:"cluster"`
 	Error   string         `json:"error"`
 }
 
 func (c *VendorV3Client) GetCluster(id string) (*types.Cluster, error) {
-	cluster := ListClusterResponse{}
+	cluster := GetClusterResponse{}
 
 	err := c.DoJSON("GET", fmt.Sprintf("/v3/cluster/%s", id), http.StatusOK, nil, &cluster)
 	if err != nil {

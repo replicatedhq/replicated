@@ -129,6 +129,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		Long:  `The release command allows vendors to create, display, and promote their releases.`,
 	}
 
+	runCmds.InitCompletionCommand(runCmds.rootCmd)
+
 	runCmds.rootCmd.AddCommand(channelCmd)
 	runCmds.InitChannelCreate(channelCmd)
 	runCmds.InitChannelInspect(channelCmd)
@@ -152,6 +154,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
 	runCmds.InitReleaseTest(releaseCmd)
+	runCmds.InitReleaseCompatibility(releaseCmd)
 
 	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
 	runCmds.InitCollectorList(collectorsCmd)
@@ -290,7 +293,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		runCmds.appID = app.ID
 		runCmds.appSlug = app.Slug
-		runCmds.isFoundationApp = app.IsFoundation
 
 		return nil
 	}

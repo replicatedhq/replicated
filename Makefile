@@ -4,6 +4,8 @@ VERSION=$(shell git describe)
 ABBREV_VERSION=$(shell git describe --abbrev=0)
 VERSION_PACKAGE = github.com/replicatedhq/replicated/pkg/version
 DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
+BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
+
 export GO111MODULE=on
 
 GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
@@ -50,7 +52,7 @@ deps:
 .PHONY: test
 test:
 	# pacts and unit
-	go test -v ./...
+	go test -tags "$(BUILDTAGS)" -v ./...
 
 	# integration and e2e
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
@@ -133,9 +135,10 @@ gen-models:
 .PHONY: build
 build:
 	go build \
-    		${LDFLAGS} \
-    		-o bin/replicated \
-    		cli/main.go
+		${LDFLAGS} \
+		-tags "$(BUILDTAGS)" \
+		-o bin/replicated \
+		cli/main.go
 
 .PHONY: docs
 docs:

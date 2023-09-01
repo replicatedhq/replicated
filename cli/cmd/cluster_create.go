@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
 	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
@@ -18,23 +16,23 @@ import (
 
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "create",
-		Short:        "create test clusters",
-		Long:         `create test clusters`,
-		RunE:         r.createCluster,
-		SilenceUsage: true,
+		Use:   "create",
+		Short: "Create test clusters",
+		Long:  `Create test clusters`,
+		RunE:  r.createCluster,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "cluster name")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "node-count", int(1), "Node count")
+	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
-	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "the type of instance to use (e.g. m6i.large)")
+	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
+	cmd.Flags()
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
@@ -59,7 +57,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
 	}
-	cl, err := createCluster(r.kotsAPI, opts, r.args.createClusterWaitDuration)
+	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
 		return err
 	}
@@ -72,8 +70,8 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
-func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.CreateClusterOpts, waitDuration time.Duration) (*types.Cluster, error) {
-	cl, ve, err := kotsRestClient.CreateCluster(opts)
+func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*types.Cluster, error) {
+	cl, ve, err := r.kotsAPI.CreateCluster(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -82,11 +80,9 @@ func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.Cr
 
 	if ve != nil && len(ve.Errors) > 0 {
 		if len(ve.SupportedDistributions) > 0 {
-			return nil, fmt.Errorf("%s\n\nSupported Kubernetes distributions and versions are:\n%s", errors.New(strings.Join(ve.Errors, ",")), supportedDistributions(ve.SupportedDistributions))
-		} else {
-			return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+			print.ClusterVersions("table", r.w, ve.SupportedDistributions)
 		}
-
+		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
 	}
 
 	if opts.DryRun {
@@ -94,8 +90,8 @@ func createCluster(kotsRestClient *kotsclient.VendorV3Client, opts kotsclient.Cr
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
-	if waitDuration > 0 {
-		return waitForCluster(kotsRestClient, cl.ID, waitDuration)
+	if r.args.createClusterWaitDuration > 0 {
+		return waitForCluster(r.kotsAPI, cl.ID, r.args.createClusterWaitDuration)
 	}
 
 	return cl, nil
@@ -113,9 +109,9 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 			return nil, errors.Wrap(err, "get cluster")
 		}
 
-		if cluster.Status == "running" {
+		if cluster.Status == types.ClusterStatusRunning {
 			return cluster, nil
-		} else if cluster.Status == "error" {
+		} else if cluster.Status == types.ClusterStatusError {
 			return nil, errors.New("cluster failed to provision")
 		} else {
 			if time.Now().After(start.Add(duration)) {
@@ -125,29 +121,4 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 
 		time.Sleep(time.Second * 5)
 	}
-}
-
-func supportedDistributions(supportedDistributions map[string][]string) string {
-	var supported []string
-	for k, vv := range supportedDistributions {
-		// assume that the vv is semver and sort
-		vs := make([]*semver.Version, len(vv))
-		for i, r := range vv {
-			v, err := semver.NewVersion(r)
-			if err != nil {
-				// just don't include it
-				continue
-			}
-
-			vs[i] = v
-		}
-
-		sort.Sort(semver.Collection(vs))
-
-		supported = append(supported, fmt.Sprintf("  %s:", k))
-		for _, v := range vs {
-			supported = append(supported, fmt.Sprintf("    %s", v.Original()))
-		}
-	}
-	return strings.Join(supported, "\n")
 }

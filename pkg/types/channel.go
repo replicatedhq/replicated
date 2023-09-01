@@ -21,6 +21,7 @@ type KotsChannel struct {
 	IsDefault                  bool                          `json:"isDefault,omitempty"`
 	Name                       string                        `json:"name,omitempty"`
 	NumReleases                int32                         `json:"numReleases,omitempty"`
+	IsHelmOnly                 bool                          `json:"isHelmOnly,omitempty"`
 	ReleaseNotes               string                        `json:"releaseNotes,omitempty"`
 	// TODO: set these (see kotsChannelToSchema function)
 	ReleaseSequence          int32                   `json:"releaseSequence,omitempty"`
@@ -29,6 +30,19 @@ type KotsChannel struct {
 	ReplicatedRegistryDomain string                  `json:"replicatedRegistryDomain"`
 	CustomHostNameOverrides  CustomHostNameOverrides `json:"customHostNameOverrides"`
 	ChartReleases            []ChartRelease          `json:"chartReleases"`
+}
+
+func (c *KotsChannel) ToChannel() *Channel {
+	return &Channel{
+		ID:              c.Id,
+		Name:            c.Name,
+		Description:     c.Description,
+		Slug:            c.ChannelSlug,
+		ReleaseSequence: int64(c.ReleaseSequence),
+		ReleaseLabel:    c.CurrentVersion,
+		IsArchived:      c.IsArchived,
+		IsHelmOnly:      c.IsHelmOnly,
+	}
 }
 
 type ChartRelease struct {
@@ -82,12 +96,13 @@ type Channel struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
-	Slug        string `json:"slug"`
+	Slug        string `json:"channelSlug"`
 
 	ReleaseSequence int64  `json:"releaseSequence"`
 	ReleaseLabel    string `json:"releaseLabel"`
 
 	IsArchived bool `json:"isArchived"`
+	IsHelmOnly bool `json:"isHelmOnly"`
 }
 
 type CustomHostNameOverrides struct {
@@ -106,15 +121,4 @@ type CustomHostNameOverrides struct {
 	ReplicatedApp struct {
 		Hostname string `json:"hostname"`
 	} `json:"replicatedApp"`
-}
-
-func (c *Channel) Copy() *Channel {
-	return &Channel{
-		ID:              c.ID,
-		Name:            c.Name,
-		Description:     c.Description,
-		Slug:            c.Slug,
-		ReleaseSequence: c.ReleaseSequence,
-		ReleaseLabel:    c.ReleaseLabel,
-	}
 }
