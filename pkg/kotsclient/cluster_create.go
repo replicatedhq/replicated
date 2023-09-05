@@ -60,7 +60,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *ClusterValidationError, error) {
 	resp := CreateClusterResponse{}
 	endpoint := "/v3/cluster"
-	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
 		if strings.Contains(err.Error(), " 400: ") {
 			// to avoid a lot of brittle string parsing, we make the request again with
