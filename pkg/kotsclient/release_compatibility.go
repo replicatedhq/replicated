@@ -15,11 +15,11 @@ type ReportReleaseCompatibilityErrorResponseBody struct {
 	Error ReportReleaseCompatibilityErrorResponse `json:"Error"`
 }
 type ReportReleaseCompatibilityErrorResponse struct {
-	Message         string           `json:"message"`
-	ValidationError *ValidationError `json:"validationError,omitempty"`
+	Message         string                  `json:"message"`
+	ValidationError *ClusterValidationError `json:"validationError,omitempty"`
 }
 
-func (c *VendorV3Client) ReportReleaseCompatibility(appID string, sequence int64, distribution string, version string, success bool, notes string) (*ValidationError, error) {
+func (c *VendorV3Client) ReportReleaseCompatibility(appID string, sequence int64, distribution string, version string, success bool, notes string) (*ClusterValidationError, error) {
 	request := types.CompatibilityResult{
 		Distribution: distribution,
 		Version:      version,
