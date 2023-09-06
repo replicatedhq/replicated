@@ -24,7 +24,7 @@ func (r *runners) archiveCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}
 
-	customer, err := r.api.GetCustomerByName(r.appType, r.appID, r.args.archiveCustomerNameOrId)
+	customer, err := r.api.GetCustomerByNameOrId(r.appType, r.appID, r.args.archiveCustomerNameOrId)
 	if err != nil {
 		return errors.Wrapf(err, "find customer %q", r.args.archiveCustomerNameOrId)
 	}

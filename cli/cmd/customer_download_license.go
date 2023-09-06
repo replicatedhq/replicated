@@ -31,7 +31,7 @@ func (r *runners) downloadCustomerLicense(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("missing or invalid parameters: output")
 	}
 
-	customer, err := r.api.GetCustomerByName(r.appType, r.appID, r.args.customerLicenseInspectCustomer)
+	customer, err := r.api.GetCustomerByNameOrId(r.appType, r.appID, r.args.customerLicenseInspectCustomer)
 	if err != nil {
 		return errors.Wrapf(err, "find customer %q", r.args.customerLicenseInspectCustomer)
 	}

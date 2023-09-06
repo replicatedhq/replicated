@@ -39,11 +39,11 @@ func (c *Client) CreateCustomer(appType string, opts kotsclient.CreateCustomerOp
 
 }
 
-func (c *Client) GetCustomerByName(appType string, appID, name string) (*types.Customer, error) {
+func (c *Client) GetCustomerByNameOrId(appType string, appID, nameOrId string) (*types.Customer, error) {
 	if appType == "platform" {
 		return nil, errors.New("listing customers is not supported for platform applications")
 	} else if appType == "kots" {
-		return c.KotsClient.GetCustomerByName(appID, name)
+		return c.KotsClient.GetCustomerByNameOrId(appID, nameOrId)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
