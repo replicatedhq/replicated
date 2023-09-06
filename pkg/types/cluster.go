@@ -5,13 +5,15 @@ import "time"
 type ClusterStatus string
 
 const (
-	ClusterStatusQueued       ClusterStatus = "queued"       // Not assigned to a runner yet
-	ClusterStatusAssigned     ClusterStatus = "assigned"     // Assigned to a runner, but have not heard back from the runner
-	ClusterStatusPreparing    ClusterStatus = "preparing"    // The runner sets this when is receives the request
-	ClusterStatusProvisioning ClusterStatus = "provisioning" // The runner sets this when it starts provisioning
-	ClusterStatusRunning      ClusterStatus = "running"      // The runner sets this when it is done provisioning and available
-	ClusterStatusTerminated   ClusterStatus = "terminated"   // This is set when the cluster expires or is deleted
-	ClusterStatusError        ClusterStatus = "error"        // Something unexpected
+	ClusterStatusQueued       ClusterStatus = "queued"        // Not assigned to a runner yet
+	ClusterStatusAssigned     ClusterStatus = "assigned"      // Assigned to a runner, but have not heard back from the runner
+	ClusterStatusPreparing    ClusterStatus = "preparing"     // The runner sets this when is receives the request
+	ClusterStatusProvisioning ClusterStatus = "provisioning"  // The runner sets this when it starts provisioning
+	ClusterStatusRunning      ClusterStatus = "running"       // The runner sets this when it is done provisioning or upgrading and available
+	ClusterStatusTerminated   ClusterStatus = "terminated"    // This is set when the cluster expires or is deleted
+	ClusterStatusError        ClusterStatus = "error"         // Something unexpected
+	ClusterStatusUpgrading    ClusterStatus = "upgrading"     // The runner sets this when it starts upgrading
+	ClusterStatusUpgradeError ClusterStatus = "upgrade_error" // Something unexpected during an upgrade
 	ClusterStatusDeleted      ClusterStatus = "deleted"
 )
 
