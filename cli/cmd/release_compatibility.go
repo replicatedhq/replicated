@@ -13,14 +13,14 @@ import (
 func (r *runners) InitReleaseCompatibility(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "compatibility SEQUENCE",
-		Short: "report release compatibility",
-		Long:  "report release compatibility for a kubernetes distribution and version",
+		Short: "Report release compatibility",
+		Long:  "Report release compatibility for a kubernetes distribution and version",
 		RunE:  r.reportReleaseCompatibility,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.compatibilityKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to report on.")
-	cmd.Flags().StringVar(&r.args.compatibilityKubernetesVersion, "version", "1.25.3", "Kubernetes version of the cluster to report on (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.compatibilityKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to report on.")
+	cmd.Flags().StringVar(&r.args.compatibilityKubernetesVersion, "version", "", "Kubernetes version of the cluster to report on (format is distribution dependent)")
 	cmd.Flags().BoolVar(&r.args.compatibilitySuccess, "success", false, "If set, the compatibility will be reported as a success.")
 	cmd.Flags().BoolVar(&r.args.compatibilityFailure, "failure", false, "If set, the compatibility will be reported as a failure.")
 	cmd.Flags().StringVar(&r.args.compatibilityNotes, "notes", "", "Additional notes to report.")
