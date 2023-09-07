@@ -49,7 +49,7 @@ func (c *VendorV3Client) ListCustomers(appID string, includeTest bool) ([]types.
 	return allCustomers, nil
 }
 
-func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
+func (c *VendorV3Client) GetCustomerByNameOrId(appID string, nameOrId string) (*types.Customer, error) {
 	allCustomers, err := c.ListCustomers(appID, false)
 	if err != nil {
 		return nil, err
@@ -57,17 +57,17 @@ func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Cu
 
 	matchingCustomers := make([]types.Customer, 0)
 	for _, customer := range allCustomers {
-		if customer.ID == name || customer.Name == name {
+		if customer.ID == nameOrId || customer.Name == nameOrId {
 			matchingCustomers = append(matchingCustomers, customer)
 		}
 	}
 
 	if len(matchingCustomers) == 0 {
-		return nil, ErrCustomerNotFound{Name: name}
+		return nil, ErrCustomerNotFound{Name: nameOrId}
 	}
 
 	if len(matchingCustomers) > 1 {
-		return nil, fmt.Errorf("customer %q is ambiguous, please use customer ID", name)
+		return nil, fmt.Errorf("customer %q is ambiguous, please use customer ID", nameOrId)
 	}
 	return &matchingCustomers[0], nil
 }

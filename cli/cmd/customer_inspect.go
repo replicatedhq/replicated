@@ -31,7 +31,7 @@ func (r *runners) inspectCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}
 
-	customer, err := r.api.GetCustomerByName(r.appType, r.appID, r.args.customerInspectCustomer)
+	customer, err := r.api.GetCustomerByNameOrId(r.appType, r.appID, r.args.customerInspectCustomer)
 	if err != nil {
 		return errors.Wrapf(err, "get customer %q", r.args.customerInspectCustomer)
 	}
