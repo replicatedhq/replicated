@@ -77,7 +77,7 @@ type runnerArgs struct {
 
 	customerLsIncludeTest bool
 
-	archiveCustomerNameOrId           string
+	customerArchiveNameOrId           string
 	customerCreateName                string
 	customerCreateChannel             string
 	customerCreateEnsureChannel       bool
