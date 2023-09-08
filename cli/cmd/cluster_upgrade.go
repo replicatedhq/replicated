@@ -20,7 +20,6 @@ func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 		RunE:         r.upgradeCluster,
 		SilenceUsage: true,
-		Hidden:       true, // TODO: remove this once released
 	}
 	parent.AddCommand(cmd)
 
