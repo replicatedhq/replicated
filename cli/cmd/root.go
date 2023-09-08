@@ -226,6 +226,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	clusterPrepareCmd := runCmds.InitClusterPrepare(clusterCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
+	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
 	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
 	runCmds.InitAPIGet(apiCmd)
