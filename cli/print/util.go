@@ -10,4 +10,10 @@ var funcs = template.FuncMap{
 	"time": func(t time.Time) string {
 		return t.Format(time.RFC3339)
 	},
+	"padding": func(s string, width int) string {
+		for len(s) < width {
+			s += " "
+		}
+		return s
+	},
 }
