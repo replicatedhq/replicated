@@ -36,6 +36,14 @@ func SetCurrentCredentials(token string) error {
 	return nil
 }
 
+func RemoveCurrentCredentials() error {
+	configFile := configFilePath()
+	if err := os.Remove(configFile); err != nil {
+		return err
+	}
+	return nil
+}
+
 func GetCurrentCredentials() (*types.Credentials, error) {
 	// priority order:
 	// 1. env vars
