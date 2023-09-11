@@ -77,6 +77,7 @@ type runnerArgs struct {
 
 	customerLsIncludeTest bool
 
+	customerArchiveNameOrId           string
 	customerCreateName                string
 	customerCreateChannel             string
 	customerCreateEnsureChannel       bool
@@ -170,6 +171,10 @@ type runnerArgs struct {
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
 	createClusterInstanceType           string
+
+	upgradeClusterKubernetesVersion string
+	upgradeClusterDryRun            bool
+	upgradeClusterWaitDuration      time.Duration
 
 	prepareClusterID                     string
 	prepareClusterName                   string

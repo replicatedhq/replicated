@@ -10,10 +10,11 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount also?
-var clustersTmplSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES
-{{ range . -}}
-{{ .ID }}	{{ .Name }}	{{ .KubernetesDistribution}}	{{ .KubernetesVersion	}}	{{ .Status }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}
+var clustersTmplHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES`
+var clustersTmplRowSrc = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}
 {{ end }}`
+var clustersTmplSrc = fmt.Sprintln(clustersTmplHeaderSrc) + clustersTmplRowSrc
 
 var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
 DISTRIBUTION	VERSION	INSTANCE_TYPES
@@ -21,12 +22,19 @@ DISTRIBUTION	VERSION	INSTANCE_TYPES
 {{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
+var clustersTmplNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplRowSrc))
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
 
-func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster) error {
+func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
 	if outputFormat == "table" {
-		if err := clustersTmpl.Execute(w, clusters); err != nil {
-			return err
+		if header {
+			if err := clustersTmpl.Execute(w, clusters); err != nil {
+				return err
+			}
+		} else {
+			if err := clustersTmplNoHeader.Execute(w, clusters); err != nil {
+				return err
+			}
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")

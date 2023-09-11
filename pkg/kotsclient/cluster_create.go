@@ -30,17 +30,17 @@ type CreateClusterOpts struct {
 	NodeCount              int
 	DiskGiB                int64
 	TTL                    string
-	DryRun                 bool
 	InstanceType           string
+	DryRun                 bool
 }
 
-type ValidationError struct {
+type ClusterValidationError struct {
 	Errors                 []string                `json:"errors"`
 	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
 }
 
-func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ValidationError, error) {
-	reqBody := &CreateClusterRequest{
+func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ClusterValidationError, error) {
+	req := CreateClusterRequest{
 		Name:                   opts.Name,
 		KubernetesDistribution: opts.KubernetesDistribution,
 		KubernetesVersion:      opts.KubernetesVersion,
@@ -50,33 +50,38 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		InstanceType:           opts.InstanceType,
 	}
 
-	cluster := CreateClusterResponse{}
-	endpoint := "/v3/cluster"
 	if opts.DryRun {
-		endpoint = "/v3/cluster?dry-run=true"
-		ve := ValidationError{}
-		err := c.DoJSON("POST", endpoint, http.StatusOK, reqBody, &ve)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		return nil, &ve, nil
+		ve, err := c.doCreateClusterDryRunRequest(req)
+		return nil, ve, err
 	}
-	err := c.DoJSON("POST", endpoint, http.StatusCreated, reqBody, &cluster)
+	return c.doCreateClusterRequest(req)
+}
+
+func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *ClusterValidationError, error) {
+	resp := CreateClusterResponse{}
+	endpoint := "/v3/cluster"
+	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
 		if strings.Contains(err.Error(), " 400: ") {
 			// to avoid a lot of brittle string parsing, we make the request again with
 			// a dry-run flag and expect to get the same result back
-			ve := ValidationError{}
-			err := c.DoJSON("POST", "/v3/cluster?dry-run=true", http.StatusOK, reqBody, &ve)
-			if err != nil {
-				return nil, nil, err
+			ve, _ := c.doCreateClusterDryRunRequest(req)
+			if ve != nil && len(ve.Errors) > 0 {
+				return nil, ve, nil
 			}
-
-			return nil, &ve, nil
 		}
 		return nil, nil, err
 	}
 
-	return cluster.Cluster, nil, nil
+	return resp.Cluster, nil, nil
+}
+
+func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*ClusterValidationError, error) {
+	resp := ClusterValidationError{}
+	endpoint := "/v3/cluster?dry-run=true"
+	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
 }

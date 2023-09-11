@@ -29,15 +29,15 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
-	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
+
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
-	cmd.Flags()
+	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
-	cmd.MarkFlagRequired("distribution")
-	cmd.MarkFlagRequired("version")
+	_ = cmd.MarkFlagRequired("distribution")
+	_ = cmd.MarkFlagRequired("version")
 
 	return cmd
 }
@@ -54,8 +54,8 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		NodeCount:              r.args.createClusterNodeCount,
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
-		DryRun:                 r.args.createClusterDryRun,
 		InstanceType:           r.args.createClusterInstanceType,
+		DryRun:                 r.args.createClusterDryRun,
 	}
 	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
@@ -80,7 +80,7 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 
 	if ve != nil && len(ve.Errors) > 0 {
 		if len(ve.SupportedDistributions) > 0 {
-			print.ClusterVersions("table", r.w, ve.SupportedDistributions)
+			_ = print.ClusterVersions("table", r.w, ve.SupportedDistributions)
 		}
 		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
 	}
@@ -111,7 +111,7 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 
 		if cluster.Status == types.ClusterStatusRunning {
 			return cluster, nil
-		} else if cluster.Status == types.ClusterStatusError {
+		} else if cluster.Status == types.ClusterStatusError || cluster.Status == types.ClusterStatusUpgradeError {
 			return nil, errors.New("cluster failed to provision")
 		} else {
 			if time.Now().After(start.Add(duration)) {
