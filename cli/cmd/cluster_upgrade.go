@@ -14,7 +14,7 @@ import (
 
 func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "upgrade [cluster id]",
+		Use:          "upgrade ID",
 		Short:        "Upgrade a test clusters",
 		Long:         `Upgrade a test clusters`,
 		Args:         cobra.ExactArgs(1),
