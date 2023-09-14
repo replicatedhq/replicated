@@ -11,11 +11,11 @@ import (
 func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rm ID [ID …]",
-		Short: "remove test clusters",
+		Short: "Remove test clusters",
 		Long: `Removes a cluster immediately.
 
 You can specify the --all flag to terminate all clusters.`,
-		RunE:         r.removeCluster,
+		RunE: r.removeCluster,
 	}
 	parent.AddCommand(cmd)
 

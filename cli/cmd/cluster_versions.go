@@ -10,10 +10,10 @@ import (
 
 func (r *runners) InitClusterVersions(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "versions",
-		Short:        "list cluster versions",
-		Long:         `list cluster versions`,
-		RunE:         r.listClusterVersions,
+		Use:   "versions",
+		Short: "List cluster versions",
+		Long:  `List cluster versions`,
+		RunE:  r.listClusterVersions,
 	}
 	parent.AddCommand(cmd)
 

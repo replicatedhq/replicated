@@ -17,8 +17,17 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create test clusters",
-		Long:  `Create test clusters`,
-		RunE:  r.createCluster,
+		Long: `Create test clusters.
+		
+This is a beta feature, with some known limitations:
+- K3s, Kind, kurl, helmvm and Openshift clusters only support a single node.
+- EKS clusters may report ready before the nodes are completely online.
+- kurl is the only supported distribution that can be upgraded.
+- Clusters cannot be resized. Create another cluster if you want to make changes, such as add another node.
+- On cloud clusters, only one node group per cluster is supported.
+- Multi-node support is available only for GKE and EKS.
+- There is no support for IPv6.`,
+		RunE: r.createCluster,
 	}
 	parent.AddCommand(cmd)
 

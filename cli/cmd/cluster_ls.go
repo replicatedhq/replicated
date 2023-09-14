@@ -15,8 +15,8 @@ import (
 func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls",
-		Short: "list test clusters",
-		Long:  `list test clusters`,
+		Short: "List test clusters",
+		Long:  `List test clusters`,
 		RunE:  r.listClusters,
 	}
 	parent.AddCommand(cmd)
