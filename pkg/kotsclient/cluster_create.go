@@ -1,9 +1,11 @@
 package kotsclient
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"strings"
 
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -34,6 +36,15 @@ type CreateClusterOpts struct {
 	DryRun                 bool
 }
 
+type CreateClusterErrorResponse struct {
+	Error CreateClusterErrorError `json:"Error"`
+}
+
+type CreateClusterErrorError struct {
+	Message         string                  `json:"message"`
+	ValidationError *ClusterValidationError `json:"validationError,omitempty"`
+}
+
 type ClusterValidationError struct {
 	Errors                 []string                `json:"errors"`
 	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
@@ -62,14 +73,18 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 	endpoint := "/v3/cluster"
 	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
-		if strings.Contains(err.Error(), " 400: ") {
-			// to avoid a lot of brittle string parsing, we make the request again with
-			// a dry-run flag and expect to get the same result back
-			ve, _ := c.doCreateClusterDryRunRequest(req)
-			if ve != nil && len(ve.Errors) > 0 {
-				return nil, ve, nil
+		// if err is APIError and the status code is 400, then we have a validation error
+		// and we can return the validation error
+		if apiErr, ok := err.(platformclient.APIError); ok {
+			if apiErr.StatusCode == http.StatusBadRequest {
+				veResp := &CreateClusterErrorResponse{}
+				if jsonErr := json.Unmarshal(apiErr.Body, veResp); jsonErr != nil {
+					return nil, nil, fmt.Errorf("unmarshal validation error response: %w", err)
+				}
+				return nil, veResp.Error.ValidationError, nil
 			}
 		}
+
 		return nil, nil, err
 	}
 
