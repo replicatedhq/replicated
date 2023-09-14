@@ -17,8 +17,12 @@ var clustersTmplRowSrc = `{{ range . -}}
 var clustersTmplSrc = fmt.Sprintln(clustersTmplHeaderSrc) + clustersTmplRowSrc
 
 var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
-DISTRIBUTION	VERSION	INSTANCE_TYPES
-{{ range $d := . -}}{{ $d.Name }}	{{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}	{{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
+{{ range $d := . -}}
+DISTRIBUTION: {{ $d.Name }}
+• VERSIONS: {{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}
+• INSTANCE TYPES: {{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
+• MAX NODES: {{ $d.NodesMax }}
+
 {{ end }}`
 
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))

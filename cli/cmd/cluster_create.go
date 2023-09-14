@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -78,11 +77,13 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 		return nil, errors.Wrap(err, "create cluster")
 	}
 
-	if ve != nil && len(ve.Errors) > 0 {
-		if len(ve.SupportedDistributions) > 0 {
-			_ = print.ClusterVersions("table", r.w, ve.SupportedDistributions)
+	if ve != nil && ve.Message != "" {
+		if ve.ValidationError != nil && len(ve.ValidationError.Errors) > 0 {
+			if len(ve.ValidationError.SupportedDistributions) > 0 {
+				_ = print.ClusterVersions("table", r.w, ve.ValidationError.SupportedDistributions)
+			}
 		}
-		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+		return nil, fmt.Errorf("%s", ve.Message)
 	}
 
 	if opts.DryRun {

@@ -42,6 +42,10 @@ type CreateClusterErrorResponse struct {
 
 type CreateClusterErrorError struct {
 	Message         string                  `json:"message"`
+	MaxDiskGiB      int64                   `json:"maxDiskGiB,omitempty"`
+	MaxEKS          int64                   `json:"maxEKS,omitempty"`
+	MaxGKE          int64                   `json:"maxGKE,omitempty"`
+	MaxAKS          int64                   `json:"maxAKS,omitempty"`
 	ValidationError *ClusterValidationError `json:"validationError,omitempty"`
 }
 
@@ -50,7 +54,7 @@ type ClusterValidationError struct {
 	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
 }
 
-func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *ClusterValidationError, error) {
+func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *CreateClusterErrorError, error) {
 	req := CreateClusterRequest{
 		Name:                   opts.Name,
 		KubernetesDistribution: opts.KubernetesDistribution,
@@ -68,7 +72,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	return c.doCreateClusterRequest(req)
 }
 
-func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *ClusterValidationError, error) {
+func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterErrorError, error) {
 	resp := CreateClusterResponse{}
 	endpoint := "/v3/cluster"
 	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
@@ -81,7 +85,7 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 				if jsonErr := json.Unmarshal(apiErr.Body, veResp); jsonErr != nil {
 					return nil, nil, fmt.Errorf("unmarshal validation error response: %w", err)
 				}
-				return nil, veResp.Error.ValidationError, nil
+				return nil, &veResp.Error, nil
 			}
 		}
 
@@ -91,12 +95,12 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 	return resp.Cluster, nil, nil
 }
 
-func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*ClusterValidationError, error) {
-	resp := ClusterValidationError{}
+func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*CreateClusterErrorError, error) {
+	resp := CreateClusterErrorResponse{}
 	endpoint := "/v3/cluster?dry-run=true"
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, err
 	}
-	return &resp, nil
+	return &resp.Error, nil
 }
