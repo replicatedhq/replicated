@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -18,8 +17,11 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create test clusters",
-		Long:  `Create test clusters`,
-		RunE:  r.createCluster,
+		Long: `Create test clusters.
+		
+This is a beta feature, with some known limitations:
+https://docs.replicated.com/vendor/testing-how-to#limitations`,
+		RunE: r.createCluster,
 	}
 	parent.AddCommand(cmd)
 
@@ -78,11 +80,13 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 		return nil, errors.Wrap(err, "create cluster")
 	}
 
-	if ve != nil && len(ve.Errors) > 0 {
-		if len(ve.SupportedDistributions) > 0 {
-			_ = print.ClusterVersions("table", r.w, ve.SupportedDistributions)
+	if ve != nil && ve.Message != "" {
+		if ve.ValidationError != nil && len(ve.ValidationError.Errors) > 0 {
+			if len(ve.ValidationError.SupportedDistributions) > 0 {
+				_ = print.ClusterVersions("table", r.w, ve.ValidationError.SupportedDistributions)
+			}
 		}
-		return nil, fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
+		return nil, errors.New(ve.Message)
 	}
 
 	if opts.DryRun {

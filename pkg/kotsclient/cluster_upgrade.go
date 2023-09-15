@@ -1,10 +1,12 @@
 package kotsclient
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -40,12 +42,15 @@ func (c *VendorV3Client) doUpgradeClusterRequest(clusterID string, req UpgradeCl
 	endpoint := fmt.Sprintf("/v3/cluster/%s/upgrade", clusterID)
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
-		if strings.Contains(err.Error(), " 400: ") {
-			// to avoid a lot of brittle string parsing, we make the request again with
-			// a dry-run flag and expect to get the same result back
-			ve, _ := c.doUpgradeClusterDryRunRequest(clusterID, req)
-			if ve != nil && len(ve.Errors) > 0 {
-				return nil, ve, nil
+		// if err is APIError and the status code is 400, then we have a validation error
+		// and we can return the validation error
+		if apiErr, ok := errors.Cause(err).(platformclient.APIError); ok {
+			if apiErr.StatusCode == http.StatusBadRequest {
+				veResp := &ClusterValidationError{}
+				if jsonErr := json.Unmarshal(apiErr.Body, veResp); jsonErr != nil {
+					return nil, nil, fmt.Errorf("unmarshal validation error response: %w", err)
+				}
+				return nil, veResp, nil
 			}
 		}
 		return nil, nil, err
