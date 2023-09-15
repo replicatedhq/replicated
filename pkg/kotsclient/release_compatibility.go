@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -37,7 +38,7 @@ func (c *VendorV3Client) ReportReleaseCompatibility(appID string, sequence int64
 	path := fmt.Sprintf("/v3/app/%s/release/%v/compatibility", appID, sequence)
 	err := c.DoJSON("POST", path, http.StatusCreated, request, nil)
 	if err != nil {
-		if err, ok := err.(platformclient.APIError); ok && err.StatusCode == http.StatusBadRequest {
+		if err, ok := errors.Cause(err).(platformclient.APIError); ok && err.StatusCode == http.StatusBadRequest {
 			// parse the error response body
 			respBody := &ReportReleaseCompatibilityErrorResponseBody{}
 			if err := json.NewDecoder(bytes.NewReader(err.Body)).Decode(respBody); err != nil {

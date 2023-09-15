@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -79,7 +80,7 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error
-		if apiErr, ok := err.(platformclient.APIError); ok {
+		if apiErr, ok := errors.Cause(err).(platformclient.APIError); ok {
 			if apiErr.StatusCode == http.StatusBadRequest {
 				veResp := &CreateClusterErrorResponse{}
 				if jsonErr := json.Unmarshal(apiErr.Body, veResp); jsonErr != nil {
