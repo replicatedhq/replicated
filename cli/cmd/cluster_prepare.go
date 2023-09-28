@@ -369,7 +369,7 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	pushedChartsCount := 0
 	for _, chart := range charts {
 		switch chart.Status {
-		case types.ChartStatusPushed, types.ChartStatusSubchart:
+		case types.ChartStatusPushed:
 			pushedChartsCount++
 		case types.ChartStatusUnknown, types.ChartStatusPushing:
 			// wait for the chart to be pushed
