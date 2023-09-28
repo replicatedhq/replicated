@@ -59,7 +59,7 @@ Example:
 replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 \
 	  --entitlement seat_count=100 --entitlement license_type=enterprise \
 	  --chart ./my-helm-chart --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
-		RunE:         r.prepareCluster,
+		RunE: r.prepareCluster,
 	}
 
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
@@ -69,11 +69,11 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.prepareClusterName, "name", "", "Cluster name")
-	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesDistribution, "distribution", "kind", "Kubernetes distribution of the cluster to provision")
-	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesVersion, "version", "v1.25.3", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
+	cmd.Flags().StringVar(&r.args.prepareClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.prepareClusterNodeCount, "node-count", int(1), "Node count.")
 	cmd.Flags().Int64Var(&r.args.prepareClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node.")
-	cmd.Flags().StringVar(&r.args.prepareClusterTTL, "ttl", "2h", "Cluster TTL (duration, max 48h)")
+	cmd.Flags().StringVar(&r.args.prepareClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().StringVar(&r.args.prepareClusterInstanceType, "instance-type", "", "the type of instance to use clusters (e.g. x5.xlarge)")
 	cmd.Flags().DurationVar(&r.args.prepareClusterWaitDuration, "wait", time.Minute*5, "Wait duration for cluster to be ready.")
 
@@ -95,6 +95,8 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 
 	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace into which to deploy the KOTS application or Helm chart.")
 	cmd.Flags().DurationVar(&r.args.prepareClusterAppReadyTimeout, "app-ready-timeout", time.Minute*5, "Timeout to wait for the application to be ready. Must be in Go duration format (e.g., 10s, 2m).")
+
+	_ = cmd.MarkFlagRequired("distribution")
 
 	// TODO add json output
 	return cmd
@@ -367,7 +369,7 @@ func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	pushedChartsCount := 0
 	for _, chart := range charts {
 		switch chart.Status {
-		case types.ChartStatusPushed:
+		case types.ChartStatusPushed, types.ChartStatusSubchart:
 			pushedChartsCount++
 		case types.ChartStatusUnknown, types.ChartStatusPushing:
 			// wait for the chart to be pushed

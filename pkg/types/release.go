@@ -5,10 +5,11 @@ import "time"
 type ChartStatus string
 
 var (
-	ChartStatusUnknown ChartStatus = "unknown"
-	ChartStatusPushing ChartStatus = "pushing"
-	ChartStatusPushed  ChartStatus = "pushed"
-	ChartStatusError   ChartStatus = "error"
+	ChartStatusUnknown  ChartStatus = "unknown"
+	ChartStatusPushing  ChartStatus = "pushing"
+	ChartStatusPushed   ChartStatus = "pushed"
+	ChartStatusError    ChartStatus = "error"
+	ChartStatusSubchart ChartStatus = "subchart"
 )
 
 type ReleaseInfo struct {
