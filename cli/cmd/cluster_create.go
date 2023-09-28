@@ -39,7 +39,6 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	_ = cmd.MarkFlagRequired("distribution")
-	_ = cmd.MarkFlagRequired("version")
 
 	return cmd
 }
