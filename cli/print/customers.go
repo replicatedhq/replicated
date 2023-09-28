@@ -6,6 +6,7 @@ import (
 	"text/tabwriter"
 	"text/template"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -55,13 +56,13 @@ func CustomersWithInstances(outputFormat string, w *tabwriter.Writer, customers 
 func Customer(outputFormat string, w *tabwriter.Writer, customer *types.Customer) error {
 	if outputFormat == "table" {
 		if err := customersTmpl.Execute(w, []types.Customer{*customer}); err != nil {
-			return err
+			return errors.Wrap(err, "execute template")
 		}
 	} else if outputFormat == "json" {
 		cAsByte, _ := json.MarshalIndent(customer, "", "  ")
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
-			return err
+			return errors.Wrap(err, "write json")
 		}
 	}
-	return w.Flush()
+	return errors.Wrap(w.Flush(), "flush")
 }

@@ -176,10 +176,25 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+var knownErrorCodes = map[string]string{
+	"CUSTOMER_CHANNEL_ERROR": `You are attempting to assign a KOTS-enabled customer to a channel with a Helm-only head release. To resolve this, you can either
+
+1. Disable KOTS installations for this customer by passing the --disable-kots flag
+2. Assign this customer to a different channel that includes a KOTS-capable release
+3. Promote a release containing KOTS manifests to this channel (it will still be installable with the Helm CLI as long as it contains a helm chart)`,
+}
+
 func responseBodyToErrorMessage(body []byte) string {
 	u := map[string]interface{}{}
 	if err := json.Unmarshal(body, &u); err != nil {
 		return string(body)
+	}
+
+	if code, ok := u["error_code"].(string); ok && code != "" {
+		m := knownErrorCodes[code]
+		if m != "" {
+			return m
+		}
 	}
 
 	if m, ok := u["message"].(string); ok && m != "" {
