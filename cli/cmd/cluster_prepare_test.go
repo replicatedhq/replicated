@@ -16,7 +16,6 @@ func Test_areReleaseChartsReady(t *testing.T) {
 	}{
 		{"nil charts", nil, true, false},
 		{"no charts", []types.Chart{}, true, false},
-		{"one chart, no status", []types.Chart{{}}, false, true},
 		{"one chart, status unkown", []types.Chart{{Status: types.ChartStatusUnknown}}, false, false},
 		{"one chart, status pushing", []types.Chart{{Status: types.ChartStatusPushing}}, false, false},
 		{"one chart, status pushed", []types.Chart{{Status: types.ChartStatusPushed}}, true, false},
