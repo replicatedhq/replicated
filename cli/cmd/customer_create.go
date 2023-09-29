@@ -12,11 +12,12 @@ import (
 
 func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "create",
-		Short:        "create a customer",
-		Long:         `create a customer`,
-		RunE:         r.createCustomer,
-		SilenceUsage: true,
+		Use:           "create",
+		Short:         "create a customer",
+		Long:          `create a customer`,
+		RunE:          r.createCustomer,
+		SilenceUsage:  true,
+		SilenceErrors: true, // this command uses custom error printing
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "Name of the customer")
@@ -33,11 +34,15 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	return cmd
 }
 
-func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
+func (r *runners) createCustomer(_ *cobra.Command, _ []string) (err error) {
+	defer func() {
+		printIfError(err)
+	}()
+
 	// all of the following validation occurs in the API also, but
 	// we want to fail fast if the user has provided invalid input
 	if err := validateCustomerType(r.args.customerCreateType); err != nil {
-		return err
+		return errors.Wrap(err, "validate customer type")
 	}
 	if r.args.customerCreateType == "test" && r.args.customerCreateExpiryDuration > time.Hour*48 {
 		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
@@ -79,7 +84,12 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Wrap(err, "create customer")
 	}
 
-	return print.Customer(r.outputFormat, r.w, customer)
+	err = print.Customer(r.outputFormat, r.w, customer)
+	if err != nil {
+		return errors.Wrap(err, "print customer")
+	}
+
+	return nil
 }
 
 func validateCustomerType(customerType string) error {

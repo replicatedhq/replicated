@@ -367,20 +367,20 @@ func getReadyAppRelease(r *runners, log *logger.Logger, release types.ReleaseInf
 
 func areReleaseChartsPushed(charts []types.Chart) (bool, error) {
 	pushedChartsCount := 0
+	chartsCount := 0 // only include charts that will be pushed
 	for _, chart := range charts {
 		switch chart.Status {
 		case types.ChartStatusPushed:
 			pushedChartsCount++
+			chartsCount++
 		case types.ChartStatusUnknown, types.ChartStatusPushing:
-			// wait for the chart to be pushed
+			chartsCount++
 		case types.ChartStatusError:
 			return false, errors.Errorf("chart %q failed to push: %s", chart.Name, chart.Error)
-		default:
-			return false, errors.Errorf("unknown release chart status %q", chart.Status)
 		}
 	}
 
-	return pushedChartsCount == len(charts), nil
+	return pushedChartsCount == chartsCount, nil
 }
 
 func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConfig *rest.Config, release *release.Release) error {
@@ -515,6 +515,10 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 
 	ctx := context.Background()
 	for _, chart := range release.Charts {
+		if chart.Status != types.ChartStatusPushed {
+			continue
+		}
+
 		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), true)
 		if err != nil {
 			return errors.Wrap(err, "dry run release")
