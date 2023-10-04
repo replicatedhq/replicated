@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/version"
 )
 
 const apiOrigin = "https://api.replicated.com/vendor"
@@ -114,6 +116,12 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 	req.Header.Set("Authorization", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
+
+	if err := addGitHubActionsHeaders(req); err != nil {
+		return errors.Wrap(err, "add github actions headers")
+	}
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -144,6 +152,30 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
 			return fmt.Errorf("%s %s response decoding: %w", method, endpoint, err)
 		}
+	}
+
+	return nil
+}
+
+func addGitHubActionsHeaders(req *http.Request) error {
+	// anyone can set this to false to disable this behavior
+	if os.Getenv("CI") != "true" {
+		return nil
+	}
+
+	// the following params are used to link CMX runs back to the workflow
+	req.Header.Set("X-Replicated-CI", "true")
+	if os.Getenv("GITHUB_RUN_ID") != "" {
+		req.Header.Set("X-Replicated-GitHubRunID", os.Getenv("GITHUB_RUN_ID"))
+	}
+	if os.Getenv("GITHUB_RUN_NUMBER") != "" {
+		req.Header.Set("X-Replicated-GitHubRunNumber", os.Getenv("GITHUB_RUN_NUMBER"))
+	}
+	if os.Getenv("GITHUB_SERVER_URL") != "" {
+		req.Header.Set("X-Replicated-GitHubServerURL", os.Getenv("GITHUB_SERVER_URL"))
+	}
+	if os.Getenv("GITHUB_REPOSITORY") != "" {
+		req.Header.Set("X-Replicated-GitHubRepository", os.Getenv("GITHUB_REPOSITORY"))
 	}
 
 	return nil
