@@ -19,6 +19,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
+	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 const (
@@ -393,7 +394,7 @@ func encodeKotsFile(prefix, path string, info os.FileInfo, err error) (*kotstype
 		return nil, nil
 	}
 
-	bytes, err := ioutil.ReadFile(path)
+	bytes, err := os.ReadFile(path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "read file %s", path)
 	}
@@ -447,13 +448,20 @@ func makeReleaseFromDir(fileDir string) (string, error) {
 }
 
 func makeReleaseFromChart(chartFile string) (string, error) {
-	fileInfo, err := os.Stat(chartFile)
+	file, err := os.Open(chartFile)
 	if err != nil {
-		return "", errors.Wrapf(err, "stat %s", chartFile)
+		return "", errors.Wrapf(err, "open file")
+	}
+	defer file.Close()
+
+	// Validate chart by loading it
+	if _, err := loader.LoadArchive(file); err != nil {
+		return "", errors.Wrapf(err, "load file")
 	}
 
-	if fileInfo.IsDir() {
-		return "", errors.Errorf("chart path %s is a directory", chartFile)
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return "", errors.Wrapf(err, "stat file")
 	}
 
 	dirName, _ := filepath.Split(chartFile)
