@@ -11,19 +11,25 @@ import (
 )
 
 type CreateClusterRequest struct {
-	Name                   string `json:"name"`
-	KubernetesDistribution string `json:"kubernetes_distribution"`
-	KubernetesVersion      string `json:"kubernetes_version"`
-	NodeCount              int    `json:"node_count"`
-	DiskGiB                int64  `json:"disk_gib"`
-	TTL                    string `json:"ttl"`
-	InstanceType           string `json:"instance_type"`
+	Name                   string       `json:"name"`
+	KubernetesDistribution string       `json:"kubernetes_distribution"`
+	KubernetesVersion      string       `json:"kubernetes_version"`
+	NodeCount              int          `json:"node_count"`
+	DiskGiB                int64        `json:"disk_gib"`
+	TTL                    string       `json:"ttl"`
+	InstanceType           string       `json:"instance_type"`
+	Tags                   []ClusterTag `json:"tags"`
 }
 
 type CreateClusterResponse struct {
 	Cluster                *types.Cluster    `json:"cluster"`
 	Errors                 []string          `json:"errors"`
 	SupportedDistributions map[string]string `json:"supported_distributions"`
+}
+
+type ClusterTag struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 type CreateClusterOpts struct {
@@ -34,6 +40,7 @@ type CreateClusterOpts struct {
 	DiskGiB                int64
 	TTL                    string
 	InstanceType           string
+	Tags                   []ClusterTag
 	DryRun                 bool
 }
 
@@ -64,6 +71,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
 		InstanceType:           opts.InstanceType,
+		Tags:                   opts.Tags,
 	}
 
 	if opts.DryRun {

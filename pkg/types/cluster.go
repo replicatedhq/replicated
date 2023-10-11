@@ -17,6 +17,11 @@ const (
 	ClusterStatusDeleted      ClusterStatus = "deleted"
 )
 
+type ClusterTag struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type Cluster struct {
 	ID                     string `json:"id"`
 	Name                   string `json:"name"`
@@ -28,6 +33,8 @@ type Cluster struct {
 	Status    ClusterStatus `json:"status"`
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
+
+	Tags []ClusterTag `json:"tags"`
 }
 
 type ClusterVersion struct {

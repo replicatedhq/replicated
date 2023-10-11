@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -18,10 +19,11 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 		Use:   "create",
 		Short: "Create test clusters",
 		Long: `Create test clusters.
-		
+
 This is a beta feature, with some known limitations:
 https://docs.replicated.com/vendor/testing-how-to#limitations`,
-		RunE: r.createCluster,
+		SilenceUsage: true,
+		RunE:         r.createCluster,
 	}
 	parent.AddCommand(cmd)
 
@@ -32,8 +34,9 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
-
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
+	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
+
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
@@ -48,6 +51,19 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		r.args.createClusterName = generateClusterName()
 	}
 
+	tags := []kotsclient.ClusterTag{}
+	for _, tag := range r.args.createClusterTags {
+		tagParts := strings.SplitN(tag, "=", 2)
+		if len(tagParts) != 2 {
+			return errors.Errorf("invalid tag format: %s", tag)
+		}
+
+		tags = append(tags, kotsclient.ClusterTag{
+			Key:   tagParts[0],
+			Value: tagParts[1],
+		})
+	}
+
 	opts := kotsclient.CreateClusterOpts{
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
@@ -56,6 +72,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		InstanceType:           r.args.createClusterInstanceType,
+		Tags:                   tags,
 		DryRun:                 r.args.createClusterDryRun,
 	}
 	cl, err := r.createAndWaitForCluster(opts)
