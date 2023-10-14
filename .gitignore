@@ -7,3 +7,5 @@ bin/
 vendor/
 .idea
 .vscode
+
+charts/

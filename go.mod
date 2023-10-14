@@ -50,6 +50,7 @@ require (
 	github.com/Microsoft/hcsshim v0.10.0-rc.7 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
+	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/ahmetalpbalkan/go-cursor v0.0.0-20131010032410-8136607ea412 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect

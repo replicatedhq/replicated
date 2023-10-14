@@ -100,6 +100,31 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 	return bodyBytes, nil
 }
 
+func (c *HTTPClient) BuildRequest(method string, path string, reqBody interface{}) (*http.Request, error) {
+	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
+	var buf bytes.Buffer
+	if reqBody != nil {
+		if err := json.NewEncoder(&buf).Encode(reqBody); err != nil {
+			return nil, err
+		}
+	}
+	req, err := http.NewRequest(method, endpoint, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
+
+	if err := addGitHubActionsHeaders(req); err != nil {
+		return nil, errors.Wrap(err, "add github actions headers")
+	}
+
+	return req, nil
+}
+
 func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer

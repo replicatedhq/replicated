@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/cli/values"
 )
@@ -33,6 +34,15 @@ type runners struct {
 
 	rootCmd *cobra.Command
 	args    runnerArgs
+
+	ai aiArgs
+}
+
+type aiArgs struct {
+	bundle           *types.Bundle
+	model            string
+	previousPrompt   string
+	previousResponse string
 }
 
 type runnerArgs struct {
