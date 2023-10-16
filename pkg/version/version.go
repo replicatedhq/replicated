@@ -57,11 +57,11 @@ func initBuild() {
 
 	build.UpdateInfo, err = usrbinsdk.GetUpdateInfo()
 	if err != nil {
-		fmt.Printf("Error getting update info: %s", err)
+		fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
 	}
 
 	if err := replicatedfile.Cache.SaveUpdateCheckerInfo(build.Version, build.UpdateInfo); err != nil {
-		fmt.Printf("Error saving update checker cache: %s", err)
+		fmt.Fprintf(os.Stderr, "Error saving update checker cache: %s", err)
 	}
 }
 
