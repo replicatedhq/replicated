@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"path/filepath"
 
@@ -10,6 +10,7 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
+	"helm.sh/helm/v3/pkg/chart/loader"
 )
 
 var (
@@ -46,16 +47,19 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 	var lintReleaseData []byte
 	var contentType string
 	if r.args.lintReleaseYamlDir != "" {
+		isHelmChartsOnly, err := isHelmChartsOnly(r.args.lintReleaseYamlDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to check if yaml dir is helm charts only")
+		}
 		data, err := tarYAMLDir(r.args.lintReleaseYamlDir)
 		if err != nil {
 			return errors.Wrap(err, "failed to read yaml dir")
 		}
 		lintReleaseData = data
-		// TODO: all specfiles are charts => isBuildersRelease
-		isBuildersRelease = false
+		isBuildersRelease = isHelmChartsOnly
 		contentType = "application/tar"
 	} else if r.args.lintReleaseChart != "" {
-		data, err := ioutil.ReadFile(r.args.lintReleaseChart)
+		data, err := os.ReadFile(r.args.lintReleaseChart)
 		if err != nil {
 			return errors.Wrap(err, "failed to read chart file")
 		}
@@ -111,7 +115,7 @@ func shouldFail(lintResult []types.LintMessage, failOn string) bool {
 }
 
 func tarYAMLDir(yamlDir string) ([]byte, error) {
-	archiveDir, err := ioutil.TempDir("", "replicated")
+	archiveDir, err := os.MkdirTemp("", "replicated")
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create temp dir for archive")
 	}
@@ -127,10 +131,40 @@ func tarYAMLDir(yamlDir string) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to archive")
 	}
 
-	data, err := ioutil.ReadFile(archiveFile)
+	data, err := os.ReadFile(archiveFile)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read archive file")
 	}
 
 	return data, nil
+}
+
+func isHelmChartsOnly(yamlDir string) (bool, error) {
+	helmError := errors.New("helm error")
+	err := filepath.Walk(yamlDir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		_, err = loader.LoadFile(path)
+		if err != nil {
+			return helmError
+		}
+
+		return nil
+	})
+
+	if err == helmError {
+		return false, nil
+	}
+
+	if err == nil {
+		return true, nil
+	}
+
+	return false, errors.Wrap(err, "failed to walk yaml dir")
 }
