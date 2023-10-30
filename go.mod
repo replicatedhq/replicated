@@ -3,8 +3,7 @@ module github.com/replicatedhq/replicated
 go 1.20
 
 require (
-	github.com/Masterminds/semver v1.5.0
-	github.com/docker/docker v23.0.3+incompatible
+	github.com/docker/docker v24.0.7+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/go-git/go-git/v5 v5.7.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -43,6 +42,7 @@ require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
+	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
