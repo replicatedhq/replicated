@@ -45,10 +45,10 @@ type CreateClusterOpts struct {
 }
 
 type CreateClusterErrorResponse struct {
-	Error CreateClusterErrorError `json:"Error"`
+	Error CreateClusterError `json:"Error"`
 }
 
-type CreateClusterErrorError struct {
+type CreateClusterError struct {
 	Message         string                  `json:"message"`
 	MaxDiskGiB      int64                   `json:"maxDiskGiB,omitempty"`
 	MaxEKS          int64                   `json:"maxEKS,omitempty"`
@@ -62,7 +62,7 @@ type ClusterValidationError struct {
 	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
 }
 
-func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *CreateClusterErrorError, error) {
+func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, *CreateClusterError, error) {
 	req := CreateClusterRequest{
 		Name:                   opts.Name,
 		KubernetesDistribution: opts.KubernetesDistribution,
@@ -81,7 +81,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	return c.doCreateClusterRequest(req)
 }
 
-func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterErrorError, error) {
+func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterError, error) {
 	resp := CreateClusterResponse{}
 	endpoint := "/v3/cluster"
 	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
@@ -104,7 +104,7 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 	return resp.Cluster, nil, nil
 }
 
-func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*CreateClusterErrorError, error) {
+func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*CreateClusterError, error) {
 	resp := CreateClusterErrorResponse{}
 	endpoint := "/v3/cluster?dry-run=true"
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)

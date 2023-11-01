@@ -23,6 +23,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsutil"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 	troubleshootanalyze "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	troubleshootcollect "github.com/replicatedhq/troubleshoot/pkg/collect"
@@ -45,13 +46,13 @@ func (r *runners) InitClusterPrepare(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prepare",
 		Short: "prepare cluster for testing",
-		Long: `The cluster prepare command will provision a cluster and install 
+		Long: `The cluster prepare command will provision a cluster and install
 a local helm chart with a custom values.yaml and custom replicated sdk entitlements.
 
 This is a higher level CLI command that is useful in CI when you have a Helm chart and
 want it running in a variety of clusters.
 
-For more control over the workflow, consider using the cluster create command and 
+For more control over the workflow, consider using the cluster create command and
 using kubectl and helm CLI tools to install your application.
 
 Example:
@@ -165,7 +166,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 
 	if r.args.prepareClusterID == "" {
 		if r.args.prepareClusterName == "" {
-			r.args.prepareClusterName = generateClusterName()
+			r.args.prepareClusterName = util.GenerateName()
 		}
 
 		clusterOpts := kotsclient.CreateClusterOpts{

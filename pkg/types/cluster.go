@@ -17,6 +17,23 @@ const (
 	ClusterStatusDeleted      ClusterStatus = "deleted"
 )
 
+type ClusterNodeGroupStatus string
+
+const (
+	ClusterNodeGroupStatusDeleted ClusterNodeGroupStatus = "deleted"
+)
+
+type ClusterNodeGroup struct {
+	ClusterID    string `json:"cluster_id"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	NodeCount    int    `json:"node_count"`
+	DiskGiB      int64  `json:"disk_gib"`
+	InstanceType string `json:"instance_type"`
+
+	Status ClusterNodeGroupStatus `json:"status"`
+}
+
 type ClusterTag struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -33,6 +50,8 @@ type Cluster struct {
 	Status    ClusterStatus `json:"status"`
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
+
+	AdditionalNodeGroups []ClusterNodeGroup `json:"additional_node_groups"`
 
 	Tags []ClusterTag `json:"tags"`
 }

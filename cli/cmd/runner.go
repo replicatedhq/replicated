@@ -199,6 +199,14 @@ type runnerArgs struct {
 
 	removeClusterAll bool
 
+	createClusterNodeGroupName         string
+	createClusterNodeGroupInstanceType string
+	createClusterNodeGroupNodeCount    int
+	createClusterNodeGroupDiskGiB      int64
+	createClusterNodeGroupWaitDuration time.Duration
+
+	lsClusterNodeGroupsWatch bool
+
 	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
 

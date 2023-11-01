@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/moby/moby/pkg/namesgenerator"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -48,7 +48,7 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 
 func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	if r.args.createClusterName == "" {
-		r.args.createClusterName = generateClusterName()
+		r.args.createClusterName = util.GenerateName()
 	}
 
 	tags := []kotsclient.ClusterTag{}
@@ -115,10 +115,6 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 	}
 
 	return cl, nil
-}
-
-func generateClusterName() string {
-	return namesgenerator.GetRandomName(0)
 }
 
 func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, duration time.Duration) (*types.Cluster, error) {

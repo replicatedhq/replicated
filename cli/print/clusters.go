@@ -10,9 +10,9 @@ import (
 )
 
 // TODO: implement a -o wide, and expose nodecount also?
-var clustersTmplHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TAGS`
+var clustersTmplHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	NODE GROUPS	STATUS	CREATED	EXPIRES	TAGS`
 var clustersTmplRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ add (len .AdditionalNodeGroups) 1 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
 {{ end }}`
 var clustersTmplSrc = fmt.Sprintln(clustersTmplHeaderSrc) + clustersTmplRowSrc
 
@@ -31,6 +31,53 @@ DISTRIBUTION: {{ $d.Name }}
 var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
 var clustersTmplNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplRowSrc))
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
+
+var clusterNodeGroupsTmplHeaderSrc = `ID	NAME	NODE COUNT	DISK	INSTANCE TYPE`
+var clusterNodeGroupTmplRowSrc = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27 }}	{{ .NodeCount }}	{{ .DiskGiB }} GiB	{{ .InstanceType }}
+{{ end }}`
+var clusterNodeGroupsTmplSrc = fmt.Sprintln(clusterNodeGroupsTmplHeaderSrc) + clusterNodeGroupTmplRowSrc
+
+var clusterNodeGroupsTmpl = template.Must(template.New("clusterNodeGroups").Funcs(funcs).Parse(clusterNodeGroupsTmplSrc))
+var clusterNodeGroupsTmplNoHeader = template.Must(template.New("clusterNodeGroups").Funcs(funcs).Parse(clusterNodeGroupTmplRowSrc))
+
+func NoNodeGroups(outputFormat string, w *tabwriter.Writer) error {
+	if outputFormat == "table" {
+		_, err := fmt.Fprintln(w, "No additional node groups found. Use the `replicated cluster nodegroup create` command to create an additional node group.")
+		if err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		if _, err := fmt.Fprintln(w, "[]"); err != nil {
+			return err
+		}
+	}
+	return w.Flush()
+}
+
+func ClusterNodeGroups(outputFormat string, w *tabwriter.Writer, nodeGroups []*types.ClusterNodeGroup, header bool) error {
+	if outputFormat == "table" {
+		if header {
+			if err := clusterNodeGroupsTmpl.Execute(w, nodeGroups); err != nil {
+				return err
+			}
+		} else {
+			if err := clusterNodeGroupsTmplNoHeader.Execute(w, nodeGroups); err != nil {
+				return err
+			}
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(nodeGroups, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
+	}
+	return w.Flush()
+}
+
+func ClusterNodeGroup(outputFormat string, w *tabwriter.Writer, ng *types.ClusterNodeGroup) error {
+	return nil
+}
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
 	if outputFormat == "table" {
@@ -106,4 +153,8 @@ func ClusterVersions(outputFormat string, w *tabwriter.Writer, clusters []*types
 		}
 	}
 	return w.Flush()
+}
+
+func ClusterInstanceTypes(outpuFormat string, w *tabwriter.Writer, instanceTypes []string) error {
+	return nil
 }
