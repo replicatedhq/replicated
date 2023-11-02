@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -20,8 +22,8 @@ func (r *runners) InitRegistryAddGCR(parent *cobra.Command) {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The GCR endpoint")
-	cmd.Flags().StringVar(&r.args.addRegistryServiceAccountKey, "serviceaccountkey", "", "The service account key to authenticate to the registry with")
-	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryServiceAccountKey, "serviceaccountkey", "", "The service account key to authenticate to the registry with. This is the path to the JSON file.")
+	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key content from stdin")
 
 	cmd.RunE = r.registryAddGCR
 }
@@ -33,7 +35,7 @@ func (r *runners) registryAddGCR(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrap(err, "read secret service account key from stdin")
 		}
-		r.args.addRegistryServiceAccountKey = serviceAccountKey
+		r.args.addRegistryPassword = serviceAccountKey
 	}
 
 	addRegistryRequest, errs := r.validateRegistryAddGCR()
@@ -77,10 +79,22 @@ func (r *runners) validateRegistryAddGCR() (kotsclient.AddKOTSRegistryRequest, [
 		req.Endpoint = r.args.addRegistryEndpoint
 	}
 
-	if r.args.addRegistryServiceAccountKey == "" {
+	if r.args.addRegistryServiceAccountKey == "" && r.args.addRegistryPassword == "" {
 		errs = append(errs, errors.New("serviceaccountkey or serviceaccountkey-stdin must be specified"))
 	} else {
-		req.Password = r.args.addRegistryServiceAccountKey
+		if r.args.addRegistryServiceAccountKey != "" {
+			bytes, err := ioutil.ReadFile(r.args.addRegistryServiceAccountKey)
+			if err != nil {
+				errs = append(errs, errors.Wrap(err, "read service account key"))
+				return req, errs
+			}
+			if !json.Valid(bytes) {
+				errs = append(errs, errors.New("Not valid json key file"))
+				return req, errs
+			}
+			r.args.addRegistryPassword = string(bytes)
+		}
+		req.Password = r.args.addRegistryPassword
 	}
 
 	return req, errs
