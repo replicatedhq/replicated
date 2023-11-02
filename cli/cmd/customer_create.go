@@ -48,8 +48,8 @@ func (r *runners) createCustomer(_ *cobra.Command, _ []string) (err error) {
 		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
 	}
 	if r.args.customerCreateType == "paid" {
-    r.args.customerCreateType = "prod"
-  }
+		r.args.customerCreateType = "prod"
+	}
 
 	channelID := ""
 	if r.args.customerCreateChannel != "" {
