@@ -21,7 +21,10 @@ var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions ar
 DISTRIBUTION: {{ $d.Name }}
 • VERSIONS: {{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}
 • INSTANCE TYPES: {{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
-• MAX NODES: {{ $d.NodesMax }}
+• MAX NODES: {{ $d.NodesMax }}{{if $d.Status}}
+• ENABLED: {{ $d.Status.Enabled }}
+• STATUS: {{ $d.Status.Status }}
+• DETAILS: {{ $d.Status.StatusMessage }}{{end}}
 
 {{ end }}`
 
