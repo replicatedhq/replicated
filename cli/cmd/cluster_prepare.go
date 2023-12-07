@@ -58,7 +58,7 @@ Example:
 
 replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 \
 	  --entitlement seat_count=100 --entitlement license_type=enterprise \
-	  --chart ./my-helm-chart --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
+	  --chart ./your-chart.tgz --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
 		RunE: r.prepareCluster,
 	}
 
@@ -90,7 +90,7 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 	cmd.Flags().StringVar(&r.args.prepareClusterKotsSharedPassword, "shared-password", "", "Shared password for the KOTS admin console.")
 
 	// for builders plan (chart only)
-	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "Path to the helm chart to deploy")
+	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "Path to the helm chart package to deploy")
 	addValueOptionsFlags(cmd.Flags(), &r.args.prepareClusterValueOpts)
 
 	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace into which to deploy the KOTS application or Helm chart.")
@@ -571,6 +571,7 @@ func installHelmChart(r *runners, appSlug string, chartName string, releaseSeque
 	client.Namespace = r.args.prepareClusterNamespace
 	client.Timeout = r.args.prepareClusterAppReadyTimeout
 	client.Wait = true
+	client.CreateNamespace = true
 
 	if dryRun {
 		client.DryRun = true
