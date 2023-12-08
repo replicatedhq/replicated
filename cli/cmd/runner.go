@@ -177,6 +177,8 @@ type runnerArgs struct {
 	upgradeClusterDryRun            bool
 	upgradeClusterWaitDuration      time.Duration
 
+	updateClusterTTL string
+
 	prepareClusterID                     string
 	prepareClusterName                   string
 	prepareClusterKubernetesDistribution string
