@@ -225,6 +225,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterVersions(clusterCmd)
 	clusterPrepareCmd := runCmds.InitClusterPrepare(clusterCmd)
 
+	clusterUpdateCmd := runCmds.InitClusterUpdateCommand(clusterCmd)
+	runCmds.InitClusterUpdateTTL(clusterUpdateCmd)
+
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
