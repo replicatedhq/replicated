@@ -199,7 +199,10 @@ type runnerArgs struct {
 	prepareClusterKotsSharedPassword     string
 	prepareClusterAppReadyTimeout        time.Duration
 
-	removeClusterAll bool
+	removeClusterAll    bool
+	removeClusterTags   []string
+	removeClusterNames  []string
+	removeClusterDryRun bool
 
 	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
