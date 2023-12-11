@@ -38,25 +38,31 @@ func (r *runners) removeCluster(_ *cobra.Command, args []string) error {
 		}
 
 		for _, cluster := range clusters {
-			err := r.kotsAPI.RemoveCluster(cluster.ID)
-			if errors.Cause(err) == platformclient.ErrForbidden {
-				return ErrCompatibilityMatrixTermsNotAccepted
-			} else if err != nil {
+			err := remove(r, cluster.ID)
+			if err != nil {
 				return errors.Wrap(err, "remove cluster")
-			} else {
-				fmt.Printf("removed cluster %s\n", cluster.ID)
 			}
 		}
 	}
 
 	for _, arg := range args {
-		err := r.kotsAPI.RemoveCluster(arg)
-		if errors.Cause(err) == platformclient.ErrForbidden {
-			return ErrCompatibilityMatrixTermsNotAccepted
-		} else if err != nil {
+		err := remove(r, arg)
+		if err != nil {
 			return errors.Wrap(err, "remove cluster")
 		}
 	}
 
+	return nil
+}
+
+func remove(r *runners, clusterID string) error {
+	err := r.kotsAPI.RemoveCluster(clusterID)
+	if errors.Cause(err) == platformclient.ErrForbidden {
+		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
+		return errors.Wrap(err, "remove cluster")
+	} else {
+		fmt.Printf("removed cluster %s\n", clusterID)
+	}
 	return nil
 }
