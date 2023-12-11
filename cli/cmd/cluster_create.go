@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -51,17 +50,9 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		r.args.createClusterName = generateClusterName()
 	}
 
-	tags := []kotsclient.ClusterTag{}
-	for _, tag := range r.args.createClusterTags {
-		tagParts := strings.SplitN(tag, "=", 2)
-		if len(tagParts) != 2 {
-			return errors.Errorf("invalid tag format: %s", tag)
-		}
-
-		tags = append(tags, kotsclient.ClusterTag{
-			Key:   tagParts[0],
-			Value: tagParts[1],
-		})
+	tags, err := parseTags(r.args.createClusterTags)
+	if err != nil {
+		return errors.Wrap(err, "parse tags")
 	}
 
 	opts := kotsclient.CreateClusterOpts{
