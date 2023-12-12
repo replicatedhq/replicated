@@ -10,16 +10,16 @@ import (
 
 func (r *runners) InitClusterUpdateTTL(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "ttl",
-		Short:        "Update TTL for a test clusters",
-		Long:         `Update TTL for a test clusters`,
+		Use:          "ttl ID",
+		Short:        "Update TTL for a test cluster",
+		Long:         `Update TTL for a test cluster`,
 		Args:         cobra.ExactArgs(1),
 		RunE:         r.updateClusterTTL,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.updateClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
+	cmd.Flags().StringVar(&r.args.updateClusterTTL, "ttl", "", "Update TTL which starts from the moment the cluster is running (duration, max 48h).")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
