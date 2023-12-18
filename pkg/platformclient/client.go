@@ -211,7 +211,7 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 var knownErrorCodes = map[string]string{
 	"CUSTOMER_CHANNEL_ERROR": `You are attempting to assign a KOTS-enabled customer to a channel with a Helm-only head release. To resolve this, you can either
 
-1. Disable KOTS installations for this customer by passing the --disable-kots flag
+1. Disable KOTS installations for this customer by passing the --kots-install=false flag
 2. Assign this customer to a different channel that includes a KOTS-capable release
 3. Promote a release containing KOTS manifests to this channel (it will still be installable with the Helm CLI as long as it contains a helm chart)`,
 }
