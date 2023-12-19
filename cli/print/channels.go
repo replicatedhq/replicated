@@ -1,6 +1,8 @@
 package print
 
 import (
+	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -15,9 +17,16 @@ var channelsTmplSrc = `ID	NAME	RELEASE	VERSION
 
 var channelsTmpl = template.Must(template.New("channels").Parse(channelsTmplSrc))
 
-func Channels(w *tabwriter.Writer, channels []*types.Channel) error {
-	if err := channelsTmpl.Execute(w, channels); err != nil {
-		return err
+func Channels(outputFormat string, w *tabwriter.Writer, channels []*types.Channel) error {
+	if outputFormat == "table" {
+		if err := channelsTmpl.Execute(w, channels); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(channels, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }

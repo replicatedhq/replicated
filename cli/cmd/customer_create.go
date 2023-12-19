@@ -16,7 +16,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 		Short:         "create a customer",
 		Long:          `create a customer`,
 		RunE:          r.createCustomer,
-		SilenceUsage:  true,
+		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
 	}
 	parent.AddCommand(cmd)
@@ -34,9 +34,9 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	return cmd
 }
 
-func (r *runners) createCustomer(_ *cobra.Command, _ []string) (err error) {
+func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 	defer func() {
-		printIfError(err)
+		printIfError(cmd, err)
 	}()
 
 	// all of the following validation occurs in the API also, but

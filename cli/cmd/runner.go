@@ -222,10 +222,7 @@ type runnerArgs struct {
 	apiPostBody string
 	apiPutBody  string
 
-	channelInspectOutputFormat string
-
-	customerInspectOutputFormat string
-	customerInspectCustomer     string
+	customerInspectCustomer string
 
 	compatibilityKubernetesDistribution string
 	compatibilityKubernetesVersion      string

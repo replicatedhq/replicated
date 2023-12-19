@@ -3,16 +3,16 @@ package types
 import "time"
 
 type App struct {
-	ID           string
-	Name         string
-	Scheduler    string
-	Slug         string
-	IsFoundation bool
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Scheduler    string `json:"scheduler"`
+	Slug         string `json:"slug"`
+	IsFoundation bool   `json:"isFoundation"`
 }
 
 type AppAndChannels struct {
-	App      *App
-	Channels []Channel
+	App      *App      `json:"app"`
+	Channels []Channel `json:"channels"`
 }
 
 type KotsAppWithChannels struct {

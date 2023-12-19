@@ -45,10 +45,5 @@ func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
 		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
-		if err != nil {
-			return errors.Wrap(err, "list customers")
-		}
-		return errors.New("Failed to list customers")
-
 	}
 }

@@ -18,6 +18,7 @@ func (r *runners) InitRegistryList(parent *cobra.Command) *cobra.Command {
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -29,7 +30,7 @@ func (r *runners) listRegistries(_ *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 0 {
-		return print.Registries(r.w, kotsRegistries)
+		return print.Registries(r.outputFormat, r.w, kotsRegistries)
 	}
 
 	registrySearch := args[0]
@@ -40,5 +41,5 @@ func (r *runners) listRegistries(_ *cobra.Command, args []string) error {
 		}
 	}
 
-	return print.Registries(r.w, resultRegistries)
+	return print.Registries(r.outputFormat, r.w, resultRegistries)
 }

@@ -1,6 +1,8 @@
 package print
 
 import (
+	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -14,9 +16,16 @@ var registriesTmplSrc = `PROVIDER	ENDPOINT	AUTHTYPE
 
 var registriesTmpl = template.Must(template.New("registries").Funcs(funcs).Parse(registriesTmplSrc))
 
-func Registries(w *tabwriter.Writer, registries []types.Registry) error {
-	if err := registriesTmpl.Execute(w, registries); err != nil {
-		return err
+func Registries(outputFormat string, w *tabwriter.Writer, registries []types.Registry) error {
+	if outputFormat == "table" {
+		if err := registriesTmpl.Execute(w, registries); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(registries, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
 	}
 
 	return w.Flush()

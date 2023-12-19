@@ -42,7 +42,7 @@ func ChannelAttrs(outputFormat string,
 	appSlug string,
 	appChan *types.Channel,
 ) error {
-	if outputFormat == "text" {
+	if outputFormat == "text" || outputFormat == "table" {
 		attrs := struct {
 			Existing string
 			Embedded string

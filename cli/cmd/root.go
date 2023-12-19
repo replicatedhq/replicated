@@ -277,7 +277,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	prerunCommand := func(cmd *cobra.Command, args []string) (err error) {
 		if cmd.SilenceErrors { // when SilenceErrors is set, command wants to use custom error printer
 			defer func() {
-				printIfError(err)
+				printIfError(cmd, err)
 			}()
 		}
 
@@ -319,10 +319,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	return runCmds.rootCmd.Execute()
 }
 
-func printIfError(err error) {
+func printIfError(cmd *cobra.Command, err error) {
 	if err == nil {
 		return
 	}
+
+	cmd.SilenceUsage = true
 
 	switch err := errors.Cause(err).(type) {
 	case platformclient.APIError:

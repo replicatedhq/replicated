@@ -13,6 +13,8 @@ func (r *runners) IniReleaseList(parent *cobra.Command) {
 	}
 
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
 	cmd.RunE = r.releaseList
 }
 
@@ -22,5 +24,5 @@ func (r *runners) releaseList(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Releases(r.w, releases)
+	return print.Releases(r.outputFormat, r.w, releases)
 }

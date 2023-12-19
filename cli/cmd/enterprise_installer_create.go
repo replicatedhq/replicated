@@ -21,6 +21,7 @@ func (r *runners) InitEnterpriseInstallerCreate(parent *cobra.Command) {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.enterpriseInstallerCreateFile, "yaml-file", "", "The filename containing the installer yaml")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.enterpriseInstallerCreate
 }
@@ -36,6 +37,6 @@ func (r *runners) enterpriseInstallerCreate(cmd *cobra.Command, args []string) e
 		return err
 	}
 
-	print.EnterpriseInstaller(r.w, installer)
+	print.EnterpriseInstaller(r.outputFormat, r.w, installer)
 	return nil
 }

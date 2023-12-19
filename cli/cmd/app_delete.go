@@ -19,6 +19,7 @@ func (r *runners) InitAppDelete(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().BoolVarP(&r.args.deleteAppForceYes, "force", "f", false, "Skip confirmation prompt. There is no undo for this action.")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -40,7 +41,7 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 
 	apps := []types.AppAndChannels{{App: app}}
 
-	err = print.Apps(r.w, apps)
+	err = print.Apps(r.outputFormat, r.w, apps)
 	if err != nil {
 		return errors.Wrap(err, "print app")
 	}

@@ -21,6 +21,7 @@ func (r *runners) InitRegistryAddGHCR(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.addRegistryToken, "token", "", "The token to use to auth to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.registryAddGHCR
 }
@@ -58,7 +59,7 @@ func (r *runners) registryAddGHCR(cmd *cobra.Command, args []string) error {
 		*registry,
 	}
 
-	return print.Registries(r.w, registries)
+	return print.Registries(r.outputFormat, r.w, registries)
 }
 
 func (r *runners) validateRegistryAddGHCR() (kotsclient.AddKOTSRegistryRequest, []error) {

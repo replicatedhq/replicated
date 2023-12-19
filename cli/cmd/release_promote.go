@@ -31,7 +31,7 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) {
 	defer func() {
-		printIfError(err)
+		printIfError(cmd, err)
 	}()
 
 	// parse sequence and channel ID positional arguments

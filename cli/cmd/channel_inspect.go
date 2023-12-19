@@ -15,7 +15,7 @@ func (r *runners) InitChannelInspect(parent *cobra.Command) {
 		Long:  "Show full details for a channel",
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVar(&r.args.channelInspectOutputFormat, "output", "text", "The output format to use. One of: json|text (default: text)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.channelInspect
 }
@@ -31,7 +31,7 @@ func (r *runners) channelInspect(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err = print.ChannelAttrs(r.args.channelInspectOutputFormat, r.w, r.appType, r.appSlug, appChan); err != nil {
+	if err = print.ChannelAttrs(r.outputFormat, r.w, r.appType, r.appSlug, appChan); err != nil {
 		return err
 	}
 

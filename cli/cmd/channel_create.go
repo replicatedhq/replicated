@@ -19,6 +19,7 @@ func (r *runners) InitChannelCreate(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.channelCreateName, "name", "", "The name of this channel")
 	cmd.Flags().StringVar(&r.args.channelCreateDescription, "description", "", "A longer description of this channel")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.channelCreate
 }
@@ -29,5 +30,5 @@ func (r *runners) channelCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.Channels(r.w, allChannels)
+	return print.Channels(r.outputFormat, r.w, allChannels)
 }

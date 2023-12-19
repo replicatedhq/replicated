@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
@@ -24,12 +24,13 @@ func (r *runners) InitEnterprisePolicyUpdate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.enterprisePolicyUpdateName, "name", "", "The new name for this policy")
 	cmd.Flags().StringVar(&r.args.enterprisePolicyUpdateDescription, "description", "", "The new description of this policy")
 	cmd.Flags().StringVar(&r.args.enterprisePolicyUpdateFile, "policy-file", "", "The filename containing an OPA policy")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.enterprisePolicyUpdate
 }
 
 func (r *runners) enterprisePolicyUpdate(cmd *cobra.Command, args []string) error {
-	b, err := ioutil.ReadFile(r.args.enterprisePolicyUpdateFile)
+	b, err := os.ReadFile(r.args.enterprisePolicyUpdateFile)
 	if err != nil {
 		return errors.Wrap(err, "failed to read file")
 	}
@@ -39,6 +40,6 @@ func (r *runners) enterprisePolicyUpdate(cmd *cobra.Command, args []string) erro
 		return err
 	}
 
-	print.EnterprisePolicy(r.w, policy)
+	print.EnterprisePolicy(r.outputFormat, r.w, policy)
 	return nil
 }

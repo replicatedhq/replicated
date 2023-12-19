@@ -1,6 +1,8 @@
 package print
 
 import (
+	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -14,15 +16,22 @@ var appsTmplSrc = `ID	NAME	SLUG	SCHEDULER
 
 var appsTmpl = template.Must(template.New("apps").Funcs(funcs).Parse(appsTmplSrc))
 
-func Apps(w *tabwriter.Writer, apps []types.AppAndChannels) error {
-	var as []*types.App
+func Apps(outputFormat string, w *tabwriter.Writer, apps []types.AppAndChannels) error {
+	if outputFormat == "table" {
+		var as []*types.App
 
-	for _, a := range apps {
-		as = append(as, a.App)
-	}
+		for _, a := range apps {
+			as = append(as, a.App)
+		}
 
-	if err := appsTmpl.Execute(w, as); err != nil {
-		return err
+		if err := appsTmpl.Execute(w, as); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(apps, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
 	}
 
 	return w.Flush()

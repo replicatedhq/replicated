@@ -55,7 +55,7 @@ func Test_ChannelAttrs(t *testing.T) {
 			var out bytes.Buffer
 			w := tabwriter.NewWriter(&out, 0, 8, 4, ' ', tabwriter.TabIndent)
 
-			err := ChannelAttrs("text", w, tt.appType, tt.appSlug, tt.appChan)
+			err := ChannelAttrs("table", w, tt.appType, tt.appSlug, tt.appChan)
 			assert.NoError(t, err)
 
 			w.Flush()

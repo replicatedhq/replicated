@@ -18,6 +18,7 @@ func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -29,7 +30,7 @@ func (r *runners) listApps(_ *cobra.Command, args []string) error {
 	}
 
 	if len(args) == 0 {
-		return print.Apps(r.w, kotsApps)
+		return print.Apps(r.outputFormat, r.w, kotsApps)
 	}
 
 	appSearch := args[0]
@@ -39,5 +40,5 @@ func (r *runners) listApps(_ *cobra.Command, args []string) error {
 			resultApps = append(resultApps, app)
 		}
 	}
-	return print.Apps(r.w, resultApps)
+	return print.Apps(r.outputFormat, r.w, resultApps)
 }
