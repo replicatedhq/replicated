@@ -13,6 +13,8 @@ func (r *runners) InitInstallerList(parent *cobra.Command) {
 	}
 
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
 	cmd.RunE = r.installerList
 }
 
@@ -22,5 +24,5 @@ func (r *runners) installerList(_ *cobra.Command, _ []string) error {
 		return err
 	}
 
-	return print.Installers(r.w, installers)
+	return print.Installers(r.outputFormat, r.w, installers)
 }

@@ -49,7 +49,7 @@ func CustomerAttrs(outputFormat string,
 	registryHostname string,
 	cust *types.Customer,
 ) error {
-	if outputFormat == "text" {
+	if outputFormat == "text" || outputFormat == "table" {
 		attrs := struct {
 			Login     string
 			Preflight string

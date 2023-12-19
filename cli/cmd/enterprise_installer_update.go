@@ -22,6 +22,7 @@ func (r *runners) InitEnterpriseInstallerUpdate(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.enterpriseInstallerUpdateID, "id", "", "The id of the installer to be updated")
 	cmd.Flags().StringVar(&r.args.enterpriseInstallerUpdateFile, "yaml-file", "", "The filename containing the installer yaml")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.enterpriseInstallerUpdate
 }
@@ -37,6 +38,6 @@ func (r *runners) enterpriseInstallerUpdate(cmd *cobra.Command, args []string) e
 		return err
 	}
 
-	print.EnterpriseInstaller(r.w, installer)
+	print.EnterpriseInstaller(r.outputFormat, r.w, installer)
 	return nil
 }

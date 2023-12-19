@@ -22,6 +22,7 @@ func (r *runners) InitRegistryAddGCR(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The GCR endpoint")
 	cmd.Flags().StringVar(&r.args.addRegistryServiceAccountKey, "serviceaccountkey", "", "The service account key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key from stdin")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.registryAddGCR
 }
@@ -59,7 +60,7 @@ func (r *runners) registryAddGCR(cmd *cobra.Command, args []string) error {
 		*registry,
 	}
 
-	return print.Registries(r.w, registries)
+	return print.Registries(r.outputFormat, r.w, registries)
 
 }
 

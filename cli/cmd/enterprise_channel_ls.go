@@ -14,6 +14,7 @@ func (r *runners) InitEnterpriseChannelLS(parent *cobra.Command) *cobra.Command 
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -24,6 +25,6 @@ func (r *runners) enterpriseChannelList(cmd *cobra.Command, args []string) error
 		return err
 	}
 
-	print.EnterpriseChannels(r.w, channels)
+	print.EnterpriseChannels(r.outputFormat, r.w, channels)
 	return nil
 }

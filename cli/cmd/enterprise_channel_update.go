@@ -20,6 +20,7 @@ func (r *runners) InitEnterpriseChannelUpdate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.enterpriseChannelUpdateID, "id", "", "The id of the channel to be updated")
 	cmd.Flags().StringVar(&r.args.enterpriseChannelUpdateName, "name", "", "The new name for this channel")
 	cmd.Flags().StringVar(&r.args.enterpriseChannelUpdateDescription, "description", "", "The new description of this channel")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.enterpriseChannelUpdate
 }
@@ -30,6 +31,6 @@ func (r *runners) enterpriseChannelUpdate(cmd *cobra.Command, args []string) err
 		return err
 	}
 
-	print.EnterpriseChannel(r.w, channel)
+	print.EnterpriseChannel(r.outputFormat, r.w, channel)
 	return nil
 }

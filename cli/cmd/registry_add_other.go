@@ -23,6 +23,7 @@ func (r *runners) InitRegistryAddOther(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.addRegistryUsername, "username", "", "The userame to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistryPassword, "password", "", "The password to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryPasswordFromStdIn, "password-stdin", false, "Take the password from stdin")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.registryAddOther
 
@@ -62,7 +63,7 @@ func (r *runners) registryAddOther(cmd *cobra.Command, args []string) error {
 		*registry,
 	}
 
-	return print.Registries(r.w, registries)
+	return print.Registries(r.outputFormat, r.w, registries)
 }
 
 func (r *runners) validateRegistryAddOther() (kotsclient.AddKOTSRegistryRequest, []error) {

@@ -23,6 +23,7 @@ func (r *runners) InitRegistryAddECR(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.addRegistryAccessKeyID, "accesskeyid", "", "The access key id to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistrySecretAccessKey, "secretaccesskey", "", "The secret access key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistrySecretAccessKeyFromStdIn, "secretaccesskey-stdin", false, "Take the secret access key from stdin")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.RunE = r.registryAddECR
 }
@@ -60,7 +61,7 @@ func (r *runners) registryAddECR(cmd *cobra.Command, args []string) error {
 		*registry,
 	}
 
-	return print.Registries(r.w, registries)
+	return print.Registries(r.outputFormat, r.w, registries)
 }
 
 func (r *runners) validateRegistryAddECR() (kotsclient.AddKOTSRegistryRequest, []error) {

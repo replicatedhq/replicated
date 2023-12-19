@@ -21,7 +21,7 @@ func (r *runners) InitCustomersInspectCommand(parent *cobra.Command) *cobra.Comm
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerInspectCustomer, "customer", "", "The Customer Name or ID")
-	cmd.Flags().StringVar(&r.args.customerInspectOutputFormat, "output", "text", "The output format to use. One of: json|text (default: text)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -46,7 +46,7 @@ func (r *runners) inspectCustomer(_ *cobra.Command, _ []string) error {
 		return errors.Wrapf(err, "get registry hostname for customer %q", r.args.customerInspectCustomer)
 	}
 
-	if err = print.CustomerAttrs(r.args.customerInspectOutputFormat, r.w, r.appType, r.appSlug, ch, regHost, customer); err != nil {
+	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, customer); err != nil {
 		return err
 	}
 

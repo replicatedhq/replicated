@@ -32,7 +32,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 		Short: "Create a new release",
 		Long: `Create a new release by providing YAML configuration for the next release in
   your sequence.`,
-		SilenceUsage:  true,
+		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
 	}
 
@@ -155,7 +155,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 	defer func() {
-		printIfError(err)
+		printIfError(cmd, err)
 	}()
 
 	log := logger.NewLogger(r.w)

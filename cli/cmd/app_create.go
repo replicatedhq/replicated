@@ -17,6 +17,7 @@ func (r *runners) InitAppCreate(parent *cobra.Command) *cobra.Command {
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -45,5 +46,5 @@ func (r *runners) createApp(_ *cobra.Command, args []string) error {
 		},
 	}
 
-	return print.Apps(r.w, apps)
+	return print.Apps(r.outputFormat, r.w, apps)
 }

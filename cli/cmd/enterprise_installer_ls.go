@@ -14,6 +14,7 @@ func (r *runners) InitEnterpriseInstallerLS(parent *cobra.Command) *cobra.Comman
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
@@ -24,6 +25,6 @@ func (r *runners) enterpriseInstallerList(cmd *cobra.Command, args []string) err
 		return err
 	}
 
-	print.EnterpriseInstallers(r.w, installers)
+	print.EnterpriseInstallers(r.outputFormat, r.w, installers)
 	return nil
 }
