@@ -22,10 +22,10 @@ const (
 
 func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "kubeconfig ID",
-		Short:        "Download credentials for a test cluster",
-		Long:         `Download credentials for a test cluster`,
-		RunE:         r.kubeconfigCluster,
+		Use:   "kubeconfig [ID]",
+		Short: "Download credentials for a test cluster",
+		Long:  `Download credentials for a test cluster`,
+		RunE:  r.kubeconfigCluster,
 	}
 	parent.AddCommand(cmd)
 
