@@ -71,7 +71,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if cluster.Status != types.ClusterStatusRunning {
-		return errors.Errorf("cluster %s is not %s, please check the cluster status", clusterID, types.ClusterStatusRunning)
+		return errors.Errorf("cluster %s is not running, please check the cluster status", clusterID)
 	}
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
