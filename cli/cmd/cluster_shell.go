@@ -87,7 +87,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	if _, err := tmpFile.Write(kubeconfig); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
-	if err := tmpFile.Chmod(0644); err != nil {
+	if err := tmpFile.Chmod(0600); err != nil {
 		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
