@@ -33,6 +33,11 @@ func (r *runners) InitClusterShell(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
+	shellCmd := os.Getenv("SHELL")
+	if shellCmd == "" {
+		return errors.New("SHELL environment is required for shell command")
+	}
+
 	// by default, we look at args[0] as the id
 	// but if it's not provided, we look for a viper flag named "name" and use it
 	// as the name of the cluster, not the id
@@ -89,11 +94,6 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	}
 	if err := tmpFile.Chmod(0600); err != nil {
 		return errors.Wrap(err, "chmod kubeconfig file")
-	}
-
-	shellCmd := os.Getenv("SHELL")
-	if shellCmd == "" {
-		return errors.New("SHELL environment is required for shell command")
 	}
 
 	shellExec := exec.Command(shellCmd)
