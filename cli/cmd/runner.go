@@ -217,6 +217,9 @@ type runnerArgs struct {
 	kubeconfigPath        string
 	kubeconfigStdout      bool
 
+	shellClusterName string
+	shellClusterID   string
+
 	loginEndpoint string
 
 	apiPostBody string
