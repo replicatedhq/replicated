@@ -22,10 +22,10 @@ const (
 
 func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "kubeconfig ID",
-		Short:        "Download credentials for a test cluster",
-		Long:         `Download credentials for a test cluster`,
-		RunE:         r.kubeconfigCluster,
+		Use:   "kubeconfig [ID]",
+		Short: "Download credentials for a test cluster",
+		Long:  `Download credentials for a test cluster`,
+		RunE:  r.kubeconfigCluster,
 	}
 	parent.AddCommand(cmd)
 
@@ -71,7 +71,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if cluster.Status != types.ClusterStatusRunning {
-		return errors.Errorf("cluster %s is not %s, please check the cluster status", clusterID, types.ClusterStatusRunning)
+		return errors.Errorf("cluster %s is not running, please check the cluster status", clusterID)
 	}
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
@@ -116,7 +116,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if _, err := tmpFile.Write(kubeconfig); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
-	if err := tmpFile.Chmod(0644); err != nil {
+	if err := tmpFile.Chmod(0600); err != nil {
 		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
