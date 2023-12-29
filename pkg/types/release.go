@@ -12,15 +12,15 @@ var (
 )
 
 type ReleaseInfo struct {
-	ActiveChannels []Channel
-	AppID          string
-	CreatedAt      time.Time
-	EditedAt       time.Time
-	Editable       bool
-	Sequence       int64
-	Version        string
-	Charts         []Chart
-	IsHelmOnly     bool
+	ActiveChannels []Channel `json:"activeChannels"`
+	AppID          string    `json:"appId"`
+	CreatedAt      time.Time `json:"createdAt"`
+	EditedAt       time.Time `json:"editedAt"`
+	Editable       bool      `json:"editable"`
+	Sequence       int64     `json:"sequence"`
+	Version        string    `json:"version"`
+	Charts         []Chart   `json:"charts"`
+	IsHelmOnly     bool      `json:"isHelmOnly"`
 }
 
 type LintMessage struct {
