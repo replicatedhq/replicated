@@ -89,6 +89,14 @@ type runnerArgs struct {
 	customerCreateEmail               string
 	customerCreateType                string
 
+	instanceInspectCustomer string
+	instanceInspectInstance string
+	instanceListCustomer    string
+	instanceListTags        []string
+	instanceTagCustomer     string
+	instanceTagInstacne     string
+	instanceTagTags         []string
+
 	createInstallerYaml                 string
 	createInstallerYamlFile             string
 	createInstallerPromote              string

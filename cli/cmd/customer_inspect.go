@@ -38,7 +38,7 @@ func (r *runners) inspectCustomer(_ *cobra.Command, _ []string) error {
 
 	ch, err := r.customerChannel(customer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get customer channel")
 	}
 
 	regHost, err := r.registryHostname(customer, ch)
@@ -47,7 +47,7 @@ func (r *runners) inspectCustomer(_ *cobra.Command, _ []string) error {
 	}
 
 	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, customer); err != nil {
-		return err
+		return errors.Wrap(err, "print customer attrs")
 	}
 
 	return nil
