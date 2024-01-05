@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/shipclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 
 	"github.com/replicatedhq/replicated/client"
@@ -170,6 +172,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersArchiveCommand(customersCmd)
 	runCmds.InitCustomersInspectCommand(customersCmd)
 
+	instanceCmd := runCmds.InitInstanceCommand(runCmds.rootCmd)
+	runCmds.InitInstanceLSCommand(instanceCmd)
+	runCmds.InitInstanceInspectCommand(instanceCmd)
+	runCmds.InitInstanceTagCommand(instanceCmd)
+
 	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
 	runCmds.InitInstallerCreate(installerCmd)
 	runCmds.InitInstallerList(installerCmd)
@@ -308,6 +315,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	collectorsCmd.PersistentPreRunE = prerunCommand
 	installerCmd.PersistentPreRunE = prerunCommand
 	customersCmd.PersistentPreRunE = prerunCommand
+	instanceCmd.PersistentPreRunE = prerunCommand
 	clusterPrepareCmd.PersistentPreRunE = prerunCommand
 
 	appCmd.PersistentPreRunE = preRunSetupAPIs
@@ -336,4 +344,20 @@ func printIfError(cmd *cobra.Command, err error) {
 	default:
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 	}
+}
+
+func parseTags(tags []string) ([]types.Tag, error) {
+	parsedTags := []types.Tag{}
+	for _, tag := range tags {
+		tagParts := strings.SplitN(tag, "=", 2)
+		if len(tagParts) != 2 {
+			return nil, errors.Errorf("invalid tag format: %s", tag)
+		}
+
+		parsedTags = append(parsedTags, types.Tag{
+			Key:   tagParts[0],
+			Value: tagParts[1],
+		})
+	}
+	return parsedTags, nil
 }
