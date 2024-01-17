@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -12,6 +13,8 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
+
+var ErrWaitDurationExceeded = errors.New("wait duration exceeded")
 
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
@@ -68,7 +71,13 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
-		return err
+		if errors.Cause(err) == ErrWaitDurationExceeded {
+			defer func() {
+				os.Exit(124)
+			}()
+		} else {
+			return err
+		}
 	}
 
 	if opts.DryRun {
@@ -126,7 +135,8 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 			return nil, errors.New("cluster failed to provision")
 		} else {
 			if time.Now().After(start.Add(duration)) {
-				return cluster, nil
+				// In case of timeout, return the cluster and a WaitDurationExceeded error
+				return cluster, ErrWaitDurationExceeded
 			}
 		}
 
