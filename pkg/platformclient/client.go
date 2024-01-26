@@ -127,6 +127,7 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode == http.StatusNotFound {
 		return ErrNotFound
 	}

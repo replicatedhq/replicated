@@ -98,7 +98,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 
 	shellExec := exec.Command(shellCmd)
 	shellExec.Env = os.Environ()
-	fmt.Println("Starting new shell with KUBECONFIG. Press Ctl-D when done to end the shell and the connection to the server")
+	fmt.Println("Starting new shell with KUBECONFIG. Press Ctrl-D or type 'exit' when done to end the shell and the connection to the server")
 	shellPty, err := pty.Start(shellExec)
 	if err != nil {
 		return errors.Wrap(err, "failed to start shell")
@@ -115,7 +115,10 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 		}
 	}()
 	ch <- syscall.SIGWINCH // Initial resize.
-	defer func() { signal.Stop(ch); close(ch) }()
+	defer func() {
+		signal.Stop(ch)
+		close(ch)
+	}()
 
 	// Set stdin to raw mode.
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -124,7 +127,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	}
 	defer func() {
 		_ = term.Restore(int(os.Stdin.Fd()), oldState)
-		fmt.Printf("cmx shell exited\n")
+		fmt.Printf("Exiting Compatibility Matrix Shell (this will reset your kubeconfig back to default)")
 	}()
 
 	// Setup the shell
@@ -133,9 +136,9 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	_, _ = io.CopyN(io.Discard, shellPty, 2*int64(len(setupCmd))) // Don't print to screen, terminal will echo anyway
 
 	// Copy stdin to the pty and the pty to stdout.
-	go func() { _, _ = io.Copy(shellPty, os.Stdin) }()
-	go func() { _, _ = io.Copy(os.Stdout, shellPty) }()
+	go io.Copy(shellPty, os.Stdin)
+	go io.Copy(os.Stdout, shellPty)
 
-	return shellExec.Wait()
-
+	_ = shellExec.Wait()
+	return nil
 }

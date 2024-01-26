@@ -45,3 +45,26 @@ type ClusterVersion struct {
 	NodesMax      int                        `json:"nodes_max"`
 	Status        *ClusterDistributionStatus `json:"status,omitempty"`
 }
+
+type AddOnState string
+
+const (
+	AddOnStatePending  AddOnState = "pending"  // No attempts to install this ingress yet
+	AddOnStateApplied  AddOnState = "applied"  // The ingress has been applied to the cluster
+	AddOnStateRunning  AddOnState = "ready"    // The ingress is ready to be used
+	AddOnStateError    AddOnState = "error"    // The ingress has an error
+	AddOnStateRemoving AddOnState = "removing" // The ingress is being removed
+	AddOnStateRemoved  AddOnState = "removed"  // The ingress has been removed
+)
+
+type ClusterAddOn struct {
+	ID    string     `json:"id"`
+	State AddOnState `json:"state"`
+
+	Ingress *ClusterIngressAddOn `json:"ingress,omitempty"`
+}
+
+type ClusterIngressAddOn struct {
+	Hostname string `json:"hostname"`
+	Target   string `json:"target"`
+}

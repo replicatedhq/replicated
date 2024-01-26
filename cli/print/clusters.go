@@ -15,6 +15,8 @@ var clustersTmplRowSrc = `{{ range . -}}
 {{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
 {{ end }}`
 var clustersTmplSrc = fmt.Sprintln(clustersTmplHeaderSrc) + clustersTmplRowSrc
+var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
+var clustersTmplNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplRowSrc))
 
 var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
 {{ range $d := . -}}
@@ -27,9 +29,6 @@ DISTRIBUTION: {{ $d.Name }}
 • DETAILS: {{ $d.Status.StatusMessage }}{{end}}
 
 {{ end }}`
-
-var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
-var clustersTmplNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplRowSrc))
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
