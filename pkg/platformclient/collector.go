@@ -30,6 +30,18 @@ func (c *HTTPClient) ListCollectors(appID string, appType string) ([]types.Colle
 	return collectors.Specs, nil
 }
 
+func (c *HTTPClient) GetCollector(appID string, specID string) (*types.CollectorSpec, error) {
+	collector := struct {
+		Spec types.CollectorSpec `json:"spec"`
+	}{}
+
+	if err := c.DoJSON("GET", fmt.Sprintf("/v1/collector/spec/%s", specID), http.StatusOK, nil, &collector); err != nil {
+		return nil, fmt.Errorf("get collector: %w", err)
+	}
+
+	return &collector.Spec, nil
+}
+
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)

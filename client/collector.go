@@ -40,8 +40,8 @@ func (c *Client) CreateCollector(appID string, appType string, name string, yaml
 
 }
 
-func (c *Client) GetCollector(appID string, specID string) (*collectors.AppCollectorInfo, error) {
-	return c.ShipClient.GetCollector(appID, specID)
+func (c *Client) GetCollector(appID string, specID string) (*types.CollectorSpec, error) {
+	return c.PlatformClient.GetCollector(appID, specID)
 
 }
 
