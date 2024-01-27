@@ -2,7 +2,6 @@ package client
 
 import (
 	"github.com/pkg/errors"
-	collectors "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -30,13 +29,12 @@ func (c *Client) UpdateCollectorName(appID string, specID string, name string) (
 
 }
 
-// func (c *Client) CreateCollector(appID string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
-func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*collectors.AppCollectorInfo, error) {
-
+func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*types.CollectorSpec, error) {
 	if appType == "kots" {
 		return nil, errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
 	}
-	return c.ShipClient.CreateCollector(appID, name, yaml)
+
+	return c.PlatformClient.CreateCollector(appID, name, yaml)
 
 }
 

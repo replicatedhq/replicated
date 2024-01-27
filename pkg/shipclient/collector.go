@@ -1,7 +1,6 @@
 package shipclient
 
 import (
-	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -99,79 +98,6 @@ mutation  promoteTroubleshootSpec($channelIds: [String], $specId: ID!) {
 	}
 
 	return nil
-
-}
-
-// CreateCollector creates a new collector based on given yaml and name
-func (c *GraphQLClient) CreateCollector(appID string, name string, yaml string) (*v1.AppCollectorInfo, error) {
-	response := GraphQLResponseCreateCollector{}
-
-	request := graphql.Request{
-		Query: `
-		mutation createSupportBundleSpec($name: String, $appId: String, $spec: String) {
-		  createSupportBundleSpec(name: $name, appId: $appId, spec: $spec) {
-			id
-			name
-			spec
-			createdAt
-			updatedAt
-			githubRef {
-			  owner
-			  repoFullName
-			  branch
-			  path
-			}
-		  }
-		}
-	  `,
-		Variables: map[string]interface{}{
-			"appId": appID,
-			"spec":  yaml,
-			"name":  name,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	request = graphql.Request{
-		Query: `
-		mutation updateSupportBundleSpec($id: ID!, $spec: String!, $isArchived: Boolean) {
-		  updateSupportBundleSpec(id: $id, spec: $spec, isArchived: $isArchived) {
-			id
-			spec
-			createdAt
-			updatedAt
-			isArchived
-			githubRef {
-			  owner
-			  repoFullName
-			  branch
-			  path
-			}
-		  }
-		}
-	  `,
-		Variables: map[string]interface{}{
-			"id":   response.Data.CreateSupportBundleSpec.ID,
-			"spec": yaml,
-		},
-	}
-
-	finalizeSpecCreate := GraphQLResponseUpdateCollector{}
-	if err := c.ExecuteRequest(request, &finalizeSpecCreate); err != nil {
-		return nil, err
-	}
-
-	newCollectorInfo := v1.AppCollectorInfo{
-		AppId:  appID,
-		SpecId: finalizeSpecCreate.Data.UpdateSupportBundleSpec.ID,
-		Config: finalizeSpecCreate.Data.UpdateSupportBundleSpec.Config,
-		Name:   response.Data.CreateSupportBundleSpec.Name,
-	}
-
-	return &newCollectorInfo, nil
 
 }
 

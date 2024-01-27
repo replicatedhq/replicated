@@ -42,6 +42,27 @@ func (c *HTTPClient) GetCollector(appID string, specID string) (*types.Collector
 	return &collector.Spec, nil
 }
 
+func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*types.CollectorSpec, error) {
+	requestBody := struct {
+		Spec string `json:"spec"`
+		Name string `json:"name"`
+	}{
+		Spec: yaml,
+		Name: name,
+	}
+
+	responseBody := struct {
+		Spec types.CollectorSpec `json:"spec"`
+	}{}
+
+	path := fmt.Sprintf("/v1/app/%s/collector", appID)
+	if err := c.DoJSON("POST", path, http.StatusOK, requestBody, &responseBody); err != nil {
+		return nil, fmt.Errorf("create collector: %w", err)
+	}
+
+	return &responseBody.Spec, nil
+}
+
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
