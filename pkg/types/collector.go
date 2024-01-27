@@ -2,12 +2,12 @@ package types
 
 import "time"
 
-type CollectorInfo struct {
-	ActiveChannels []Channel
-	AppID          string
-	CreatedAt      time.Time
-	EditedAt       time.Time
-	Name           string
-	SpecID         string
-	Config         string
+type CollectorSpec struct {
+	ID        string    `json:"id"`
+	Spec      string    `json:"spec"`
+	Name      string    `json:"name"`
+	AppID     string    `json:"appId"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Channels  []Channel `json:"channels"`
 }

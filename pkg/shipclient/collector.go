@@ -1,9 +1,6 @@
 package shipclient
 
 import (
-	"time"
-
-	"github.com/pkg/errors"
 	v1 "github.com/replicatedhq/replicated/gen/go/v1"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -100,76 +97,6 @@ type PlatformSupportBundleSpec struct {
 type PlatformChannel struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
-}
-
-func (c *GraphQLClient) ListCollectors(appID string, appType string) ([]types.CollectorInfo, error) {
-
-	if appType != "platform" {
-		return nil, errors.Errorf("unknown app type %s", appType)
-	}
-
-	response := PlatformGQLResponseListCollectors{}
-
-	request := graphql.Request{
-		Query: `
-query supportBundleSpecs($appId: String) {
-	supportBundleSpecs(appId: $appId) {
-		id
-		name
-		spec
-		createdAt
-		updatedAt
-		isArchived
-		isImmutable
-		githubRef {
-		owner
-		repoFullName
-		branch
-		path
-		}
-		channels {
-		id
-		name
-		}
-		platformChannels {
-		id
-		name
-		}
-	}
-}`,
-		Variables: map[string]interface{}{
-			"appId": appID,
-		},
-	}
-
-	if err := c.ExecuteRequest(request, &response); err != nil {
-		return nil, err
-	}
-
-	location, err := time.LoadLocation("Local")
-	if err != nil {
-		return nil, err
-	}
-
-	collectors := make([]types.CollectorInfo, 0, 0)
-	for _, spec := range response.Data.PlatformSupportBundleSpecs {
-		createdAt, err := time.Parse(time.RFC3339, spec.CreatedAt)
-		if err != nil {
-			return nil, err
-		}
-		collector := types.CollectorInfo{
-			SpecID:         spec.ID,
-			Name:           spec.Name,
-			CreatedAt:      createdAt.In(location),
-			ActiveChannels: spec.Channels,
-			Config:         spec.Config,
-		}
-
-		collectors = append(collectors, collector)
-	}
-
-	return collectors, nil
-
 }
 
 // GetCollector returns a collector's properties.

@@ -6,40 +6,17 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListCollectors(appID string, appType string) ([]types.CollectorInfo, error) {
-
+func (c *Client) ListCollectors(appID string, appType string) ([]types.CollectorSpec, error) {
 	if appType == "kots" {
 		return nil, errors.New("On a kots application, users must modify the support-bundle.yaml file in the release")
 	}
 
-	shipappCollectors, err := c.ShipClient.ListCollectors(appID, appType)
+	shipappCollectors, err := c.PlatformClient.ListCollectors(appID, appType)
 	if err != nil {
 		return nil, err
 	}
 
-	shipCollectorInfos := make([]types.CollectorInfo, 0, 0)
-	for _, shipappCollector := range shipappCollectors {
-		activeChannels := make([]types.Channel, 0, 0)
-		for _, shipappCollectorChannel := range shipappCollector.ActiveChannels {
-			activeChannel := types.Channel{
-				ID:   shipappCollectorChannel.ID,
-				Name: shipappCollectorChannel.Name,
-			}
-
-			activeChannels = append(activeChannels, activeChannel)
-		}
-		shipCollectorInfo := types.CollectorInfo{
-			AppID:          shipappCollector.AppID,
-			CreatedAt:      shipappCollector.CreatedAt,
-			Name:           shipappCollector.Name,
-			ActiveChannels: activeChannels,
-			SpecID:         shipappCollector.SpecID,
-		}
-
-		shipCollectorInfos = append(shipCollectorInfos, shipCollectorInfo)
-	}
-
-	return shipCollectorInfos, nil
+	return shipappCollectors, nil
 }
 
 func (c *Client) UpdateCollector(appID string, specID string, yaml string) (interface{}, error) {

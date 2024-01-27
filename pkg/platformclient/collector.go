@@ -3,9 +3,32 @@ package platformclient
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
+	"github.com/pkg/errors"
 	v1 "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
+
+func (c *HTTPClient) ListCollectors(appID string, appType string) ([]types.CollectorSpec, error) {
+	if appType != "platform" {
+		return nil, errors.Errorf("unknown app type %s", appType)
+	}
+
+	params := url.Values{}
+	params.Add("appId", appID)
+
+	collectors := struct {
+		Specs []types.CollectorSpec `json:"specs"`
+	}{}
+
+	url := fmt.Sprintf("/v1/collector/specs?%s", params.Encode())
+	if err := c.DoJSON("GET", url, http.StatusOK, nil, &collectors); err != nil {
+		return nil, fmt.Errorf("list specs: %w", err)
+	}
+
+	return collectors.Specs, nil
+}
 
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
