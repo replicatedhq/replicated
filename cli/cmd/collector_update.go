@@ -60,17 +60,25 @@ func (r *runners) collectorUpdate(cmd *cobra.Command, args []string) error {
 		r.args.updateCollectorYaml = string(bytes)
 	}
 
-	if r.args.updateCollectorYaml != "" {
-		_, err := r.api.UpdateCollector(r.appID, specID, r.args.updateCollectorYaml)
-		if err != nil {
-			return errors.Wrap(err, "failure setting updates for collector")
-		}
+	currentSpec, err := r.api.GetCollector(r.appID, specID)
+	if err != nil {
+		return errors.Wrap(err, "failure getting current collector spec")
 	}
 
+	newSpec := currentSpec.Spec
+	if r.args.updateCollectorYaml != "" {
+		newSpec = r.args.updateCollectorYaml
+	}
+
+	newName := currentSpec.Name
 	if r.args.updateCollectorName != "" {
-		_, err := r.api.UpdateCollectorName(r.appID, specID, r.args.updateCollectorName)
+		newName = r.args.updateCollectorName
+	}
+
+	if r.args.updateCollectorYaml != "" || r.args.updateCollectorName != "" {
+		err := r.api.UpdateCollector(r.appID, specID, newSpec, newName, currentSpec.IsArchived)
 		if err != nil {
-			return errors.Wrap(err, "failure setting new yaml config for collector")
+			return errors.Wrap(err, "failure setting updates for collector")
 		}
 	}
 

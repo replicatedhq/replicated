@@ -18,15 +18,8 @@ func (c *Client) ListCollectors(appID string, appType string) ([]types.Collector
 	return shipappCollectors, nil
 }
 
-func (c *Client) UpdateCollector(appID string, specID string, yaml string) (interface{}, error) {
-
-	return c.ShipClient.UpdateCollector(appID, specID, yaml)
-}
-
-func (c *Client) UpdateCollectorName(appID string, specID string, name string) (interface{}, error) {
-
-	return c.ShipClient.UpdateCollectorName(appID, specID, name)
-
+func (c *Client) UpdateCollector(appID string, specID string, yaml string, name string, isArchived bool) error {
+	return c.PlatformClient.UpdateCollector(appID, specID, yaml, name, isArchived)
 }
 
 func (c *Client) CreateCollector(appID string, appType string, name string, yaml string) (*types.CollectorSpec, error) {

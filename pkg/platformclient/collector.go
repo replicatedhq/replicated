@@ -63,6 +63,25 @@ func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*t
 	return &responseBody.Spec, nil
 }
 
+func (c *HTTPClient) UpdateCollector(appID string, specID string, yaml string, name string, isArchived bool) error {
+	requestBody := struct {
+		Spec       string `json:"spec"`
+		Name       string `json:"name"`
+		IsArchived bool   `json:"isArchived"`
+	}{
+		Spec:       yaml,
+		Name:       name,
+		IsArchived: isArchived,
+	}
+
+	path := fmt.Sprintf("/v1/app/%s/collector/%s", appID, specID)
+	if err := c.DoJSON("PUT", path, http.StatusOK, requestBody, nil); err != nil {
+		return fmt.Errorf("update collector: %w", err)
+	}
+
+	return nil
+}
+
 // Vendor-API: PromoteCollector points the specified channels at a named collector.
 func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ...string) error {
 	path := fmt.Sprintf("/v1/app/%s/collector/%s/promote", appID, specID)
