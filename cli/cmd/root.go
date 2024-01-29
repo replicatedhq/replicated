@@ -12,7 +12,6 @@ import (
 
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 
@@ -33,7 +32,6 @@ var appSlugOrID string
 var apiToken string
 var enterprisePrivateKeyPath = filepath.Join(homeDir(), ".replicated", "enterprise", "ecdsa")
 var platformOrigin = "https://api.replicated.com/vendor"
-var graphqlOrigin = "https://g.replicated.com/graphql"
 var kurlDotSHOrigin = "https://kurl.sh"
 var enterpriseOrigin = "https://api.replicated.com/enterprise"
 
@@ -43,19 +41,9 @@ func init() {
 		platformOrigin = originFromEnv
 	}
 
-	shipOriginFromEnv := os.Getenv("REPLICATED_SHIP_ORIGIN")
-	if shipOriginFromEnv != "" {
-		graphqlOrigin = shipOriginFromEnv
-	}
-
 	enterpriseOriginFromEnv := os.Getenv("REPLICATED_ENTERPRISE_ORIGIN")
 	if enterpriseOriginFromEnv != "" {
 		enterpriseOrigin = enterpriseOriginFromEnv
-	}
-
-	graphqlOriginFromEnv := os.Getenv("REPLICATED_GRAPHQL_ORIGIN")
-	if graphqlOriginFromEnv != "" {
-		graphqlOrigin = graphqlOriginFromEnv
 	}
 }
 
@@ -267,14 +255,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		platformAPI := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		runCmds.platformAPI = platformAPI
 
-		shipAPI := shipclient.NewGraphQLClient(graphqlOrigin, apiToken)
-		runCmds.shipAPI = shipAPI
-
 		httpClient := platformclient.NewHTTPClient(platformOrigin, apiToken)
 		kotsAPI := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 		runCmds.kotsAPI = kotsAPI
 
-		commonAPI := client.NewClient(platformOrigin, graphqlOrigin, apiToken, kurlDotSHOrigin)
+		commonAPI := client.NewClient(platformOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
 		version.PrintIfUpgradeAvailable()

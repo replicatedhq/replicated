@@ -9,7 +9,6 @@ import (
 	"github.com/replicatedhq/replicated/pkg/enterpriseclient"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/shipclient"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/cli/values"
 )
@@ -24,7 +23,6 @@ type runners struct {
 	api              client.Client
 	enterpriseClient *enterpriseclient.HTTPClient
 	platformAPI      *platformclient.HTTPClient
-	shipAPI          *shipclient.GraphQLClient
 	kotsAPI          *kotsclient.VendorV3Client
 	stdin            io.Reader
 	dir              string
