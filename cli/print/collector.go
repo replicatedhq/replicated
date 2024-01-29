@@ -4,18 +4,18 @@ import (
 	"text/tabwriter"
 	"text/template"
 
-	collectors "github.com/replicatedhq/replicated/gen/go/v1"
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 var collectorTmplSrc = `NAME:	{{ .Name }}
 CREATED:	{{ time .CreatedAt }}
 CONFIG:
-{{ .Config }}
+{{ .Spec }}
 `
 
 var collectorTmpl = template.Must(template.New("Collector").Funcs(funcs).Parse(collectorTmplSrc))
 
-func Collector(w *tabwriter.Writer, collector *collectors.AppCollectorInfo) error {
+func Collector(w *tabwriter.Writer, collector *types.CollectorSpec) error {
 	if err := collectorTmpl.Execute(w, collector); err != nil {
 		return err
 	}

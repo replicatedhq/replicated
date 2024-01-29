@@ -15,13 +15,13 @@ var collectorsTmplSrc = `NAME	CREATED	 SPEC_ID 	ACTIVE_CHANNELS
 
 var collectorsTmpl = template.Must(template.New("Collectors").Funcs(funcs).Parse(collectorsTmplSrc))
 
-func Collectors(w *tabwriter.Writer, appCollectors []types.CollectorInfo) error {
+func Collectors(w *tabwriter.Writer, appCollectors []types.CollectorSpec) error {
 	rs := make([]map[string]interface{}, len(appCollectors))
 
 	for i, r := range appCollectors {
 		// join active channel names like "Stable,Unstable"
-		activeChans := make([]string, len(r.ActiveChannels))
-		for j, activeChan := range r.ActiveChannels {
+		activeChans := make([]string, len(r.Channels))
+		for j, activeChan := range r.Channels {
 			activeChans[j] = activeChan.Name
 		}
 		activeChansField := strings.Join(activeChans, ",")
@@ -35,7 +35,7 @@ func Collectors(w *tabwriter.Writer, appCollectors []types.CollectorInfo) error 
 		rs[i] = map[string]interface{}{
 			"Name":           r.Name,
 			"CreatedAt":      r.CreatedAt,
-			"SpecID":         r.SpecID,
+			"SpecID":         r.ID,
 			"ActiveChannels": activeChansField,
 		}
 	}
