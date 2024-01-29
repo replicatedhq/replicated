@@ -306,56 +306,6 @@
       }
     },
     {
-      "description": "A request to list clusters",
-      "providerState": "List clusters using service account",
-      "request": {
-        "method": "GET",
-        "path": "/v3/clusters",
-        "headers": {
-          "Authorization": "replicated-cli-tokens-sa-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "totalClusters": 0
-        },
-        "matchingRules": {
-          "$.body.totalClusters": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list clusters",
-      "providerState": "List clusters using personal token",
-      "request": {
-        "method": "GET",
-        "path": "/v3/clusters",
-        "headers": {
-          "Authorization": "replicated-cli-tokens-personal-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "totalClusters": 0
-        },
-        "matchingRules": {
-          "$.body.totalClusters": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
       "description": "A request to create a kots installer",
       "providerState": "Create KOTS installer",
       "request": {
@@ -693,6 +643,56 @@
       "response": {
         "status": 200,
         "headers": {
+        }
+      }
+    },
+    {
+      "description": "A request to list clusters",
+      "providerState": "List clusters using service account",
+      "request": {
+        "method": "GET",
+        "path": "/v3/clusters",
+        "headers": {
+          "Authorization": "replicated-cli-tokens-sa-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "totalClusters": 0
+        },
+        "matchingRules": {
+          "$.body.totalClusters": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to list clusters",
+      "providerState": "List clusters using personal token",
+      "request": {
+        "method": "GET",
+        "path": "/v3/clusters",
+        "headers": {
+          "Authorization": "replicated-cli-tokens-personal-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "totalClusters": 0
+        },
+        "matchingRules": {
+          "$.body.totalClusters": {
+            "match": "type"
+          }
         }
       }
     }
