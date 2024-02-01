@@ -219,6 +219,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterRemove(clusterCmd)
 	runCmds.InitClusterVersions(clusterCmd)
 	runCmds.InitClusterShell(clusterCmd)
+
+	clusterAddOnCmd := runCmds.InitClusterAddOn(clusterCmd)
+	runCmds.InitClusterAddOnRm(clusterAddOnCmd)
+	runCmds.InitClusterAddOnLs(clusterAddOnCmd)
+
+	clusterAddOnIngressCmd := runCmds.InitClusterAddOnIngress(clusterAddOnCmd)
+	runCmds.InitClusterAddOnIngressCreate(clusterAddOnIngressCmd)
+
 	clusterPrepareCmd := runCmds.InitClusterPrepare(clusterCmd)
 
 	clusterUpdateCmd := runCmds.InitClusterUpdateCommand(clusterCmd)
