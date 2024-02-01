@@ -715,6 +715,11 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 		return "", errors.Wrap(err, "chmod KOTS install script")
 	}
 
+	err = installScript.Close()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to close install script")
+	}
+
 	cmd := exec.Command(installScript.Name())
 	cmd.Env = append(cmd.Env, fmt.Sprintf("REPL_INSTALL_PATH=%s", kotsDir))
 	cmd.Stdout = r.w
