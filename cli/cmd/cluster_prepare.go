@@ -705,7 +705,7 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 		return "", errors.Wrap(err, "failed to create temp file")
 	}
 	defer func() {
-		installScript.Close()
+    installScript.Close()
 		os.Remove(installScript.Name())
 	}()
 	if _, err := io.Copy(installScript, resp.Body); err != nil {
@@ -713,6 +713,11 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 	}
 	if err := installScript.Chmod(0755); err != nil {
 		return "", errors.Wrap(err, "chmod KOTS install script")
+	}
+
+  err = installScript.Close()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to close install script")
 	}
 
 	cmd := exec.Command(installScript.Name())
