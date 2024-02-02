@@ -9,10 +9,14 @@ import (
 type CreateClusterIngressOpts struct {
 	ClusterID string
 	Target    string
+	Port      int
+	Namespace string
 }
 
 type CreateClusterIngressRequest struct {
-	Target string `json:"target"`
+	Target    string `json:"target"`
+	Port      int    `json:"port"`
+	Namespace string `json:"namespace"`
 }
 
 type CreateClusterIngressResponse struct {
@@ -21,7 +25,9 @@ type CreateClusterIngressResponse struct {
 
 func (c *VendorV3Client) CreateClusterIngress(opts CreateClusterIngressOpts) (*types.ClusterAddOn, error) {
 	req := CreateClusterIngressRequest{
-		Target: opts.Target,
+		Target:    opts.Target,
+		Port:      opts.Port,
+		Namespace: opts.Namespace,
 	}
 
 	return c.doCreateClusterIngressRequest(opts.ClusterID, req)

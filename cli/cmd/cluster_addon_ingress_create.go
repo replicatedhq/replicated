@@ -13,10 +13,19 @@ import (
 
 func (r *runners) InitClusterAddOnIngressCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "create",
+		Use:  "create <cluster_id> --target svc/my-service --port <port>",
 		RunE: r.ingressClusterCreate,
+		Args: cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
+
+	cmd.Flags().StringVar(&r.args.clusterCreateIngressTarget, "target", "", "The target for the ingress")
+	cmd.MarkFlagRequired("target")
+
+	cmd.Flags().IntVar(&r.args.clusterCreateIngressPort, "port", 80, "The port for the ingress")
+	cmd.MarkFlagRequired("port")
+
+	cmd.Flags().StringVar(&r.args.clusterCreateIngressNamespace, "namespace", "default", "The namespace for the ingress")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
@@ -24,17 +33,18 @@ func (r *runners) InitClusterAddOnIngressCreate(parent *cobra.Command) *cobra.Co
 }
 
 func (r *runners) ingressClusterCreate(_ *cobra.Command, args []string) error {
-	// for consistency in the cli, these are positional args
-	if len(args) != 2 {
-		return errors.New("cluster ingress create requires exactly two arguments: cluster id and ingress target")
-	}
-
 	clusterID := args[0]
-	ingressTarget := args[1]
+
+	namespace := r.args.clusterCreateIngressNamespace
+	if namespace == "" {
+		namespace = "default" // avoiding the entire k8s dep list
+	}
 
 	opts := kotsclient.CreateClusterIngressOpts{
 		ClusterID: clusterID,
-		Target:    ingressTarget,
+		Target:    r.args.clusterCreateIngressTarget,
+		Port:      r.args.clusterCreateIngressPort,
+		Namespace: namespace,
 	}
 
 	ing, err := r.createAndWaitForIngress(opts)
