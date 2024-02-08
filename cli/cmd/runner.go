@@ -226,6 +226,10 @@ type runnerArgs struct {
 	shellClusterName string
 	shellClusterID   string
 
+	clusterCreateIngressTarget    string
+	clusterCreateIngressPort      int
+	clusterCreateIngressNamespace string
+
 	loginEndpoint string
 
 	apiPostBody string

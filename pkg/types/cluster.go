@@ -65,6 +65,7 @@ type ClusterAddOn struct {
 }
 
 type ClusterIngressAddOn struct {
-	Hostname string `json:"hostname"`
-	Target   string `json:"target"`
+	Hostname  string `json:"hostname"`
+	Target    string `json:"target"`
+	Namespace string `json:"namespace"`
 }
