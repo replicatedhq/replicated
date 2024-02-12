@@ -177,6 +177,7 @@ type runnerArgs struct {
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
 	createClusterInstanceType           string
+	createClusterNodeGroups             []string
 	createClusterTags                   []string
 
 	upgradeClusterKubernetesVersion string

@@ -17,6 +17,7 @@ type CreateClusterRequest struct {
 	NodeCount              int         `json:"node_count"`
 	DiskGiB                int64       `json:"disk_gib"`
 	TTL                    string      `json:"ttl"`
+	NodeGroups             []NodeGroup `json:"node_groups"`
 	InstanceType           string      `json:"instance_type"`
 	Tags                   []types.Tag `json:"tags"`
 }
@@ -35,8 +36,16 @@ type CreateClusterOpts struct {
 	DiskGiB                int64
 	TTL                    string
 	InstanceType           string
+	NodeGroups             []NodeGroup
 	Tags                   []types.Tag
 	DryRun                 bool
+}
+
+type NodeGroup struct {
+	Name         string `json:"name"`
+	InstanceType string `json:"instance_type"`
+	Nodes        int    `json:"node_count"`
+	Disk         int    `json:"disk_gib"`
 }
 
 type CreateClusterErrorResponse struct {
@@ -66,6 +75,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
 		InstanceType:           opts.InstanceType,
+		NodeGroups:             opts.NodeGroups,
 		Tags:                   opts.Tags,
 	}
 
