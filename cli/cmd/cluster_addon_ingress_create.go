@@ -19,13 +19,13 @@ func (r *runners) InitClusterAddOnIngressCreate(parent *cobra.Command) *cobra.Co
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.clusterCreateIngressTarget, "target", "", "The target for the ingress")
+	cmd.Flags().StringVar(&r.args.clusterCreateIngressTarget, "target", "", "The target service name the ingress should route to")
 	cmd.MarkFlagRequired("target")
 
-	cmd.Flags().IntVar(&r.args.clusterCreateIngressPort, "port", 80, "The port for the ingress")
+	cmd.Flags().IntVar(&r.args.clusterCreateIngressPort, "port", 0, "The target port number that the ingress should route to")
 	cmd.MarkFlagRequired("port")
 
-	cmd.Flags().StringVar(&r.args.clusterCreateIngressNamespace, "namespace", "default", "The namespace for the ingress")
+	cmd.Flags().StringVar(&r.args.clusterCreateIngressNamespace, "namespace", "default", "The namespace at the target service is in")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 

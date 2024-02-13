@@ -9,9 +9,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var addOnsTmplHeaderSrc = `ID	TYPE 	STATUS`
+var addOnsTmplHeaderSrc = `ID	TYPE 	STATUS	NOTES`
 var addOnsTmplRowSrc = `{{ range . -}}
-{{ .ID }}	{{ if .Ingress }}Ingress{{ else }}Other{{ end }}	{{ printf "%-12s" .State }}
+{{ .ID }}	{{ if .Ingress }}Ingress{{ else }}Other{{ end }}	{{ printf "%-12s" .State }}	{{ if .Ingress }}http[s]://{{ .Ingress.Hostname }}{{ end }}
 {{ end }}`
 var addOnsTmplSrc = fmt.Sprintln(addOnsTmplHeaderSrc) + addOnsTmplRowSrc
 var addOnsTmpl = template.Must(template.New("ingresses").Funcs(funcs).Parse(addOnsTmplSrc))

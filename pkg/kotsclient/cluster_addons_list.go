@@ -7,7 +7,7 @@ import (
 )
 
 type ListClusterAddOnsResponse struct {
-	Ingresses []*types.ClusterAddOn `json:"ingresses"`
+	AddOns []*types.ClusterAddOn `json:"addons"`
 }
 
 func (c *VendorV3Client) ListClusterAddOns() ([]*types.ClusterAddOn, error) {
@@ -17,5 +17,5 @@ func (c *VendorV3Client) ListClusterAddOns() ([]*types.ClusterAddOn, error) {
 		return nil, err
 	}
 
-	return resp.Ingresses, nil
+	return resp.AddOns, nil
 }
