@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -37,6 +39,8 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
+	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,disk=? format, can be specified multiple times)")
+
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
@@ -58,6 +62,11 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "parse tags")
 	}
 
+	nodeGroups, err := parseNodeGroups(r.args.createClusterNodeGroups)
+	if err != nil {
+		return errors.Wrap(err, "parse node groups")
+	}
+
 	opts := kotsclient.CreateClusterOpts{
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
@@ -66,6 +75,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		InstanceType:           r.args.createClusterInstanceType,
+		NodeGroups:             nodeGroups,
 		Tags:                   tags,
 		DryRun:                 r.args.createClusterDryRun,
 	}
@@ -142,4 +152,47 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 
 		time.Sleep(time.Second * 5)
 	}
+}
+
+func parseNodeGroups(nodeGroups []string) ([]kotsclient.NodeGroup, error) {
+	parsedNodeGroups := []kotsclient.NodeGroup{}
+	for _, nodeGroup := range nodeGroups {
+		field := strings.Split(nodeGroup, ",")
+		ng := kotsclient.NodeGroup{}
+		for _, f := range field {
+			fieldParsed := strings.SplitN(f, "=", 2)
+			if len(fieldParsed) != 2 {
+				return nil, errors.Errorf("invalid node group format: %s", nodeGroup)
+			}
+			parsedFieldKey := fieldParsed[0]
+			parsedFieldValue := fieldParsed[1]
+			switch parsedFieldKey {
+			case "name":
+				ng.Name = parsedFieldValue
+			case "instance-type":
+				ng.InstanceType = parsedFieldValue
+			case "nodes":
+				nodes, err := strconv.Atoi(parsedFieldValue)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse nodes value: %s", parsedFieldValue)
+				}
+				ng.Nodes = nodes
+			case "disk":
+				diskSize, err := strconv.Atoi(parsedFieldValue)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse disk value: %s", parsedFieldValue)
+				}
+				ng.Disk = diskSize
+			default:
+				return nil, errors.Errorf("invalid node group field: %s", parsedFieldKey)
+			}
+		}
+
+		// check if instanceType, nodes and disk are set (required)
+		if ng.InstanceType == "" || ng.Nodes == 0 || ng.Disk == 0 {
+			return nil, errors.Errorf("invalid node group format: %s", nodeGroup)
+		}
+		parsedNodeGroups = append(parsedNodeGroups, ng)
+	}
+	return parsedNodeGroups, nil
 }
