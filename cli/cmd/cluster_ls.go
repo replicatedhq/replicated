@@ -24,7 +24,7 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().BoolVar(&r.args.lsClusterShowTerminated, "show-terminated", false, "when set, only show terminated clusters")
 	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 	cmd.Flags().BoolVarP(&r.args.lsClusterWatch, "watch", "w", false, "watch clusters")
 
 	return cmd
@@ -59,7 +59,7 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 	if r.args.lsClusterWatch {
 
 		// Checks to see if the outputFormat is table
-		if r.outputFormat != "table" {
+		if r.outputFormat != "table" && r.outputFormat != "wide" {
 			return errors.New("watch is only supported for table output")
 		}
 

@@ -18,18 +18,36 @@ const (
 )
 
 type Cluster struct {
-	ID                     string `json:"id"`
-	Name                   string `json:"name"`
-	KubernetesDistribution string `json:"kubernetes_distribution"`
-	KubernetesVersion      string `json:"kubernetes_version"`
-	NodeCount              int    `json:"node_count"`
-	DiskGiB                int64  `json:"disk_gib"`
+	ID                     string       `json:"id"`
+	Name                   string       `json:"name"`
+	KubernetesDistribution string       `json:"kubernetes_distribution"`
+	KubernetesVersion      string       `json:"kubernetes_version"`
+	NodeGroups             []*NodeGroup `json:"node_groups"`
 
 	Status    ClusterStatus `json:"status"`
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
 
 	Tags []Tag `json:"tags"`
+}
+
+type NodeGroup struct {
+	ID           string `json:"id"`
+	ClusterID    string `json:"cluster_id"`
+	IsDefault    bool   `json:"is_default"`
+	InstanceType string `json:"instance_type"`
+
+	Name      string `json:"name"`
+	NodeCount int    `json:"node_count"`
+	DiskGiB   int64  `json:"disk_gib"`
+
+	CreatedAt      time.Time  `json:"created_at"`
+	ProvisioningAt *time.Time `json:"-"`
+	RunningAt      *time.Time `json:"running_at"`
+	CreditsPerHour int64      `json:"credits_per_hour"`
+
+	TotalCredits  int64 `json:"total_credits,omitempty"` // this is only present after the cluster is stopped
+	MinutesBilled int64 `json:"minutes_billed"`
 }
 
 type ClusterDistributionStatus struct {
