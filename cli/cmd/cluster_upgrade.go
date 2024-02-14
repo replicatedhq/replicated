@@ -27,7 +27,7 @@ func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().BoolVar(&r.args.upgradeClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.upgradeClusterWaitDuration, "wait", 0, "Wait duration for cluster to be ready (leave empty to not wait)")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	_ = cmd.MarkFlagRequired("version")
 

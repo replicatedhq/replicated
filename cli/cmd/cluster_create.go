@@ -45,7 +45,7 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	_ = cmd.MarkFlagRequired("distribution")
 

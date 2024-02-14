@@ -16,4 +16,7 @@ var funcs = template.FuncMap{
 		}
 		return s
 	},
+	"add": func(a, b int) int {
+		return a + b
+	},
 }

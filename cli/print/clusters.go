@@ -9,15 +9,25 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-// TODO: implement a -o wide, and expose nodecount also?
-var clustersTmplHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TAGS`
-var clustersTmplRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+// Table formatting
+var clustersTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES`
+var clustersTmplTableRowSrc = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}
 {{ end }}`
-var clustersTmplSrc = fmt.Sprintln(clustersTmplHeaderSrc) + clustersTmplRowSrc
-var clustersTmpl = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplSrc))
-var clustersTmplNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplRowSrc))
+var clustersTmplTableSrc = fmt.Sprintln(clustersTmplTableHeaderSrc) + clustersTmplTableRowSrc
+var clustersTmplTable = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplTableSrc))
+var clustersTmplTableNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplTableRowSrc))
 
+// Wide table formatting
+var clustersTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	NODES	NODEGROUPS	TAGS`
+var clustersTmplWideRowSrc = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ $nodecount}}	{{ len .NodeGroups}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ end }}`
+var clustersTmplWideSrc = fmt.Sprintln(clustersTmplWideHeaderSrc) + clustersTmplWideRowSrc
+var clustersTmplWide = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplWideSrc))
+var clustersTmplWideNoHeader = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplWideRowSrc))
+
+// Cluster versions
 var clusterVersionsTmplSrc = `Supported Kubernetes distributions and versions are:
 {{ range $d := . -}}
 DISTRIBUTION: {{ $d.Name }}
@@ -34,11 +44,21 @@ var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(fu
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
 	if outputFormat == "table" {
 		if header {
-			if err := clustersTmpl.Execute(w, clusters); err != nil {
+			if err := clustersTmplTable.Execute(w, clusters); err != nil {
 				return err
 			}
 		} else {
-			if err := clustersTmplNoHeader.Execute(w, clusters); err != nil {
+			if err := clustersTmplTableNoHeader.Execute(w, clusters); err != nil {
+				return err
+			}
+		}
+	} else if outputFormat == "wide" {
+		if header {
+			if err := clustersTmplWide.Execute(w, clusters); err != nil {
+				return err
+			}
+		} else {
+			if err := clustersTmplWideNoHeader.Execute(w, clusters); err != nil {
 				return err
 			}
 		}
@@ -52,7 +72,7 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 }
 
 func NoClusters(outputFormat string, w *tabwriter.Writer) error {
-	if outputFormat == "table" {
+	if outputFormat == "table" || outputFormat == "wide" {
 		_, err := fmt.Fprintln(w, "No clusters found. Use the `replicated cluster create` command to create a new cluster.")
 		if err != nil {
 			return err
@@ -67,7 +87,11 @@ func NoClusters(outputFormat string, w *tabwriter.Writer) error {
 
 func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
 	if outputFormat == "table" {
-		if err := clustersTmpl.Execute(w, []*types.Cluster{cluster}); err != nil {
+		if err := clustersTmplTable.Execute(w, []*types.Cluster{cluster}); err != nil {
+			return err
+		}
+	} else if outputFormat == "wide" {
+		if err := clustersTmplWide.Execute(w, []*types.Cluster{cluster}); err != nil {
 			return err
 		}
 	} else if outputFormat == "json" {

@@ -21,7 +21,7 @@ func (r *runners) InitClusterUpdateTTL(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().StringVar(&r.args.updateClusterTTL, "ttl", "", "Update TTL which starts from the moment the cluster is running (duration, max 48h).")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	_ = cmd.MarkFlagRequired("ttl")
 
