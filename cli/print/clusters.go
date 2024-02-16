@@ -12,7 +12,7 @@ import (
 // Table formatting
 var clustersTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES`
 var clustersTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" .CreatedAt) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" .ExpiresAt) 30 }}{{end}}
 {{ end }}`
 var clustersTmplTableSrc = fmt.Sprintln(clustersTmplTableHeaderSrc) + clustersTmplTableRowSrc
 var clustersTmplTable = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplTableSrc))
@@ -21,7 +21,7 @@ var clustersTmplTableNoHeader = template.Must(template.New("clusters").Funcs(fun
 // Wide table formatting
 var clustersTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TOTAL NODES	NODEGROUPS	TAGS`
 var clustersTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ .CreatedAt}}	{{if .ExpiresAt.IsZero}}-{{else}}{{ .ExpiresAt }}{{end}}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ $nodecount}}	{{ len .NodeGroups}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" .CreatedAt) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" .ExpiresAt) 30 }}{{end}}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ padding (printf "%d" $nodecount) 11 }}	{{ len .NodeGroups}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
 {{ end }}`
 var clustersTmplWideSrc = fmt.Sprintln(clustersTmplWideHeaderSrc) + clustersTmplWideRowSrc
 var clustersTmplWide = template.Must(template.New("clusters").Funcs(funcs).Parse(clustersTmplWideSrc))
