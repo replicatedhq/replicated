@@ -38,7 +38,7 @@ func (r *runners) registryTest(cmd *cobra.Command, args []string) error {
 	}
 
 	if status == http.StatusOK {
-		fmt.Println("Registry conection appears ok")
+		fmt.Println("Registry coninection appears ok")
 	} else if status == http.StatusNotFound {
 		fmt.Println(`Registry connection failed with MANIFEST_UNKNOWN.
 Check that the credentials are ok and that the image exists.
