@@ -42,7 +42,8 @@ DISTRIBUTION: {{ $d.Name }}
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
 
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		if header {
 			if err := clustersTmplTable.Execute(w, clusters); err != nil {
 				return err
@@ -52,7 +53,7 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 				return err
 			}
 		}
-	} else if outputFormat == "wide" {
+	case "wide":
 		if header {
 			if err := clustersTmplWide.Execute(w, clusters); err != nil {
 				return err
@@ -62,71 +63,94 @@ func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluste
 				return err
 			}
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(clusters, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
 
 func NoClusters(outputFormat string, w *tabwriter.Writer) error {
-	if outputFormat == "table" || outputFormat == "wide" {
+	switch outputFormat {
+	case "table", "wide":
 		_, err := fmt.Fprintln(w, "No clusters found. Use the `replicated cluster create` command to create a new cluster.")
 		if err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
+	case "json":
 		if _, err := fmt.Fprintln(w, "[]"); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
 
 func Cluster(outputFormat string, w *tabwriter.Writer, cluster *types.Cluster) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		if err := clustersTmplTable.Execute(w, []*types.Cluster{cluster}); err != nil {
 			return err
 		}
-	} else if outputFormat == "wide" {
+	case "wide":
 		if err := clustersTmplWide.Execute(w, []*types.Cluster{cluster}); err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(cluster, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(cluster, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
 
 func NoClusterVersions(outputFormat string, w *tabwriter.Writer) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		_, err := fmt.Fprintln(w, "No cluster versions found.")
 		if err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
+	case "json":
 		if _, err := fmt.Fprintln(w, "[]"); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
 
 func ClusterVersions(outputFormat string, w *tabwriter.Writer, clusters []*types.ClusterVersion) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		if err := clusterVersionsTmpl.Execute(w, clusters); err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(clusters, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(clusters, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
