@@ -17,15 +17,21 @@ var nodeGroupsTmplSrc = `ID	NAME	DEFAULT	INSTANCE TYPE	NODES	DISK
 var nodeGroupsTmpl = template.Must(template.New("nodegroups").Parse(nodeGroupsTmplSrc))
 
 func NodeGroups(outputFormat string, w *tabwriter.Writer, addOns []*types.NodeGroup) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table", "wide":
 		if err := nodeGroupsTmpl.Execute(w, addOns); err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(addOns, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(addOns, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
 	return w.Flush()
 }

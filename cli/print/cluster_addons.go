@@ -18,7 +18,8 @@ var addOnsTmpl = template.Must(template.New("ingresses").Funcs(funcs).Parse(addO
 var addOnsTmplNoHeader = template.Must(template.New("ingresses").Funcs(funcs).Parse(addOnsTmplRowSrc))
 
 func AddOns(outputFormat string, w *tabwriter.Writer, addOns []*types.ClusterAddOn, header bool) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		if header {
 			if err := addOnsTmpl.Execute(w, addOns); err != nil {
 				return err
@@ -28,25 +29,36 @@ func AddOns(outputFormat string, w *tabwriter.Writer, addOns []*types.ClusterAdd
 				return err
 			}
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(addOns, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(addOns, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
 
 func AddOn(outputFormat string, w *tabwriter.Writer, addOn *types.ClusterAddOn) error {
-	if outputFormat == "table" {
+	switch outputFormat {
+	case "table":
 		if err := addOnsTmpl.Execute(w, []*types.ClusterAddOn{addOn}); err != nil {
 			return err
 		}
-	} else if outputFormat == "json" {
-		cAsByte, _ := json.MarshalIndent(addOn, "", "  ")
+	case "json":
+		cAsByte, err := json.MarshalIndent(addOn, "", "  ")
+		if err != nil {
+			return err
+		}
 		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
+	default:
+		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
 	return w.Flush()
 }
