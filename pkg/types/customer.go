@@ -7,6 +7,7 @@ import (
 
 type Customer struct {
 	ID             string     `json:"id"`
+	CustomID       string     `json:"customId"`
 	Name           string     `json:"name"`
 	Email          string     `json:"email"`
 	Channels       []Channel  `json:"channels"`
