@@ -21,6 +21,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "Name of the customer")
+	cmd.Flags().StringVar(&r.args.customerCreateCustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
 	cmd.Flags().StringVar(&r.args.customerCreateChannel, "channel", "", "Release channel to which the customer should be assigned")
 	cmd.Flags().DurationVar(&r.args.customerCreateExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
 	cmd.Flags().BoolVar(&r.args.customerCreateEnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
@@ -71,6 +72,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 
 	opts := kotsclient.CreateCustomerOpts{
 		Name:                r.args.customerCreateName,
+		CustomID:            r.args.customerCreateCustomID,
 		ChannelID:           channelID,
 		AppID:               r.appID,
 		ExpiresAt:           r.args.customerCreateExpiryDuration,

@@ -16,6 +16,7 @@ type EntitlementValue struct {
 type CreateCustomerRequest struct {
 	Name                string             `json:"name"`
 	ChannelID           string             `json:"channel_id"`
+	CustomID            string             `json:"custom_id"`
 	AppID               string             `json:"app_id"`
 	Type                string             `json:"type"`
 	ExpiresAt           string             `json:"expires_at"`
@@ -33,6 +34,7 @@ type CreateCustomerResponse struct {
 
 type CreateCustomerOpts struct {
 	Name                string
+	CustomID            string
 	ChannelID           string
 	AppID               string
 	ExpiresAt           time.Duration
@@ -48,6 +50,7 @@ type CreateCustomerOpts struct {
 func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Customer, error) {
 	request := &CreateCustomerRequest{
 		Name:                opts.Name,
+		CustomID:            opts.CustomID,
 		ChannelID:           opts.ChannelID,
 		AppID:               opts.AppID,
 		Type:                opts.LicenseType,

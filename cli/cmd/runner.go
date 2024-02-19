@@ -77,6 +77,7 @@ type runnerArgs struct {
 
 	customerArchiveNameOrId           string
 	customerCreateName                string
+	customerCreateCustomID            string
 	customerCreateChannel             string
 	customerCreateEnsureChannel       bool
 	customerCreateExpiryDuration      time.Duration
