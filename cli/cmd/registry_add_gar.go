@@ -20,15 +20,19 @@ func (r *runners) InitRegistryAddGAR(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The GCR endpoint")
+	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The GAR endpoint")
+	cmd.Flags().StringVar(&r.args.addRegistryAuthType, "authtype", "serviceaccount", "Auth type for the registry")
 	cmd.Flags().StringVar(&r.args.addRegistryServiceAccountKey, "serviceaccountkey", "", "The service account key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryToken, "token", "", "The token to use to auth to the registry with")
+	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
-	cmd.RunE = r.registryAddGCR
+	cmd.RunE = r.registryAddGAR
 }
 
-func (r *runners) registryAddGCR(cmd *cobra.Command, args []string) error {
+func (r *runners) registryAddGAR(cmd *cobra.Command, args []string) error {
+
 	if r.args.addRegistryServiceAccountKeyFromStdIn {
 		var err error
 		serviceAccountKey, err := r.readPasswordFromStdIn("Service Account Key")
@@ -38,7 +42,16 @@ func (r *runners) registryAddGCR(cmd *cobra.Command, args []string) error {
 		r.args.addRegistryServiceAccountKey = serviceAccountKey
 	}
 
-	addRegistryRequest, errs := r.validateRegistryAddGCR()
+	if r.args.addRegistryTokenFromStdIn {
+		var err error
+		token, err := r.readPasswordFromStdIn("Token")
+		if err != nil {
+			return errors.Wrap(err, "read token from stdin")
+		}
+		r.args.addRegistryToken = token
+	}
+
+	addRegistryRequest, errs := r.validateRegistryAddGAR()
 	if len(errs) > 0 {
 		joinedErrs := []string{}
 		for _, err := range errs {
@@ -65,11 +78,11 @@ func (r *runners) registryAddGCR(cmd *cobra.Command, args []string) error {
 
 }
 
-func (r *runners) validateRegistryAddGCR() (kotsclient.AddKOTSRegistryRequest, []error) {
+func (r *runners) validateRegistryAddGAR() (kotsclient.AddKOTSRegistryRequest, []error) {
 	req := kotsclient.AddKOTSRegistryRequest{
 		Provider: "gcr",
 		AuthType: "serviceaccount",
-		Username: "_json_key",
+		//Username: "_json_key",
 	}
 	errs := []error{}
 
@@ -79,10 +92,25 @@ func (r *runners) validateRegistryAddGCR() (kotsclient.AddKOTSRegistryRequest, [
 		req.Endpoint = r.args.addRegistryEndpoint
 	}
 
+	supportedAuthTypes := []string{"serviceaccount", "token"}
+	if !contains(supportedAuthTypes, r.args.addRegistryAuthType) {
+		errs = append(errs, errors.New("authtype must be one of: password, token"))
+	} else {
+		req.AuthType = r.args.addRegistryAuthType
+	}
+
 	if r.args.addRegistryServiceAccountKey == "" {
 		errs = append(errs, errors.New("serviceaccountkey or serviceaccountkey-stdin must be specified"))
 	} else {
+		req.Username = "_json_key"
 		req.Password = r.args.addRegistryServiceAccountKey
+	}
+
+	if r.args.addRegistryToken == "" {
+		errs = append(errs, errors.New("token is required"))
+	} else {
+		req.Username = "token"
+		req.Password = r.args.addRegistryToken
 	}
 
 	return req, errs
