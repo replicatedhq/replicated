@@ -99,8 +99,7 @@ func (r *runners) validateRegistryAddGAR() (kotsclient.AddKOTSRegistryRequest, [
 		req.AuthType = r.args.addRegistryAuthType
 	}
 
-	if req.AuthType == "serviceacccount" {
-
+	if req.AuthType == "serviceaccount" {
 		if r.args.addRegistryServiceAccountKey == "" {
 			errs = append(errs, errors.New("serviceaccountkey or serviceaccountkey-stdin must be specified"))
 		} else {
@@ -113,10 +112,9 @@ func (r *runners) validateRegistryAddGAR() (kotsclient.AddKOTSRegistryRequest, [
 		if r.args.addRegistryToken == "" {
 			errs = append(errs, errors.New("token is required"))
 		} else {
-			req.Username = "token"
+			req.Username = "oauth2accesstoken"
 			req.Password = r.args.addRegistryToken
 		}
-
 	}
 
 	return req, errs
