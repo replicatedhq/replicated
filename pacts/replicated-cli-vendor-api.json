@@ -459,6 +459,70 @@
       }
     },
     {
+      "description": "A request to add a gar external registry using auth type serviceaccount",
+      "providerState": "Add an gar external registry using a serviceaccount",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "serviceaccount",
+          "endpoint": "pkg.dev",
+          "password": "test",
+          "provider": "gar",
+          "skipValidation": true,
+          "username": "_json_key"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "serviceaccount",
+            "endpoint": "pkg.dev",
+            "provider": "gar"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to add a gar external registry using auth type access token",
+      "providerState": "Add an gar external registry using an access token",
+      "request": {
+        "method": "POST",
+        "path": "/v3/external_registry",
+        "headers": {
+          "Authorization": "replicated-cli-add-registry-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "authType": "token",
+          "endpoint": "pkg.dev",
+          "password": "test",
+          "provider": "gar",
+          "skipValidation": true,
+          "username": "oauth2accesstoken"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "external_registry": {
+            "authType": "token",
+            "endpoint": "pkg.dev",
+            "provider": "gar"
+          }
+        }
+      }
+    },
+    {
       "description": "A request to remove a dockerhub external registry using authtype password",
       "providerState": "Remove a dockerhub external registry using a password",
       "request": {
