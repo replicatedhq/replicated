@@ -204,10 +204,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitRegistryTest(registryCmd)
 	runCmds.InitRegistryLogs(registryCmd)
 	registryAddCmd := runCmds.InitRegistryAdd(registryCmd)
+	runCmds.InitRegistryAddDockerHub(registryAddCmd)
 	runCmds.InitRegistryAddECR(registryAddCmd)
+	runCmds.InitRegistryAddGAR(registryAddCmd)
 	runCmds.InitRegistryAddGCR(registryAddCmd)
 	runCmds.InitRegistryAddGHCR(registryAddCmd)
-	runCmds.InitRegistryAddDockerHub(registryAddCmd)
 	runCmds.InitRegistryAddQuay(registryAddCmd)
 	runCmds.InitRegistryAddOther(registryAddCmd)
 
