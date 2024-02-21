@@ -80,9 +80,9 @@ func (r *runners) registryAddGAR(cmd *cobra.Command, args []string) error {
 
 func (r *runners) validateRegistryAddGAR() (kotsclient.AddKOTSRegistryRequest, []error) {
 	req := kotsclient.AddKOTSRegistryRequest{
-		Provider: "gcr",
+		Provider: "gar",
 		AuthType: "serviceaccount",
-		//Username: "_json_key",
+		Username: "_json_key",
 	}
 	errs := []error{}
 
@@ -94,7 +94,7 @@ func (r *runners) validateRegistryAddGAR() (kotsclient.AddKOTSRegistryRequest, [
 
 	supportedAuthTypes := []string{"serviceaccount", "token"}
 	if !contains(supportedAuthTypes, r.args.addRegistryAuthType) {
-		errs = append(errs, errors.New("authtype must be one of: password, token"))
+		errs = append(errs, errors.New("authtype must be one of: serviceaccount, token"))
 	} else {
 		req.AuthType = r.args.addRegistryAuthType
 	}
