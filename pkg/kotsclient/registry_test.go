@@ -249,6 +249,126 @@ func Test_CreateRegistryGCR(t *testing.T) {
 	}
 }
 
+func Test_CreateRegistryGARServiceAccount(t *testing.T) {
+	var test = func() (err error) {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+
+		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
+		client := VendorV3Client{HTTPClient: *api}
+
+		req := AddKOTSRegistryRequest{
+			Provider:       "gar",
+			Endpoint:       "pkg.dev",
+			AuthType:       "serviceaccount",
+			Username:       "_json_key",
+			Password:       "test",
+			SkipValidation: true,
+		}
+		response, err := client.AddKOTSRegistry(req)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "pkg.dev", response.Endpoint)
+		assert.Equal(t, "gar", response.Provider)
+		assert.Equal(t, "serviceaccount", response.AuthType)
+
+		return nil
+	}
+
+	pact.AddInteraction().
+		Given("Add an gar external registry using a serviceaccount").
+		UponReceiving("A request to add a gar external registry using auth type serviceaccount").
+		WithRequest(dsl.Request{
+			Method: "POST",
+			Path:   dsl.String("/v3/external_registry"),
+			Headers: dsl.MapMatcher{
+				"Authorization": dsl.String("replicated-cli-add-registry-token"),
+				"Content-Type":  dsl.String("application/json"),
+			},
+			Body: map[string]interface{}{
+				"provider":       dsl.String("gar"),
+				"endpoint":       dsl.String("pkg.dev"),
+				"authType":       dsl.String("serviceaccount"),
+				"username":       dsl.String("_json_key"),
+				"password":       dsl.String("test"),
+				"skipValidation": true,
+			},
+		}).
+		WillRespondWith(dsl.Response{
+			Status: 201,
+			Body: map[string]interface{}{
+				"external_registry": map[string]interface{}{
+					"provider": dsl.String("gar"),
+					"endpoint": dsl.String("pkg.dev"),
+					"authType": dsl.String("serviceaccount"),
+				},
+			},
+		})
+
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
+func Test_CreateRegistryGARAccessToken(t *testing.T) {
+	var test = func() (err error) {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+
+		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
+		client := VendorV3Client{HTTPClient: *api}
+
+		req := AddKOTSRegistryRequest{
+			Provider:       "gar",
+			Endpoint:       "pkg.dev",
+			AuthType:       "token",
+			Username:       "oauth2accesstoken",
+			Password:       "test",
+			SkipValidation: true,
+		}
+		response, err := client.AddKOTSRegistry(req)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "pkg.dev", response.Endpoint)
+		assert.Equal(t, "gar", response.Provider)
+		assert.Equal(t, "token", response.AuthType)
+
+		return nil
+	}
+
+	pact.AddInteraction().
+		Given("Add an gar external registry using an access token").
+		UponReceiving("A request to add a gar external registry using auth type access token").
+		WithRequest(dsl.Request{
+			Method: "POST",
+			Path:   dsl.String("/v3/external_registry"),
+			Headers: dsl.MapMatcher{
+				"Authorization": dsl.String("replicated-cli-add-registry-token"),
+				"Content-Type":  dsl.String("application/json"),
+			},
+			Body: map[string]interface{}{
+				"provider":       dsl.String("gar"),
+				"endpoint":       dsl.String("pkg.dev"),
+				"authType":       dsl.String("token"),
+				"username":       dsl.String("oauth2accesstoken"),
+				"password":       dsl.String("test"),
+				"skipValidation": true,
+			},
+		}).
+		WillRespondWith(dsl.Response{
+			Status: 201,
+			Body: map[string]interface{}{
+				"external_registry": map[string]interface{}{
+					"provider": dsl.String("gar"),
+					"endpoint": dsl.String("pkg.dev"),
+					"authType": dsl.String("token"),
+				},
+			},
+		})
+
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
 func Test_RemoveRegistryDockerHubPassword(t *testing.T) {
 	var test = func() (err error) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
