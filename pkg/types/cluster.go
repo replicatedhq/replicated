@@ -87,3 +87,16 @@ type ClusterIngressAddOn struct {
 	Target    string `json:"target"`
 	Namespace string `json:"namespace"`
 }
+
+type ClusterExposedPort struct {
+	Protocol    string `json:"protocol"`
+	ExposedPort int    `json:"exposed_port"`
+}
+
+type ClusterPort struct {
+	UpstreamPort int                  `json:"upstream_port"`
+	ExposedPorts []ClusterExposedPort `json:"exposed_ports"`
+	CreatedAt    time.Time            `json:"created_at"`
+	Hostname     string               `json:"hostname"`
+	State        AddOnState           `json:"state"`
+}

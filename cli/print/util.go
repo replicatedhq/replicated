@@ -1,6 +1,7 @@
 package print
 
 import (
+	"fmt"
 	"text/template"
 	"time"
 )
@@ -18,5 +19,8 @@ var funcs = template.FuncMap{
 	},
 	"add": func(a, b int) int {
 		return a + b
+	},
+	"formatURL": func(protocol, hostname string) string {
+		return fmt.Sprintf("%s://%s", protocol, hostname)
 	},
 }

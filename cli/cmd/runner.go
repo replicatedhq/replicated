@@ -232,6 +232,12 @@ type runnerArgs struct {
 	clusterCreateIngressPort      int
 	clusterCreateIngressNamespace string
 
+	clusterExposePortPort      int
+	clusterExposePortProtocols []string
+
+	clusterPortRemovePort      int
+	clusterPortRemoveProtocols []string
+
 	loginEndpoint string
 
 	apiPostBody string
