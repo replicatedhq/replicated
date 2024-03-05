@@ -34,6 +34,7 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
@@ -71,6 +72,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
+		LicenseID:              r.args.createClusterLicenseID,
 		NodeCount:              r.args.createClusterNodeCount,
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,

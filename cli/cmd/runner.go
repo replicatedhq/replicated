@@ -172,6 +172,7 @@ type runnerArgs struct {
 	createClusterName                   string
 	createClusterKubernetesDistribution string
 	createClusterKubernetesVersion      string
+	createClusterLicenseID              string
 	createClusterNodeCount              int
 	createClusterDiskGiB                int64
 	createClusterDryRun                 bool

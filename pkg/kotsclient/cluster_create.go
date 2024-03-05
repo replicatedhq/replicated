@@ -14,6 +14,7 @@ type CreateClusterRequest struct {
 	Name                   string      `json:"name"`
 	KubernetesDistribution string      `json:"kubernetes_distribution"`
 	KubernetesVersion      string      `json:"kubernetes_version"`
+	LicenseID              string      `json:"license_id"`
 	NodeCount              int         `json:"node_count"`
 	DiskGiB                int64       `json:"disk_gib"`
 	TTL                    string      `json:"ttl"`
@@ -32,6 +33,7 @@ type CreateClusterOpts struct {
 	Name                   string
 	KubernetesDistribution string
 	KubernetesVersion      string
+	LicenseID              string
 	NodeCount              int
 	DiskGiB                int64
 	TTL                    string
@@ -71,6 +73,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		Name:                   opts.Name,
 		KubernetesDistribution: opts.KubernetesDistribution,
 		KubernetesVersion:      opts.KubernetesVersion,
+		LicenseID:              opts.LicenseID,
 		NodeCount:              opts.NodeCount,
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
