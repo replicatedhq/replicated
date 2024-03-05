@@ -35,11 +35,13 @@ https://docs.replicated.com/vendor/testing-how-to#limitations`,
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
+	cmd.Flags().IntVar(&r.args.createClusterMinNodeCount, "min-nodes", int(-1), "Minimum Node count (only for EKS, AKS and GKE clusters)")
+	cmd.Flags().IntVar(&r.args.createClusterMaxNodeCount, "max-nodes", int(1), "Maximum Node count (only for EKS, AKS and GKE clusters)")
 	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
-	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,disk=? format, can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format, can be specified multiple times)")
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
 
@@ -72,6 +74,8 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		NodeCount:              r.args.createClusterNodeCount,
+		MinNodeCount:           r.args.createClusterMinNodeCount,
+		MaxNodeCount:           r.args.createClusterMaxNodeCount,
 		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		InstanceType:           r.args.createClusterInstanceType,
@@ -177,6 +181,18 @@ func parseNodeGroups(nodeGroups []string) ([]kotsclient.NodeGroup, error) {
 					return nil, errors.Wrapf(err, "failed to parse nodes value: %s", parsedFieldValue)
 				}
 				ng.Nodes = nodes
+			case "min-nodes":
+				minNodes, err := strconv.Atoi(parsedFieldValue)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse min-nodes value: %s", parsedFieldValue)
+				}
+				ng.MinNodes = minNodes
+			case "max-nodes":
+				maxNodes, err := strconv.Atoi(parsedFieldValue)
+				if err != nil {
+					return nil, errors.Wrapf(err, "failed to parse max-nodes value: %s", parsedFieldValue)
+				}
+				ng.MaxNodes = maxNodes
 			case "disk":
 				diskSize, err := strconv.Atoi(parsedFieldValue)
 				if err != nil {

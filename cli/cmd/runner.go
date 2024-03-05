@@ -173,6 +173,8 @@ type runnerArgs struct {
 	createClusterKubernetesDistribution string
 	createClusterKubernetesVersion      string
 	createClusterNodeCount              int
+	createClusterMinNodeCount           int
+	createClusterMaxNodeCount           int
 	createClusterDiskGiB                int64
 	createClusterDryRun                 bool
 	createClusterTTL                    string
