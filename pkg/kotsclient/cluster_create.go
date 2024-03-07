@@ -85,10 +85,10 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		Tags:                   opts.Tags,
 	}
 
-	if opts.MinNodeCount != -1 {
+	if opts.MinNodeCount >= 0 {
 		req.MinNodeCount = &opts.MinNodeCount
 	}
-	if opts.MaxNodeCount != -1 {
+	if opts.MaxNodeCount >= 0 {
 		req.MaxNodeCount = &opts.MaxNodeCount
 	}
 
