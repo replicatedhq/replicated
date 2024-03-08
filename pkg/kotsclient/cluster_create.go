@@ -35,8 +35,8 @@ type CreateClusterOpts struct {
 	KubernetesDistribution string
 	KubernetesVersion      string
 	NodeCount              int
-	MinNodeCount           int
-	MaxNodeCount           int
+	MinNodeCount           *int
+	MaxNodeCount           *int
 	DiskGiB                int64
 	TTL                    string
 	InstanceType           string
@@ -49,8 +49,8 @@ type NodeGroup struct {
 	Name         string `json:"name"`
 	InstanceType string `json:"instance_type"`
 	Nodes        int    `json:"node_count"`
-	MinNodes     int    `json:"min_node_count"`
-	MaxNodes     int    `json:"max_node_count"`
+	MinNodes     *int   `json:"min_node_count"`
+	MaxNodes     *int   `json:"max_node_count"`
 	Disk         int    `json:"disk_gib"`
 }
 
@@ -78,18 +78,13 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		KubernetesDistribution: opts.KubernetesDistribution,
 		KubernetesVersion:      opts.KubernetesVersion,
 		NodeCount:              opts.NodeCount,
+		MinNodeCount:           opts.MinNodeCount,
+		MaxNodeCount:           opts.MaxNodeCount,
 		DiskGiB:                opts.DiskGiB,
 		TTL:                    opts.TTL,
 		InstanceType:           opts.InstanceType,
 		NodeGroups:             opts.NodeGroups,
 		Tags:                   opts.Tags,
-	}
-
-	if opts.MinNodeCount >= 0 {
-		req.MinNodeCount = &opts.MinNodeCount
-	}
-	if opts.MaxNodeCount >= 0 {
-		req.MaxNodeCount = &opts.MaxNodeCount
 	}
 
 	if opts.DryRun {
