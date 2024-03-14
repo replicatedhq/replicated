@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,10 @@ func (r *runners) InitClusterPortRm(parent *cobra.Command) *cobra.Command {
 
 func (r *runners) clusterPortRemove(_ *cobra.Command, args []string) error {
 	clusterID := args[0]
+
+	if len(r.args.clusterPortRemoveProtocols) == 0 {
+		return errors.New("at least one protocol must be specified")
+	}
 
 	ports, err := r.kotsAPI.RemoveClusterPort(clusterID, r.args.clusterPortRemovePort, r.args.clusterPortRemoveProtocols)
 	if err != nil {

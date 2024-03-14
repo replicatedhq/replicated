@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,10 @@ func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 
 func (r *runners) clusterPortExpose(_ *cobra.Command, args []string) error {
 	clusterID := args[0]
+
+	if len(r.args.clusterExposePortProtocols) == 0 {
+		return errors.New("at least one protocol must be specified")
+	}
 
 	port, err := r.kotsAPI.ExposeClusterPort(clusterID, r.args.clusterExposePortPort, r.args.clusterExposePortProtocols)
 	if err != nil {
