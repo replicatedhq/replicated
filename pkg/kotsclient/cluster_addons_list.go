@@ -1,21 +1,24 @@
 package kotsclient
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type ListClusterAddOnsResponse struct {
-	AddOns []*types.ClusterAddOn `json:"addons"`
+type ListClusterAddonsResponse struct {
+	Addons []*types.ClusterAddon `json:"addons"`
 }
 
-func (c *VendorV3Client) ListClusterAddOns() ([]*types.ClusterAddOn, error) {
-	resp := ListClusterAddOnsResponse{}
-	err := c.DoJSON("GET", "/v3/cluster/addons", http.StatusOK, nil, &resp)
+func (c *VendorV3Client) ListClusterAddons(clusterID string) ([]*types.ClusterAddon, error) {
+	resp := ListClusterAddonsResponse{}
+
+	endpoint := fmt.Sprintf("/v3/cluster/%s/addons", clusterID)
+	err := c.DoJSON("GET", endpoint, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	return resp.AddOns, nil
+	return resp.Addons, nil
 }

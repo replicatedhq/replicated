@@ -5,19 +5,13 @@ import (
 	"net/http"
 )
 
-type DeleteClusterAddOnRequest struct {
+type DeleteClusterAddonRequest struct {
 	ID string `json:"id"`
 }
 
-type DeleteClusterAddOnResponse struct {
-	Error string `json:"error"`
-}
-
-func (c *VendorV3Client) DeleteClusterAddOn(id string) error {
-	resp := DeleteClusterAddOnResponse{}
-
-	url := fmt.Sprintf("/v3/cluster/addons/%s", id)
-	err := c.DoJSON("DELETE", url, http.StatusOK, nil, &resp)
+func (c *VendorV3Client) DeleteClusterAddon(id string) error {
+	endpoint := fmt.Sprintf("/v3/cluster/addons/%s", id)
+	err := c.DoJSON("DELETE", endpoint, http.StatusNoContent, nil, nil)
 	if err != nil {
 		return err
 	}
