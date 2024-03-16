@@ -231,6 +231,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	clusterAddOnIngressCmd := runCmds.InitClusterAddOnIngress(clusterAddOnCmd)
 	runCmds.InitClusterAddOnIngressCreate(clusterAddOnIngressCmd)
 
+	clusterPortCmd := runCmds.InitClusterPort(clusterCmd)
+	runCmds.InitClusterPortLs(clusterPortCmd)
+	runCmds.InitClusterPortExpose(clusterPortCmd)
+	runCmds.InitClusterPortRm(clusterPortCmd)
+
 	clusterPrepareCmd := runCmds.InitClusterPrepare(clusterCmd)
 
 	clusterUpdateCmd := runCmds.InitClusterUpdateCommand(clusterCmd)
