@@ -107,5 +107,5 @@ type ClusterPort struct {
 	ExposedPorts []ClusterExposedPort `json:"exposed_ports"`
 	CreatedAt    time.Time            `json:"created_at"`
 	Hostname     string               `json:"hostname"`
-	State        AddOnState           `json:"state"`
+	State        ClusterAddonStatus   `json:"state"`
 }
