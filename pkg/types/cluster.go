@@ -97,6 +97,15 @@ func (addon *ClusterAddon) TypeName() string {
 	}
 }
 
+type ClusterPortState string
+
+const (
+	ClusterPortStatePending ClusterPortState = "pending"
+	ClusterPortStateReady   ClusterPortState = "ready"
+	ClusterPortStateError   ClusterPortState = "error"
+	ClusterPortStateRemoved ClusterPortState = "removed"
+)
+
 type ClusterExposedPort struct {
 	Protocol    string `json:"protocol"`
 	ExposedPort int    `json:"exposed_port"`
@@ -107,5 +116,5 @@ type ClusterPort struct {
 	ExposedPorts []ClusterExposedPort `json:"exposed_ports"`
 	CreatedAt    time.Time            `json:"created_at"`
 	Hostname     string               `json:"hostname"`
-	State        ClusterAddonStatus   `json:"state"`
+	State        ClusterPortState     `json:"state"`
 }
