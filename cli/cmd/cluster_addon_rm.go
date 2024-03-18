@@ -5,7 +5,8 @@ import (
 )
 
 type clusterAddonRmArgs struct {
-	id string
+	id        string
+	clusterID string
 	clusterAddonArgs
 }
 
@@ -13,11 +14,11 @@ func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
 	args := clusterAddonRmArgs{}
 
 	cmd := &cobra.Command{
-		Use:   "rm ID",
+		Use:   "rm CLUSTER_ID --id ADDON_ID",
 		Short: "Remove cluster addon by ID",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
-			args.id = cmdArgs[0]
+			args.clusterID = cmdArgs[0]
 			return r.clusterAddonRmRun(args)
 		},
 	}
@@ -29,6 +30,11 @@ func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
 }
 
 func clusterAddonRmFlags(cmd *cobra.Command, args *clusterAddonRmArgs) error {
+	cmd.Flags().StringVar(&args.id, "id", "", "The ID of the cluster addon to remove (required)")
+	err := cmd.MarkFlagRequired("id")
+	if err != nil {
+		return err
+	}
 	return clusterAddonFlags(cmd, &args.clusterAddonArgs)
 }
 

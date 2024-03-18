@@ -8,7 +8,7 @@ import (
 
 func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "expose <cluster-id> --port <port> --protocol <protocol>",
+		Use:  "expose CLUSTER_ID --port PORT --protocol PROTOCOL",
 		RunE: r.clusterPortExpose,
 		Args: cobra.ExactArgs(1),
 	}

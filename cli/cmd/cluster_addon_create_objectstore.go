@@ -39,7 +39,7 @@ func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobr
 }
 
 func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCreateObjectStoreArgs) error {
-	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket", "", "The object store bucket name to create")
+	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket", "", "The object store bucket name to create (required)")
 	err := cmd.MarkFlagRequired("bucket")
 	if err != nil {
 		return err
