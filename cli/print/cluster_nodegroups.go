@@ -16,14 +16,14 @@ var nodeGroupsTmplSrc = `ID	NAME	DEFAULT	INSTANCE TYPE	NODES	DISK
 
 var nodeGroupsTmpl = template.Must(template.New("nodegroups").Parse(nodeGroupsTmplSrc))
 
-func NodeGroups(outputFormat string, w *tabwriter.Writer, addons []*types.NodeGroup) error {
+func NodeGroups(outputFormat string, w *tabwriter.Writer, nodeGroups []*types.NodeGroup) error {
 	switch outputFormat {
 	case "table", "wide":
-		if err := nodeGroupsTmpl.Execute(w, addons); err != nil {
+		if err := nodeGroupsTmpl.Execute(w, nodeGroups); err != nil {
 			return err
 		}
 	case "json":
-		cAsByte, err := json.MarshalIndent(addons, "", "  ")
+		cAsByte, err := json.MarshalIndent(nodeGroups, "", "  ")
 		if err != nil {
 			return err
 		}
