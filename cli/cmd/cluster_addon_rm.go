@@ -7,9 +7,8 @@ import (
 )
 
 type clusterAddonRmArgs struct {
-	id           string
-	clusterID    string
-	outputFormat string
+	id        string
+	clusterID string
 }
 
 func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
@@ -37,16 +36,15 @@ func clusterAddonRmFlags(cmd *cobra.Command, args *clusterAddonRmArgs) error {
 	if err != nil {
 		return err
 	}
-	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 	return nil
 }
 
 func (r *runners) clusterAddonRmRun(args clusterAddonRmArgs) error {
-	err := r.kotsAPI.DeleteClusterAddon(args.id)
+	err := r.kotsAPI.DeleteClusterAddon(args.clusterID, args.id)
 	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintln(r.w, "Addon has been deleted")
+	_, err = fmt.Fprintf(r.w, "Addon %s has been deleted\n", args.id)
 	return err
 }
