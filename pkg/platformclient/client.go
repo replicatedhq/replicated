@@ -118,6 +118,10 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
 
+	if _, ok := os.LookupEnv("CI"); ok {
+		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
+	}
+
 	if err := addGitHubActionsHeaders(req); err != nil {
 		return errors.Wrap(err, "add github actions headers")
 	}
