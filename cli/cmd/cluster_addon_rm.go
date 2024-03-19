@@ -1,13 +1,15 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
 type clusterAddonRmArgs struct {
-	id        string
-	clusterID string
-	clusterAddonArgs
+	id           string
+	clusterID    string
+	outputFormat string
 }
 
 func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
@@ -35,7 +37,8 @@ func clusterAddonRmFlags(cmd *cobra.Command, args *clusterAddonRmArgs) error {
 	if err != nil {
 		return err
 	}
-	return clusterAddonFlags(cmd, &args.clusterAddonArgs)
+	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	return nil
 }
 
 func (r *runners) clusterAddonRmRun(args clusterAddonRmArgs) error {

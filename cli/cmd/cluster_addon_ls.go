@@ -6,8 +6,8 @@ import (
 )
 
 type clusterAddonLsArgs struct {
-	clusterID string
-	clusterAddonArgs
+	clusterID    string
+	outputFormat string
 }
 
 func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
@@ -30,7 +30,8 @@ func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
 }
 
 func clusterAddonLsFlags(cmd *cobra.Command, args *clusterAddonLsArgs) error {
-	return clusterAddonFlags(cmd, &args.clusterAddonArgs)
+	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	return nil
 }
 
 func (r *runners) addonClusterLsRun(args clusterAddonLsArgs) error {

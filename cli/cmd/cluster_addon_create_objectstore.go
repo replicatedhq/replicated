@@ -15,8 +15,10 @@ import (
 
 type clusterAddonCreateObjectStoreArgs struct {
 	objectStoreBucket string
-	clusterAddonCreateArgs
-	clusterAddonArgs
+	clusterID         string
+	waitDuration      time.Duration
+	dryRun            bool
+	outputFormat      string
 }
 
 func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobra.Command {
@@ -44,11 +46,10 @@ func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCr
 	if err != nil {
 		return err
 	}
-	err = clusterAddonFlags(cmd, &args.clusterAddonArgs)
-	if err != nil {
-		return err
-	}
-	return clusterAddonCreateFlags(cmd, &args.clusterAddonCreateArgs)
+	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for addon to be ready (leave empty to not wait)")
+	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Dry run")
+	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	return nil
 }
 
 func (r *runners) clusterAddonCreateObjectStoreCreateRun(args clusterAddonCreateObjectStoreArgs) error {
