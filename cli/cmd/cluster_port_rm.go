@@ -8,7 +8,7 @@ import (
 
 func (r *runners) InitClusterPortRm(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "rm",
+		Use:  "rm CLUSTER_ID",
 		RunE: r.clusterPortRemove,
 		Args: cobra.ExactArgs(1),
 	}

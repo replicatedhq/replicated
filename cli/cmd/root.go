@@ -224,12 +224,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	clusterNodeGroupCmd := runCmds.InitClusterNodeGroup(clusterCmd)
 	runCmds.InitClusterNodeGroupList(clusterNodeGroupCmd)
 
-	clusterAddOnCmd := runCmds.InitClusterAddOn(clusterCmd)
-	runCmds.InitClusterAddOnRm(clusterAddOnCmd)
-	runCmds.InitClusterAddOnLs(clusterAddOnCmd)
-
-	clusterAddOnIngressCmd := runCmds.InitClusterAddOnIngress(clusterAddOnCmd)
-	runCmds.InitClusterAddOnIngressCreate(clusterAddOnIngressCmd)
+	clusterAddonCmd := runCmds.InitClusterAddon(clusterCmd)
+	runCmds.InitClusterAddonLs(clusterAddonCmd)
+	runCmds.InitClusterAddonRm(clusterAddonCmd)
+	clusterAddonCreateCmd := runCmds.InitClusterAddonCreate(clusterAddonCmd)
+	runCmds.InitClusterAddonCreateObjectStore(clusterAddonCreateCmd)
 
 	clusterPortCmd := runCmds.InitClusterPort(clusterCmd)
 	runCmds.InitClusterPortLs(clusterPortCmd)

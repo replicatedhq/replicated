@@ -64,29 +64,47 @@ type ClusterVersion struct {
 	Status        *ClusterDistributionStatus `json:"status,omitempty"`
 }
 
-type AddOnState string
+type ClusterAddonStatus string
 
 const (
-	AddOnStatePending  AddOnState = "pending"  // No attempts to install this ingress yet
-	AddOnStateApplied  AddOnState = "applied"  // The ingress has been applied to the cluster
-	AddOnStateRunning  AddOnState = "ready"    // The ingress is ready to be used
-	AddOnStateError    AddOnState = "error"    // The ingress has an error
-	AddOnStateRemoving AddOnState = "removing" // The ingress is being removed
-	AddOnStateRemoved  AddOnState = "removed"  // The ingress has been removed
+	ClusterAddonStatusPending  ClusterAddonStatus = "pending"  // No attempts to install this addon
+	ClusterAddonStatusApplied  ClusterAddonStatus = "applied"  // The addon has been applied to the cluster
+	ClusterAddonStatusRunning  ClusterAddonStatus = "ready"    // The addon is ready to be used
+	ClusterAddonStatusError    ClusterAddonStatus = "error"    // The addon has an error
+	ClusterAddonStatusRemoving ClusterAddonStatus = "removing" // The addon is being removed
+	ClusterAddonStatusRemoved  ClusterAddonStatus = "removed"  // The addon has been removed
 )
 
-type ClusterAddOn struct {
-	ID    string     `json:"id"`
-	State AddOnState `json:"state"`
+type ClusterAddon struct {
+	ID        string             `json:"id"`
+	ClusterID string             `json:"cluster_id"`
+	Status    ClusterAddonStatus `json:"status"`
+	CreatedAt time.Time          `json:"created_at"`
 
-	Ingress *ClusterIngressAddOn `json:"ingress,omitempty"`
+	ObjectStore *ClusterAddonObjectStore `json:"object_store,omitempty"`
 }
 
-type ClusterIngressAddOn struct {
-	Hostname  string `json:"hostname"`
-	Target    string `json:"target"`
-	Namespace string `json:"namespace"`
+type ClusterAddonObjectStore struct {
+	Bucket string `json:"bucket"`
 }
+
+func (addon *ClusterAddon) TypeName() string {
+	switch {
+	case addon.ObjectStore != nil:
+		return "Object Store"
+	default:
+		return "Unknown"
+	}
+}
+
+type ClusterPortState string
+
+const (
+	ClusterPortStatePending ClusterPortState = "pending"
+	ClusterPortStateReady   ClusterPortState = "ready"
+	ClusterPortStateError   ClusterPortState = "error"
+	ClusterPortStateRemoved ClusterPortState = "removed"
+)
 
 type ClusterExposedPort struct {
 	Protocol    string `json:"protocol"`
@@ -98,5 +116,5 @@ type ClusterPort struct {
 	ExposedPorts []ClusterExposedPort `json:"exposed_ports"`
 	CreatedAt    time.Time            `json:"created_at"`
 	Hostname     string               `json:"hostname"`
-	State        AddOnState           `json:"state"`
+	State        ClusterPortState     `json:"state"`
 }
