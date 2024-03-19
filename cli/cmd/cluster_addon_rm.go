@@ -47,5 +47,6 @@ func (r *runners) clusterAddonRmRun(args clusterAddonRmArgs) error {
 		return err
 	}
 
-	return nil
+	_, err = fmt.Fprintln(r.w, "Addon has been deleted")
+	return err
 }
