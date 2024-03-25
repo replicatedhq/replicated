@@ -20,12 +20,9 @@ var ErrWaitDurationExceeded = errors.New("wait duration exceeded")
 
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "create",
-		Short: "Create test clusters",
-		Long: `Create test clusters.
-
-This is a beta feature, with some known limitations:
-https://docs.replicated.com/vendor/testing-how-to#limitations`,
+		Use:          "create",
+		Short:        "Create test clusters",
+		Long:         "Create test clusters.",
 		SilenceUsage: true,
 		RunE:         r.createCluster,
 	}
