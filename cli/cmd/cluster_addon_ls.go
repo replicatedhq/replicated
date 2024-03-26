@@ -40,5 +40,5 @@ func (r *runners) addonClusterLsRun(args clusterAddonLsArgs) error {
 		return err
 	}
 
-	return print.Addons(r.outputFormat, r.w, addons, true)
+	return print.Addons(args.outputFormat, r.w, addons, true)
 }

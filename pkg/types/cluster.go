@@ -85,7 +85,11 @@ type ClusterAddon struct {
 }
 
 type ClusterAddonObjectStore struct {
-	Bucket string `json:"bucket"`
+	BucketPrefix               string `json:"bucket_prefix"`
+	BucketName                 string `json:"bucket_name,omitempty"`
+	ServiceAccountNamespace    string `json:"service_account_namespace,omitempty"`
+	ServiceAccountName         string `json:"service_account_name,omitempty"`
+	ServiceAccountNameReadOnly string `json:"service_account_name_read_only,omitempty"`
 }
 
 func (addon *ClusterAddon) TypeName() string {
