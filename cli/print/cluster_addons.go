@@ -3,6 +3,7 @@ package print
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"text/tabwriter"
 	"text/template"
 
@@ -21,14 +22,7 @@ var addonsFuncs = template.FuncMap{
 	"Type": func(addon *types.ClusterAddon) string {
 		return addon.TypeName()
 	},
-	"Data": func(addon *types.ClusterAddon) string {
-		switch {
-		case addon.ObjectStore != nil:
-			return fmt.Sprintf("Bucket: %s", addon.ObjectStore.Bucket)
-		default:
-			return ""
-		}
-	},
+	"Data": addonData,
 }
 
 func init() {
@@ -81,4 +75,21 @@ func Addon(outputFormat string, w *tabwriter.Writer, addon *types.ClusterAddon) 
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
 	return w.Flush()
+}
+
+func addonData(addon *types.ClusterAddon) string {
+	switch {
+	case addon.ObjectStore != nil:
+		return addonObjectStoreData(*addon.ObjectStore)
+	default:
+		return ""
+	}
+}
+
+func addonObjectStoreData(data types.ClusterAddonObjectStore) string {
+	b, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("failed to marshal object store data: %v", err)
+	}
+	return string(b)
 }
