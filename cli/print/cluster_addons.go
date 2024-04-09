@@ -81,6 +81,8 @@ func addonData(addon *types.ClusterAddon) string {
 	switch {
 	case addon.ObjectStore != nil:
 		return addonObjectStoreData(*addon.ObjectStore)
+	case addon.Postgres != nil:
+		return addonPostgresData(*addon.Postgres)
 	default:
 		return ""
 	}
@@ -90,6 +92,14 @@ func addonObjectStoreData(data types.ClusterAddonObjectStore) string {
 	b, err := json.Marshal(data)
 	if err != nil {
 		log.Printf("failed to marshal object store data: %v", err)
+	}
+	return string(b)
+}
+
+func addonPostgresData(data types.ClusterAddonPostgres) string {
+	b, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("failed to marshal postgres data: %v", err)
 	}
 	return string(b)
 }
