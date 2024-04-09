@@ -13,21 +13,21 @@ import (
 type CreateClusterAddonPostgresOpts struct {
 	ClusterID    string
 	Version      string
-	DiskSize     int64
+	DiskGiB      int64
 	InstanceType string
 	DryRun       bool
 }
 
 type CreateClusterAddonPostgresRequest struct {
 	Version      string `json:"version"`
-	DiskSize     int64  `json:"diskSize"`
-	InstanceType string `json:"instanceType"`
+	DiskGiB      int64  `json:"disk_gib"`
+	InstanceType string `json:"instance_type"`
 }
 
 func (c *VendorV3Client) CreateClusterAddonPostgres(opts CreateClusterAddonPostgresOpts) (*types.ClusterAddon, error) {
 	req := CreateClusterAddonPostgresRequest{
 		Version:      opts.Version,
-		DiskSize:     opts.DiskSize,
+		DiskGiB:      opts.DiskGiB,
 		InstanceType: opts.InstanceType,
 	}
 	return c.doCreateClusterAddonPostgresRequest(opts.ClusterID, req, opts.DryRun)

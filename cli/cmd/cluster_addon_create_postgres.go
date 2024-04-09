@@ -15,7 +15,7 @@ import (
 
 type clusterAddonCreatePostgresArgs struct {
 	version      string
-	diskSize     int64
+	diskGiB      int64
 	instanceType string
 
 	clusterID    string
@@ -49,7 +49,7 @@ func clusterAddonCreatePostgresFlags(cmd *cobra.Command, args *clusterAddonCreat
 	if err != nil {
 		return err
 	}
-	cmd.Flags().Int64Var(&args.diskSize, "disk", 200, "Disk Size (GiB) for the Postgres database")
+	cmd.Flags().Int64Var(&args.diskGiB, "disk", 200, "Disk Size (GiB) for the Postgres database")
 	cmd.Flags().StringVar(&args.instanceType, "instance-type", "db.t3.micro", "The type of instance to use for the Postgres database")
 
 	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for addon to be ready (leave empty to not wait)")
@@ -62,7 +62,7 @@ func (r *runners) clusterAddonCreatePostgresCreateRun(args clusterAddonCreatePos
 	opts := kotsclient.CreateClusterAddonPostgresOpts{
 		ClusterID:    args.clusterID,
 		Version:      args.version,
-		DiskSize:     args.diskSize,
+		DiskGiB:      args.diskGiB,
 		InstanceType: args.instanceType,
 		DryRun:       args.dryRun,
 	}
