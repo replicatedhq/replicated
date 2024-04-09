@@ -90,7 +90,7 @@ func (r *runners) createAndWaitForClusterAddonCreateObjectStore(opts kotsclient.
 		return addon, nil
 	}
 
-	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
+	// if the wait flag was provided, we poll the api until the addon is ready, or a timeout
 	if waitDuration > 0 {
 		return waitForAddon(r.kotsAPI, opts.ClusterID, addon.ID, waitDuration)
 	}
