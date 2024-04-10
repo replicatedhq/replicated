@@ -12,7 +12,7 @@ import (
 func (r *runners) InitClusterAddon(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:    "addon",
-		Short:  "Manage cluster addons",
+		Short:  "Manage cluster add-ons",
 		Hidden: true, // this feature is not fully implemented and controlled behind a feature toggle in the api until ready
 	}
 	parent.AddCommand(cmd)
