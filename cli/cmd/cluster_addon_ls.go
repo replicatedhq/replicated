@@ -15,7 +15,7 @@ func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "ls CLUSTER_ID",
-		Short: "List cluster addons for a cluster",
+		Short: "List cluster add-ons for a cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
 			args.clusterID = cmdArgs[0]

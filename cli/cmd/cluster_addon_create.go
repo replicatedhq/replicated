@@ -7,7 +7,7 @@ import (
 func (r *runners) InitClusterAddonCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
-		Short: "Create cluster addons",
+		Short: "Create cluster add-ons",
 	}
 	parent.AddCommand(cmd)
 
