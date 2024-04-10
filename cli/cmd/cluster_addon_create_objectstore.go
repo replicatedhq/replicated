@@ -21,13 +21,24 @@ type clusterAddonCreateObjectStoreArgs struct {
 	outputFormat      string
 }
 
+const (
+	clusterAddonCreateObjectStoreShort = "Create an object store bucket for a cluster"
+	clusterAddonCreateObjectStoreLong  = `Create an object store bucket for a cluster.
+
+Requires a bucket name prefix (using flag "--bucket") that will be used to create a unique bucket name with format "[BUCKET_PREFIX]-[ADDON_ID]-cmx".`
+	clusterAddonCreateObjectStoreExample = `  $ replicated cluster addon create object-store 05929b24 --bucket mybucket
+  05929b24    Object Store    pending         {"bucket_prefix":"mybucket"}`
+)
+
 func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobra.Command {
 	args := clusterAddonCreateObjectStoreArgs{}
 
 	cmd := &cobra.Command{
-		Use:   "object-store CLUSTER_ID --bucket BUCKET_NAME",
-		Short: "Create an object store for a cluster",
-		Args:  cobra.ExactArgs(1),
+		Use:     "object-store CLUSTER_ID --bucket BUCKET_PREFIX",
+		Short:   clusterAddonCreateObjectStoreShort,
+		Long:    clusterAddonCreateObjectStoreLong,
+		Example: clusterAddonCreateObjectStoreExample,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
 			args.clusterID = cmdArgs[0]
 			return r.clusterAddonCreateObjectStoreCreateRun(args)
@@ -41,13 +52,13 @@ func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobr
 }
 
 func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCreateObjectStoreArgs) error {
-	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket", "", "The object store bucket name to create (required)")
+	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket", "", "A prefix for the bucket name to be created (required)")
 	err := cmd.MarkFlagRequired("bucket")
 	if err != nil {
 		return err
 	}
-	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for addon to be ready (leave empty to not wait)")
-	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Dry run")
+	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
+	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
 	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 	return nil
 }

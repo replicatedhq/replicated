@@ -69,8 +69,8 @@ Usage:{{if .Runnable}}
 Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
-  Examples:
-  {{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+Example:
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
 
 Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
