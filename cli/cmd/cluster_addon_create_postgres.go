@@ -52,8 +52,8 @@ func clusterAddonCreatePostgresFlags(cmd *cobra.Command, args *clusterAddonCreat
 	cmd.Flags().Int64Var(&args.diskGiB, "disk", 200, "Disk Size (GiB) for the Postgres database")
 	cmd.Flags().StringVar(&args.instanceType, "instance-type", "db.t3.micro", "The type of instance to use for the Postgres database")
 
-	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for addon to be ready (leave empty to not wait)")
-	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Dry run")
+	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
+	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
 	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 	return nil
 }
@@ -91,14 +91,14 @@ func (r *runners) createAndWaitForClusterAddonCreatePostgres(opts kotsclient.Cre
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
-		return nil, errors.Wrap(err, "create cluster addon postgres")
+		return nil, errors.Wrap(err, "create cluster add-on postgres")
 	}
 
 	if opts.DryRun {
 		return addon, nil
 	}
 
-	// if the wait flag was provided, we poll the api until the addon is ready, or a timeout
+	// if the wait flag was provided, we poll the api until the add-on is ready, or a timeout
 	if waitDuration > 0 {
 		return waitForAddon(r.kotsAPI, opts.ClusterID, addon.ID, waitDuration)
 	}
