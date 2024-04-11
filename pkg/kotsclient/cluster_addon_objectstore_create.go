@@ -25,7 +25,7 @@ type CreateClusterAddonObjectStoreResponse struct {
 }
 
 type CreateClusterAddonErrorResponse struct {
-	Error string `json:"error"`
+	Message string `json:"message"`
 }
 
 func (c *VendorV3Client) CreateClusterAddonObjectStore(opts CreateClusterAddonObjectStoreOpts) (*types.ClusterAddon, error) {
@@ -51,7 +51,7 @@ func (c *VendorV3Client) doCreateClusterAddonObjectStoreRequest(clusterID string
 				if jsonErr := json.Unmarshal(apiErr.Body, errResp); jsonErr != nil {
 					return nil, fmt.Errorf("unmarshal error response: %w", err)
 				}
-				return nil, errors.New(errResp.Error)
+				return nil, errors.New(errResp.Message)
 			}
 		}
 

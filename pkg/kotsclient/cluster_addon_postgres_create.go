@@ -49,7 +49,7 @@ func (c *VendorV3Client) doCreateClusterAddonPostgresRequest(clusterID string, r
 				if jsonErr := json.Unmarshal(apiErr.Body, errResp); jsonErr != nil {
 					return nil, fmt.Errorf("unmarshal error response: %w", err)
 				}
-				return nil, errors.New(errResp.Error)
+				return nil, errors.New(errResp.Message)
 			}
 		}
 
