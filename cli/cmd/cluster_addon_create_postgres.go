@@ -28,7 +28,7 @@ func (r *runners) InitClusterAddonCreatePostgres(parent *cobra.Command) *cobra.C
 	args := clusterAddonCreatePostgresArgs{}
 
 	cmd := &cobra.Command{
-		Use:   "postgres CLUSTER_ID --version POSTGRES_VERSION",
+		Use:   "postgres CLUSTER_ID",
 		Short: "Create a Postgres database for a cluster",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
@@ -44,11 +44,7 @@ func (r *runners) InitClusterAddonCreatePostgres(parent *cobra.Command) *cobra.C
 }
 
 func clusterAddonCreatePostgresFlags(cmd *cobra.Command, args *clusterAddonCreatePostgresArgs) error {
-	cmd.Flags().StringVar(&args.version, "version", "", "The Postgres version to create (required)")
-	err := cmd.MarkFlagRequired("version")
-	if err != nil {
-		return err
-	}
+	cmd.Flags().StringVar(&args.version, "version", "", "The Postgres version to create")
 	cmd.Flags().Int64Var(&args.diskGiB, "disk", 200, "Disk Size (GiB) for the Postgres database")
 	cmd.Flags().StringVar(&args.instanceType, "instance-type", "db.t3.micro", "The type of instance to use for the Postgres database")
 
