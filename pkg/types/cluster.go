@@ -98,9 +98,7 @@ type ClusterAddonPostgres struct {
 	DiskGiB      int64  `json:"disk_gib"`
 	InstanceType string `json:"instance_type"`
 
-	URI      string `json:"uri,omitempty"`
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
+	URI string `json:"uri,omitempty"`
 }
 
 func (addon *ClusterAddon) TypeName() string {
