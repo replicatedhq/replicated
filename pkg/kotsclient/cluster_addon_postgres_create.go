@@ -10,34 +10,32 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type CreateClusterAddonObjectStoreOpts struct {
-	ClusterID string
-	Bucket    string
-	DryRun    bool
+type CreateClusterAddonPostgresOpts struct {
+	ClusterID    string
+	Version      string
+	DiskGiB      int64
+	InstanceType string
+	DryRun       bool
 }
 
-type CreateClusterAddonObjectStoreRequest struct {
-	Bucket string `json:"bucket"`
+type CreateClusterAddonPostgresRequest struct {
+	Version      string `json:"version"`
+	DiskGiB      int64  `json:"disk_gib"`
+	InstanceType string `json:"instance_type"`
 }
 
-type CreateClusterAddonObjectStoreResponse struct {
-	Addon *types.ClusterAddon `json:"addon"`
-}
-
-type CreateClusterAddonErrorResponse struct {
-	Message string `json:"message"`
-}
-
-func (c *VendorV3Client) CreateClusterAddonObjectStore(opts CreateClusterAddonObjectStoreOpts) (*types.ClusterAddon, error) {
-	req := CreateClusterAddonObjectStoreRequest{
-		Bucket: opts.Bucket,
+func (c *VendorV3Client) CreateClusterAddonPostgres(opts CreateClusterAddonPostgresOpts) (*types.ClusterAddon, error) {
+	req := CreateClusterAddonPostgresRequest{
+		Version:      opts.Version,
+		DiskGiB:      opts.DiskGiB,
+		InstanceType: opts.InstanceType,
 	}
-	return c.doCreateClusterAddonObjectStoreRequest(opts.ClusterID, req, opts.DryRun)
+	return c.doCreateClusterAddonPostgresRequest(opts.ClusterID, req, opts.DryRun)
 }
 
-func (c *VendorV3Client) doCreateClusterAddonObjectStoreRequest(clusterID string, req CreateClusterAddonObjectStoreRequest, dryRun bool) (*types.ClusterAddon, error) {
+func (c *VendorV3Client) doCreateClusterAddonPostgresRequest(clusterID string, req CreateClusterAddonPostgresRequest, dryRun bool) (*types.ClusterAddon, error) {
 	resp := CreateClusterAddonObjectStoreResponse{}
-	endpoint := fmt.Sprintf("/v3/cluster/%s/addons/objectstore", clusterID)
+	endpoint := fmt.Sprintf("/v3/cluster/%s/addons/postgres", clusterID)
 	if dryRun {
 		endpoint = fmt.Sprintf("%s?dry-run=true", endpoint)
 	}
