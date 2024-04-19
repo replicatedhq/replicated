@@ -25,8 +25,8 @@ const (
 	clusterAddonCreateObjectStoreShort = "Create an object store bucket for a cluster"
 	clusterAddonCreateObjectStoreLong  = `Create an object store bucket for a cluster.
 
-Requires a bucket name prefix (using flag "--bucket") that will be used to create a unique bucket name with format "[BUCKET_PREFIX]-[ADDON_ID]-cmx".`
-	clusterAddonCreateObjectStoreExample = `  $ replicated cluster addon create object-store 05929b24 --bucket mybucket
+Requires a bucket name prefix (using flag "--bucket-prefix") that will be used to create a unique bucket name with format "[BUCKET_PREFIX]-[ADDON_ID]-cmx".`
+	clusterAddonCreateObjectStoreExample = `  $ replicated cluster addon create object-store 05929b24 --bucket-prefix mybucket
   05929b24    Object Store    pending         {"bucket_prefix":"mybucket"}`
 )
 
@@ -34,7 +34,7 @@ func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobr
 	args := clusterAddonCreateObjectStoreArgs{}
 
 	cmd := &cobra.Command{
-		Use:     "object-store CLUSTER_ID --bucket BUCKET_PREFIX",
+		Use:     "object-store CLUSTER_ID --bucket-prefix BUCKET_PREFIX",
 		Short:   clusterAddonCreateObjectStoreShort,
 		Long:    clusterAddonCreateObjectStoreLong,
 		Example: clusterAddonCreateObjectStoreExample,
@@ -52,7 +52,7 @@ func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobr
 }
 
 func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCreateObjectStoreArgs) error {
-	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket", "", "A prefix for the bucket name to be created (required)")
+	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required)")
 	err := cmd.MarkFlagRequired("bucket")
 	if err != nil {
 		return err
