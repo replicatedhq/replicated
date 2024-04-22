@@ -30,7 +30,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
-	cmd.Flags().BoolVar(&r.args.customerUpdateIsKotInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
+	cmd.Flags().BoolVar(&r.args.customerUpdateIsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
@@ -89,7 +89,7 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 		IsAirgapEnabled:                  r.args.customerUpdateIsAirgapEnabled,
 		IsGitopsSupported:                r.args.customerUpdateIsGitopsSupported,
 		IsSnapshotSupported:              r.args.customerUpdateIsSnapshotSupported,
-		IsKotInstallEnabled:              r.args.customerUpdateIsKotInstallEnabled,
+		IsKotsInstallEnabled:             r.args.customerUpdateIsKotsInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled: r.args.customerUpdateIsEmbeddedClusterDownloadEnabled,
 		IsGeoaxisSupported:               r.args.customerUpdateIsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          r.args.customerUpdateIsHelmVMDownloadEnabled,

@@ -84,7 +84,7 @@ type runnerArgs struct {
 	customerCreateIsAirgapEnabled                  bool
 	customerCreateIsGitopsSupported                bool
 	customerCreateIsSnapshotSupported              bool
-	customerCreateIsKotInstallEnabled              bool
+	customerCreateIsKotsInstallEnabled             bool
 	customerCreateIsEmbeddedClusterDownloadEnabled bool
 	customerCreateIsGeoaxisSupported               bool
 	customerCreateIsHelmVMDownloadEnabled          bool
@@ -103,7 +103,7 @@ type runnerArgs struct {
 	customerUpdateIsAirgapEnabled                  bool
 	customerUpdateIsGitopsSupported                bool
 	customerUpdateIsSnapshotSupported              bool
-	customerUpdateIsKotInstallEnabled              bool
+	customerUpdateIsKotsInstallEnabled             bool
 	customerUpdateIsEmbeddedClusterDownloadEnabled bool
 	customerUpdateIsGeoaxisSupported               bool
 	customerUpdateIsHelmVMDownloadEnabled          bool

@@ -47,7 +47,7 @@ type CreateCustomerOpts struct {
 	IsAirgapEnabled                  bool
 	IsGitopsSupported                bool
 	IsSnapshotSupported              bool
-	IsKotInstallEnabled              bool
+	IsKotsInstallEnabled             bool
 	IsEmbeddedClusterDownloadEnabled bool
 	IsGeoaxisSupported               bool
 	IsHelmVMDownloadEnabled          bool
@@ -69,7 +69,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsAirgapEnabled:                  opts.IsAirgapEnabled,
 		IsGitopsSupported:                opts.IsGitopsSupported,
 		IsSnapshotSupported:              opts.IsSnapshotSupported,
-		IsKotInstallEnabled:              opts.IsKotInstallEnabled,
+		IsKotInstallEnabled:              opts.IsKotsInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterDownloadEnabled,
 		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
