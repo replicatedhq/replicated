@@ -81,7 +81,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 		CustomID:                         r.args.customerCreateCustomID,
 		ChannelID:                        channelID,
 		AppID:                            r.appID,
-		ExpiresAt:                        r.args.customerCreateExpiryDuration,
+		ExpiresAtDuration:                r.args.customerCreateExpiryDuration,
 		IsAirgapEnabled:                  r.args.customerCreateIsAirgapEnabled,
 		IsGitopsSupported:                r.args.customerCreateIsGitopsSupported,
 		IsSnapshotSupported:              r.args.customerCreateIsSnapshotSupported,

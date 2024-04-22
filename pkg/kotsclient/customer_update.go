@@ -38,7 +38,8 @@ type UpdateCustomerOpts struct {
 	CustomID                         string
 	ChannelID                        string
 	AppID                            string
-	ExpiresAt                        time.Duration
+	ExpiresAt                        string
+	ExpiresAtDuration                time.Duration
 	IsAirgapEnabled                  bool
 	IsGitopsSupported                bool
 	IsSnapshotSupported              bool
@@ -73,8 +74,11 @@ func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOp
 		EntitlementValues:                opts.EntitlementValues,
 	}
 
-	if opts.ExpiresAt > 0 {
-		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAt)).Format(time.RFC3339)
+	// If duration is set, calculate the expiry time
+	if opts.ExpiresAtDuration > 0 {
+		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAtDuration)).Format(time.RFC3339)
+	} else {
+		request.ExpiresAt = opts.ExpiresAt
 	}
 	var response UpdateCustomerResponse
 	endpoint := fmt.Sprintf("/v3/customer/%s", customerID)

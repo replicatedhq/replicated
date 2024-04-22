@@ -43,7 +43,8 @@ type CreateCustomerOpts struct {
 	CustomID                         string
 	ChannelID                        string
 	AppID                            string
-	ExpiresAt                        time.Duration
+	ExpiresAt                        string
+	ExpiresAtDuration                time.Duration
 	IsAirgapEnabled                  bool
 	IsGitopsSupported                bool
 	IsSnapshotSupported              bool
@@ -80,8 +81,11 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		EntitlementValues:                opts.EntitlementValues,
 	}
 
-	if opts.ExpiresAt > 0 {
-		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAt)).Format(time.RFC3339)
+	// if expiresAtDuration is set, calculate the expiresAt time
+	if opts.ExpiresAtDuration > 0 {
+		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAtDuration)).Format(time.RFC3339)
+	} else {
+		request.ExpiresAt = opts.ExpiresAt
 	}
 	var response CreateCustomerResponse
 	err := c.DoJSON("POST", "/v3/customer", http.StatusCreated, request, &response)

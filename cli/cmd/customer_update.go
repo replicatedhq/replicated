@@ -85,7 +85,7 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 		CustomID:                         r.args.customerUpdateCustomID,
 		ChannelID:                        channelID,
 		AppID:                            r.appID,
-		ExpiresAt:                        r.args.customerUpdateExpiryDuration,
+		ExpiresAtDuration:                r.args.customerUpdateExpiryDuration,
 		IsAirgapEnabled:                  r.args.customerUpdateIsAirgapEnabled,
 		IsGitopsSupported:                r.args.customerUpdateIsGitopsSupported,
 		IsSnapshotSupported:              r.args.customerUpdateIsSnapshotSupported,
