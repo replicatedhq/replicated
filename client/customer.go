@@ -36,6 +36,16 @@ func (c *Client) CreateCustomer(appType string, opts kotsclient.CreateCustomerOp
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
+func (c *Client) UpdateCustomer(appType string, customerID string, opts kotsclient.UpdateCustomerOpts) (*types.Customer, error) {
+	if appType == "platform" {
+		return nil, errors.New("updating customers is not supported for platform applications")
+	} else if appType == "kots" {
+		return c.KotsClient.UpdateCustomer(customerID, opts)
+	}
+
+	return nil, errors.Errorf("unknown app type %q", appType)
 
 }
 
