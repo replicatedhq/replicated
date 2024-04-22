@@ -23,7 +23,7 @@ type CreateCustomerRequest struct {
 	IsAirgapEnabled                  bool               `json:"is_airgap_enabled"`
 	IsGitopsSupported                bool               `json:"is_gitops_supported"`
 	IsSnapshotSupported              bool               `json:"is_snapshot_supported"`
-	IsKotInstallEnabled              bool               `json:"is_kots_install_enabled"`
+	IsKotsInstallEnabled             bool               `json:"is_kots_install_enabled"`
 	IsEmbeddedClusterDownloadEnabled bool               `json:"is_embedded_cluster_download_enabled"`
 	IsGeoaxisSupported               bool               `json:"is_geoaxis_supported"`
 	IsHelmVMDownloadEnabled          bool               `json:"is_helm_vm_download_enabled"`
@@ -69,7 +69,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsAirgapEnabled:                  opts.IsAirgapEnabled,
 		IsGitopsSupported:                opts.IsGitopsSupported,
 		IsSnapshotSupported:              opts.IsSnapshotSupported,
-		IsKotInstallEnabled:              opts.IsKotsInstallEnabled,
+		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterDownloadEnabled,
 		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
