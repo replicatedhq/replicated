@@ -32,16 +32,21 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster distribution)")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
-	cmd.Flags().StringVar(&r.args.createClusterMinNodeCount, "min-nodes", "", "Minimum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
-	cmd.Flags().StringVar(&r.args.createClusterMaxNodeCount, "max-nodes", "", "Maximum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
-	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
-	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
-	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
-	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format, can be specified multiple times)")
-
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
+	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
+
+	// the CLI supports setting the default node group via separate flags or the --default-nodegroup flag
+	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
+	cmd.Flags().StringVar(&r.args.createClusterMinNodeCount, "min-nodes", 0, "Minimum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
+	cmd.Flags().StringVar(&r.args.createClusterMaxNodeCount, "max-nodes", 0, "Maximum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
+	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
+	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
+
+	cmd.Flags().StringVar(&r.args.createClusterDefaultNodeGroup, "default-nodegroup", "", "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format)")
+
+	// the CLI supports creating additional node groups (not default) via the --additional-nodegroup flag
+	cmd.Flags().StringArrayVar(&r.args.createClusterAdditionalNodeGroups, "additional-nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format, can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
@@ -62,44 +67,52 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "parse tags")
 	}
 
-	nodeGroups, err := parseNodeGroups(r.args.createClusterNodeGroups)
+	additionalNodeGroups, err := parseNodeGroups(r.args.createClusterAdditionalNodeGroups)
 	if err != nil {
 		return errors.Wrap(err, "parse node groups")
 	}
+
+	defaultNodeGroup := kotsclient.NodeGroup{}
+	if r.args.createClusterDefaultNodeGroup != "" {
+		parsed, err := parseNodeGroups([]string{r.args.createClusterDefaultNodeGroup})
+		if err != nil {
+			return errors.Wrap(err, "parse default node group")
+		}
+		if len(parsed) != 1 {
+			return errors.New("invalid default node group format")
+		}
+		defaultNodeGroup = parsed[0]
+	} else {
+		defaultNodeGroup = kotsclient.NodeGroup{
+			Name:         "default",
+			InstanceType: r.args.createClusterInstanceType,
+			Disk:         int(r.args.createClusterDiskGiB),
+		}
+
+		if r.args.createClusterNodeCount > 0 {
+			defaultNodeGroup.Nodes = r.args.createClusterNodeCount
+		} else {
+			defaultNodeGroup.MinNodes = &r.args.createClusterMinNodeCount
+			defaultNodeGroup.MaxNodes = &r.args.createClusterMaxNodeCount
+		}
+	}
+
+	// the default node group is always set in defaultNodeGroup, regardless of
+	// how the user passed the params in
 
 	opts := kotsclient.CreateClusterOpts{
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
 		LicenseID:              r.args.createClusterLicenseID,
-		NodeCount:              r.args.createClusterNodeCount,
-		DiskGiB:                r.args.createClusterDiskGiB,
 		TTL:                    r.args.createClusterTTL,
 		InstanceType:           r.args.createClusterInstanceType,
-		NodeGroups:             nodeGroups,
+		AdditionalNodeGroups:   additionalNodeGroups,
+		DefaultNodeGroup:       defaultNodeGroup,
 		Tags:                   tags,
 		DryRun:                 r.args.createClusterDryRun,
 	}
-	if r.args.createClusterMinNodeCount != "" {
-		minNodes, err := strconv.Atoi(r.args.createClusterMinNodeCount)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse min-nodes value: %s", r.args.createClusterMinNodeCount)
-		}
-		if minNodes < 0 {
-			return errors.Errorf("min-nodes must be a non-negative number: %s", r.args.createClusterMinNodeCount)
-		}
-		opts.MinNodeCount = &minNodes
-	}
-	if r.args.createClusterMaxNodeCount != "" {
-		maxNodes, err := strconv.Atoi(r.args.createClusterMaxNodeCount)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse max-nodes value: %s", r.args.createClusterMaxNodeCount)
-		}
-		if maxNodes < 0 {
-			return errors.Errorf("max-nodes must be a non-negative number: %s", r.args.createClusterMaxNodeCount)
-		}
-		opts.MaxNodeCount = &maxNodes
-	}
+
 	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrWaitDurationExceeded {

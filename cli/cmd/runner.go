@@ -174,14 +174,15 @@ type runnerArgs struct {
 	createClusterKubernetesVersion      string
 	createClusterLicenseID              string
 	createClusterNodeCount              int
-	createClusterMinNodeCount           string
-	createClusterMaxNodeCount           string
+	createClusterMinNodeCount           int
+	createClusterMaxNodeCount           int
 	createClusterDiskGiB                int64
 	createClusterDryRun                 bool
 	createClusterTTL                    string
 	createClusterWaitDuration           time.Duration
 	createClusterInstanceType           string
-	createClusterNodeGroups             []string
+	createClusterDefaultNodeGroup       string
+	createClusterAdditionalNodeGroups   []string
 	createClusterTags                   []string
 
 	upgradeClusterKubernetesVersion string
