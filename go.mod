@@ -275,4 +275,4 @@ require (
 )
 
 // useful when debugging local usrbin-go changes
-// replace github.com/usrbinapp/usrbin-go => ../../usrbinapp/usrbin-go
+replace github.com/usrbinapp/usrbin-go => ../../usrbinapp/usrbin-go

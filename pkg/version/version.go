@@ -45,10 +45,10 @@ func initBuild() {
 
 	build.GoInfo = getGoInfo()
 
-	if !replicatedfile.Cache.IsUpdateCheckerInfoExpired(build.Version) {
-		build.UpdateInfo = replicatedfile.Cache.GetUpdateCheckerInfo()
-		return
-	}
+	// if !replicatedfile.Cache.IsUpdateCheckerInfoExpired(build.Version) {
+	// 	build.UpdateInfo = replicatedfile.Cache.GetUpdateCheckerInfo()
+	// 	return
+	// }
 
 	usrbinsdk, err := NewUsrbinSDK(build.Version)
 	if err != nil {
