@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -8,12 +9,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type EntitlementValue struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type CreateCustomerRequest struct {
+type UpdateCustomerRequest struct {
 	Name                             string             `json:"name"`
 	ChannelID                        string             `json:"channel_id"`
 	CustomID                         string             `json:"custom_id"`
@@ -28,17 +24,16 @@ type CreateCustomerRequest struct {
 	IsGeoaxisSupported               bool               `json:"is_geoaxis_supported"`
 	IsHelmVMDownloadEnabled          bool               `json:"is_helm_vm_download_enabled"`
 	IsIdentityServiceSupported       bool               `json:"is_identity_service_supported"`
-	IsInstallerSupportEnabled        bool               `json:"is_installer_support_enabled"`
 	IsSupportBundleUploadEnabled     bool               `json:"is_support_bundle_upload_enabled"`
 	Email                            string             `json:"email,omitempty"`
 	EntitlementValues                []EntitlementValue `json:"entitlementValues"`
 }
 
-type CreateCustomerResponse struct {
+type UpdateCustomerResponse struct {
 	Customer *types.Customer `json:"customer"`
 }
 
-type CreateCustomerOpts struct {
+type UpdateCustomerOpts struct {
 	Name                             string
 	CustomID                         string
 	ChannelID                        string
@@ -53,15 +48,14 @@ type CreateCustomerOpts struct {
 	IsGeoaxisSupported               bool
 	IsHelmVMDownloadEnabled          bool
 	IsIdentityServiceSupported       bool
-	IsInstallerSupportEnabled        bool
 	IsSupportBundleUploadEnabled     bool
 	LicenseType                      string
 	Email                            string
 	EntitlementValues                []EntitlementValue
 }
 
-func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Customer, error) {
-	request := &CreateCustomerRequest{
+func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOpts) (*types.Customer, error) {
+	request := &UpdateCustomerRequest{
 		Name:                             opts.Name,
 		CustomID:                         opts.CustomID,
 		ChannelID:                        opts.ChannelID,
@@ -75,22 +69,22 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
-		IsInstallerSupportEnabled:        opts.IsInstallerSupportEnabled,
 		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
 		Email:                            opts.Email,
 		EntitlementValues:                opts.EntitlementValues,
 	}
 
-	// if expiresAtDuration is set, calculate the expiresAt time
+	// If duration is set, calculate the expiry time
 	if opts.ExpiresAtDuration > 0 {
 		request.ExpiresAt = (time.Now().UTC().Add(opts.ExpiresAtDuration)).Format(time.RFC3339)
 	} else {
 		request.ExpiresAt = opts.ExpiresAt
 	}
-	var response CreateCustomerResponse
-	err := c.DoJSON("POST", "/v3/customer", http.StatusCreated, request, &response)
+	var response UpdateCustomerResponse
+	endpoint := fmt.Sprintf("/v3/customer/%s", customerID)
+	err := c.DoJSON("PUT", endpoint, http.StatusOK, request, &response)
 	if err != nil {
-		return nil, errors.Wrap(err, "create customer")
+		return nil, errors.Wrap(err, "update customer")
 	}
 
 	return response.Customer, nil

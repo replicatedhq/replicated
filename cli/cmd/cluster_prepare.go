@@ -234,17 +234,17 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	// create a test customer with the correct entitlement values
 	email := fmt.Sprintf("%s@replicated.com", clusterName)
 	customerOpts := kotsclient.CreateCustomerOpts{
-		Name:                clusterName,
-		ChannelID:           "",
-		AppID:               r.appID,
-		LicenseType:         "test",
-		Email:               email,
-		EntitlementValues:   entitlements,
-		IsKotInstallEnabled: true,
+		Name:                 clusterName,
+		ChannelID:            "",
+		AppID:                r.appID,
+		LicenseType:          "test",
+		Email:                email,
+		EntitlementValues:    entitlements,
+		IsKotsInstallEnabled: true,
 	}
 
 	if appRelease.IsHelmOnly {
-		customerOpts.IsKotInstallEnabled = false
+		customerOpts.IsKotsInstallEnabled = false
 	}
 	log.ActionWithSpinner("Creating Customer")
 	customer, err := r.api.CreateCustomer(r.appType, customerOpts)

@@ -6,15 +6,26 @@ import (
 )
 
 type Customer struct {
-	ID             string     `json:"id"`
-	CustomID       string     `json:"customId"`
-	Name           string     `json:"name"`
-	Email          string     `json:"email"`
-	Channels       []Channel  `json:"channels"`
-	Type           string     `json:"type"`
-	Expires        *util.Time `json:"expiresAt"`
-	Instances      []Instance `json:"instances"`
-	InstallationID string     `json:"installationId"`
+	ID                               string        `json:"id"`
+	CustomID                         string        `json:"customId"`
+	Name                             string        `json:"name"`
+	Email                            string        `json:"email"`
+	Channels                         []Channel     `json:"channels"`
+	Type                             string        `json:"type"`
+	Expires                          *util.Time    `json:"expiresAt"`
+	Instances                        []Instance    `json:"instances"`
+	InstallationID                   string        `json:"installationId"`
+	Entitlements                     []Entitlement `json:"entitlements"`
+	IsAirgapEnabled                  bool          `json:"airgap"`
+	IsEmbeddedClusterDownloadEnabled bool          `json:"isEmbeddedClusterDownloadEnabled"`
+	IsGeoaxisSupported               bool          `json:"isGeoaxisSupported"`
+	IsHelmVMDownloadEnabled          bool          `json:"isHelmVmDownloadEnabled"`
+	IsIdentityServiceSupported       bool          `json:"isIdentityServiceSupported"`
+	IsInstallerSupportEnabled        bool          `json:"isInstallerSupportEnabled"`
+	IsKotsInstallEnabled             bool          `json:"isKotsInstallEnabled"`
+	IsSnapshotSupported              bool          `json:"isSnapshotSupported"`
+	IsSupportBundleUploadEnabled     bool          `json:"isSupportBundleUploadEnabled"`
+	IsGitopsSupported                bool          `json:"isGitopsSupported"`
 }
 
 func (c Customer) WithExpiryTime(expiryTime string) (Customer, error) {

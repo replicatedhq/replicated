@@ -159,6 +159,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCustomersDownloadLicenseCommand(customersCmd)
 	runCmds.InitCustomersArchiveCommand(customersCmd)
 	runCmds.InitCustomersInspectCommand(customersCmd)
+	runCmds.InitCustomerUpdateCommand(customersCmd)
 
 	instanceCmd := runCmds.InitInstanceCommand(runCmds.rootCmd)
 	runCmds.InitInstanceLSCommand(instanceCmd)

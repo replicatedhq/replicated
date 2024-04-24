@@ -14,3 +14,9 @@ type EntitlementValueResponse struct {
 	Key        string `json:"key,omitempty"`
 	Value      string `json:"value,omitempty"`
 }
+
+type Entitlement struct {
+	IsDefault bool   `json:"isDefault,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Value     string `json:"value,omitempty"`
+}
