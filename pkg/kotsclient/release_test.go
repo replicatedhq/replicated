@@ -219,7 +219,8 @@ func Test_PromoteRelease(t *testing.T) {
 				"channelIds": []string{
 					"replicated-cli-promote-release-unstable",
 				},
-				"ignoreWarnings": false,
+				"ignoreWarnings":        false,
+				"omitDetailsInResponse": true,
 			},
 		}).
 		WillRespondWith(dsl.Response{
