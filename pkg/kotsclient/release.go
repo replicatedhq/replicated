@@ -174,10 +174,11 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 
 func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
 	request := types.KotsPromoteReleaseRequest{
-		ReleaseNotes: notes,
-		VersionLabel: label,
-		IsRequired:   required,
-		ChannelIDs:   channelIDs,
+		ReleaseNotes:          notes,
+		VersionLabel:          label,
+		IsRequired:            required,
+		ChannelIDs:            channelIDs,
+		OmitDetailsInResponse: true,
 	}
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, sequence)

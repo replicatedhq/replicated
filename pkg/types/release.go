@@ -69,6 +69,9 @@ type KotsPromoteReleaseRequest struct {
 	IsRequired     bool     `json:"isRequired"`
 	ChannelIDs     []string `json:"channelIds"`
 	IgnoreWarnings bool     `json:"ignoreWarnings"`
+
+	// Omits channels, charts, and compatibilityResults details in the response body
+	OmitDetailsInResponse bool `json:"omitDetailsInResponse"`
 }
 
 type KotsAppRelease struct {
