@@ -38,7 +38,10 @@ func (r *runners) InitClusterAddonCreatePostgres(parent *cobra.Command) *cobra.C
 	}
 	parent.AddCommand(cmd)
 
-	_ = clusterAddonCreatePostgresFlags(cmd, &args)
+	err := clusterAddonCreatePostgresFlags(cmd, &args)
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
