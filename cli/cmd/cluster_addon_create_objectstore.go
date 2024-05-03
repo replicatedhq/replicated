@@ -46,14 +46,17 @@ func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobr
 	}
 	parent.AddCommand(cmd)
 
-	_ = clusterAddonCreateObjectStoreFlags(cmd, &args)
+	err := clusterAddonCreateObjectStoreFlags(cmd, &args)
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
 
 func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCreateObjectStoreArgs) error {
 	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required)")
-	err := cmd.MarkFlagRequired("bucket")
+	err := cmd.MarkFlagRequired("bucket-prefix")
 	if err != nil {
 		return err
 	}

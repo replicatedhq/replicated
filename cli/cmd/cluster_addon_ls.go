@@ -24,7 +24,10 @@ func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
-	_ = clusterAddonLsFlags(cmd, &args)
+	err := clusterAddonLsFlags(cmd, &args)
+	if err != nil {
+		panic(err)
+	}
 
 	return cmd
 }
