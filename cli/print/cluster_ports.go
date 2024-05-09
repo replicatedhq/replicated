@@ -10,13 +10,15 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var portsTmplHeaderSrc = `CLUSTER PORT	PROTOCOL	EXPOSED PORT	STATUS`
+var portsTmplHeaderSrc = `ID	CLUSTER PORT	PROTOCOL	EXPOSED PORT	WILDCARD	STATUS`
 var portsTmplRowSrc = `{{- range . }}
+{{- $id := .AddonID }}
 {{- $upstreamPort := .UpstreamPort }}
 {{- $hostname := .Hostname }}
+{{- $isWildcard := .IsWildcard }}
 {{- $state := .State }}
 {{- range .ExposedPorts }}
-{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
+{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ printf "%-12s" $state }}
 {{ end }}
 {{ end }}`
 var portsTmplSrc = fmt.Sprintln(portsTmplHeaderSrc) + portsTmplRowSrc
@@ -35,7 +37,7 @@ func ClusterPorts(outputFormat string, w *tabwriter.Writer, ports []*types.Clust
 	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
 	switch outputFormat {
-	case "table":
+	case "table", "wide":
 		if header {
 			if err := portsTmpl.Execute(portsWriter, ports); err != nil {
 				return err

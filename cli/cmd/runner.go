@@ -255,9 +255,11 @@ type runnerArgs struct {
 	shellClusterName string
 	shellClusterID   string
 
-	clusterExposePortPort      int
-	clusterExposePortProtocols []string
+	clusterExposePortPort       int
+	clusterExposePortProtocols  []string
+	clusterExposePortIsWildcard bool
 
+	clusterPortRemoveAddonID   string
 	clusterPortRemovePort      int
 	clusterPortRemoveProtocols []string
 

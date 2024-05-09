@@ -13,6 +13,8 @@ func (r *runners) InitClusterPortLs(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+
 	return cmd
 }
 
