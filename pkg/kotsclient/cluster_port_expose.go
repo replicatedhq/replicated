@@ -8,18 +8,20 @@ import (
 )
 
 type ExportClusterPortRequest struct {
-	Port      int      `json:"port"`
-	Protocols []string `json:"protocols"`
+	Port       int      `json:"port"`
+	Protocols  []string `json:"protocols"`
+	IsWildcard bool     `json:"is_wildcard"`
 }
 
 type ExposeClusterPortResponse struct {
 	Port *types.ClusterPort `json:"port"`
 }
 
-func (c *VendorV3Client) ExposeClusterPort(clusterID string, portNumber int, protocols []string) (*types.ClusterPort, error) {
+func (c *VendorV3Client) ExposeClusterPort(clusterID string, portNumber int, protocols []string, isWildcard bool) (*types.ClusterPort, error) {
 	req := ExportClusterPortRequest{
-		Port:      portNumber,
-		Protocols: protocols,
+		Port:       portNumber,
+		Protocols:  protocols,
+		IsWildcard: isWildcard,
 	}
 
 	resp := ExposeClusterPortResponse{}
