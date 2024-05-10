@@ -6,11 +6,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	clusterPortExposeShort = "Expose a port on a cluster to the public internet"
+	clusterPortExposeLong  = `Expose a port on a cluster to the public internet.
+
+This command will create a DNS entry and TLS certificate (if "https") for the specified port on the cluster.
+
+A wildcard DNS entry and TLS certificate can be created by specifying the "--wildcard" flag. This will take extra time to provision.
+
+NOTE: This feature currently only supports VM cluster distributions.`
+	clusterPortExposeExample = `  $ replicated cluster port expose 05929b24 --port 8080 --protocol https --wildcard
+  ID              CLUSTER PORT    PROTOCOL        EXPOSED PORT                                           WILDCARD        STATUS
+  d079b2fc        8080            https           https://happy-germain.ingress.replicatedcluster.com    true            pending`
+)
+
 func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "expose CLUSTER_ID --port PORT --protocol PROTOCOL",
-		RunE: r.clusterPortExpose,
-		Args: cobra.ExactArgs(1),
+		Use:     "expose CLUSTER_ID --port PORT",
+		Short:   clusterPortExposeShort,
+		Long:    clusterPortExposeLong,
+		Example: clusterPortExposeExample,
+		RunE:    r.clusterPortExpose,
+		Args:    cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
 
@@ -19,8 +36,8 @@ func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	if err != nil {
 		panic(err)
 	}
-	cmd.Flags().StringArrayVar(&r.args.clusterExposePortProtocols, "protocol", []string{"http", "https"}, "Protocol to expose")
-	cmd.Flags().BoolVar(&r.args.clusterExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port (will take extra time to provision)")
+	cmd.Flags().StringSliceVar(&r.args.clusterExposePortProtocols, "protocol", []string{"http", "https"}, `Protocol to expose (valid values are "http" and "https")`)
+	cmd.Flags().BoolVar(&r.args.clusterExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	return cmd

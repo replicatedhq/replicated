@@ -8,9 +8,10 @@ import (
 
 func (r *runners) InitClusterPortRm(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:  "rm CLUSTER_ID --id PORT_ID",
-		RunE: r.clusterPortRemove,
-		Args: cobra.ExactArgs(1),
+		Use:   "rm CLUSTER_ID --id PORT_ID",
+		Short: "Remove cluster port by ID",
+		RunE:  r.clusterPortRemove,
+		Args:  cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
 
@@ -23,7 +24,7 @@ func (r *runners) InitClusterPortRm(parent *cobra.Command) *cobra.Command {
 	if err != nil {
 		panic(err)
 	}
-	cmd.Flags().StringArrayVar(&r.args.clusterPortRemoveProtocols, "protocol", []string{"http", "https"}, "Protocol to remove")
+	cmd.Flags().StringSliceVar(&r.args.clusterPortRemoveProtocols, "protocol", []string{"http", "https"}, "Protocol to remove")
 	err = cmd.Flags().MarkHidden("protocol")
 	if err != nil {
 		panic(err)
