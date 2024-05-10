@@ -20,7 +20,7 @@ func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 		panic(err)
 	}
 	cmd.Flags().StringArrayVar(&r.args.clusterExposePortProtocols, "protocol", []string{"http", "https"}, "Protocol to expose")
-	cmd.Flags().BoolVar(&r.args.clusterExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port")
+	cmd.Flags().BoolVar(&r.args.clusterExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port (will take extra time to provision)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	return cmd
