@@ -39,7 +39,7 @@ func (r *runners) clusterPortRemove(_ *cobra.Command, args []string) error {
 	if r.args.clusterPortRemoveAddonID == "" && r.args.clusterPortRemovePort == 0 {
 		return errors.New("either --id or --port must be specified")
 	} else if r.args.clusterPortRemoveAddonID != "" && r.args.clusterPortRemovePort > 0 {
-		return errors.New("only one o  --id or --port can be specified")
+		return errors.New("only one of --id or --port can be specified")
 	}
 
 	if r.args.clusterPortRemoveAddonID != "" {
