@@ -4,13 +4,13 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListApps() ([]types.AppAndChannels, error) {
+func (c *Client) ListApps(excludeChannels bool) ([]types.AppAndChannels, error) {
 	platformApps, err := c.PlatformClient.ListApps()
 	if err != nil {
 		return nil, err
 	}
 
-	kotsApps, err := c.KotsClient.ListApps()
+	kotsApps, err := c.KotsClient.ListApps(excludeChannels)
 	if err != nil {
 		return nil, err
 	}

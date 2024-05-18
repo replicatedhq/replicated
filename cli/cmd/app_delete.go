@@ -32,7 +32,7 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 	appName := args[0]
 
 	log.ActionWithSpinner("Fetching App")
-	app, err := r.kotsAPI.GetApp(appName)
+	app, err := r.kotsAPI.GetApp(appName, true)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "list apps")
