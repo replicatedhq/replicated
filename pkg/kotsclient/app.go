@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -11,10 +12,10 @@ type kotsAppResponse struct {
 	Apps []types.KotsAppWithChannels `json:"apps"`
 }
 
-func (c *VendorV3Client) ListApps() ([]types.AppAndChannels, error) {
+func (c *VendorV3Client) ListApps(excludeChannels bool) ([]types.AppAndChannels, error) {
 	var response = kotsAppResponse{}
 
-	err := c.DoJSON("GET", "/v3/apps", http.StatusOK, nil, &response)
+	err := c.DoJSON("GET", fmt.Sprintf("/v3/apps?excludeChannels=%t", excludeChannels), http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list apps")
 	}
@@ -37,8 +38,8 @@ func (c *VendorV3Client) ListApps() ([]types.AppAndChannels, error) {
 	return results, nil
 }
 
-func (c *VendorV3Client) GetApp(appID string) (*types.App, error) {
-	apps, err := c.ListApps()
+func (c *VendorV3Client) GetApp(appID string, excludeChannels bool) (*types.App, error) {
+	apps, err := c.ListApps(excludeChannels)
 	if err != nil {
 		return nil, err
 	}
