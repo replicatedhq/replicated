@@ -196,6 +196,7 @@ type runnerArgs struct {
 	createClusterName                   string
 	createClusterKubernetesDistribution string
 	createClusterKubernetesVersion      string
+	createClusterIPFamily               string
 	createClusterLicenseID              string
 	createClusterNodeCount              int
 	createClusterMinNodeCount           string

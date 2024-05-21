@@ -31,6 +31,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.createClusterIPFamily, "ip-family", "", "IP Family to use for the cluster (ipv4|ipv6|dual).")
 	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster distribution)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().StringVar(&r.args.createClusterMinNodeCount, "min-nodes", "", "Minimum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
@@ -71,6 +72,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		Name:                   r.args.createClusterName,
 		KubernetesDistribution: r.args.createClusterKubernetesDistribution,
 		KubernetesVersion:      r.args.createClusterKubernetesVersion,
+		IPFamily:               r.args.createClusterIPFamily,
 		LicenseID:              r.args.createClusterLicenseID,
 		NodeCount:              r.args.createClusterNodeCount,
 		DiskGiB:                r.args.createClusterDiskGiB,
