@@ -127,7 +127,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	}
 	defer func() {
 		_ = term.Restore(int(os.Stdin.Fd()), oldState)
-		fmt.Printf("Exiting Compatibility Matrix Shell (this will reset your kubeconfig back to default)")
+		fmt.Println("Exiting Compatibility Matrix Shell (this will reset your kubeconfig back to default)")
 	}()
 
 	// Setup the shell
