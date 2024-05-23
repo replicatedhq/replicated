@@ -33,7 +33,6 @@ type Cluster struct {
 
 type NodeGroup struct {
 	ID           string `json:"id"`
-	ClusterID    string `json:"cluster_id"`
 	IsDefault    bool   `json:"is_default"`
 	InstanceType string `json:"instance_type"`
 
