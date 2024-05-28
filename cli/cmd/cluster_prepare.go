@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	dockertypes "github.com/docker/docker/api/types"
+	dockerregistrytypes "github.com/docker/docker/api/types/registry"
 	"github.com/pkg/errors"
 	releaseTypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -485,7 +485,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 		return errors.Wrap(err, "build config from flags")
 	}
 
-	authConfig := dockertypes.AuthConfig{
+	authConfig := dockerregistrytypes.AuthConfig{
 		Username: customer.Email,
 		Password: customer.InstallationID,
 		Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", customer.Email, customer.InstallationID))),
