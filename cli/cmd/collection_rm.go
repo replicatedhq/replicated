@@ -16,6 +16,7 @@ func (r *runners) InitCollectionRemove(parent *cobra.Command) *cobra.Command {
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
+
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
