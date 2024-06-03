@@ -213,6 +213,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitRegistryAddQuay(registryAddCmd)
 	runCmds.InitRegistryAddOther(registryAddCmd)
 
+	modelCmd := runCmds.InitModelCommand(runCmds.rootCmd)
+	runCmds.InitModelList(modelCmd)
+	runCmds.InitModelPush(modelCmd)
+	collectionCmd := runCmds.InitCollectionCommand(modelCmd)
+	runCmds.InitCollectionList(collectionCmd)
+	runCmds.InitCollectionCreate(collectionCmd)
+	runCmds.InitCollectionRemove(collectionCmd)
+
 	clusterCmd := runCmds.InitClusterCommand(runCmds.rootCmd)
 	runCmds.InitClusterCreate(clusterCmd)
 	runCmds.InitClusterUpgrade(clusterCmd)
@@ -325,6 +333,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
 	clusterCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
+	modelCmd.PersistentPreRunE = preRunSetupAPIs
 
 	runCmds.rootCmd.AddCommand(Version())
 
