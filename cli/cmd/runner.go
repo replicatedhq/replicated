@@ -242,8 +242,12 @@ type runnerArgs struct {
 	removeClusterNames  []string
 	removeClusterDryRun bool
 
-	modelCollectionCreateName string
-	modelPushName             string
+	modelCollectionCreateName           string
+	modelPushName                       string
+	modelCollectionAddModelName         string
+	modelCollectionAddModelCollectionID string
+	modelCollectionRmModelName          string
+	modelCollectionRmModelCollectionID  string
 
 	lsAppVersion                            string
 	lsVersionsClusterKubernetesDistribution string
