@@ -30,3 +30,25 @@ func ModelCollections(outputFormat string, w *tabwriter.Writer, collections []ty
 
 	return w.Flush()
 }
+
+var modelsTmplSrc = `NAME
+{{ range . -}}
+{{ .Name }}
+{{ end }}`
+
+var modelsTmpl = template.Must(template.New("registries").Funcs(funcs).Parse(modelsTmplSrc))
+
+func Models(outputFormat string, w *tabwriter.Writer, models []types.Model) error {
+	if outputFormat == "table" {
+		if err := modelsTmpl.Execute(w, models); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		mAsByte, _ := json.MarshalIndent(models, "", "  ")
+		if _, err := fmt.Fprintln(w, string(mAsByte)); err != nil {
+			return err
+		}
+	}
+
+	return w.Flush()
+}

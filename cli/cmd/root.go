@@ -220,6 +220,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitCollectionList(collectionCmd)
 	runCmds.InitCollectionCreate(collectionCmd)
 	runCmds.InitCollectionRemove(collectionCmd)
+	runCmds.InitCollectionAddModel(collectionCmd)
+	runCmds.InitCollectionRemoveModel(collectionCmd)
 
 	clusterCmd := runCmds.InitClusterCommand(runCmds.rootCmd)
 	runCmds.InitClusterCreate(clusterCmd)

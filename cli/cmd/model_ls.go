@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
 
@@ -19,5 +20,10 @@ func (r *runners) InitModelList(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) listModels(_ *cobra.Command, args []string) error {
-	return nil
+	models, err := r.kotsAPI.ListModels()
+	if err != nil {
+		return err
+	}
+
+	return print.Models(r.outputFormat, r.w, models)
 }
