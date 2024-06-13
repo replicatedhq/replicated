@@ -12,8 +12,8 @@ import (
 func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "ls [NAME]",
-		Short:        "list kots apps",
-		Long:         `list kots apps, or a single app by name`,
+		Short:        "list apps",
+		Long:         `list apps, or a single app by name`,
 		RunE:         r.listApps,
 		SilenceUsage: true,
 	}
