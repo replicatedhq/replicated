@@ -6,7 +6,9 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/replicatedfile"
+	usrbingithub "github.com/usrbinapp/usrbin-go/pkg/github"
 	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
 )
 
@@ -57,6 +59,12 @@ func initBuild() {
 
 	build.UpdateInfo, err = usrbinsdk.GetUpdateInfo()
 	if err != nil {
+		if errors.Cause(err) == usrbingithub.ErrTimeoutExceeded {
+			// i'm going to leave this println out for now because it could be really noisy
+			// for someone with a slow connection
+			// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
+			return
+		}
 		fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
 	}
 

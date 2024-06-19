@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	cacheTTLInHours = 4
+	cacheTTLInMinutes = 15
 
 	replicatedDir = ".replicated"
 	cacheFile     = "cache.json"
@@ -53,7 +53,7 @@ func (c *cache) IsUpdateCheckerInfoExpired(currentVersion string) bool {
 		return true
 	}
 
-	if c.UpdateCheckerInfo.CheckedAt.Add(time.Duration(cacheTTLInHours) * time.Hour).Before(time.Now()) {
+	if c.UpdateCheckerInfo.CheckedAt.Add(time.Duration(cacheTTLInMinutes) * time.Minute).Before(time.Now()) {
 		return true
 	}
 
