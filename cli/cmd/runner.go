@@ -78,7 +78,8 @@ type runnerArgs struct {
 	customerArchiveNameOrId                        string
 	customerCreateName                             string
 	customerCreateCustomID                         string
-	customerCreateChannel                          string
+	customerCreateChannel                          []string
+	customerCreateDefaultChannel                   string
 	customerCreateEnsureChannel                    bool
 	customerCreateExpiryDuration                   time.Duration
 	customerCreateIsAirgapEnabled                  bool
@@ -97,7 +98,8 @@ type runnerArgs struct {
 	customerUpdateID                               string
 	customerUpdateName                             string
 	customerUpdateCustomID                         string
-	customerUpdateChannel                          string
+	customerUpdateChannel                          []string
+	customerUpdateDefaultChannel                   string
 	customerUpdateEnsureChannel                    bool
 	customerUpdateExpiryDuration                   time.Duration
 	customerUpdateIsAirgapEnabled                  bool

@@ -22,7 +22,8 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "Name of the customer")
 	cmd.Flags().StringVar(&r.args.customerCreateCustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
-	cmd.Flags().StringVar(&r.args.customerCreateChannel, "channel", "", "Release channel to which the customer should be assigned")
+	cmd.Flags().StringArrayVar(&r.args.customerCreateChannel, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.customerCreateDefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
 	cmd.Flags().DurationVar(&r.args.customerCreateExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
 	cmd.Flags().BoolVar(&r.args.customerCreateEnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&r.args.customerCreateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
@@ -38,6 +39,9 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 	cmd.Flags().StringVar(&r.args.customerCreateEmail, "email", "", "Email address of the customer that is to be created.")
 	cmd.Flags().StringVar(&r.args.customerCreateType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
+	cmd.MarkFlagRequired("channel")
+
 	return cmd
 }
 
@@ -58,12 +62,14 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 		r.args.customerCreateType = "prod"
 	}
 
-	channelID := ""
-	if r.args.customerCreateChannel != "" {
+	channels := []kotsclient.CustomerChannel{}
+
+	foundDefaultChannel := false
+	for _, requestedChannel := range r.args.customerCreateChannel {
 		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
 			AppID:          r.appID,
 			AppType:        r.appType,
-			NameOrID:       r.args.customerCreateChannel,
+			NameOrID:       requestedChannel,
 			Description:    "",
 			CreateIfAbsent: r.args.customerCreateEnsureChannel,
 		}
@@ -73,13 +79,32 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 			return errors.Wrap(err, "get channel")
 		}
 
-		channelID = channel.ID
+		customerChannel := kotsclient.CustomerChannel{
+			ID: channel.ID,
+		}
+
+		if r.args.customerCreateDefaultChannel == requestedChannel {
+			customerChannel.IsDefault = true
+		}
+
+		channels = append(channels, customerChannel)
+	}
+
+	if len(channels) == 0 {
+		return errors.New("no channels found")
+	}
+
+	if !foundDefaultChannel {
+		// if the user didn't specify a default channel, the first channel will be the default
+		firstChannel := channels[0]
+		firstChannel.IsDefault = true
+		channels[0] = firstChannel
 	}
 
 	opts := kotsclient.CreateCustomerOpts{
 		Name:                             r.args.customerCreateName,
 		CustomID:                         r.args.customerCreateCustomID,
-		ChannelID:                        channelID,
+		Channels:                         channels,
 		AppID:                            r.appID,
 		ExpiresAtDuration:                r.args.customerCreateExpiryDuration,
 		IsAirgapEnabled:                  r.args.customerCreateIsAirgapEnabled,
