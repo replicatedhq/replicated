@@ -114,7 +114,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Estimated cost:", CreditsToDollarsDisplay(cl.EstimatedCost))
+		_, err := fmt.Fprintln(r.w, "Estimated cost:", creditsToDollarsDisplay(cl.EstimatedCost))
 		if err != nil {
 			return err
 		}
@@ -125,7 +125,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	return print.Cluster(r.outputFormat, r.w, cl)
 }
 
-func CreditsToDollarsDisplay(credits int64) string {
+func creditsToDollarsDisplay(credits int64) string {
 	dollars := float64(credits) / 100000.0
 	return fmt.Sprintf("$%.2f", dollars)
 }
