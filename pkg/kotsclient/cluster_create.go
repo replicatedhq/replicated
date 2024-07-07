@@ -32,6 +32,11 @@ type CreateClusterResponse struct {
 	SupportedDistributions map[string]string `json:"supported_distributions"`
 }
 
+type CreateClusterDryRunResponse struct {
+	TotalCost *int64                  `json:"total_cost"`
+	Error     CreateClusterErrorError `json:"Error"`
+}
+
 type CreateClusterOpts struct {
 	Name                   string
 	KubernetesDistribution string
@@ -94,8 +99,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 	}
 
 	if opts.DryRun {
-		ve, err := c.doCreateClusterDryRunRequest(req)
-		return nil, ve, err
+		return c.doCreateClusterDryRunRequest(req)
 	}
 	return c.doCreateClusterRequest(req)
 }
@@ -123,12 +127,20 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 	return resp.Cluster, nil, nil
 }
 
-func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*CreateClusterErrorError, error) {
-	resp := CreateClusterErrorResponse{}
+func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterErrorError, error) {
+	resp := CreateClusterDryRunResponse{}
 	endpoint := "/v3/cluster?dry-run=true"
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &resp.Error, nil
+	if resp.TotalCost == nil {
+		// We did not get a total cost back, so that means there should be some Validation error
+		return nil, &resp.Error, nil
+	}
+	cl := &types.Cluster{
+		EstimatedCost: *resp.TotalCost,
+	}
+
+	return cl, nil, nil
 }

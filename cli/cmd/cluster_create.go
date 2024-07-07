@@ -114,11 +114,20 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
+		_, err := fmt.Fprintln(r.w, "Estimated cost:", CreditsToDollarsDisplay(cl.EstimatedCost))
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(r.w, "Dry run succeeded.")
 		return err
 	}
 
 	return print.Cluster(r.outputFormat, r.w, cl)
+}
+
+func CreditsToDollarsDisplay(credits int64) string {
+	dollars := float64(credits) / 100000.0
+	return fmt.Sprintf("$%.2f", dollars)
 }
 
 func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*types.Cluster, error) {
@@ -139,7 +148,7 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 	}
 
 	if opts.DryRun {
-		return nil, nil
+		return cl, nil
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
