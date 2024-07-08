@@ -14,7 +14,7 @@ import (
 
 func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "update --customer <id> [options]",
+		Use:           "update --customer <id> --name <name> [options]",
 		Short:         "update a customer",
 		Long:          `update a customer`,
 		RunE:          r.updateCustomer,
