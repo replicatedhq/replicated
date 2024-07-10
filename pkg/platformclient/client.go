@@ -137,6 +137,24 @@ func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBo
 	}
 	if resp.StatusCode != successStatus {
 		if resp.StatusCode == http.StatusForbidden {
+			// look for a response message in the body
+			body, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return ErrForbidden
+			}
+
+			// some of the methods in the api have a standardized response for 403
+			type forbiddenResponse struct {
+				Error struct {
+					Code    string `json:"code"`
+					Message string `json:"message"`
+				} `json:"error"`
+			}
+			var fr forbiddenResponse
+			if err := json.Unmarshal(body, &fr); err == nil {
+				return errors.New(fr.Error.Message)
+			}
+
 			return ErrForbidden
 		}
 		body, _ := io.ReadAll(resp.Body)

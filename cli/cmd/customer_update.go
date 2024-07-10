@@ -1,18 +1,20 @@
 package cmd
 
 import (
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
 func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:           "update",
+		Use:           "update --customer <id> --name <name> [options]",
 		Short:         "update a customer",
 		Long:          `update a customer`,
 		RunE:          r.updateCustomer,
@@ -21,10 +23,10 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerUpdateID, "customer", "", "The ID of the customer to update")
-	_ = cmd.MarkFlagRequired("customer")
 	cmd.Flags().StringVar(&r.args.customerUpdateName, "name", "", "Name of the customer")
 	cmd.Flags().StringVar(&r.args.customerUpdateCustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
-	cmd.Flags().StringVar(&r.args.customerUpdateChannel, "channel", "", "Release channel to which the customer should be assigned")
+	cmd.Flags().StringArrayVar(&r.args.customerUpdateChannel, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.customerUpdateDefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
 	cmd.Flags().DurationVar(&r.args.customerUpdateExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
 	cmd.Flags().BoolVar(&r.args.customerUpdateEnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&r.args.customerUpdateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
@@ -39,6 +41,11 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().StringVar(&r.args.customerUpdateEmail, "email", "", "Email address of the customer that is to be updated.")
 	cmd.Flags().StringVar(&r.args.customerUpdateType, "type", "dev", "The license type to update. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
+	cmd.MarkFlagRequired("customer")
+	cmd.MarkFlagRequired("channel")
+	cmd.MarkFlagRequired("name") // until the API supports better patching, this is actually a required field
+
 	return cmd
 }
 
@@ -62,14 +69,16 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 		r.args.customerUpdateType = "prod"
 	}
 
-	channelID := ""
-	if r.args.customerUpdateChannel != "" {
+	channels := []kotsclient.CustomerChannel{}
+
+	foundDefaultChannel := false
+	for _, requestedChannel := range r.args.customerUpdateChannel {
 		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
 			AppID:          r.appID,
 			AppType:        r.appType,
-			NameOrID:       r.args.customerUpdateChannel,
+			NameOrID:       requestedChannel,
 			Description:    "",
-			CreateIfAbsent: r.args.customerUpdateEnsureChannel,
+			CreateIfAbsent: r.args.customerCreateEnsureChannel,
 		}
 
 		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
@@ -77,13 +86,38 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 			return errors.Wrap(err, "get channel")
 		}
 
-		channelID = channel.ID
+		customerChannel := kotsclient.CustomerChannel{
+			ID: channel.ID,
+		}
+
+		if r.args.customerUpdateDefaultChannel == requestedChannel {
+			customerChannel.IsDefault = true
+			foundDefaultChannel = true
+		}
+
+		channels = append(channels, customerChannel)
+	}
+
+	if len(channels) == 0 {
+		return errors.New("no channels found")
+	}
+
+	if r.args.customerUpdateDefaultChannel != "" && !foundDefaultChannel {
+		return errors.New("default channel not found in specified channels")
+	}
+
+	if !foundDefaultChannel {
+		log := logger.NewLogger(os.Stdout)
+		log.Info("No default channel specified, defaulting to the first channel specified.")
+		firstChannel := channels[0]
+		firstChannel.IsDefault = true
+		channels[0] = firstChannel
 	}
 
 	opts := kotsclient.UpdateCustomerOpts{
 		Name:                             r.args.customerUpdateName,
 		CustomID:                         r.args.customerUpdateCustomID,
-		ChannelID:                        channelID,
+		Channels:                         channels,
 		AppID:                            r.appID,
 		ExpiresAtDuration:                r.args.customerUpdateExpiryDuration,
 		IsAirgapEnabled:                  r.args.customerUpdateIsAirgapEnabled,

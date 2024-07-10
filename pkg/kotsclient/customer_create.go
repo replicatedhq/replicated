@@ -13,9 +13,15 @@ type EntitlementValue struct {
 	Value string `json:"value"`
 }
 
+type CustomerChannel struct {
+	ID                    string `json:"channel_id"`
+	PinnedChannelSequence *int64 `json:"pinned_channel_sequence"`
+	IsDefault             bool   `json:"is_default_for_customer"`
+}
+
 type CreateCustomerRequest struct {
 	Name                             string             `json:"name"`
-	ChannelID                        string             `json:"channel_id"`
+	Channels                         []CustomerChannel  `json:"channels"`
 	CustomID                         string             `json:"custom_id"`
 	AppID                            string             `json:"app_id"`
 	Type                             string             `json:"type"`
@@ -41,7 +47,7 @@ type CreateCustomerResponse struct {
 type CreateCustomerOpts struct {
 	Name                             string
 	CustomID                         string
-	ChannelID                        string
+	Channels                         []CustomerChannel
 	AppID                            string
 	ExpiresAt                        string
 	ExpiresAtDuration                time.Duration
@@ -64,7 +70,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 	request := &CreateCustomerRequest{
 		Name:                             opts.Name,
 		CustomID:                         opts.CustomID,
-		ChannelID:                        opts.ChannelID,
+		Channels:                         opts.Channels,
 		AppID:                            opts.AppID,
 		Type:                             opts.LicenseType,
 		IsAirgapEnabled:                  opts.IsAirgapEnabled,

@@ -11,7 +11,7 @@ import (
 
 type UpdateCustomerRequest struct {
 	Name                             string             `json:"name"`
-	ChannelID                        string             `json:"channel_id"`
+	Channels                         []CustomerChannel  `json:"channels"`
 	CustomID                         string             `json:"custom_id"`
 	AppID                            string             `json:"app_id"`
 	Type                             string             `json:"type"`
@@ -36,7 +36,7 @@ type UpdateCustomerResponse struct {
 type UpdateCustomerOpts struct {
 	Name                             string
 	CustomID                         string
-	ChannelID                        string
+	Channels                         []CustomerChannel
 	AppID                            string
 	ExpiresAt                        string
 	ExpiresAtDuration                time.Duration
@@ -58,7 +58,7 @@ func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOp
 	request := &UpdateCustomerRequest{
 		Name:                             opts.Name,
 		CustomID:                         opts.CustomID,
-		ChannelID:                        opts.ChannelID,
+		Channels:                         opts.Channels,
 		AppID:                            opts.AppID,
 		Type:                             opts.LicenseType,
 		IsAirgapEnabled:                  opts.IsAirgapEnabled,

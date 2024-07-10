@@ -45,13 +45,13 @@ func (r *runners) InitClusterPrepare(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prepare",
 		Short: "prepare cluster for testing",
-		Long: `The cluster prepare command will provision a cluster and install 
+		Long: `The cluster prepare command will provision a cluster and install
 a local helm chart with a custom values.yaml and custom replicated sdk entitlements.
 
 This is a higher level CLI command that is useful in CI when you have a Helm chart and
 want it running in a variety of clusters.
 
-For more control over the workflow, consider using the cluster create command and 
+For more control over the workflow, consider using the cluster create command and
 using kubectl and helm CLI tools to install your application.
 
 Example:
@@ -235,7 +235,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	email := fmt.Sprintf("%s@replicated.com", clusterName)
 	customerOpts := kotsclient.CreateCustomerOpts{
 		Name:                 clusterName,
-		ChannelID:            "",
+		Channels:             []kotsclient.CustomerChannel{},
 		AppID:                r.appID,
 		LicenseType:          "test",
 		Email:                email,
