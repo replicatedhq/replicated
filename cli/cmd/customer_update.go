@@ -90,8 +90,9 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 			ID: channel.ID,
 		}
 
-		if r.args.customerCreateDefaultChannel == requestedChannel {
+		if r.args.customerUpdateDefaultChannel == requestedChannel {
 			customerChannel.IsDefault = true
+			foundDefaultChannel = true
 		}
 
 		channels = append(channels, customerChannel)
@@ -99,6 +100,10 @@ func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
 
 	if len(channels) == 0 {
 		return errors.New("no channels found")
+	}
+
+	if r.args.customerUpdateDefaultChannel != "" && !foundDefaultChannel {
+		return errors.New("default channel not found in specified channels")
 	}
 
 	if !foundDefaultChannel {

@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"os"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -85,6 +87,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 
 		if r.args.customerCreateDefaultChannel == requestedChannel {
 			customerChannel.IsDefault = true
+			foundDefaultChannel = true
 		}
 
 		channels = append(channels, customerChannel)
@@ -94,8 +97,13 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 		return errors.New("no channels found")
 	}
 
+	if r.args.customerUpdateDefaultChannel != "" && !foundDefaultChannel {
+		return errors.New("default channel not found in specified channels")
+	}
+
 	if !foundDefaultChannel {
-		// if the user didn't specify a default channel, the first channel will be the default
+		log := logger.NewLogger(os.Stdout)
+		log.Info("No default channel specified, defaulting to the first channel specified.")
 		firstChannel := channels[0]
 		firstChannel.IsDefault = true
 		channels[0] = firstChannel
