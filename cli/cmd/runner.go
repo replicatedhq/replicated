@@ -215,9 +215,16 @@ type runnerArgs struct {
 	upgradeClusterDryRun            bool
 	upgradeClusterWaitDuration      time.Duration
 
-	updateClusterTTL  string
 	updateClusterName string
 	updateClusterID   string
+
+	updateClusterTTL string
+
+	updateClusterNodeGroupID       string
+	updateClusterNodeGroupName     string
+	updateClusterNodeGroupCount    int
+	updateClusterNodeGroupMinCount string
+	updateClusterNodeGroupMaxCount string
 
 	prepareClusterID                     string
 	prepareClusterName                   string
