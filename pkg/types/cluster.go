@@ -28,6 +28,12 @@ type Cluster struct {
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
 
+	TTL string `json:"ttl"`
+
+	CreditsPerHourPerCluster int64 `json:"credits_per_hour_per_cluster"`
+	FlatFee                  int64 `json:"flat_fee"`
+	TotalCredits             int64 `json:"total_credits"`
+
 	EstimatedCost int64 `json:"_"`
 
 	Tags []Tag `json:"tags"`

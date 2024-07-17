@@ -114,7 +114,12 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Estimated cost:", creditsToDollarsDisplay(cl.EstimatedCost))
+		ttl := opts.TTL
+		if opts.TTL == "" {
+			ttl = "1h"
+		}
+		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), ttl)
+		_, err := fmt.Fprintln(r.w, estimatedCostMessage)
 		if err != nil {
 			return err
 		}
@@ -123,11 +128,6 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	return print.Cluster(r.outputFormat, r.w, cl)
-}
-
-func creditsToDollarsDisplay(credits int64) string {
-	dollars := float64(credits) / 100000.0
-	return fmt.Sprintf("$%.2f", dollars)
 }
 
 func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*types.Cluster, error) {
