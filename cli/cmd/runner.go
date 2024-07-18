@@ -252,7 +252,6 @@ type runnerArgs struct {
 	removeClusterDryRun bool
 
 	modelCollectionCreateName           string
-	modelPushName                       string
 	modelCollectionAddModelName         string
 	modelCollectionAddModelCollectionID string
 	modelCollectionRmModelName          string
