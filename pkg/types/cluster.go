@@ -34,7 +34,7 @@ type Cluster struct {
 	FlatFee                  int64 `json:"flat_fee"`
 	TotalCredits             int64 `json:"total_credits"`
 
-	EstimatedCost int64 `json:"_"`
+	EstimatedCost int64
 
 	Tags []Tag `json:"tags"`
 }

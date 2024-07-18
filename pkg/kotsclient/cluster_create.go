@@ -133,11 +133,18 @@ func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) 
 	endpoint := "/v3/cluster?dry-run=true"
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
+		// if err is APIError and the status code is 400, then we have a validation error
+		// and we can return the validation error
+		if apiErr, ok := errors.Cause(err).(platformclient.APIError); ok {
+			if apiErr.StatusCode == http.StatusBadRequest {
+				veResp := &CreateClusterErrorResponse{}
+				if jsonErr := json.Unmarshal(apiErr.Body, veResp); jsonErr != nil {
+					return nil, nil, fmt.Errorf("unmarshal validation error response: %w", err)
+				}
+				return nil, &veResp.Error, nil
+			}
+		}
 		return nil, nil, err
-	}
-	if resp.TotalCost == nil {
-		// We did not get a total cost back, so that means there should be some Validation error
-		return nil, &resp.Error, nil
 	}
 	cl := &types.Cluster{
 		EstimatedCost: *resp.TotalCost,
