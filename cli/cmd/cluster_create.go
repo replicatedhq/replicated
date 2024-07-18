@@ -114,11 +114,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		ttl := opts.TTL
-		if opts.TTL == "" {
-			ttl = "1h"
-		}
-		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), ttl)
+		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), cl.TTL)
 		_, err := fmt.Fprintln(r.w, estimatedCostMessage)
 		if err != nil {
 			return err

@@ -34,6 +34,7 @@ type CreateClusterResponse struct {
 
 type CreateClusterDryRunResponse struct {
 	TotalCost *int64                  `json:"total_cost"`
+	TTL       *string                 `json:"ttl"`
 	Error     CreateClusterErrorError `json:"Error"`
 }
 
@@ -140,6 +141,7 @@ func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) 
 	}
 	cl := &types.Cluster{
 		EstimatedCost: *resp.TotalCost,
+		TTL:           *resp.TTL,
 	}
 
 	return cl, nil, nil
