@@ -2,8 +2,13 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/spf13/cobra"
@@ -16,11 +21,11 @@ import (
 
 func (r *runners) InitModelPull(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "pull [NAME:TAG]",
+		Use:          "pull [NAME:TAG] [DESTINATION]",
 		Short:        "pull a model from the model repository",
-		Long:         `pull a model from the mdoel repository`,
+		Long:         `pull a model from the model repository`,
 		RunE:         r.pullModel,
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
@@ -40,8 +45,10 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Pulling model from %s\n", endpoint)
 
+	name, tag := nameToNameAndTag(args[0])
+
 	// oras copy this from the endpoint to the local registry
-	repo, err := remote.NewRepository(endpoint + "/model")
+	repo, err := remote.NewRepository(fmt.Sprintf("%s/%s", endpoint, name))
 	if err != nil {
 		return err
 	}
@@ -59,19 +66,86 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 		}),
 	}
 
-	fs, err := file.New("/tmp/")
+	// ensure that destination exists and is a directory
+	destination := args[1]
+	if _, err := os.Stat(destination); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(destination, 0755); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	// ensure that destination is empty
+	files, err := listFilesInPath(destination)
 	if err != nil {
-		panic(err)
+		return err
+	}
+	if len(files) > 0 {
+		return fmt.Errorf("destination %q is not empty", destination)
+	}
+
+	fs, err := file.New(destination)
+	if err != nil {
+		return err
 	}
 	defer fs.Close()
 
-	tag := "latest"
+	// Copy the manifest from the remote repository
 	manifestDescriptor, err := oras.Copy(context.Background(), repo, tag, fs, tag, oras.DefaultCopyOptions)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	fmt.Println("manifest descriptor:", manifestDescriptor)
+
+	// Fetch the manifest content
+	manifestContent, err := fs.Fetch(context.Background(), manifestDescriptor)
+	if err != nil {
+		return err
+	}
+	defer manifestContent.Close()
+
+	// Read the manifest content into a byte slice
+	manifestBytes, err := io.ReadAll(manifestContent)
+	if err != nil {
+		return err
+	}
+
+	var manifest v1.Manifest
+	if err := json.Unmarshal(manifestBytes, &manifest); err != nil {
+		return err
+	}
+
+	// Download each layer in the manifest
+	for _, layer := range manifest.Layers {
+		layerPath := filepath.Join(destination, layer.Digest.Encoded())
+		layerFile, err := os.Create(layerPath)
+		if err != nil {
+			return err
+		}
+		defer layerFile.Close()
+
+		err = downloadBlob(context.Background(), repo, layer, layerFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	fmt.Printf("Model pulled successfully to %s\n", destination)
+	return nil
+}
+
+func downloadBlob(ctx context.Context, repo *remote.Repository, descriptor v1.Descriptor, file *os.File) error {
+	blobContent, err := repo.Blobs().Fetch(ctx, descriptor)
+	if err != nil {
+		return err
+	}
+	defer blobContent.Close()
+
+	if _, err := io.Copy(file, blobContent); err != nil {
+		return err
+	}
 
 	return nil
-
 }
