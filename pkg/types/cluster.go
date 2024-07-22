@@ -34,7 +34,7 @@ type Cluster struct {
 	FlatFee                  int64 `json:"flat_fee"`
 	TotalCredits             int64 `json:"total_credits"`
 
-	EstimatedCost int64
+	EstimatedCost int64 `json:"estimated_cost"` // Represents estimated credits for this cluster based on the TTL
 
 	Tags []Tag `json:"tags"`
 }
