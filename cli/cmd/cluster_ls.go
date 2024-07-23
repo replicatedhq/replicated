@@ -102,6 +102,8 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 					clustersToPrint = append(clustersToPrint, newCluster)
 				} else {
 					// Check if properties of existing clusters have changed
+					// reset EstimatedCost (as it is calculated on the fly and not stored in the API response)
+					oldCluster.EstimatedCost = 0
 					if !reflect.DeepEqual(newCluster, oldCluster) {
 						clustersToPrint = append(clustersToPrint, newCluster)
 					}

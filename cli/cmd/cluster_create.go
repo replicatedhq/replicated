@@ -114,7 +114,12 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
+		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), cl.TTL)
+		_, err := fmt.Fprintln(r.w, estimatedCostMessage)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintln(r.w, "Dry run succeeded.")
 		return err
 	}
 
@@ -139,7 +144,7 @@ func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*t
 	}
 
 	if opts.DryRun {
-		return nil, nil
+		return cl, nil
 	}
 
 	// if the wait flag was provided, we poll the api until the cluster is ready, or a timeout
