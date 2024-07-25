@@ -35,7 +35,7 @@ type CreateClusterResponse struct {
 type CreateClusterDryRunResponse struct {
 	TotalCost *int64                  `json:"total_cost"`
 	TTL       *string                 `json:"ttl"`
-	Error     CreateClusterErrorError `json:"Error"`
+	Error     CreateClusterErrorError `json:"error"`
 }
 
 type CreateClusterOpts struct {
@@ -65,7 +65,7 @@ type NodeGroup struct {
 }
 
 type CreateClusterErrorResponse struct {
-	Error CreateClusterErrorError `json:"Error"`
+	Error CreateClusterErrorError `json:"error"`
 }
 
 type CreateClusterErrorError struct {
