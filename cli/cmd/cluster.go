@@ -19,3 +19,15 @@ func (r *runners) InitClusterCommand(parent *cobra.Command) *cobra.Command {
 
 	return cmd
 }
+
+func (r *runners) completeClusterIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	clusters, _ := r.kotsAPI.ListClusters(false, nil, nil)
+	var clusterIDs []string
+	for _, cluster := range clusters {
+		clusterIDs = append(clusterIDs, cluster.ID)
+	}
+	return []string{"steve", "john"}, cobra.ShellCompDirectiveNoFileComp
+}
