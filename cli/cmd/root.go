@@ -215,7 +215,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	modelCmd := runCmds.InitModelCommand(runCmds.rootCmd)
 	runCmds.InitModelList(modelCmd)
+	runCmds.InitModelRemove(modelCmd)
 	runCmds.InitModelPush(modelCmd)
+	runCmds.InitModelPull(modelCmd)
 	collectionCmd := runCmds.InitCollectionCommand(modelCmd)
 	runCmds.InitCollectionList(collectionCmd)
 	runCmds.InitCollectionCreate(collectionCmd)
