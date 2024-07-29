@@ -14,12 +14,13 @@ import (
 
 func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "upgrade [ID]",
-		Short:        "Upgrade a test clusters",
-		Long:         `Upgrade a test clusters`,
-		Args:         cobra.ExactArgs(1),
-		RunE:         r.upgradeCluster,
-		SilenceUsage: true,
+		Use:               "upgrade [ID]",
+		Short:             "Upgrade a test clusters",
+		Long:              `Upgrade a test clusters`,
+		Args:              cobra.ExactArgs(1),
+		RunE:              r.upgradeCluster,
+		SilenceUsage:      true,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

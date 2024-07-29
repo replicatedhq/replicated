@@ -28,7 +28,10 @@ func (r *runners) InitClusterShell(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.shellClusterName, "name", "", "name of the cluster to have kubectl access to.")
+	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+
 	cmd.Flags().StringVar(&r.args.shellClusterID, "id", "", "id of the cluster to have kubectl access to (when name is not provided)")
+	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
 
 	return cmd
 }

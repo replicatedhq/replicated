@@ -35,6 +35,7 @@ func (r *runners) InitClusterAddonCreatePostgres(parent *cobra.Command) *cobra.C
 			args.clusterID = cmdArgs[0]
 			return r.clusterAddonCreatePostgresCreateRun(args)
 		},
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

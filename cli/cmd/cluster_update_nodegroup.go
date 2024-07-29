@@ -12,11 +12,12 @@ import (
 
 func (r *runners) InitClusterUpdateNodegroup(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "nodegroup [ID]",
-		Short:        "Update a nodegroup for a test cluster",
-		Long:         `Update a nodegroup for a test cluster`,
-		RunE:         r.updateClusterNodegroup,
-		SilenceUsage: true,
+		Use:               "nodegroup [ID]",
+		Short:             "Update a nodegroup for a test cluster",
+		Long:              `Update a nodegroup for a test cluster`,
+		RunE:              r.updateClusterNodegroup,
+		SilenceUsage:      true,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

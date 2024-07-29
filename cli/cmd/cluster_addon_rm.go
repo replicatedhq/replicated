@@ -22,10 +22,11 @@ func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
 			args.clusterID = cmdArgs[0]
 			return r.clusterAddonRmRun(args)
 		},
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
-	err := clusterAddonRmFlags(cmd, &args)
+	err := r.clusterAddonRmFlags(cmd, &args)
 	if err != nil {
 		panic(err)
 	}
@@ -33,8 +34,9 @@ func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func clusterAddonRmFlags(cmd *cobra.Command, args *clusterAddonRmArgs) error {
+func (r *runners) clusterAddonRmFlags(cmd *cobra.Command, args *clusterAddonRmArgs) error {
 	cmd.Flags().StringVar(&args.id, "id", "", "The ID of the cluster add-on to remove (required)")
+	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
 	err := cmd.MarkFlagRequired("id")
 	if err != nil {
 		return err

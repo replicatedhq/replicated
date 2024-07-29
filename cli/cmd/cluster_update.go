@@ -15,7 +15,10 @@ func (r *runners) InitClusterUpdateCommand(parent *cobra.Command) *cobra.Command
 	parent.AddCommand(cmd)
 
 	cmd.PersistentFlags().StringVar(&r.args.updateClusterName, "name", "", "Name of the cluster to update TTL.")
+	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+
 	cmd.PersistentFlags().StringVar(&r.args.updateClusterID, "id", "", "id of the cluster to update TTL (when name is not provided)")
+	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
 
 	return cmd
 }

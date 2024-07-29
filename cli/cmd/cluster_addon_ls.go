@@ -21,6 +21,7 @@ func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
 			args.clusterID = cmdArgs[0]
 			return r.addonClusterLsRun(args)
 		},
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
