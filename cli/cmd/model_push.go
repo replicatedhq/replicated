@@ -45,16 +45,16 @@ func (r *runners) pushModel(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fullPaths := []string{}
-	for _, modelFile := range modelFiles {
-		fullPaths = append(fullPaths, filepath.Base(modelFile))
-	}
-
-	if err := ociclient.UploadFiles(context.Background(), endpoint, name, tag, fullPaths); err != nil {
+	baseDir, err := filepath.Abs(path)
+	if err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(r.w, "Model %s:%s has been pushed\n", name, tag)
+	if err := ociclient.UploadFiles(context.Background(), endpoint, name, tag, modelFiles, baseDir); err != nil {
+		return err
+	}
+
+	_, err = fmt.Fprintf(r.w, "\nModel %s:%s has been pushed\n", name, tag)
 	if err != nil {
 		return err
 	}
