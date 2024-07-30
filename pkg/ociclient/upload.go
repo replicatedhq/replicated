@@ -17,7 +17,7 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const chunkSize = 100 * 1024 * 1024 // 100 MB chunks
+const chunkSize = 10 * 1024 * 1024 // 10 MB chunks
 
 type Blob struct {
 	Digest string
@@ -54,6 +54,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 
 	hasher := sha256.New()
 	buf := make([]byte, chunkSize)
+	totalSize := int64(0)
 	for {
 		n, err := file.Read(buf)
 		if err != nil && err != io.EOF {
@@ -64,8 +65,11 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 		}
 
 		hasher.Write(buf[:n])
+		totalSize += int64(n)
 
 		chunk := bytes.NewReader(buf[:n])
+		contentRange := fmt.Sprintf("bytes %d-%d/%d", totalSize-int64(n), totalSize-1, totalSize)
+
 		req, err := http.NewRequest("PATCH", uploadURL, chunk)
 		if err != nil {
 			return nil, err
@@ -73,6 +77,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 		req.Header.Set("Authorization", "Bearer "+jwtToken)
 		req.Header.Set("Content-Type", "application/octet-stream")
 		req.Header.Set("Content-Length", fmt.Sprintf("%d", n))
+		req.Header.Set("Content-Range", contentRange)
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
