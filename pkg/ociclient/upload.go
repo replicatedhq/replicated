@@ -17,11 +17,11 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const chunkSize = 10 * 1024 * 1024 // 10 MB chunks
-
 type Blob struct {
-	Digest string
-	Size   int64
+	Digest       string
+	Size         int64
+	RelativePath string
+	Permissions  os.FileMode
 }
 
 func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob, error) {
@@ -50,6 +50,11 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 	uploadURL := resp.Header.Get("Location")
 	if uploadURL == "" {
 		return nil, fmt.Errorf("no upload URL returned")
+	}
+
+	chunkSize, err := determineChunkSize(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to determine chunk size: %w", err)
 	}
 
 	hasher := sha256.New()
@@ -102,6 +107,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 		return nil, err
 	}
 	size := stat.Size()
+	permissions := stat.Mode()
 
 	req, err = http.NewRequest("PUT", uploadURL+"?digest="+digest, nil)
 	if err != nil {
@@ -120,8 +126,10 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string) (*Blob,
 	}
 
 	return &Blob{
-		Digest: digest,
-		Size:   size,
+		Digest:       digest,
+		Size:         size,
+		RelativePath: filePath,
+		Permissions:  permissions,
 	}, nil
 }
 
@@ -180,6 +188,10 @@ func uploadManifest(ctx context.Context, blobs []*Blob, configBlob *Blob, repoUR
 			MediaType: "application/vnd.oci.image.layer.v1.tar+gzip",
 			Digest:    digest.Digest(blob.Digest),
 			Size:      blob.Size,
+			Annotations: map[string]string{
+				"org.opencontainers.image.layer.path":        blob.RelativePath,
+				"org.opencontainers.image.layer.permissions": fmt.Sprintf("%o", blob.Permissions),
+			},
 		})
 	}
 

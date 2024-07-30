@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
@@ -119,15 +120,40 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 
 	// Download each layer in the manifest
 	for _, layer := range manifest.Layers {
-		layerPath := filepath.Join(destination, layer.Digest.Encoded())
+		relativePath := layer.Annotations["org.opencontainers.image.layer.path"]
+		if relativePath == "" {
+			return fmt.Errorf("missing relative path annotation for layer %s", layer.Digest)
+		}
+
+		permissionsStr := layer.Annotations["org.opencontainers.image.layer.permissions"]
+		if permissionsStr == "" {
+			return fmt.Errorf("missing permissions annotation for layer %s", layer.Digest)
+		}
+
+		permissions, err := strconv.ParseUint(permissionsStr, 8, 32)
+		if err != nil {
+			return fmt.Errorf("invalid permissions annotation for layer %s: %v", layer.Digest, err)
+		}
+
+		layerPath := filepath.Join(destination, relativePath)
+		layerDir := filepath.Dir(layerPath)
+		if err := os.MkdirAll(layerDir, 0755); err != nil {
+			return err
+		}
+
 		layerFile, err := os.Create(layerPath)
 		if err != nil {
 			return err
 		}
-		defer layerFile.Close()
 
 		err = downloadBlob(context.Background(), repo, layer, layerFile)
 		if err != nil {
+			layerFile.Close()
+			return err
+		}
+		layerFile.Close()
+
+		if err := os.Chmod(layerPath, os.FileMode(permissions)); err != nil {
 			return err
 		}
 	}
