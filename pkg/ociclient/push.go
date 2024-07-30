@@ -9,7 +9,7 @@ import (
 	"oras.land/oras-go/v2/content/file"
 )
 
-func UploadFiles(ctx context.Context, endpoint string, name string, tag string, filePaths []string) error {
+func UploadFiles(ctx context.Context, endpoint string, name string, tag string, filePaths []string, baseDir string) error {
 	fs, err := file.New("")
 	if err != nil {
 		return err
@@ -27,7 +27,6 @@ func UploadFiles(ctx context.Context, endpoint string, name string, tag string, 
 	repoURL := fmt.Sprintf("https://%s/v2/%s", endpoint, name)
 
 	for _, modelFile := range filePaths {
-		fmt.Printf("Adding %s\n", modelFile)
 		mediaType := "application/vnd.replicated.modelfile"
 
 		fileDescriptor, err := fs.Add(ctx, modelFile, mediaType, modelFile)
@@ -36,7 +35,7 @@ func UploadFiles(ctx context.Context, endpoint string, name string, tag string, 
 		}
 		fileDescriptors = append(fileDescriptors, fileDescriptor)
 
-		blob, err := uploadBlob(ctx, modelFile, repoURL, jwtToken)
+		blob, err := uploadBlob(ctx, modelFile, repoURL, jwtToken, true, fmt.Sprintf("%s:%s", name, tag))
 		if err != nil {
 			return err
 		}
@@ -62,7 +61,7 @@ func UploadFiles(ctx context.Context, endpoint string, name string, tag string, 
 		return err
 	}
 
-	err = uploadManifest(ctx, blobs, configBlob, repoURL, jwtToken, tag)
+	err = uploadManifest(ctx, blobs, configBlob, repoURL, jwtToken, tag, baseDir)
 	if err != nil {
 		return err
 	}
