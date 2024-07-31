@@ -234,7 +234,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterVersions(clusterCmd)
 	runCmds.InitClusterShell(clusterCmd)
 
-	runCmds.InitClusterSupportBundle(clusterCmd)
+	clusterSupportCmd := runCmds.InitClusterSupportBundle(clusterCmd)
 
 	clusterNodeGroupCmd := runCmds.InitClusterNodeGroup(clusterCmd)
 	runCmds.InitClusterNodeGroupList(clusterNodeGroupCmd)
@@ -335,6 +335,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	customersCmd.PersistentPreRunE = prerunCommand
 	instanceCmd.PersistentPreRunE = prerunCommand
 	clusterPrepareCmd.PersistentPreRunE = prerunCommand
+	clusterSupportCmd.PersistentPreRunE = prerunCommand
 
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
