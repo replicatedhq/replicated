@@ -251,6 +251,12 @@ type runnerArgs struct {
 	removeClusterNames  []string
 	removeClusterDryRun bool
 
+	supportBundleClusterName         string
+	supportBundleReleaseSequence     int64
+	supportBundleFile                string
+	supportBundleSpec                string
+	supportBundleReportCompatibility bool
+
 	modelCollectionCreateName           string
 	modelCollectionAddModelName         string
 	modelCollectionAddModelCollectionID string

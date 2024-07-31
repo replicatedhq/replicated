@@ -234,6 +234,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterVersions(clusterCmd)
 	runCmds.InitClusterShell(clusterCmd)
 
+	runCmds.InitClusterSupportBundle(clusterCmd)
+
 	clusterNodeGroupCmd := runCmds.InitClusterNodeGroup(clusterCmd)
 	runCmds.InitClusterNodeGroupList(clusterNodeGroupCmd)
 
