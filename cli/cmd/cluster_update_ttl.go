@@ -10,11 +10,12 @@ import (
 
 func (r *runners) InitClusterUpdateTTL(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "ttl [ID]",
-		Short:        "Update TTL for a test cluster",
-		Long:         `Update TTL for a test cluster`,
-		RunE:         r.updateClusterTTL,
-		SilenceUsage: true,
+		Use:               "ttl [ID]",
+		Short:             "Update TTL for a test cluster",
+		Long:              `Update TTL for a test cluster`,
+		RunE:              r.updateClusterTTL,
+		SilenceUsage:      true,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

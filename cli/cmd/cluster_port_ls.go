@@ -7,10 +7,11 @@ import (
 
 func (r *runners) InitClusterPortLs(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls CLUSTER_ID",
-		Short: "List cluster ports for a cluster",
-		RunE:  r.clusterPortList,
-		Args:  cobra.ExactArgs(1),
+		Use:               "ls CLUSTER_ID",
+		Short:             "List cluster ports for a cluster",
+		RunE:              r.clusterPortList,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

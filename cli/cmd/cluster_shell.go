@@ -19,15 +19,19 @@ import (
 
 func (r *runners) InitClusterShell(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "shell [ID]",
-		Short: "Open a new shell with kubeconfig configured.",
-		Long:  `Open a new shell with kubeconfig configured.`,
-		RunE:  r.shellCluster,
+		Use:               "shell [ID]",
+		Short:             "Open a new shell with kubeconfig configured.",
+		Long:              `Open a new shell with kubeconfig configured.`,
+		RunE:              r.shellCluster,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.shellClusterName, "name", "", "name of the cluster to have kubectl access to.")
+	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+
 	cmd.Flags().StringVar(&r.args.shellClusterID, "id", "", "id of the cluster to have kubectl access to (when name is not provided)")
+	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
 
 	return cmd
 }

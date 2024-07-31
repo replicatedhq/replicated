@@ -22,15 +22,20 @@ const (
 
 func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "kubeconfig [ID]",
-		Short: "Download credentials for a test cluster",
-		Long:  `Download credentials for a test cluster`,
-		RunE:  r.kubeconfigCluster,
+		Use:               "kubeconfig [ID]",
+		Short:             "Download credentials for a test cluster",
+		Long:              `Download credentials for a test cluster`,
+		RunE:              r.kubeconfigCluster,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterName, "name", "", "name of the cluster to download credentials for (when id is not provided)")
+	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "id of the cluster to download credentials for (when name is not provided)")
+	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
+
 	cmd.Flags().StringVar(&r.args.kubeconfigPath, "output-path", "", "path to kubeconfig file to write to, if not provided, it will be merged into your existing kubeconfig")
 	cmd.Flags().BoolVar(&r.args.kubeconfigStdout, "stdout", false, "write kubeconfig to stdout")
 

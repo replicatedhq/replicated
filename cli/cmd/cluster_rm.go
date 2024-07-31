@@ -15,11 +15,13 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 		Long: `Removes a cluster immediately.
 
 You can specify the --all flag to terminate all clusters.`,
-		RunE: r.removeCluster,
+		RunE:              r.removeCluster,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringArrayVar(&r.args.removeClusterNames, "name", []string{}, "Name of the cluster to remove (can be specified multiple times)")
+	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
 	cmd.Flags().StringArrayVar(&r.args.removeClusterTags, "tag", []string{}, "Tag of the cluster to remove (key=value format, can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.removeClusterAll, "all", false, "remove all clusters")

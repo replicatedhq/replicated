@@ -9,11 +9,12 @@ import (
 
 func (r *runners) InitClusterNodeGroupList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls [ID]",
-		Short: "List node groups for a cluster",
-		Long:  `List node groups for a cluster`,
-		Args:  cobra.ExactArgs(1),
-		RunE:  r.listNodeGroups,
+		Use:               "ls [ID]",
+		Short:             "List node groups for a cluster",
+		Long:              `List node groups for a cluster`,
+		Args:              cobra.ExactArgs(1),
+		RunE:              r.listNodeGroups,
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 

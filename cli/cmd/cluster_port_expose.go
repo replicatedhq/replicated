@@ -22,12 +22,13 @@ NOTE: This feature currently only supports VM cluster distributions.`
 
 func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "expose CLUSTER_ID --port PORT",
-		Short:   clusterPortExposeShort,
-		Long:    clusterPortExposeLong,
-		Example: clusterPortExposeExample,
-		RunE:    r.clusterPortExpose,
-		Args:    cobra.ExactArgs(1),
+		Use:               "expose CLUSTER_ID --port PORT",
+		Short:             clusterPortExposeShort,
+		Long:              clusterPortExposeLong,
+		Example:           clusterPortExposeExample,
+		RunE:              r.clusterPortExpose,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: r.completeClusterIDs,
 	}
 	parent.AddCommand(cmd)
 
