@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 
-	"github.com/replicatedhq/replicated/cli/print"
 	analyzer "github.com/replicatedhq/troubleshoot/pkg/analyze"
 	"github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
 	"github.com/replicatedhq/troubleshoot/pkg/loader"
@@ -23,17 +21,18 @@ type analysisOutput struct {
 	ArchivePath string
 }
 
-func (r *runners) InitClusterSupportBundle(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitClusterValidate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "support ID",
+		Use:   "validate ID",
 		Short: "Generate a support bundle on test cluster",
 		Long:  "Generate a support bundle on test cluster.",
-		RunE:  r.generateSupportBundle,
+		RunE:  r.validateCluster,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.supportBundleClusterName, "name", "", "Name of the cluster to generate a support bundle for.")
-	cmd.Flags().Int64Var(&r.args.supportBundleReleaseSequence, "release-sequence", -1, "Release sequence of the support bundle to generate.")
+	cmd.Flags().StringVar(&r.args.validationClusterName, "name", "", "Name of the cluster to generate a support bundle for.")
+	cmd.Flags().Int64Var(&r.args.validationReleaseSequence, "release-sequence", -1, "Release sequence to report results for.")
+	cmd.Flags().StringVar(&r.args.validationAppVersion, "app-version", "", "App version to report results for.")
 	cmd.Flags().StringVar(&r.args.supportBundleFile, "support-bundle-file", "", "Support bundle file to use.")
 
 	// Which support bundle spec to use: --support-bundle-spec
@@ -42,33 +41,34 @@ func (r *runners) InitClusterSupportBundle(parent *cobra.Command) *cobra.Command
 	// 3. Option: "release" flag is provided, search for the spec in the release (vendor portal) (--release-sequence required)
 	cmd.Flags().StringVar(&r.args.supportBundleSpec, "support-bundle-spec", "cluster", "Support bundle spec to use. Options: file, cluster, release")
 
-	// Report results compatibility (--release-sequence required)
-	cmd.Flags().BoolVar(&r.args.supportBundleReportCompatibility, "report-compatibility", false, "Report results compatibility")
+	// Report results compatibility (--release-sequence or --app-version required)
+	cmd.Flags().BoolVar(&r.args.validationReportCompatibility, "report-compatibility", false, "Report results compatibility")
 
 	return cmd
 }
 
-func (r *runners) generateSupportBundle(_ *cobra.Command, args []string) error {
-	if len(args) == 0 && r.args.supportBundleClusterName == "" {
+func (r *runners) validateCluster(_ *cobra.Command, args []string) error {
+	if len(args) == 0 && r.args.validationClusterName == "" {
 		return errors.New("One of ID or --name required")
-	} else if len(args) > 0 && r.args.supportBundleClusterName != "" {
+	} else if len(args) > 0 && r.args.validationClusterName != "" {
 		return errors.New("cannot specify ID and --name flag")
 	}
 
-	if r.args.supportBundleReportCompatibility && r.args.supportBundleReleaseSequence == -1 {
-		return errors.New("--report-compatibility requires --release-sequence")
+	if r.args.validationReportCompatibility && (r.args.validationReleaseSequence == -1 && r.args.validationAppVersion == "") {
+		return errors.New("--report-compatibility requires --release-sequence or --app-version")
+	}
+	if r.args.validationReleaseSequence != -1 && r.args.validationAppVersion != "" {
+		return errors.New("only one of --release-sequence or --app-version is allowed")
 	}
 	if r.args.supportBundleSpec == "file" && r.args.supportBundleFile == "" {
 		return errors.New("--support-bundle-file required when --support-bundle-spec=file")
 	}
-	if r.args.supportBundleSpec == "release" && r.args.supportBundleReleaseSequence == -1 {
+	if r.args.supportBundleSpec == "release" && r.args.validationReleaseSequence == -1 {
 		return errors.New("--release-sequence required when --support-bundle-spec=release")
 	}
 
 	// Get kubeconfig
 	var clusterID string
-	var kubernetesDistribution string
-	var kubernetesVersion string
 	if len(args) > 0 {
 		clusterID = args[0]
 	} else {
@@ -78,7 +78,7 @@ func (r *runners) generateSupportBundle(_ *cobra.Command, args []string) error {
 			return errors.Wrap(err, "list clusters")
 		}
 		for _, cluster := range clusters {
-			if cluster.Name == r.args.supportBundleClusterName {
+			if cluster.Name == r.args.validationClusterName {
 				clusterID = cluster.ID
 				break
 			}
@@ -88,15 +88,19 @@ func (r *runners) generateSupportBundle(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster kubeconfig")
 	}
-	cluster, err := r.kotsAPI.GetCluster(clusterID)
+	_, err = r.kotsAPI.GetCluster(clusterID)
 	if err != nil {
 		return errors.Wrap(err, "failed to get cluster")
 	}
-	kubernetesDistribution = cluster.KubernetesDistribution
-	kubernetesVersion = cluster.KubernetesVersion
 	restKubeConfig, err := clientcmd.RESTConfigFromKubeConfig(kubeconfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to create rest kubeconfig")
+	}
+
+	// Get support bundle upload URL
+	uploadResponse, err := r.kotsAPI.GetSupportBundleUploadURL()
+	if err != nil {
+		return errors.Wrap(err, "failed to get support bundle upload URL")
 	}
 
 	// Get support bundle spec
@@ -154,10 +158,23 @@ func (r *runners) generateSupportBundle(_ *cobra.Command, args []string) error {
 		if len(kinds.RedactorsV1Beta2) == 1 {
 			additionalRedactors = kinds.RedactorsV1Beta2[0]
 		}
+
+		// Inject afterCollection hook to upload support bundle
+		kinds.SupportBundlesV1Beta2[0].Spec.AfterCollection = []*v1beta2.AfterCollection{
+			{
+				UploadResultsTo: &v1beta2.ResultRequest{
+					URI:    uploadResponse.URL,
+					Method: "PUT",
+				},
+			},
+		}
+
 		response, err := supportbundle.CollectSupportBundleFromSpec(&kinds.SupportBundlesV1Beta2[0].Spec, &additionalRedactors, createOpts)
 		if err != nil {
 			return errors.Wrap(err, "failed to run collect and analyze process")
 		}
+
+		fmt.Printf("Support bundle uploaded %v\n", response.FileUploaded)
 
 		close(progressChan) // this removes the spinner in interactive mode
 		isProgressChanClosed = true
@@ -166,31 +183,28 @@ func (r *runners) generateSupportBundle(_ *cobra.Command, args []string) error {
 			nonInteractiveOutput.Analysis = response.AnalyzerResults
 		}
 
+		// Mark bundle as uploaded
+		err = r.kotsAPI.SupportBundleUploaded(uploadResponse.BundleID)
+		if err != nil {
+			return errors.Wrap(err, "failed to mark support bundle as uploaded")
+		}
 	}
+
 	// Report compatibility results
 	passed := true
-	notes := []string{"Support bundle generated from the cluster"}
 	for _, analysis := range nonInteractiveOutput.Analysis {
 		if analysis.IsFail || analysis.IsWarn {
 			passed = false
-			notes = append(notes, fmt.Sprintf("Analysis %s failed", analysis.Title))
 			fmt.Printf("Analysis %s failed\n", analysis.Title)
 		}
 	}
 
 	if passed {
-		notes = append(notes, "All analyses passed")
 		fmt.Println("All analyses passed")
 	}
 
-	if r.args.supportBundleReportCompatibility {
-		ve, err := r.kotsAPI.ReportReleaseCompatibility(r.appID, r.args.supportBundleReleaseSequence, kubernetesDistribution, kubernetesVersion, passed, strings.Join(notes, "\n"))
-		if ve != nil && len(ve.Errors) > 0 {
-			if len(ve.SupportedDistributions) > 0 {
-				print.ClusterVersions("table", r.w, ve.SupportedDistributions)
-			}
-			return fmt.Errorf("%s", errors.New(strings.Join(ve.Errors, ",")))
-		}
+	if r.args.validationReportCompatibility {
+		err := r.kotsAPI.ReportClusterCompatibility(clusterID, uploadResponse.BundleID, r.appID, r.args.validationReleaseSequence, r.args.validationAppVersion)
 		if err != nil {
 			return err
 		}

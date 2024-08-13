@@ -144,7 +144,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleasePromote(releaseCmd)
 	runCmds.InitReleaseLint(releaseCmd)
 	runCmds.InitReleaseTest(releaseCmd)
-	runCmds.InitReleaseCompatibility(releaseCmd)
 
 	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
 	runCmds.InitCollectorList(collectorsCmd)
@@ -234,7 +233,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterVersions(clusterCmd)
 	runCmds.InitClusterShell(clusterCmd)
 
-	clusterSupportCmd := runCmds.InitClusterSupportBundle(clusterCmd)
+	clusterSupportCmd := runCmds.InitClusterValidate(clusterCmd)
+	clusterCompatibilityCmd := runCmds.InitClusterCompatibility(clusterCmd)
 
 	clusterNodeGroupCmd := runCmds.InitClusterNodeGroup(clusterCmd)
 	runCmds.InitClusterNodeGroupList(clusterNodeGroupCmd)
@@ -336,6 +336,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	instanceCmd.PersistentPreRunE = prerunCommand
 	clusterPrepareCmd.PersistentPreRunE = prerunCommand
 	clusterSupportCmd.PersistentPreRunE = prerunCommand
+	clusterCompatibilityCmd.PersistentPreRunE = prerunCommand
 
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs

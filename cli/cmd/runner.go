@@ -251,11 +251,15 @@ type runnerArgs struct {
 	removeClusterNames  []string
 	removeClusterDryRun bool
 
-	supportBundleClusterName         string
-	supportBundleReleaseSequence     int64
-	supportBundleFile                string
-	supportBundleSpec                string
-	supportBundleReportCompatibility bool
+	validationClusterName         string
+	validationReleaseSequence     int64
+	validationAppVersion          string
+	supportBundleFile             string
+	supportBundleSpec             string
+	validationReportCompatibility bool
+
+	compatibilityReleaseSequence int64
+	compatibilityAppVersion      string
 
 	modelCollectionCreateName           string
 	modelCollectionAddModelName         string
@@ -293,10 +297,4 @@ type runnerArgs struct {
 	apiPutBody  string
 
 	customerInspectCustomer string
-
-	compatibilityKubernetesDistribution string
-	compatibilityKubernetesVersion      string
-	compatibilitySuccess                bool
-	compatibilityFailure                bool
-	compatibilityNotes                  string
 }
