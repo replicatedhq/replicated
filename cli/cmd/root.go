@@ -262,6 +262,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitAPIGet(apiCmd)
 	runCmds.InitAPIPost(apiCmd)
 	runCmds.InitAPIPut(apiCmd)
+	runCmds.InitAPIPatch(apiCmd)
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 

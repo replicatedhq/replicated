@@ -26,3 +26,12 @@ func (c *VendorV3Client) Put(path string, body string) ([]byte, error) {
 
 	return resp, nil
 }
+
+func (c *VendorV3Client) Patch(path string, body string) ([]byte, error) {
+	resp, err := c.DoJSONWithoutUnmarshal("PATCH", path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
