@@ -283,8 +283,9 @@ type runnerArgs struct {
 
 	loginEndpoint string
 
-	apiPostBody string
-	apiPutBody  string
+	apiPostBody  string
+	apiPutBody   string
+	apiPatchBody string
 
 	customerInspectCustomer string
 
