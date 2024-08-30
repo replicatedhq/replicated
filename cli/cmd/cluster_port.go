@@ -8,7 +8,7 @@ func (r *runners) InitClusterPort(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "port",
 		SilenceUsage: true,
-		Hidden:       true, // this feature is not fully implemented and controlled behind a feature toggle in the api until ready
+		Hidden:       false,
 	}
 	parent.AddCommand(cmd)
 
