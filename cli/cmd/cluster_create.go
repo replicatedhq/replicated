@@ -234,10 +234,6 @@ func parseNodeGroups(nodeGroups []string) ([]kotsclient.NodeGroup, error) {
 			}
 		}
 
-		// check if instanceType, nodes and disk are set (required)
-		if ng.InstanceType == "" || ng.Nodes == 0 || ng.Disk == 0 {
-			return nil, errors.Errorf("invalid node group format: %s", nodeGroup)
-		}
 		parsedNodeGroups = append(parsedNodeGroups, ng)
 	}
 	return parsedNodeGroups, nil
