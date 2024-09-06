@@ -17,7 +17,7 @@ func Test_parseNodeGroups(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "valid node group",
+			name: "valid node group with name, disk and instance type",
 			args: args{
 				nodeGroups: []string{
 					"name=ng1,instance-type=t2.medium,nodes=3,disk=20",
@@ -34,14 +34,49 @@ func Test_parseNodeGroups(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "invalid node group",
+			name: "valid node group with name and instance type",
 			args: args{
 				nodeGroups: []string{
 					"name=ng1,instance-type=t2.medium,nodes=3",
 				},
 			},
-			want:    nil,
-			wantErr: true,
+			want: []kotsclient.NodeGroup{
+				{
+					Name:         "ng1",
+					InstanceType: "t2.medium",
+					Nodes:        3,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid node group with name",
+			args: args{
+				nodeGroups: []string{
+					"name=ng1,nodes=3",
+				},
+			},
+			want: []kotsclient.NodeGroup{
+				{
+					Name:  "ng1",
+					Nodes: 3,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid node group",
+			args: args{
+				nodeGroups: []string{
+					"nodes=3",
+				},
+			},
+			want: []kotsclient.NodeGroup{
+				{
+					Nodes: 3,
+				},
+			},
+			wantErr: false,
 		},
 		{
 			name: "invalid node group field",
