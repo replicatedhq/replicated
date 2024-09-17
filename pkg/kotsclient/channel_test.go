@@ -233,14 +233,13 @@ func Test_AddRemoveSemver(t *testing.T) {
 		Given("Add Semver to a KOTS app channel").
 		UponReceiving("A request to add semver to kots app channel").
 		WithRequest(dsl.Request{
-			Method: "PUT",
+			Method: "PATCH",
 			Path:   dsl.String("/v3/app/replicated-cli-semver-channel-app/channel/replicated-cli-semver-channel-unstable"),
 			Headers: dsl.MapMatcher{
 				"Authorization": dsl.String("replicated-cli-semver-channel-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
-				"name":           "Unstable",
 				"semverRequired": true,
 			},
 		}).
