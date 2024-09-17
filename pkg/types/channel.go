@@ -86,10 +86,8 @@ type CreateChannelRequest struct {
 	Name                       string `json:"name"`
 }
 
-type UpdateChannelRequest struct {
-	// Description of the channel that is to be created.
-	Name           string `json:"name"`
-	SemverRequired bool   `json:"semverRequired,omitempty"`
+type PatchChannelRequest struct {
+	SemverRequired *bool `json:"semverRequired,omitempty"`
 }
 
 type Channel struct {
