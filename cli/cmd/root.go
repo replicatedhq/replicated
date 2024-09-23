@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 
 	"github.com/replicatedhq/replicated/pkg/credentials"
@@ -362,6 +363,11 @@ func printIfError(cmd *cobra.Command, err error) {
 	default:
 		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
 	}
+}
+
+func printChartDeprecationWarning() {
+	red := color.New(color.FgHiRed)
+	red.Fprintf(os.Stderr, "\nThe --chart flag is deprecated and will be removed in a future release. Please use the --yaml or --yaml-dir flag instead.\n\n")
 }
 
 func parseTags(tags []string) ([]types.Tag, error) {

@@ -24,6 +24,9 @@ func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.updateReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.updateReleaseChart, "chart", "", "Helm chart to create the release from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 
+	// deprecated
+	cmd.Flags().MarkHidden("chart")
+
 	cmd.RunE = r.releaseUpdate
 }
 
@@ -85,6 +88,7 @@ func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "make release from dir")
 		}
 	} else if r.args.updateReleaseChart != "" {
+		printChartDeprecationWarning()
 		r.args.updateReleaseYaml, err = makeReleaseFromChart(r.args.updateReleaseChart)
 		if err != nil {
 			return errors.Wrap(err, "make release from chart")

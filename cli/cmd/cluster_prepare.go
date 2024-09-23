@@ -91,6 +91,8 @@ replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.
 
 	// for builders plan (chart only)
 	cmd.Flags().StringVar(&r.args.prepareClusterChart, "chart", "", "Path to the helm chart package to deploy")
+	cmd.Flags().MarkHidden("chart")
+
 	addValueOptionsFlags(cmd.Flags(), &r.args.prepareClusterValueOpts)
 
 	cmd.Flags().StringVar(&r.args.prepareClusterNamespace, "namespace", "default", "The namespace into which to deploy the KOTS application or Helm chart.")
@@ -130,6 +132,7 @@ func validateClusterPrepareFlags(args runnerArgs) error {
 	}
 
 	if args.prepareClusterChart != "" {
+		printChartDeprecationWarning()
 		if args.prepareClusterKotsSharedPassword != "" {
 			return errors.New("The --shared-password flag cannot be used when deploying a Helm chart")
 		}
@@ -309,6 +312,7 @@ func prepareRelease(r *runners, log *logger.Logger) (*types.ReleaseInfo, error) 
 	}
 
 	if r.args.prepareClusterChart != "" {
+		printChartDeprecationWarning()
 		fmt.Fprintln(r.w)
 		log.ActionWithSpinner("Reading chart from %s", r.args.prepareClusterChart)
 		var err error
