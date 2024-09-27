@@ -23,7 +23,7 @@ func (r *runners) InitClusterCommand(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func (r *runners) initClient() error {
+func (r *runners) initClusterClient() error {
 	if apiToken == "" {
 		creds, err := credentials.GetCurrentCredentials()
 		if err != nil {
@@ -40,7 +40,7 @@ func (r *runners) initClient() error {
 }
 
 func (r *runners) completeClusterIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	err := r.initClient()
+	err := r.initClusterClient()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
@@ -58,7 +58,7 @@ func (r *runners) completeClusterIDs(cmd *cobra.Command, args []string, toComple
 }
 
 func (r *runners) completeClusterNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	err := r.initClient()
+	err := r.initClusterClient()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
