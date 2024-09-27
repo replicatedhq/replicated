@@ -36,6 +36,9 @@ type Cluster struct {
 
 	EstimatedCost int64 `json:"estimated_cost"` // Represents estimated credits for this cluster based on the TTL
 
+	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
+	OverlayToken    string `json:"overlay_token,omitempty"`
+
 	Tags []Tag `json:"tags"`
 }
 
