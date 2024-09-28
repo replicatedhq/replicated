@@ -11,4 +11,9 @@ type VM struct {
 	Status    ClusterStatus `json:"status"`
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
+
+	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
+	OverlayToken    string `json:"overlay_token,omitempty"`
+
+	Tags []Tag `json:"tags"`
 }

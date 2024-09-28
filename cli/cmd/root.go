@@ -259,6 +259,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	vmCmd := runCmds.InitVMCommand(runCmds.rootCmd)
 	runCmds.InitVMList(vmCmd)
 	runCmds.InitVMVersions(vmCmd)
+	runCmds.InitVMRemove(vmCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
