@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"text/tabwriter"
 	"text/template"
+	"time"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -129,4 +130,46 @@ func VMVersions(outputFormat string, w *tabwriter.Writer, versions []*types.Clus
 		return fmt.Errorf("invalid output format: %s", outputFormat)
 	}
 	return w.Flush()
+}
+
+func VM(outputFormat string, w *tabwriter.Writer, vm *types.VM) error {
+	updateEstimatedVMCost(vm)
+	switch outputFormat {
+	case "table":
+		if err := vmsTmplTable.Execute(w, []*types.VM{vm}); err != nil {
+			return err
+		}
+	case "wide":
+		if err := vmsTmplWide.Execute(w, []*types.VM{vm}); err != nil {
+			return err
+		}
+	case "json":
+		cAsByte, err := json.MarshalIndent(vm, "", "  ")
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
+	}
+	return w.Flush()
+}
+
+func updateEstimatedVMCost(vm *types.VM) {
+	if vm.EstimatedCost != 0 {
+		return
+	}
+	if vm.TotalCredits > 0 {
+		vm.EstimatedCost = vm.TotalCredits
+	} else {
+		expireDuration, _ := time.ParseDuration(vm.TTL)
+		minutesRunning := int64(expireDuration.Minutes())
+		totalCredits := int64(minutesRunning) * vm.CreditsPerHourPerVM / 60.0
+		vm.EstimatedCost = vm.FlatFee + totalCredits
+		for _, ng := range vm.NodeGroups {
+			vm.EstimatedCost += int64(minutesRunning) * ng.CreditsPerHour / 60.0 * int64(ng.NodeCount)
+		}
+	}
 }
