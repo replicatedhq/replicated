@@ -27,6 +27,20 @@ var vmsTmplWideSrc = fmt.Sprintln(vmsTmplWideHeaderSrc) + vmsTmplWideRowSrc
 var vmsTmplWide = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplWideSrc))
 var vmsTmplWideNoHeader = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplWideRowSrc))
 
+// VM versions
+var vmVersionsTmplSrc = `Supported VM distributions and versions are:
+{{ range $d := . -}}
+DISTRIBUTION: {{ $d.Name }}
+• VERSIONS: {{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}
+• INSTANCE TYPES: {{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
+• MAX NODES: {{ $d.NodesMax }}{{if $d.Status}}
+• ENABLED: {{ $d.Status.Enabled }}
+• STATUS: {{ $d.Status.Status }}
+• DETAILS: {{ $d.Status.StatusMessage }}{{end}}
+
+{{ end }}`
+var vmVersionsTmpl = template.Must(template.New("vmVersions").Funcs(funcs).Parse(vmVersionsTmplSrc))
+
 func VMs(outputFormat string, w *tabwriter.Writer, vms []*types.VM, header bool) error {
 	switch outputFormat {
 	case "table":
@@ -72,6 +86,43 @@ func NoVMs(outputFormat string, w *tabwriter.Writer) error {
 		}
 	case "json":
 		if _, err := fmt.Fprintln(w, "[]"); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
+	}
+	return w.Flush()
+}
+
+func NoVMVersions(outputFormat string, w *tabwriter.Writer) error {
+	switch outputFormat {
+	case "table":
+		_, err := fmt.Fprintln(w, "No VM versions found.")
+		if err != nil {
+			return err
+		}
+	case "json":
+		if _, err := fmt.Fprintln(w, "[]"); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
+	}
+	return w.Flush()
+}
+
+func VMVersions(outputFormat string, w *tabwriter.Writer, versions []*types.ClusterVersion) error {
+	switch outputFormat {
+	case "table":
+		if err := vmVersionsTmpl.Execute(w, versions); err != nil {
+			return err
+		}
+	case "json":
+		cAsByte, err := json.MarshalIndent(versions, "", "  ")
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	default:
