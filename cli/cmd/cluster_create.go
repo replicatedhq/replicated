@@ -63,7 +63,7 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "parse tags")
 	}
 
-	nodeGroups, err := parseNodeGroups(r.args.createClusterNodeGroups)
+	nodeGroups, err := parseClusterNodeGroups(r.args.createClusterNodeGroups)
 	if err != nil {
 		return errors.Wrap(err, "parse node groups")
 	}
@@ -182,7 +182,7 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 	}
 }
 
-func parseNodeGroups(nodeGroups []string) ([]kotsclient.NodeGroup, error) {
+func parseClusterNodeGroups(nodeGroups []string) ([]kotsclient.NodeGroup, error) {
 	parsedNodeGroups := []kotsclient.NodeGroup{}
 	for _, nodeGroup := range nodeGroups {
 		field := strings.Split(nodeGroup, ",")

@@ -256,6 +256,18 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterUpdateTTL(clusterUpdateCmd)
 	runCmds.InitClusterUpdateNodegroup(clusterUpdateCmd)
 
+	vmCmd := runCmds.InitVMCommand(runCmds.rootCmd)
+	runCmds.InitVMCreate(vmCmd)
+	runCmds.InitVMList(vmCmd)
+	runCmds.InitVMVersions(vmCmd)
+	runCmds.InitVMRemove(vmCmd)
+
+	vmNodeGroupCmd := runCmds.InitVMGroup(vmCmd)
+	runCmds.InitVMGroupList(vmNodeGroupCmd)
+
+	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
+	runCmds.InitVMUpdateTTL(vmUpdateCmd)
+
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
@@ -339,6 +351,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
 	clusterCmd.PersistentPreRunE = preRunSetupAPIs
+	vmCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
 

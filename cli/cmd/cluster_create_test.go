@@ -120,7 +120,7 @@ func Test_parseNodeGroups(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		got, err := parseNodeGroups(tt.args.nodeGroups)
+		got, err := parseClusterNodeGroups(tt.args.nodeGroups)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("%q. parseNodeGroups() error = %v, wantErr %v", tt.name, err, tt.wantErr)
 			continue

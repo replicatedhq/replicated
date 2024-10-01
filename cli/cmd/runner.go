@@ -257,8 +257,8 @@ type runnerArgs struct {
 	modelCollectionRmModelName          string
 	modelCollectionRmModelCollectionID  string
 
-	lsAppVersion                            string
-	lsVersionsClusterKubernetesDistribution string
+	lsAppVersion           string
+	lsVersionsDistribution string
 
 	lsClusterShowTerminated bool
 	lsClusterStartTime      string

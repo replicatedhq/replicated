@@ -8,12 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitClusterVersions(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitVMVersions(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "versions",
-		Short: "List cluster versions",
-		Long:  `List cluster versions`,
-		RunE:  r.listClusterVersions,
+		Short: "List vm versions",
+		Long:  `List vm versions`,
+		RunE:  r.listVMVersions,
 	}
 	parent.AddCommand(cmd)
 
@@ -23,28 +23,28 @@ func (r *runners) InitClusterVersions(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func (r *runners) listClusterVersions(_ *cobra.Command, args []string) error {
-	cv, err := r.kotsAPI.ListClusterVersions()
+func (r *runners) listVMVersions(_ *cobra.Command, args []string) error {
+	vmVersions, err := r.kotsAPI.ListVMVersions()
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
-		return errors.Wrap(err, "list cluster versions")
+		return errors.Wrap(err, "list vm versions")
 	}
 
 	if r.args.lsVersionsDistribution != "" {
 		var filteredCV []*types.ClusterVersion
-		for _, cluster := range cv {
-			if cluster.Name == r.args.lsVersionsDistribution {
-				filteredCV = append(filteredCV, cluster)
+		for _, vmVersion := range vmVersions {
+			if vmVersion.Name == r.args.lsVersionsDistribution {
+				filteredCV = append(filteredCV, vmVersion)
 				break
 			}
 		}
-		cv = filteredCV
+		vmVersions = filteredCV
 	}
 
-	if len(cv) == 0 {
-		return print.NoClusterVersions(r.outputFormat, r.w)
+	if len(vmVersions) == 0 {
+		return print.NoVMVersions(r.outputFormat, r.w)
 	}
 
-	return print.ClusterVersions(r.outputFormat, r.w, cv)
+	return print.VMVersions(r.outputFormat, r.w, vmVersions)
 }
