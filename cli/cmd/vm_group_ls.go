@@ -7,11 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitVMNodeGroupList(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitVMGroupList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:               "ls [ID]",
-		Short:             "List node groups for a vm",
-		Long:              `List node groups for a vm`,
+		Short:             "List groups for a vm",
+		Long:              `List groups for a vm`,
 		Args:              cobra.ExactArgs(1),
 		RunE:              r.listVMNodeGroups,
 		ValidArgsFunction: r.completeVMIDs,

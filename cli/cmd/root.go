@@ -262,8 +262,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitVMVersions(vmCmd)
 	runCmds.InitVMRemove(vmCmd)
 
-	vmNodeGroupCmd := runCmds.InitVMNodeGroup(vmCmd)
-	runCmds.InitVMNodeGroupList(vmNodeGroupCmd)
+	vmNodeGroupCmd := runCmds.InitVMGroup(vmCmd)
+	runCmds.InitVMGroupList(vmNodeGroupCmd)
 
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
