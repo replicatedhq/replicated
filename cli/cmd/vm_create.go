@@ -37,7 +37,7 @@ func (r *runners) InitVMCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "VM TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for VM to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. r1.medium)")
-	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,disk=? format, can be specified multiple times). For each nodegroup, one of the following flags must be specified: name, instance-type, nodes or disk.")
+	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "group", []string{}, "Group to create (name=?,instance-type=?,nodes=?,disk=? format, can be specified multiple times). For each group, one of the following flags must be specified: name, instance-type, nodes or disk.")
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
 
