@@ -13,7 +13,7 @@ func (r *runners) InitVMGroupList(parent *cobra.Command) *cobra.Command {
 		Short:             "List groups for a vm",
 		Long:              `List groups for a vm`,
 		Args:              cobra.ExactArgs(1),
-		RunE:              r.listVMNodeGroups,
+		RunE:              r.listVMGroups,
 		ValidArgsFunction: r.completeVMIDs,
 	}
 	parent.AddCommand(cmd)
@@ -23,7 +23,7 @@ func (r *runners) InitVMGroupList(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func (r *runners) listVMNodeGroups(cmd *cobra.Command, args []string) error {
+func (r *runners) listVMGroups(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return errors.New("vm id is required")
 	}
