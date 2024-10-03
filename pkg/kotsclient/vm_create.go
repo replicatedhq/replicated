@@ -19,7 +19,7 @@ type CreateVMRequest struct {
 	NodeCount    int           `json:"node_count"`
 	DiskGiB      int64         `json:"disk_gib"`
 	TTL          string        `json:"ttl"`
-	NodeGroups   []VMNodeGroup `json:"node_groups"`
+	NodeGroups   []VMNodeGroup `json:"groups"`
 	InstanceType string        `json:"instance_type"`
 	Tags         []types.Tag   `json:"tags"`
 }

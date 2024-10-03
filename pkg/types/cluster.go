@@ -58,6 +58,15 @@ type NodeGroup struct {
 
 	TotalCredits  int64 `json:"total_credits,omitempty"` // this is only present after the cluster is stopped
 	MinutesBilled int64 `json:"minutes_billed"`
+
+	Nodes []*Node `json:"nodes"`
+}
+
+type Node struct {
+	Index int `json:"node_index"`
+
+	SSHPort     int64  `json:"ssh_port,omitempty"`
+	SSHEndpoint string `json:"ssh_endpoint,omitempty"`
 }
 
 type ClusterDistributionStatus struct {
