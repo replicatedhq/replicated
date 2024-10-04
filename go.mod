@@ -291,3 +291,6 @@ require (
 
 // useful when debugging local usrbin-go changes
 // replace github.com/usrbinapp/usrbin-go => ../../usrbinapp/usrbin-go
+
+// patches CVE-2024-6257
+replace github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.7.5
