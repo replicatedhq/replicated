@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -20,28 +18,41 @@ var ErrVMWaitDurationExceeded = errors.New("wait duration exceeded")
 
 func (r *runners) InitVMCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "create",
-		Short:        "Create test VMs",
-		Long:         `Create test VMs.`,
+		Use:   "create",
+		Short: "Create one or more test VMs with specified distribution, version, and configuration options.",
+		Long: `Create one or more test VMs with a specified distribution, version, and a variety of customizable configuration options.
+
+This command allows you to provision VMs with different distributions (e.g., Ubuntu, RHEL), versions, instance types, and more. You can set the number of VMs to create, disk size, and specify the network to use. If no network is provided, a new network will be created automatically. You can also assign tags to your VMs and use a TTL (Time-To-Live) to define how long the VMs should live.
+
+By default, the command provisions one VM, but you can customize the number of VMs to create by using the "--count" flag. Additionally, you can use the "--dry-run" flag to simulate the creation without actually provisioning the VMs.
+
+The command also supports a "--wait" flag to wait for the VMs to be ready before returning control, with a customizable timeout duration.`,
+		Example: `  # Create a single Ubuntu 20.04 VM
+  replicated vm create --distribution ubuntu --version 20.04
+
+  # Create 3 RHEL 9 VMs
+  replicated vm create --distribution rhel --version 9 --count 3
+
+  # Create 5 Ubuntu VMs with a custom instance type and disk size
+  replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
 		SilenceUsage: true,
 		RunE:         r.createVM,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "VM name (defaults to random name)")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Distribution of the vm to provision")
-	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Vversion to provision (format is distribution dependent)")
-	cmd.Flags().StringVar(&r.args.createClusterIPFamily, "ip-family", "", "IP Family to use for the vm (ipv4|ipv6|dual).")
-	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
-	cmd.Flags().Int64Var(&r.args.createClusterDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
-	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "VM TTL (duration, max 48h)")
-	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for VM to be ready (leave empty to not wait)")
-	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. r1.medium)")
-	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "group", []string{}, "Group to create (name=?,instance-type=?,nodes=?,disk=? format, can be specified multiple times). For each group, one of the following flags must be specified: name, instance-type, nodes or disk.")
+	cmd.Flags().StringVar(&r.args.createVMName, "name", "", "VM name (defaults to random name)")
+	cmd.Flags().StringVar(&r.args.createVMDistribution, "distribution", "", "Distribution of the vm to provision")
+	cmd.Flags().StringVar(&r.args.createVMVersion, "version", "", "Vversion to provision (format is distribution dependent)")
+	cmd.Flags().IntVar(&r.args.createVMCount, "count", int(1), "Number of matching VMs to create")
+	cmd.Flags().Int64Var(&r.args.createVMDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
+	cmd.Flags().StringVar(&r.args.createVMTTL, "ttl", "", "VM TTL (duration, max 48h)")
+	cmd.Flags().DurationVar(&r.args.createVMWaitDuration, "wait", time.Second*0, "Wait duration for VM(s) to be ready (leave empty to not wait)")
+	cmd.Flags().StringVar(&r.args.createVMInstanceType, "instance-type", "", "The type of instance to use (e.g. r1.medium)")
+	cmd.Flags().StringVar(&r.args.createVMNetwork, "network", "", "The network to use for the VM(s). If not supplied, create a new network")
 
-	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
 
-	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
+	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
@@ -51,32 +62,25 @@ func (r *runners) InitVMCreate(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) createVM(_ *cobra.Command, args []string) error {
-	if r.args.createClusterName == "" {
-		r.args.createClusterName = namesgenerator.GetRandomName(0)
+	if r.args.createVMName == "" {
+		r.args.createVMName = namesgenerator.GetRandomName(0)
 	}
 
-	tags, err := parseTags(r.args.createClusterTags)
+	tags, err := parseTags(r.args.createVMTags)
 	if err != nil {
 		return errors.Wrap(err, "parse tags")
 	}
 
-	nodeGroups, err := parseVMNodeGroups(r.args.createClusterNodeGroups)
-	if err != nil {
-		return errors.Wrap(err, "parse node groups")
-	}
-
 	opts := kotsclient.CreateVMOpts{
-		Name:         r.args.createClusterName,
-		Distribution: r.args.createClusterKubernetesDistribution,
-		Version:      r.args.createClusterKubernetesVersion,
-		IPFamily:     r.args.createClusterIPFamily,
-		NodeCount:    r.args.createClusterNodeCount,
-		DiskGiB:      r.args.createClusterDiskGiB,
-		TTL:          r.args.createClusterTTL,
-		InstanceType: r.args.createClusterInstanceType,
-		NodeGroups:   nodeGroups,
+		Name:         r.args.createVMName,
+		Distribution: r.args.createVMDistribution,
+		Version:      r.args.createVMVersion,
+		Count:        r.args.createVMCount,
+		DiskGiB:      r.args.createVMDiskGiB,
+		TTL:          r.args.createVMTTL,
+		InstanceType: r.args.createVMInstanceType,
 		Tags:         tags,
-		DryRun:       r.args.createClusterDryRun,
+		DryRun:       r.args.createVMDryRun,
 	}
 
 	vm, err := r.createAndWaitForVM(opts)
@@ -114,7 +118,9 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) (*types.VM, e
 	if ve != nil && ve.Message != "" {
 		if ve.ValidationError != nil && len(ve.ValidationError.Errors) > 0 {
 			if len(ve.ValidationError.SupportedDistributions) > 0 {
-				_ = print.VMVersions("table", r.w, ve.ValidationError.SupportedDistributions)
+				if err := print.VMVersions("table", r.w, ve.ValidationError.SupportedDistributions); err != nil {
+					return nil, errors.Wrap(err, "print vm versions")
+				}
 			}
 		}
 		return nil, errors.New(ve.Message)
@@ -125,8 +131,8 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) (*types.VM, e
 	}
 
 	// if the wait flag was provided, we poll the api until the vm is ready, or a timeout
-	if r.args.createClusterWaitDuration > 0 {
-		return waitForVM(r.kotsAPI, vm.ID, r.args.createClusterWaitDuration)
+	if r.args.createVMWaitDuration > 0 {
+		return waitForVM(r.kotsAPI, vm.ID, r.args.createVMWaitDuration)
 	}
 
 	return vm, nil
@@ -140,9 +146,9 @@ func waitForVM(kotsRestClient *kotsclient.VendorV3Client, id string, duration ti
 			return nil, errors.Wrap(err, "get vm")
 		}
 
-		if vm.Status == types.ClusterStatusRunning {
+		if vm.Status == types.VMStatus(types.VMStatusRunning) {
 			return vm, nil
-		} else if vm.Status == types.ClusterStatusError || vm.Status == types.ClusterStatusUpgradeError {
+		} else if vm.Status == types.VMStatus(types.VMStatusError) {
 			return nil, errors.New("vm failed to provision")
 		} else {
 			if time.Now().After(start.Add(duration)) {
@@ -153,43 +159,4 @@ func waitForVM(kotsRestClient *kotsclient.VendorV3Client, id string, duration ti
 
 		time.Sleep(time.Second * 5)
 	}
-}
-
-func parseVMNodeGroups(nodeGroups []string) ([]kotsclient.VMNodeGroup, error) {
-	parsedNodeGroups := []kotsclient.VMNodeGroup{}
-	for _, nodeGroup := range nodeGroups {
-		field := strings.Split(nodeGroup, ",")
-		ng := kotsclient.VMNodeGroup{}
-		for _, f := range field {
-			fieldParsed := strings.SplitN(f, "=", 2)
-			if len(fieldParsed) != 2 {
-				return nil, errors.Errorf("invalid node group format: %s", nodeGroup)
-			}
-			parsedFieldKey := fieldParsed[0]
-			parsedFieldValue := fieldParsed[1]
-			switch parsedFieldKey {
-			case "name":
-				ng.Name = parsedFieldValue
-			case "instance-type":
-				ng.InstanceType = parsedFieldValue
-			case "nodes":
-				nodes, err := strconv.Atoi(parsedFieldValue)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to parse nodes value: %s", parsedFieldValue)
-				}
-				ng.Nodes = nodes
-			case "disk":
-				diskSize, err := strconv.Atoi(parsedFieldValue)
-				if err != nil {
-					return nil, errors.Wrapf(err, "failed to parse disk value: %s", parsedFieldValue)
-				}
-				ng.Disk = diskSize
-			default:
-				return nil, errors.Errorf("invalid node group field: %s", parsedFieldKey)
-			}
-		}
-
-		parsedNodeGroups = append(parsedNodeGroups, ng)
-	}
-	return parsedNodeGroups, nil
 }

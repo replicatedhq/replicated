@@ -19,9 +19,18 @@ import (
 
 func (r *runners) InitClusterShell(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "shell [ID]",
-		Short:             "Open a new shell with kubeconfig configured.",
-		Long:              `Open a new shell with kubeconfig configured.`,
+		Use:   "shell [ID]",
+		Short: "Open a new shell with kubeconfig configured.",
+		Long: `The 'shell' command opens a new shell session with the kubeconfig configured for the specified test cluster. This allows you to have immediate kubectl access to the cluster within the shell environment.
+
+You can either specify the cluster ID directly or provide the cluster name to resolve the corresponding cluster ID. The shell will inherit your existing environment and add the necessary kubeconfig context for interacting with the Kubernetes cluster.
+
+Once inside the shell, you can use 'kubectl' to interact with the cluster. To exit the shell, press Ctrl-D or type 'exit'. When the shell closes, the kubeconfig will be reset back to your default configuration.`,
+		Example: `  # Open a shell for a cluster by ID
+  replicated cluster shell CLUSTER_ID
+
+  # Open a shell for a cluster by name
+  replicated cluster shell --name "My Cluster"`,
 		RunE:              r.shellCluster,
 		ValidArgsFunction: r.completeClusterIDs,
 	}

@@ -12,9 +12,16 @@ import (
 
 func (r *runners) InitClusterUpdateNodegroup(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "nodegroup [ID]",
-		Short:             "Update a nodegroup for a test cluster",
-		Long:              `Update a nodegroup for a test cluster`,
+		Use:   "nodegroup [ID]",
+		Short: "Update a nodegroup for a test cluster.",
+		Long: `The 'nodegroup' command allows you to update the configuration of a nodegroup within a test cluster. You can update attributes like the number of nodes, minimum and maximum node counts for autoscaling, and more.
+
+If you do not provide the nodegroup ID, the command will try to resolve it based on the nodegroup name provided.`,
+		Example: `  # Update the number of nodes in a nodegroup
+  replicated cluster update nodegroup CLUSTER_ID --nodegroup-id NODEGROUP_ID --nodes 3
+
+  # Update the autoscaling limits for a nodegroup
+  replicated cluster update nodegroup CLUSTER_ID --nodegroup-id NODEGROUP_ID --min-nodes 2 --max-nodes 5`,
 		RunE:              r.updateClusterNodegroup,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeClusterIDs,

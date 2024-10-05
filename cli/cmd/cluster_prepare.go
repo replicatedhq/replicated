@@ -44,22 +44,20 @@ import (
 func (r *runners) InitClusterPrepare(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "prepare",
-		Short: "prepare cluster for testing",
-		Long: `The cluster prepare command will provision a cluster and install
-a local helm chart with a custom values.yaml and custom replicated sdk entitlements.
+		Short: "Prepare cluster for testing.",
+		Long: `The 'cluster prepare' command provisions a Kubernetes cluster and installs an application using a Helm chart or KOTS YAML configuration.
 
-This is a higher level CLI command that is useful in CI when you have a Helm chart and
-want it running in a variety of clusters.
+This command is designed to be used in CI environments to prepare a cluster for testing by deploying a Helm chart or KOTS application with entitlements and custom values. You can specify the cluster configuration, such as the Kubernetes distribution, version, node count, and instance type, and then install your application automatically.
 
-For more control over the workflow, consider using the cluster create command and
-using kubectl and helm CLI tools to install your application.
+Alternatively, if you prefer deploying KOTS applications, you can specify YAML manifests for the release and use the '--shared-password' flag for the KOTS admin console.
 
-Example:
+You can also pass entitlement values to configure the cluster's customer entitlements.
 
-replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 \
-	  --entitlement seat_count=100 --entitlement license_type=enterprise \
-	  --chart ./your-chart.tgz --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
-		RunE: r.prepareCluster,
+Note:
+- The '--chart' flag cannot be used with '--yaml', '--yaml-file', or '--yaml-dir'.
+- If deploying a Helm chart, use the '--set' flags to pass chart values. When deploying a KOTS application, the '--shared-password' flag is required.`,
+		Example: `  replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 --chart ./your-chart.tgz --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
+		RunE:    r.prepareCluster,
 	}
 
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {

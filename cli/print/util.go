@@ -23,4 +23,10 @@ var funcs = template.FuncMap{
 	"formatURL": func(protocol, hostname string) string {
 		return fmt.Sprintf("%s://%s", protocol, hostname)
 	},
+	"localeTime": func(t time.Time) string {
+		if t.IsZero() {
+			return "-"
+		}
+		return t.Local().Format("2006-01-02 15:04 MST")
+	},
 }

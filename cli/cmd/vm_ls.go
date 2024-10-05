@@ -15,17 +15,34 @@ import (
 func (r *runners) InitVMList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls",
-		Short: "List test vms",
-		Long:  `List test vms`,
-		RunE:  r.listVMs,
+		Short: "List test VMs and their status, with optional filters for start/end time and terminated VMs.",
+		Long: `List all test VMs in your account, including their current status, distribution, version, and more. You can use optional flags to filter the output based on VM termination status, start time, or end time. This command can also watch the VM status in real-time.
+
+By default, the command will return a table of all VMs, but you can switch to JSON or wide output formats for more detailed information. The command supports filtering to show only terminated VMs or to specify a time range for the query.
+
+You can use the '--watch' flag to monitor VMs continuously. This will refresh the list of VMs every 2 seconds, displaying any updates in real-time, such as new VMs being created or existing VMs being terminated.
+
+The command also allows you to customize the output format, supporting 'json', 'table', and 'wide' views for flexibility based on your needs.`,
+		Example: `  # List all active VMs
+  replicated vm ls
+
+  # List all VMs that were created after a specific start time
+  replicated vm ls --start-time 2024-10-01T00:00:00Z
+
+  # Show only terminated VMs
+  replicated vm ls --show-terminated
+
+  # Watch VM status changes in real-time
+  replicated vm ls --watch`,
+		RunE: r.listVMs,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().BoolVar(&r.args.lsClusterShowTerminated, "show-terminated", false, "when set, only show terminated vms")
-	cmd.Flags().StringVar(&r.args.lsClusterStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
-	cmd.Flags().StringVar(&r.args.lsClusterEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
+	cmd.Flags().BoolVar(&r.args.lsVMShowTerminated, "show-terminated", false, "when set, only show terminated vms")
+	cmd.Flags().StringVar(&r.args.lsVMStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
+	cmd.Flags().StringVar(&r.args.lsVMEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
-	cmd.Flags().BoolVarP(&r.args.lsClusterWatch, "watch", "w", false, "watch vms")
+	cmd.Flags().BoolVarP(&r.args.lsVMWatch, "watch", "w", false, "watch vms")
 
 	return cmd
 }
@@ -33,22 +50,22 @@ func (r *runners) InitVMList(parent *cobra.Command) *cobra.Command {
 func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 	const longForm = "2006-01-02T15:04:05Z"
 	var startTime, endTime *time.Time
-	if r.args.lsClusterStartTime != "" {
-		st, err := time.Parse(longForm, r.args.lsClusterStartTime)
+	if r.args.lsVMStartTime != "" {
+		st, err := time.Parse(longForm, r.args.lsVMStartTime)
 		if err != nil {
 			return errors.Wrap(err, "parse start time")
 		}
 		startTime = &st
 	}
-	if r.args.lsClusterEndTime != "" {
-		et, err := time.Parse(longForm, r.args.lsClusterEndTime)
+	if r.args.lsVMEndTime != "" {
+		et, err := time.Parse(longForm, r.args.lsVMEndTime)
 		if err != nil {
 			return errors.Wrap(err, "parse end time")
 		}
 		endTime = &et
 	}
 
-	vms, err := r.kotsAPI.ListVMs(r.args.lsClusterShowTerminated, startTime, endTime)
+	vms, err := r.kotsAPI.ListVMs(r.args.lsVMShowTerminated, startTime, endTime)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -56,7 +73,7 @@ func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 	}
 
 	header := true
-	if r.args.lsClusterWatch {
+	if r.args.lsVMWatch {
 
 		// Checks to see if the outputFormat is table
 		if r.outputFormat != "table" && r.outputFormat != "wide" {
@@ -74,7 +91,7 @@ func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 
 		// Runs until ctrl C is recognized
 		for range time.Tick(2 * time.Second) {
-			newVMs, err := r.kotsAPI.ListVMs(r.args.lsClusterShowTerminated, startTime, endTime)
+			newVMs, err := r.kotsAPI.ListVMs(r.args.lsVMShowTerminated, startTime, endTime)
 
 			if err != nil {
 				if err == promptui.ErrInterrupt {
@@ -111,7 +128,7 @@ func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 			// Check for removed vms and print them, changing their status to be "deleted"
 			for id, vm := range oldVMMap {
 				if _, found := newVMMap[id]; !found {
-					vm.Status = types.ClusterStatusDeleted
+					vm.Status = types.VMStatusDeleted
 					vmsToPrint = append(vmsToPrint, vm)
 				}
 			}

@@ -11,10 +11,19 @@ import (
 func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "rm ID [ID …]",
-		Short: "Remove test clusters",
-		Long: `Removes a cluster immediately.
+		Short: "Remove test clusters.",
+		Long: `The 'rm' command removes test clusters immediately.
 
-You can specify the --all flag to terminate all clusters.`,
+You can remove clusters by specifying a cluster ID, or by using other criteria such as cluster names or tags. Alternatively, you can remove all clusters in your account at once.
+
+This command can also be used in a dry-run mode to simulate the removal without actually deleting anything.
+
+You cannot mix the use of cluster IDs with other options like removing by name, tag, or removing all clusters at once.`,
+		Example: `  # Remove a specific cluster by ID
+  replicated cluster rm CLUSTER_ID
+
+  # Remove all clusters
+  replicated cluster rm --all`,
 		RunE:              r.removeClusters,
 		ValidArgsFunction: r.completeClusterIDs,
 	}
@@ -70,7 +79,7 @@ func (r *runners) removeClusters(_ *cobra.Command, args []string) error {
 		}
 
 		for _, cluster := range clusters {
-			if cluster.Tags != nil && len(cluster.Tags) > 0 {
+			if len(cluster.Tags) > 0 {
 				for _, tag := range tags {
 					for _, clusterTag := range cluster.Tags {
 						if clusterTag.Key == tag.Key && clusterTag.Value == tag.Value {

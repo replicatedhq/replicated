@@ -10,16 +10,27 @@ import (
 
 func (r *runners) InitVMUpdateTTL(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "ttl [ID]",
-		Short:             "Update TTL for a test vm",
-		Long:              `Update TTL for a test vm`,
+		Use:   "ttl [ID]",
+		Short: "Update TTL for a test VM.",
+		Long: `The 'ttl' command allows you to update the Time to Live (TTL) for a test VM. This command modifies the lifespan of a running VM by updating its TTL, which is a duration starting from the moment the VM is provisioned.
+
+The TTL specifies how long the VM will run before it is automatically terminated. You can specify a duration up to a maximum of 48 hours.
+
+The command accepts a VM ID as an argument and requires the '--ttl' flag to specify the new TTL value.
+
+You can also specify the output format (json, table, wide) using the '--output' flag.`,
+		Example: `  # Update the TTL of a VM to 2 hours
+  replicated vm update ttl aaaaa11 --ttl 2h
+
+  # Update the TTL of a VM to 30 minutes
+  replicated vm update ttl aaaaa11 --ttl 30m`,
 		RunE:              r.updateVMTTL,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeVMIDs,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.updateClusterTTL, "ttl", "", "Update TTL which starts from the moment the vm is running (duration, max 48h).")
+	cmd.Flags().StringVar(&r.args.updateVMTTL, "ttl", "", "Update TTL which starts from the moment the vm is running (duration, max 48h).")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	cmd.MarkFlagRequired("ttl")
@@ -33,9 +44,9 @@ func (r *runners) updateVMTTL(cmd *cobra.Command, args []string) error {
 	}
 
 	opts := kotsclient.UpdateVMTTLOpts{
-		TTL: r.args.updateClusterTTL,
+		TTL: r.args.updateVMTTL,
 	}
-	vm, err := r.kotsAPI.UpdateVMTTL(r.args.updateClusterID, opts)
+	vm, err := r.kotsAPI.UpdateVMTTL(r.args.updateVMID, opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {

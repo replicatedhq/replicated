@@ -10,9 +10,11 @@ import (
 
 func (r *runners) InitClusterUpdateTTL(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "ttl [ID]",
-		Short:             "Update TTL for a test cluster",
-		Long:              `Update TTL for a test cluster`,
+		Use:   "ttl [ID]",
+		Short: "Update TTL for a test cluster.",
+		Long:  `The 'ttl' command allows you to update the Time-To-Live (TTL) of a test cluster. The TTL represents the duration for which the cluster will remain active before it is automatically terminated. The duration starts from the moment the cluster becomes active. You must provide a valid duration, with a maximum limit of 48 hours.`,
+		Example: `  # Update the TTL for a specific cluster
+  replicated cluster update ttl CLUSTER_ID --ttl 24h`,
 		RunE:              r.updateClusterTTL,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeClusterIDs,

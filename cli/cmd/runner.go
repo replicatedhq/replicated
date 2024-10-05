@@ -294,4 +294,31 @@ type runnerArgs struct {
 	compatibilitySuccess                bool
 	compatibilityFailure                bool
 	compatibilityNotes                  string
+
+	createVMName         string
+	createVMDistribution string
+	createVMVersion      string
+	createVMCount        int
+	createVMDiskGiB      int64
+	createVMTTL          string
+	createVMInstanceType string
+	createVMWaitDuration time.Duration
+	createVMTags         []string
+	createVMNetwork      string
+	createVMDryRun       bool
+
+	lsVMShowTerminated bool
+	lsVMStartTime      string
+	lsVMEndTime        string
+	lsVMWatch          bool
+
+	removeVMAll    bool
+	removeVMTags   []string
+	removeVMNames  []string
+	removeVMDryRun bool
+
+	updateVMTTL string
+
+	updateVMName string
+	updateVMID   string
 }

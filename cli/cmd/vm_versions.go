@@ -11,9 +11,20 @@ import (
 func (r *runners) InitVMVersions(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "versions",
-		Short: "List vm versions",
-		Long:  `List vm versions`,
-		RunE:  r.listVMVersions,
+		Short: "List available VM versions.",
+		Long: `The 'vm versions' command lists all the available versions of virtual machines that can be provisioned. This includes the available distributions and their respective versions.
+
+- You can filter the list by a specific distribution using the '--distribution' flag.
+- The output can be formatted as a table or in JSON format using the '--output' flag.`,
+		Example: `  # List all available VM versions
+  replicated vm versions
+
+  # List VM versions for a specific distribution (e.g., Ubuntu)
+  replicated vm versions --distribution ubuntu
+
+  # Display the output in JSON format
+  replicated vm versions --output json`,
+		RunE: r.listVMVersions,
 	}
 	parent.AddCommand(cmd)
 
@@ -32,7 +43,7 @@ func (r *runners) listVMVersions(_ *cobra.Command, args []string) error {
 	}
 
 	if r.args.lsVersionsDistribution != "" {
-		var filteredCV []*types.ClusterVersion
+		var filteredCV []*types.VMVersion
 		for _, vmVersion := range vmVersions {
 			if vmVersion.Name == r.args.lsVersionsDistribution {
 				filteredCV = append(filteredCV, vmVersion)

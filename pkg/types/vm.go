@@ -3,15 +3,14 @@ package types
 import "time"
 
 type VM struct {
-	ID           string       `json:"id"`
-	Name         string       `json:"name"`
-	Distribution string       `json:"distribution"`
-	Version      string       `json:"version"`
-	NodeGroups   []*NodeGroup `json:"node_groups"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Distribution string `json:"distribution"`
+	Version      string `json:"version"`
 
-	Status    ClusterStatus `json:"status"`
-	CreatedAt time.Time     `json:"created_at"`
-	ExpiresAt time.Time     `json:"expires_at"`
+	Status    VMStatus  `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 
 	TTL string `json:"ttl"`
 
@@ -25,4 +24,24 @@ type VM struct {
 	OverlayToken    string `json:"overlay_token,omitempty"`
 
 	Tags []Tag `json:"tags"`
+}
+
+type VMStatus string
+
+const (
+	VMStatusQueued       VMStatus = "queued"       // Not assigned to a runner yet
+	VMStatusAssigned     VMStatus = "assigned"     // Assigned to a runner, but have not heard back from the runner
+	VMStatusPreparing    VMStatus = "preparing"    // The runner sets this when is receives the request
+	VMStatusProvisioning VMStatus = "provisioning" // The runner sets this when it starts provisioning
+	VMStatusRunning      VMStatus = "running"      // The runner sets this when it is done provisioning or upgrading and available
+	VMStatusTerminated   VMStatus = "terminated"   // This is set when the cluster expires or is deleted
+	VMStatusError        VMStatus = "error"        // Something unexpected
+	VMStatusDeleted      VMStatus = "deleted"
+)
+
+type VMVersion struct {
+	Name          string                     `json:"short_name"`
+	Versions      []string                   `json:"versions"`
+	InstanceTypes []string                   `json:"instance_types"`
+	Status        *ClusterDistributionStatus `json:"status,omitempty"`
 }
