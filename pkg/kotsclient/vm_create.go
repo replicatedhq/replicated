@@ -52,9 +52,6 @@ type CreateVMErrorResponse struct {
 type CreateVMErrorError struct {
 	Message         string             `json:"message"`
 	MaxDiskGiB      int64              `json:"maxDiskGiB,omitempty"`
-	MaxEKS          int64              `json:"maxEKS,omitempty"`
-	MaxGKE          int64              `json:"maxGKE,omitempty"`
-	MaxAKS          int64              `json:"maxAKS,omitempty"`
 	ValidationError *VMValidationError `json:"validationError,omitempty"`
 }
 

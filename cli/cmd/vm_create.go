@@ -31,7 +31,7 @@ The command also supports a "--wait" flag to wait for the VMs to be ready before
   replicated vm create --distribution ubuntu --version 20.04
 
   # Create 3 RHEL 9 VMs
-  replicated vm create --distribution rhel --version 9 --count 3
+  replicated vm create --distribution ubuntu --version 20.04 --count 3
 
   # Create 5 Ubuntu VMs with a custom instance type and disk size
   replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,

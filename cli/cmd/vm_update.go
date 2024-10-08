@@ -15,12 +15,12 @@ func (r *runners) InitVMUpdateCommand(parent *cobra.Command) *cobra.Command {
 - To update the VM by its ID, use the '--id' flag.
 - To update the VM by its name, use the '--name' flag.
 
-Subcommands will allow for more specific updates like TTL, name changes, or resource modifications.`,
+Subcommands will allow for more specific updates like TTL`,
 		Example: `  # Update a VM by specifying its ID
-  replicated vm update --id aaaaa11 --name "new-vm-name"
+  replicated vm update --id aaaaa11 --ttl 12h
 
   # Update a VM by specifying its name
-  replicated vm update --name old-vm-name --name "new-vm-name"`,
+  replicated vm update --name --ttl 12h`,
 	}
 	parent.AddCommand(cmd)
 
