@@ -22,9 +22,27 @@ const (
 
 func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "kubeconfig [ID]",
-		Short:             "Download credentials for a test cluster",
-		Long:              `Download credentials for a test cluster`,
+		Use:   "kubeconfig [ID]",
+		Short: "Download credentials for a test cluster.",
+		Long: `The 'cluster kubeconfig' command downloads the credentials (kubeconfig) required to access a test cluster. You can either merge these credentials into your existing kubeconfig file or save them as a new file.
+
+This command ensures that the kubeconfig is correctly configured for use with your Kubernetes tools. You can specify the cluster by ID or by name. Additionally, the kubeconfig can be written to a specific file path or printed to stdout.
+
+You can also use this command to automatically update your current Kubernetes context with the downloaded credentials.`,
+		Example: `  # Download and merge kubeconfig into your existing configuration
+  replicated cluster kubeconfig CLUSTER_ID
+
+  # Save the kubeconfig to a specific file
+  replicated cluster kubeconfig CLUSTER_ID --output-path ./kubeconfig
+
+  # Print the kubeconfig to stdout
+  replicated cluster kubeconfig CLUSTER_ID --stdout
+
+  # Download kubeconfig for a cluster by name
+  replicated cluster kubeconfig --name "My Cluster"
+
+  # Download kubeconfig for a cluster by ID
+  replicated cluster kubeconfig --id CLUSTER_ID`,
 		RunE:              r.kubeconfigCluster,
 		ValidArgsFunction: r.completeClusterIDs,
 	}

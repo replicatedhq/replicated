@@ -13,16 +13,16 @@ import (
 // Table formatting
 var vmsTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES`
 var vmsTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" .CreatedAt) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" .ExpiresAt) 30 }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}
 {{ end }}`
 var vmsTmplTableSrc = fmt.Sprintln(vmsTmplTableHeaderSrc) + vmsTmplTableRowSrc
 var vmsTmplTable = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplTableSrc))
 var vmsTmplTableNoHeader = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplTableRowSrc))
 
 // Wide table formatting
-var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TOTAL NODES	NODEGROUPS	TAGS`
+var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TAGS`
 var vmsTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" .CreatedAt) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" .ExpiresAt) 30 }}{{end}}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ padding (printf "%d" $nodecount) 11 }}	{{ len .NodeGroups}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
 {{ end }}`
 var vmsTmplWideSrc = fmt.Sprintln(vmsTmplWideHeaderSrc) + vmsTmplWideRowSrc
 var vmsTmplWide = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplWideSrc))
@@ -33,8 +33,7 @@ var vmVersionsTmplSrc = `Supported VM distributions and versions are:
 {{ range $d := . -}}
 DISTRIBUTION: {{ $d.Name }}
 • VERSIONS: {{ range $i, $v := $d.Versions -}}{{if $i}}, {{end}}{{ $v }}{{ end }}
-• INSTANCE TYPES: {{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}
-• MAX NODES: {{ $d.NodesMax }}{{if $d.Status}}
+• INSTANCE TYPES: {{ range $i, $it := $d.InstanceTypes -}}{{if $i}}, {{end}}{{ $it }}{{ end }}{{if $d.Status}}
 • ENABLED: {{ $d.Status.Enabled }}
 • STATUS: {{ $d.Status.Status }}
 • DETAILS: {{ $d.Status.StatusMessage }}{{end}}
@@ -112,7 +111,7 @@ func NoVMVersions(outputFormat string, w *tabwriter.Writer) error {
 	return w.Flush()
 }
 
-func VMVersions(outputFormat string, w *tabwriter.Writer, versions []*types.ClusterVersion) error {
+func VMVersions(outputFormat string, w *tabwriter.Writer, versions []*types.VMVersion) error {
 	switch outputFormat {
 	case "table":
 		if err := vmVersionsTmpl.Execute(w, versions); err != nil {
@@ -168,8 +167,5 @@ func updateEstimatedVMCost(vm *types.VM) {
 		minutesRunning := int64(expireDuration.Minutes())
 		totalCredits := int64(minutesRunning) * vm.CreditsPerHourPerVM / 60.0
 		vm.EstimatedCost = vm.FlatFee + totalCredits
-		for _, ng := range vm.NodeGroups {
-			vm.EstimatedCost += int64(minutesRunning) * ng.CreditsPerHour / 60.0 * int64(ng.NodeCount)
-		}
 	}
 }

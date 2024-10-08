@@ -14,9 +14,17 @@ import (
 
 func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "upgrade [ID]",
-		Short:             "Upgrade a test clusters",
-		Long:              `Upgrade a test clusters`,
+		Use:   "upgrade [ID]",
+		Short: "Upgrade a test cluster.",
+		Long:  `The 'upgrade' command upgrades a Kubernetes test cluster to a specified version. You must provide a cluster ID and the version to upgrade to. The upgrade can be simulated with a dry-run option, or you can choose to wait for the cluster to be fully upgraded.`,
+		Example: `  # Upgrade a cluster to a new Kubernetes version
+  replicated cluster upgrade [CLUSTER_ID] --version 1.31
+
+  # Perform a dry run of a cluster upgrade without making any changes
+  replicated cluster upgrade [CLUSTER_ID] --version 1.31 --dry-run
+
+  # Upgrade a cluster and wait for it to be ready
+  replicated cluster upgrade [CLUSTER_ID] --version 1.31 --wait 30m`,
 		Args:              cobra.ExactArgs(1),
 		RunE:              r.upgradeCluster,
 		SilenceUsage:      true,

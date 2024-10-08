@@ -11,17 +11,14 @@ import (
 )
 
 type CreateVMRequest struct {
-	Name         string        `json:"name"`
-	Distribution string        `json:"distribution"`
-	Version      string        `json:"version"`
-	IPFamily     string        `json:"ip_family"`
-	LicenseID    string        `json:"license_id"`
-	NodeCount    int           `json:"node_count"`
-	DiskGiB      int64         `json:"disk_gib"`
-	TTL          string        `json:"ttl"`
-	NodeGroups   []VMNodeGroup `json:"groups"`
-	InstanceType string        `json:"instance_type"`
-	Tags         []types.Tag   `json:"tags"`
+	Name         string      `json:"name"`
+	Distribution string      `json:"distribution"`
+	Version      string      `json:"version"`
+	Count        int         `json:"count"`
+	DiskGiB      int64       `json:"disk_gib"`
+	TTL          string      `json:"ttl"`
+	InstanceType string      `json:"instance_type"`
+	Tags         []types.Tag `json:"tags"`
 }
 
 type CreateVMResponse struct {
@@ -40,21 +37,12 @@ type CreateVMOpts struct {
 	Name         string
 	Distribution string
 	Version      string
-	IPFamily     string
-	NodeCount    int
+	Count        int
 	DiskGiB      int64
 	TTL          string
 	InstanceType string
-	NodeGroups   []VMNodeGroup
 	Tags         []types.Tag
 	DryRun       bool
-}
-
-type VMNodeGroup struct {
-	Name         string `json:"name"`
-	InstanceType string `json:"instance_type"`
-	Nodes        int    `json:"node_count"`
-	Disk         int    `json:"disk_gib"`
 }
 
 type CreateVMErrorResponse struct {
@@ -62,17 +50,14 @@ type CreateVMErrorResponse struct {
 }
 
 type CreateVMErrorError struct {
-	Message         string                  `json:"message"`
-	MaxDiskGiB      int64                   `json:"maxDiskGiB,omitempty"`
-	MaxEKS          int64                   `json:"maxEKS,omitempty"`
-	MaxGKE          int64                   `json:"maxGKE,omitempty"`
-	MaxAKS          int64                   `json:"maxAKS,omitempty"`
-	ValidationError *ClusterValidationError `json:"validationError,omitempty"`
+	Message         string             `json:"message"`
+	MaxDiskGiB      int64              `json:"maxDiskGiB,omitempty"`
+	ValidationError *VMValidationError `json:"validationError,omitempty"`
 }
 
 type VMValidationError struct {
-	Errors                 []string                `json:"errors"`
-	SupportedDistributions []*types.ClusterVersion `json:"supported_distributions"`
+	Errors                 []string           `json:"errors"`
+	SupportedDistributions []*types.VMVersion `json:"supported_distributions"`
 }
 
 func (c *VendorV3Client) CreateVM(opts CreateVMOpts) (*types.VM, *CreateVMErrorError, error) {
@@ -80,12 +65,10 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) (*types.VM, *CreateVMErrorE
 		Name:         opts.Name,
 		Distribution: opts.Distribution,
 		Version:      opts.Version,
-		IPFamily:     opts.IPFamily,
-		NodeCount:    opts.NodeCount,
+		Count:        opts.Count,
 		DiskGiB:      opts.DiskGiB,
 		TTL:          opts.TTL,
 		InstanceType: opts.InstanceType,
-		NodeGroups:   opts.NodeGroups,
 		Tags:         opts.Tags,
 	}
 

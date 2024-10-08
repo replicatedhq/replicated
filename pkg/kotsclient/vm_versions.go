@@ -7,10 +7,10 @@ import (
 )
 
 type ListVMVersionsResponse struct {
-	Versions []*types.ClusterVersion `json:"cluster-versions"`
+	Versions []*types.VMVersion `json:"cluster-versions"`
 }
 
-func (c *VendorV3Client) ListVMVersions() ([]*types.ClusterVersion, error) {
+func (c *VendorV3Client) ListVMVersions() ([]*types.VMVersion, error) {
 	versions := ListVMVersionsResponse{}
 	err := c.DoJSON("GET", "/v3/vm/versions", http.StatusOK, nil, &versions)
 	if err != nil {

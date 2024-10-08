@@ -9,9 +9,21 @@ import (
 
 func (r *runners) InitClusterNodeGroupList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "ls [ID]",
-		Short:             "List node groups for a cluster",
-		Long:              `List node groups for a cluster`,
+		Use:   "ls [ID]",
+		Short: "List node groups for a cluster.",
+		Long: `The 'cluster nodegroup ls' command lists all the node groups associated with a given cluster. Each node group defines a specific set of nodes with particular configurations, such as instance types and scaling options.
+
+You can view information about the node groups within the specified cluster, including their ID, name, node count, and other configuration details.
+
+You must provide the cluster ID to list its node groups.`,
+		Example: `  # List all node groups in a cluster with default table output
+  replicated cluster nodegroup ls CLUSTER_ID
+
+  # List node groups with JSON output
+  replicated cluster nodegroup ls CLUSTER_ID --output json
+
+  # List node groups with wide table output
+  replicated cluster nodegroup ls CLUSTER_ID --output wide`,
 		Args:              cobra.ExactArgs(1),
 		RunE:              r.listNodeGroups,
 		ValidArgsFunction: r.completeClusterIDs,

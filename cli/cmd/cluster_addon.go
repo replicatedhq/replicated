@@ -12,7 +12,27 @@ import (
 func (r *runners) InitClusterAddon(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "addon",
-		Short: "Manage cluster add-ons",
+		Short: "Manage cluster add-ons.",
+		Long: `The 'cluster addon' command allows you to manage add-ons installed on a test cluster. Add-ons are additional components or services that can be installed and configured to enhance or extend the functionality of the cluster.
+
+You can use various subcommands to create, list, remove, or check the status of add-ons on a cluster. This command is useful for adding databases, object storage, monitoring, security, or other specialized tools to your cluster environment.`,
+		Example: `  # List all add-ons installed on a cluster
+  replicated cluster addon ls CLUSTER_ID
+
+  # Remove an add-on from a cluster
+  replicated cluster addon rm CLUSTER_ID --id ADDON_ID
+
+  # Create a Postgres database add-on for a cluster
+  replicated cluster addon create postgres CLUSTER_ID --version 13 --disk 100 --instance-type db.t3.micro
+
+  # Create an object store bucket add-on for a cluster
+  replicated cluster addon create object-store CLUSTER_ID --bucket-prefix mybucket
+
+  # List add-ons with JSON output
+  replicated cluster addon ls CLUSTER_ID --output json
+
+  # Create a Postgres add-on and wait for it to be ready
+  replicated cluster addon create postgres CLUSTER_ID --version 13 --wait 5m`,
 	}
 	parent.AddCommand(cmd)
 

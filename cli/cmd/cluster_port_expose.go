@@ -6,26 +6,28 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	clusterPortExposeShort = "Expose a port on a cluster to the public internet"
-	clusterPortExposeLong  = `Expose a port on a cluster to the public internet.
-
-This command will create a DNS entry and TLS certificate (if "https") for the specified port on the cluster.
-
-A wildcard DNS entry and TLS certificate can be created by specifying the "--wildcard" flag. This will take extra time to provision.
-
-NOTE: This feature currently only supports VM cluster distributions.`
-	clusterPortExposeExample = `  $ replicated cluster port expose 05929b24 --port 8080 --protocol https --wildcard
-  ID              CLUSTER PORT    PROTOCOL        EXPOSED PORT                                           WILDCARD        STATUS
-  d079b2fc        8080            https           https://happy-germain.ingress.replicatedcluster.com    true            pending`
-)
-
 func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:               "expose CLUSTER_ID --port PORT",
-		Short:             clusterPortExposeShort,
-		Long:              clusterPortExposeLong,
-		Example:           clusterPortExposeExample,
+		Use:   "expose CLUSTER_ID --port PORT",
+		Short: "Expose a port on a cluster to the public internet.",
+		Long: `The 'cluster port expose' command is used to expose a specified port on a cluster to the public internet. When exposing a port, the command automatically creates a DNS entry and, if using the "https" protocol, provisions a TLS certificate for secure communication.
+
+You can also create a wildcard DNS entry and TLS certificate by specifying the "--wildcard" flag. Please note that creating a wildcard certificate may take additional time.
+
+This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.
+
+NOTE: Currently, this feature only supports VM-based cluster distributions.`,
+		Example: `  # Expose port 8080 with HTTPS protocol and wildcard DNS
+  replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --wildcard
+
+  # Expose port 3000 with HTTP protocol
+  replicated cluster port expose CLUSTER_ID --port 3000 --protocol http
+
+  # Expose port 8080 with multiple protocols
+  replicated cluster port expose CLUSTER_ID --port 8080 --protocol http,https
+
+  # Expose port 8080 and display the result in JSON format
+  replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --output json`,
 		RunE:              r.clusterPortExpose,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeClusterIDs,

@@ -29,8 +29,25 @@ func (r *runners) InitClusterAddonCreatePostgres(parent *cobra.Command) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:   "postgres CLUSTER_ID",
-		Short: "Create a Postgres database for a cluster",
-		Args:  cobra.ExactArgs(1),
+		Short: "Create a Postgres database for a cluster.",
+		Long: `Creates a Postgres database instance for the specified cluster, provisioning it with a specified version, disk size, and instance type. This allows you to attach a managed Postgres instance to your cluster for database functionality.
+
+Examples:
+  # Create a Postgres database with default settings
+  replicated cluster addon create postgres CLUSTER_ID
+
+  # Create a Postgres 13 database with 500GB disk and a larger instance type
+  replicated cluster addon create postgres CLUSTER_ID --version 13 --disk 500 --instance-type db.t3.large
+
+  # Perform a dry run to validate inputs without creating the database
+  replicated cluster addon create postgres CLUSTER_ID --dry-run
+
+  # Create a Postgres database and wait for it to be ready (up to 10 minutes)
+  replicated cluster addon create postgres CLUSTER_ID --wait 10m
+
+  # Create a Postgres database and output the result in JSON format
+  replicated cluster addon create postgres CLUSTER_ID --output json`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
 			args.clusterID = cmdArgs[0]
 			return r.clusterAddonCreatePostgresCreateRun(args)
