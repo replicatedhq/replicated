@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	latestVersionURI = `https://market-api-marccampbell.okteto.repldev.com/ping`
+	latestVersionURI = `https://replicated.app/ping`
 )
 
 // GetUpdateInfo will return the latest version
@@ -42,8 +42,8 @@ func (s UpdateChecker) GetUpdateInfo() (*UpdateInfo, error) {
 }
 
 type PingResponse struct {
-	ClientIP       string          `json:"client_ip"`
-	ClientVersions *ClientVersions `json:"client_versions"`
+	ClientIP       string         `json:"client_ip"`
+	ClientVersions ClientVersions `json:"client_versions"`
 }
 
 type ClientVersions struct {
@@ -71,6 +71,10 @@ func getLatestVersion(timeout time.Duration) (*VersionInfo, error) {
 	err = json.NewDecoder(resp.Body).Decode(&pingResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "decode response")
+	}
+
+	if pingResponse.ClientVersions.ReplicatedCLI == "" {
+		return nil, nil
 	}
 
 	return &VersionInfo{
