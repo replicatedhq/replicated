@@ -7,9 +7,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/replicatedfile"
-	usrbingithub "github.com/usrbinapp/usrbin-go/pkg/github"
-	"github.com/usrbinapp/usrbin-go/pkg/updatechecker"
 )
 
 var (
@@ -18,12 +15,12 @@ var (
 
 // Build holds details about this build of the replicated cli binary
 type Build struct {
-	Version      string                    `json:"version,omitempty"`
-	GitSHA       string                    `json:"git,omitempty"`
-	BuildTime    time.Time                 `json:"buildTime,omitempty"`
-	TimeFallback string                    `json:"buildTimeFallback,omitempty"`
-	GoInfo       GoInfo                    `json:"go,omitempty"`
-	UpdateInfo   *updatechecker.UpdateInfo `json:"updateInfo,omitempty"`
+	Version      string      `json:"version,omitempty"`
+	GitSHA       string      `json:"git,omitempty"`
+	BuildTime    time.Time   `json:"buildTime,omitempty"`
+	TimeFallback string      `json:"buildTimeFallback,omitempty"`
+	GoInfo       GoInfo      `json:"go,omitempty"`
+	UpdateInfo   *UpdateInfo `json:"updateInfo,omitempty"`
 }
 
 type GoInfo struct {
@@ -47,29 +44,20 @@ func initBuild() {
 
 	build.GoInfo = getGoInfo()
 
-	if !replicatedfile.Cache.IsUpdateCheckerInfoExpired(build.Version) {
-		build.UpdateInfo = replicatedfile.Cache.GetUpdateCheckerInfo()
-		return
-	}
-
-	usrbinsdk, err := NewUsrbinSDK(build.Version)
+	updateChecker, err := NewUpdateChecker(build.Version, "replicatedhq/replicated/cli")
 	if err != nil {
 		return
 	}
 
-	build.UpdateInfo, err = usrbinsdk.GetUpdateInfo()
+	build.UpdateInfo, err = updateChecker.GetUpdateInfo()
 	if err != nil {
-		if errors.Cause(err) == usrbingithub.ErrTimeoutExceeded {
+		if errors.Cause(err) == ErrTimeoutExceeded {
 			// i'm going to leave this println out for now because it could be really noisy
 			// for someone with a slow connection
 			// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
 			return
 		}
 		fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
-	}
-
-	if err := replicatedfile.Cache.SaveUpdateCheckerInfo(build.Version, build.UpdateInfo); err != nil {
-		fmt.Fprintf(os.Stderr, "Error saving update checker cache: %s", err)
 	}
 }
 
