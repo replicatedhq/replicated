@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/replicatedhq/replicated/client"
-	"github.com/replicatedhq/replicated/pkg/enterpriseclient"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
@@ -16,18 +15,17 @@ import (
 // Runner holds the I/O dependencies and configurations used by individual
 // commands, which are defined as methods on this type.
 type runners struct {
-	appID            string
-	appSlug          string
-	appType          string
-	isFoundationApp  bool
-	api              client.Client
-	enterpriseClient *enterpriseclient.HTTPClient
-	platformAPI      *platformclient.HTTPClient
-	kotsAPI          *kotsclient.VendorV3Client
-	stdin            io.Reader
-	dir              string
-	outputFormat     string
-	w                *tabwriter.Writer
+	appID           string
+	appSlug         string
+	appType         string
+	isFoundationApp bool
+	api             client.Client
+	platformAPI     *platformclient.HTTPClient
+	kotsAPI         *kotsclient.VendorV3Client
+	stdin           io.Reader
+	dir             string
+	outputFormat    string
+	w               *tabwriter.Writer
 
 	rootCmd *cobra.Command
 	args    runnerArgs
@@ -127,52 +125,10 @@ type runnerArgs struct {
 	createInstallerPromote              string
 	createInstallerPromoteEnsureChannel bool
 
-	enterpriseAuthInitCreateOrg string
-
-	enterpriseAuthApproveFingerprint string
-
-	enterpriseChannelCreateName        string
-	enterpriseChannelCreateDescription string
-
-	enterpriseChannelUpdateID          string
-	enterpriseChannelUpdateName        string
-	enterpriseChannelUpdateDescription string
-
-	enterpriseChannelRmId string
-
-	enterpriseChannelAssignChannelID string
-	enterpriseChannelAssignTeamID    string
-
-	enterprisePolicyCreateName        string
-	enterprisePolicyCreateDescription string
-	enterprisePolicyCreateFile        string
-
-	enterprisePolicyUpdateID          string
-	enterprisePolicyUpdateName        string
-	enterprisePolicyUpdateDescription string
-	enterprisePolicyUpdateFile        string
-
-	enterprisePolicyRmId string
-
-	enterprisePolicyAssignPolicyID  string
-	enterprisePolicyAssignChannelID string
-
-	enterprisePolicyUnassignPolicyID  string
-	enterprisePolicyUnassignChannelID string
-
-	enterpriseInstallerCreateFile string
-
-	enterpriseInstallerUpdateID   string
-	enterpriseInstallerUpdateFile string
-
-	enterpriseInstallerRmId string
-
-	enterpriseInstallerAssignInstallerID string
-	enterpriseInstallerAssignChannelID   string
-	customerLicenseInspectCustomer       string
-	customerLicenseInspectOutput         string
-	createReleaseAutoDefaults            bool
-	createReleaseAutoDefaultsAccept      bool
+	customerLicenseInspectCustomer  string
+	customerLicenseInspectOutput    string
+	createReleaseAutoDefaults       bool
+	createReleaseAutoDefaultsAccept bool
 
 	releaseDownloadDest               string
 	createInstallerAutoDefaults       bool
