@@ -5,24 +5,23 @@ import (
 )
 
 type KotsChannel struct {
-	AdoptionRate               []CustomerAdoption            `json:"adoptionRate,omitempty"`
-	AppId                      string                        `json:"appId,omitempty"`
-	BuildAirgapAutomatically   bool                          `json:"buildAirgapAutomatically,omitempty"`
-	ChannelIcon                string                        `json:"channelIcon,omitempty"`
-	ChannelSequence            int32                         `json:"channelSequence,omitempty"`
-	ChannelSlug                string                        `json:"channelSlug,omitempty"`
-	Created                    time.Time                     `json:"created,omitempty"`
-	CurrentVersion             string                        `json:"currentVersion,omitempty"`
-	Customers                  *TotalActiveInactiveCustomers `json:"customers,omitempty"`
-	Description                string                        `json:"description,omitempty"`
-	EnterprisePartnerChannelID string                        `json:"enterprisePartnerChannelID,omitempty"`
-	Id                         string                        `json:"id,omitempty"`
-	IsArchived                 bool                          `json:"isArchived,omitempty"`
-	IsDefault                  bool                          `json:"isDefault,omitempty"`
-	Name                       string                        `json:"name,omitempty"`
-	NumReleases                int32                         `json:"numReleases,omitempty"`
-	IsHelmOnly                 bool                          `json:"isHelmOnly,omitempty"`
-	ReleaseNotes               string                        `json:"releaseNotes,omitempty"`
+	AdoptionRate             []CustomerAdoption            `json:"adoptionRate,omitempty"`
+	AppId                    string                        `json:"appId,omitempty"`
+	BuildAirgapAutomatically bool                          `json:"buildAirgapAutomatically,omitempty"`
+	ChannelIcon              string                        `json:"channelIcon,omitempty"`
+	ChannelSequence          int32                         `json:"channelSequence,omitempty"`
+	ChannelSlug              string                        `json:"channelSlug,omitempty"`
+	Created                  time.Time                     `json:"created,omitempty"`
+	CurrentVersion           string                        `json:"currentVersion,omitempty"`
+	Customers                *TotalActiveInactiveCustomers `json:"customers,omitempty"`
+	Description              string                        `json:"description,omitempty"`
+	Id                       string                        `json:"id,omitempty"`
+	IsArchived               bool                          `json:"isArchived,omitempty"`
+	IsDefault                bool                          `json:"isDefault,omitempty"`
+	Name                     string                        `json:"name,omitempty"`
+	NumReleases              int32                         `json:"numReleases,omitempty"`
+	IsHelmOnly               bool                          `json:"isHelmOnly,omitempty"`
+	ReleaseNotes             string                        `json:"releaseNotes,omitempty"`
 	// TODO: set these (see kotsChannelToSchema function)
 	ReleaseSequence          int32                   `json:"releaseSequence,omitempty"`
 	Releases                 []ChannelRelease        `json:"releases,omitempty"`
@@ -81,9 +80,7 @@ type ChannelRelease struct {
 type CreateChannelRequest struct {
 	// Description of the channel that is to be created.
 	Description string `json:"description,omitempty"`
-	// Enterprise Partner Channel Id to be added to channel.
-	EnterprisePartnerChannelID string `json:"enterprisePartnerChannelID,omitempty"`
-	Name                       string `json:"name"`
+	Name        string `json:"name"`
 }
 
 type PatchChannelRequest struct {

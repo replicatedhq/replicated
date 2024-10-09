@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -31,20 +30,13 @@ const (
 
 var appSlugOrID string
 var apiToken string
-var enterprisePrivateKeyPath = filepath.Join(homeDir(), ".replicated", "enterprise", "ecdsa")
 var platformOrigin = "https://api.replicated.com/vendor"
 var kurlDotSHOrigin = "https://kurl.sh"
-var enterpriseOrigin = "https://api.replicated.com/enterprise"
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {
 		platformOrigin = originFromEnv
-	}
-
-	enterpriseOriginFromEnv := os.Getenv("REPLICATED_ENTERPRISE_ORIGIN")
-	if enterpriseOriginFromEnv != "" {
-		enterpriseOrigin = enterpriseOriginFromEnv
 	}
 }
 
@@ -170,30 +162,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	installerCmd := runCmds.InitInstallerCommand(runCmds.rootCmd)
 	runCmds.InitInstallerCreate(installerCmd)
 	runCmds.InitInstallerList(installerCmd)
-
-	enterpriseCmd := runCmds.InitEnterpriseCommand(runCmds.rootCmd)
-	enterpriseAuthCmd := runCmds.InitEnterpriseAuth(enterpriseCmd)
-	runCmds.InitEnterpriseAuthInit(enterpriseAuthCmd)
-	runCmds.InitEnterpriseAuthApprove(enterpriseAuthCmd)
-	enterpriseChannelCmd := runCmds.InitEnterpriseChannel(enterpriseCmd)
-	runCmds.InitEnterpriseChannelLS(enterpriseChannelCmd)
-	runCmds.InitEnterpriseChannelCreate(enterpriseChannelCmd)
-	runCmds.InitEnterpriseChannelUpdate(enterpriseChannelCmd)
-	runCmds.InitEnterpriseChannelRM(enterpriseChannelCmd)
-	runCmds.InitEnterpriseChannelAssign(enterpriseChannelCmd)
-	enterprisePolicyCmd := runCmds.InitEnterprisePolicy(enterpriseCmd)
-	runCmds.InitEnterprisePolicyLS(enterprisePolicyCmd)
-	runCmds.InitEnterprisePolicyCreate(enterprisePolicyCmd)
-	runCmds.InitEnterprisePolicyUpdate(enterprisePolicyCmd)
-	runCmds.InitEnterprisePolicyRM(enterprisePolicyCmd)
-	runCmds.InitEnterprisePolicyAssign(enterprisePolicyCmd)
-	runCmds.InitEnterprisePolicyUnassign(enterprisePolicyCmd)
-	enterpriseInstallerCmd := runCmds.InitEnterpriseInstaller(enterpriseCmd)
-	runCmds.InitEnterpriseInstallerLS(enterpriseInstallerCmd)
-	runCmds.InitEnterpriseInstallerCreate(enterpriseInstallerCmd)
-	runCmds.InitEnterpriseInstallerUpdate(enterpriseInstallerCmd)
-	runCmds.InitEnterpriseInstallerRM(enterpriseInstallerCmd)
-	runCmds.InitEnterpriseInstallerAssign(enterpriseInstallerCmd)
 
 	appCmd := runCmds.InitAppCommand(runCmds.rootCmd)
 	runCmds.InitAppList(appCmd)
@@ -400,4 +368,11 @@ func parseTags(tags []string) ([]types.Tag, error) {
 		})
 	}
 	return parsedTags, nil
+}
+
+func homeDir() string {
+	if h := os.Getenv("HOME"); h != "" {
+		return h
+	}
+	return os.Getenv("USERPROFILE")
 }
