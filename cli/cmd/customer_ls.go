@@ -7,43 +7,58 @@ import (
 )
 
 func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
-	customersCmd := &cobra.Command{
-		Use:   "ls",
-		Short: "list customers",
-		Long:  `list customers`,
-		RunE:  r.listCustomers,
-	}
-	// Example to list customers by app version and app
-	// replicated customer ls --app <appID> --app-version <appVersion>
-	parent.AddCommand(customersCmd)
-	customersCmd.Flags().StringVar(&r.args.lsAppVersion, "app-version", "", "List customers and their instances by app version")
-	customersCmd.Flags().BoolVar(&r.args.customerLsIncludeTest, "include-test", false, "Include test customers in the list")
-	customersCmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	var (
+		appVersion   string
+		includeTest  bool
+		outputFormat string
+	)
 
-	return customersCmd
+	customersLsCmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List customers for the current application",
+		Long: `List customers associated with the current application.
+
+This command displays information about customers linked to your application.
+By default, it shows all non-test customers. You can use flags to:
+- Filter customers by a specific app version
+- Include test customers in the results
+- Change the output format (table or JSON)
+
+The command requires an app to be set using the --app flag.`,
+		Example: `  # List all customers for the current application
+  replicated customer ls --app myapp
+  # Output results in JSON format
+  replicated customer ls --app myapp --output json
+
+  # Combine multiple flags
+  replicated customer ls --app myapp --output json`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return r.listCustomers(appVersion, includeTest, outputFormat)
+		},
+	}
+
+	parent.AddCommand(customersLsCmd)
+	customersLsCmd.Flags().StringVar(&appVersion, "app-version", "", "Filter customers by a specific app version")
+	customersLsCmd.Flags().BoolVar(&includeTest, "include-test", false, "Include test customers in the results")
+	customersLsCmd.Flags().StringVar(&outputFormat, "output", "table", "Output format: json|table (default: table)")
+
+	return customersLsCmd
 }
 
-func (r *runners) listCustomers(_ *cobra.Command, _ []string) error {
-
-	// get appVersion from flags
-	lsappVersion := r.args.lsAppVersion
-	// if appVersion is blank, call ListCustomers
-	if lsappVersion == "" {
-		customers, err := r.api.ListCustomers(r.appID, r.appType, r.args.customerLsIncludeTest)
+func (r *runners) listCustomers(appVersion string, includeTest bool, outputFormat string) error {
+	if appVersion == "" {
+		customers, err := r.api.ListCustomers(r.appID, r.appType, includeTest)
 		if err != nil {
 			return errors.Wrap(err, "list customers")
 		}
-		return print.Customers(r.outputFormat, r.w, customers)
+		return print.Customers(outputFormat, r.w, customers)
 	} else {
-		// call ListCustomersByAppAndVersion
-		customers, err := r.api.ListCustomersByAppAndVersion(r.appID, lsappVersion, r.appType)
-		// if err and outputFormat is json, customers should be a blank struct and print will return []
-		if err != nil && r.outputFormat == "json" {
-			return print.CustomersWithInstances(r.outputFormat, r.w, customers)
-			// error and outputFormat is table, print error
+		customers, err := r.api.ListCustomersByAppAndVersion(r.appID, appVersion, r.appType)
+		if err != nil && outputFormat == "json" {
+			return print.CustomersWithInstances(outputFormat, r.w, customers)
 		} else if err != nil {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
-		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
+		return print.CustomersWithInstances(outputFormat, r.w, customers)
 	}
 }

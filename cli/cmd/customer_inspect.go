@@ -12,41 +12,66 @@ import (
 )
 
 func (r *runners) InitCustomersInspectCommand(parent *cobra.Command) *cobra.Command {
+	var (
+		customer     string
+		outputFormat string
+	)
 	cmd := &cobra.Command{
-		Use:          "inspect",
-		Short:        "Show full details for a customer",
-		Long:         `Show full details for a customer`,
-		RunE:         r.inspectCustomer,
+		Use:   "inspect [flags]",
+		Short: "Show detailed information about a specific customer",
+		Long: `The inspect command provides comprehensive details about a customer.
+
+	This command retrieves and displays full information about a specified customer,
+	including their assigned channels, registry information, and other relevant attributes.
+	It's useful for getting an in-depth view of a customer's configuration and status.
+
+	You must specify the customer using either their name or ID with the --customer flag.`,
+		Example: `  # Inspect a customer by ID
+	  replicated customer inspect --customer cus_abcdef123456
+
+	  # Inspect a customer by name
+	  replicated customer inspect --customer "Acme Inc"
+
+	  # Inspect a customer and output in JSON format
+	  replicated customer inspect --customer cus_abcdef123456 --output json
+
+	  # Inspect a customer for a specific app (if you have multiple apps)
+	  replicated customer inspect --app myapp --customer "Acme Inc"`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return r.inspectCustomer(cmd, customer, outputFormat)
+		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVar(&r.args.customerInspectCustomer, "customer", "", "The Customer Name or ID")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID")
+	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+
+	cmd.MarkFlagRequired("customer")
 
 	return cmd
 }
 
-func (r *runners) inspectCustomer(_ *cobra.Command, _ []string) error {
-	if r.args.customerInspectCustomer == "" {
+func (r *runners) inspectCustomer(cmd *cobra.Command, customer string, outputFormat string) error {
+	if customer == "" {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}
 
-	customer, err := r.api.GetCustomerByNameOrId(r.appType, r.appID, r.args.customerInspectCustomer)
+	c, err := r.api.GetCustomerByNameOrId(r.appType, r.appID, customer)
 	if err != nil {
-		return errors.Wrapf(err, "get customer %q", r.args.customerInspectCustomer)
+		return errors.Wrapf(err, "get customer %q", customer)
 	}
 
-	ch, err := r.customerChannel(customer)
+	ch, err := r.customerChannel(c)
 	if err != nil {
 		return errors.Wrap(err, "get customer channel")
 	}
 
-	regHost, err := r.registryHostname(customer, ch)
+	regHost, err := r.registryHostname(c, ch)
 	if err != nil {
-		return errors.Wrapf(err, "get registry hostname for customer %q", r.args.customerInspectCustomer)
+		return errors.Wrapf(err, "get registry hostname for customer %q", customer)
 	}
 
-	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, customer); err != nil {
+	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, c); err != nil {
 		return errors.Wrap(err, "print customer attrs")
 	}
 
