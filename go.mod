@@ -27,7 +27,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	github.com/tj/go-spin v1.1.0
-	github.com/usrbinapp/usrbin-go v0.0.6
 	golang.org/x/crypto v0.23.0
 	golang.org/x/term v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -288,9 +287,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-// useful when debugging local usrbin-go changes
-// replace github.com/usrbinapp/usrbin-go => ../../usrbinapp/usrbin-go
 
 // patches CVE-2024-6257
 replace github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.7.5
