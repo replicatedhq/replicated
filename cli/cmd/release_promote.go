@@ -16,7 +16,7 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 		Long: `Set the release for a channel
 
   Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 
 	parent.AddCommand(cmd)
@@ -30,6 +30,8 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 }
 
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) {
+	cmd.SilenceErrors = true // this command uses custom error printing
+
 	defer func() {
 		printIfError(cmd, err)
 	}()

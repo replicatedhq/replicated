@@ -19,7 +19,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 		Long:          `update a customer`,
 		RunE:          r.updateCustomer,
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerUpdateID, "customer", "", "The ID of the customer to update")
@@ -50,6 +50,8 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 }
 
 func (r *runners) updateCustomer(cmd *cobra.Command, _ []string) (err error) {
+	cmd.SilenceErrors = true // this command uses custom error printing
+
 	defer func() {
 		printIfError(cmd, err)
 	}()

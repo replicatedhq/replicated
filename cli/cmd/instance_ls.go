@@ -13,7 +13,7 @@ func (r *runners) InitInstanceLSCommand(parent *cobra.Command) *cobra.Command {
 		Long:          `list customer instances`,
 		RunE:          r.listInstances,
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 
 	parent.AddCommand(cmd)
@@ -25,6 +25,8 @@ func (r *runners) InitInstanceLSCommand(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) listInstances(cmd *cobra.Command, _ []string) (err error) {
+	cmd.SilenceErrors = true // this command uses custom error printing
+
 	defer func() {
 		printIfError(cmd, err)
 	}()

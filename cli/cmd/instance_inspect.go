@@ -14,7 +14,7 @@ func (r *runners) InitInstanceInspectCommand(parent *cobra.Command) *cobra.Comma
 		Long:          `Show full details for a customer instance`,
 		RunE:          r.inspectInstance,
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.instanceInspectCustomer, "customer", "", "Customer Name or ID")
@@ -25,6 +25,8 @@ func (r *runners) InitInstanceInspectCommand(parent *cobra.Command) *cobra.Comma
 }
 
 func (r *runners) inspectInstance(cmd *cobra.Command, _ []string) (err error) {
+	cmd.SilenceErrors = true // this command uses custom error printing
+
 	defer func() {
 		printIfError(cmd, err)
 	}()

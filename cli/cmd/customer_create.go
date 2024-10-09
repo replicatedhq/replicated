@@ -19,7 +19,7 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 		Long:          `create a customer`,
 		RunE:          r.createCustomer,
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "Name of the customer")
@@ -48,6 +48,8 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 }
 
 func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
+	cmd.SilenceErrors = true // this command uses custom error printing
+
 	defer func() {
 		printIfError(cmd, err)
 	}()
