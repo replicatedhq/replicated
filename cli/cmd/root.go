@@ -186,6 +186,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	enterprisePortalStatusCmd := runCmds.InitEnterprisePortalStatusCmd(enterprisePortalCmd)
 	runCmds.InitEnterprisePortalStatusGetCmd(enterprisePortalStatusCmd)
 	runCmds.InitEnterprisePortalStatusUpdateCmd(enterprisePortalStatusCmd)
+	runCmds.InitEnterprisePortalInviteCmd(enterprisePortalCmd)
+	enterprisePortalUserCmd := runCmds.InitEnterprisePortalUserCmd(enterprisePortalCmd)
+	runCmds.InitEnterprisePortalUserLsCmd(enterprisePortalUserCmd)
 
 	registryCmd := runCmds.InitRegistryCommand(runCmds.rootCmd)
 	runCmds.InitRegistryList(registryCmd)
