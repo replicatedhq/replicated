@@ -12,68 +12,118 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type createCustomerOpts struct {
+	Name                         string
+	CustomID                     string
+	ChannelNames                 []string
+	DefaultChannel               string
+	ExpiryDuration               time.Duration
+	EnsureChannel                bool
+	IsAirgapEnabled              bool
+	IsGitopsSupported            bool
+	IsSnapshotSupported          bool
+	IsKotsInstallEnabled         bool
+	IsEmbeddedClusterEnabled     bool
+	IsGeoaxisSupported           bool
+	IsHelmVMDownloadEnabled      bool
+	IsIdentityServiceSupported   bool
+	IsInstallerSupportEnabled    bool
+	IsSupportBundleUploadEnabled bool
+	Email                        string
+	CustomerType                 string
+}
+
 func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Command {
+	opts := createCustomerOpts{}
+	var outputFormat string
+
 	cmd := &cobra.Command{
-		Use:           "create",
-		Short:         "create a customer",
-		Long:          `create a customer`,
-		RunE:          r.createCustomer,
+		Use:   "create",
+		Short: "Create a new customer for the current application",
+		Long: `Create a new customer for the current application with specified attributes.
+
+This command allows you to create a customer record with various properties such as name,
+custom ID, channels, license type, and feature flags. You can set expiration dates,
+enable or disable specific features, and assign the customer to one or more channels.
+
+The --app flag must be set to specify the target application.`,
+		Example: `  # Create a basic customer with a name and assigned to a channel
+  replicated customer create --app myapp --name "Acme Inc" --channel stable
+
+  # Create a customer with multiple channels and a custom ID
+  replicated customer create --app myapp --name "Beta Corp" --custom-id "BETA123" --channel beta --channel stable
+
+  # Create a paid customer with specific features enabled
+  replicated customer create --app myapp --name "Enterprise Ltd" --type paid --channel enterprise --airgap --snapshot
+
+  # Create a trial customer with an expiration date
+  replicated customer create --app myapp --name "Trial User" --type trial --channel stable --expires-in 720h
+
+  # Create a customer with all available options
+  replicated customer create --app myapp --name "Full Options Inc" --custom-id "FULL001" \
+    --channel stable --channel beta --default-channel stable --type paid \
+    --email "contact@fulloptions.com" --expires-in 8760h \
+    --airgap --snapshot --kots-install --embedded-cluster-download \
+    --support-bundle-upload --ensure-channel`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return r.createCustomer(cmd, opts, outputFormat)
+		},
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: true,
 	}
+
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVar(&r.args.customerCreateName, "name", "", "Name of the customer")
-	cmd.Flags().StringVar(&r.args.customerCreateCustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
-	cmd.Flags().StringArrayVar(&r.args.customerCreateChannel, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
-	cmd.Flags().StringVar(&r.args.customerCreateDefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
-	cmd.Flags().DurationVar(&r.args.customerCreateExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
-	cmd.Flags().BoolVar(&r.args.customerCreateEnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsInstallerSupportEnabled, "installer-support", false, "If set, the license will allow installer support.")
-	cmd.Flags().BoolVar(&r.args.customerCreateIsSupportBundleUploadEnabled, "support-bundle-upload", false, "If set, the license will allow uploading support bundles.")
-	cmd.Flags().StringVar(&r.args.customerCreateEmail, "email", "", "Email address of the customer that is to be created.")
-	cmd.Flags().StringVar(&r.args.customerCreateType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the customer")
+	cmd.Flags().StringVar(&opts.CustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
+	cmd.Flags().StringArrayVar(&opts.ChannelNames, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
+	cmd.Flags().StringVar(&opts.DefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
+	cmd.Flags().DurationVar(&opts.ExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
+	cmd.Flags().BoolVar(&opts.EnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
+	cmd.Flags().BoolVar(&opts.IsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
+	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
+	cmd.Flags().BoolVar(&opts.IsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
+	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
+	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
+	cmd.Flags().BoolVar(&opts.IsInstallerSupportEnabled, "installer-support", false, "If set, the license will allow installer support.")
+	cmd.Flags().BoolVar(&opts.IsSupportBundleUploadEnabled, "support-bundle-upload", false, "If set, the license will allow uploading support bundles.")
+	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be created.")
+	cmd.Flags().StringVar(&opts.CustomerType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
+	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.MarkFlagRequired("channel")
 
 	return cmd
 }
 
-func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
+func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, outputFormat string) (err error) {
 	defer func() {
 		printIfError(cmd, err)
 	}()
 
-	// all of the following validation occurs in the API also, but
-	// we want to fail fast if the user has provided invalid input
-	if err := validateCustomerType(r.args.customerCreateType); err != nil {
+	// Validation
+	if err := validateCustomerType(opts.CustomerType); err != nil {
 		return errors.Wrap(err, "validate customer type")
 	}
-	if r.args.customerCreateType == "test" && r.args.customerCreateExpiryDuration > time.Hour*48 {
+	if opts.CustomerType == "test" && opts.ExpiryDuration > time.Hour*48 {
 		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
 	}
-	if r.args.customerCreateType == "paid" {
-		r.args.customerCreateType = "prod"
+	if opts.CustomerType == "paid" {
+		opts.CustomerType = "prod"
 	}
 
 	channels := []kotsclient.CustomerChannel{}
 
 	foundDefaultChannel := false
-	for _, requestedChannel := range r.args.customerCreateChannel {
+	for _, requestedChannel := range opts.ChannelNames {
 		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
 			AppID:          r.appID,
 			AppType:        r.appType,
 			NameOrID:       requestedChannel,
 			Description:    "",
-			CreateIfAbsent: r.args.customerCreateEnsureChannel,
+			CreateIfAbsent: opts.EnsureChannel,
 		}
 
 		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
@@ -85,7 +135,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 			ID: channel.ID,
 		}
 
-		if r.args.customerCreateDefaultChannel == requestedChannel {
+		if opts.DefaultChannel == requestedChannel {
 			customerChannel.IsDefault = true
 			foundDefaultChannel = true
 		}
@@ -97,7 +147,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 		return errors.New("no channels found")
 	}
 
-	if r.args.customerUpdateDefaultChannel != "" && !foundDefaultChannel {
+	if opts.DefaultChannel != "" && !foundDefaultChannel {
 		return errors.New("default channel not found in specified channels")
 	}
 
@@ -110,32 +160,32 @@ func (r *runners) createCustomer(cmd *cobra.Command, _ []string) (err error) {
 		channels[0] = firstChannel
 	}
 
-	opts := kotsclient.CreateCustomerOpts{
-		Name:                             r.args.customerCreateName,
-		CustomID:                         r.args.customerCreateCustomID,
+	createOpts := kotsclient.CreateCustomerOpts{
+		Name:                             opts.Name,
+		CustomID:                         opts.CustomID,
 		Channels:                         channels,
 		AppID:                            r.appID,
-		ExpiresAtDuration:                r.args.customerCreateExpiryDuration,
-		IsAirgapEnabled:                  r.args.customerCreateIsAirgapEnabled,
-		IsGitopsSupported:                r.args.customerCreateIsGitopsSupported,
-		IsSnapshotSupported:              r.args.customerCreateIsSnapshotSupported,
-		IsKotsInstallEnabled:             r.args.customerCreateIsKotsInstallEnabled,
-		IsEmbeddedClusterDownloadEnabled: r.args.customerCreateIsEmbeddedClusterDownloadEnabled,
-		IsGeoaxisSupported:               r.args.customerCreateIsGeoaxisSupported,
-		IsHelmVMDownloadEnabled:          r.args.customerCreateIsHelmVMDownloadEnabled,
-		IsIdentityServiceSupported:       r.args.customerCreateIsIdentityServiceSupported,
-		IsInstallerSupportEnabled:        r.args.customerCreateIsInstallerSupportEnabled,
-		IsSupportBundleUploadEnabled:     r.args.customerCreateIsSupportBundleUploadEnabled,
-		LicenseType:                      r.args.customerCreateType,
-		Email:                            r.args.customerCreateEmail,
+		ExpiresAtDuration:                opts.ExpiryDuration,
+		IsAirgapEnabled:                  opts.IsAirgapEnabled,
+		IsGitopsSupported:                opts.IsGitopsSupported,
+		IsSnapshotSupported:              opts.IsSnapshotSupported,
+		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
+		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterEnabled,
+		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
+		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
+		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
+		IsInstallerSupportEnabled:        opts.IsInstallerSupportEnabled,
+		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
+		LicenseType:                      opts.CustomerType,
+		Email:                            opts.Email,
 	}
 
-	customer, err := r.api.CreateCustomer(r.appType, opts)
+	customer, err := r.api.CreateCustomer(r.appType, createOpts)
 	if err != nil {
 		return errors.Wrap(err, "create customer")
 	}
 
-	err = print.Customer(r.outputFormat, r.w, customer)
+	err = print.Customer(outputFormat, r.w, customer)
 	if err != nil {
 		return errors.Wrap(err, "print customer")
 	}

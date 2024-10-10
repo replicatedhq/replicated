@@ -71,46 +71,7 @@ type runnerArgs struct {
 	updateReleaseYamlFile string
 	updateReleaseChart    string
 
-	customerLsIncludeTest bool
-
-	customerArchiveNameOrId                        string
-	customerCreateName                             string
-	customerCreateCustomID                         string
-	customerCreateChannel                          []string
-	customerCreateDefaultChannel                   string
-	customerCreateEnsureChannel                    bool
-	customerCreateExpiryDuration                   time.Duration
-	customerCreateIsAirgapEnabled                  bool
-	customerCreateIsGitopsSupported                bool
-	customerCreateIsSnapshotSupported              bool
-	customerCreateIsKotsInstallEnabled             bool
-	customerCreateIsEmbeddedClusterDownloadEnabled bool
-	customerCreateIsGeoaxisSupported               bool
-	customerCreateIsHelmVMDownloadEnabled          bool
-	customerCreateIsIdentityServiceSupported       bool
-	customerCreateIsInstallerSupportEnabled        bool
-	customerCreateIsSupportBundleUploadEnabled     bool
-	customerCreateEmail                            string
-	customerCreateType                             string
-
-	customerUpdateID                               string
-	customerUpdateName                             string
-	customerUpdateCustomID                         string
-	customerUpdateChannel                          []string
-	customerUpdateDefaultChannel                   string
-	customerUpdateEnsureChannel                    bool
-	customerUpdateExpiryDuration                   time.Duration
-	customerUpdateIsAirgapEnabled                  bool
-	customerUpdateIsGitopsSupported                bool
-	customerUpdateIsSnapshotSupported              bool
-	customerUpdateIsKotsInstallEnabled             bool
-	customerUpdateIsEmbeddedClusterDownloadEnabled bool
-	customerUpdateIsGeoaxisSupported               bool
-	customerUpdateIsHelmVMDownloadEnabled          bool
-	customerUpdateIsIdentityServiceSupported       bool
-	customerUpdateIsSupportBundleUploadEnabled     bool
-	customerUpdateEmail                            string
-	customerUpdateType                             string
+	customerArchiveNameOrId string
 
 	instanceInspectCustomer string
 	instanceInspectInstance string
@@ -242,8 +203,6 @@ type runnerArgs struct {
 	apiPostBody  string
 	apiPutBody   string
 	apiPatchBody string
-
-	customerInspectCustomer string
 
 	compatibilityKubernetesDistribution string
 	compatibilityKubernetesVersion      string
