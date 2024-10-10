@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/version"
 
 	"github.com/replicatedhq/replicated/client"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
@@ -32,12 +33,19 @@ var appSlugOrID string
 var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
 var kurlDotSHOrigin = "https://kurl.sh"
+var cache *replicatedcache.Cache
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
 	if originFromEnv != "" {
 		platformOrigin = originFromEnv
 	}
+
+	c, err := replicatedcache.InitCache()
+	if err != nil {
+		panic(err)
+	}
+	cache = c
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -168,6 +176,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitAppCreate(appCmd)
 	runCmds.InitAppRm(appCmd)
 
+	defaultCmd := runCmds.InitDefaultCommand(runCmds.rootCmd)
+	runCmds.InitDefaultShowCommand(defaultCmd)
+	runCmds.InitDefaultSetCommand(defaultCmd)
+	runCmds.InitDefaultClearCommand(defaultCmd)
+	runCmds.InitDefaultClearAllCommand(defaultCmd)
+
 	enterprisePortalCmd := runCmds.InitEnterprisePortalCommand(runCmds.rootCmd)
 	enterprisePortalStatusCmd := runCmds.InitEnterprisePortalStatusCmd(enterprisePortalCmd)
 	runCmds.InitEnterprisePortalStatusGetCmd(enterprisePortalStatusCmd)
@@ -255,7 +269,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
-	preRunSetupAPIs := func(_ *cobra.Command, _ []string) error {
+	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			creds, err := credentials.GetCurrentCredentials()
 			if err != nil {
@@ -300,17 +314,40 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		}
 
 		if appSlugOrID == "" {
+			if cache.DefaultApp != "" {
+				appSlugOrID = cache.DefaultApp
+			}
+		}
+
+		if appSlugOrID == "" {
 			appSlugOrID = os.Getenv("REPLICATED_APP")
 		}
 
+		// attempt to load the app from cache
 		if appSlugOrID != "" {
+			app, err := cache.GetApp(appSlugOrID)
+			if err != nil {
+				return errors.Wrap(err, "get app from cache")
+			}
+
+			if app != nil {
+				runCmds.appType = app.Scheduler
+				runCmds.appID = app.ID
+				runCmds.appSlug = app.Slug
+			}
+		}
+
+		if appSlugOrID != "" && (runCmds.appType == "" || runCmds.appID == "" || runCmds.appSlug == "") {
 			app, appType, err := runCmds.api.GetAppType(appSlugOrID, true)
 			if err != nil {
 				return errors.Wrap(err, "get app type")
 			}
 
-			runCmds.appType = appType
+			if err := cache.SetApp(app); err != nil {
+				return errors.Wrap(err, "set app in cache")
+			}
 
+			runCmds.appType = appType
 			runCmds.appID = app.ID
 			runCmds.appSlug = app.Slug
 		}
@@ -327,6 +364,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	clusterPrepareCmd.PersistentPreRunE = prerunCommand
 	enterprisePortalCmd.PersistentPreRunE = prerunCommand
 
+	defaultCmd.PersistentPreRunE = preRunSetupAPIs
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
 	clusterCmd.PersistentPreRunE = preRunSetupAPIs
