@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"io/ioutil"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"io/ioutil"
 )
 
 func (r *runners) InitCustomersDownloadLicenseCommand(parent *cobra.Command) *cobra.Command {
@@ -29,7 +30,11 @@ func (r *runners) downloadCustomerLicense(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("missing or invalid parameters: output")
 	}
 
-	customer, err := r.api.GetCustomerByName(r.appType, r.appID, r.args.customerLicenseInspectCustomer)
+	if r.appType == "platform" {
+		return errors.New("downloading customer licenses is not supported for platform applications")
+	}
+
+	customer, err := r.api.GetCustomerByName(r.appID, r.args.customerLicenseInspectCustomer)
 	if err != nil {
 		return errors.Wrapf(err, "find customer %q", r.args.customerLicenseInspectCustomer)
 	}

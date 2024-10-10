@@ -46,6 +46,19 @@ func (c *VendorV3Client) ListCustomers(appID string) ([]types.Customer, error) {
 	return allCustomers, nil
 }
 
+type CustomerGetResponse struct {
+	Customer types.Customer `json:"customer"`
+}
+
+func (c *VendorV3Client) GetCustomerByID(customerID string) (*types.Customer, error) {
+	resp := CustomerGetResponse{}
+	err := c.DoJSON("GET", fmt.Sprintf("/v3/customer/%s", customerID), http.StatusOK, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp.Customer, nil
+}
+
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
 	allCustomers, err := c.ListCustomers(appID)
 	if err != nil {
