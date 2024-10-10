@@ -7,7 +7,7 @@ import (
 )
 
 type ListVMVersionsResponse struct {
-	Versions []*types.VMVersion `json:"cluster-versions"`
+	Versions []*types.VMVersion `json:"vm-versions"`
 }
 
 func (c *VendorV3Client) ListVMVersions() ([]*types.VMVersion, error) {
