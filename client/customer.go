@@ -60,6 +60,14 @@ func (c *Client) GetCustomerByNameOrId(appType string, appID, nameOrId string) (
 
 }
 
+func (c *Client) GetCustomerByID(customerID string) (*types.Customer, error) {
+	return c.KotsClient.GetCustomerByID(customerID)
+}
+
+func (c *Client) GetCustomerByName(app string, name string) (*types.Customer, error) {
+	return c.KotsClient.GetCustomerByName(app, name)
+}
+
 func (c *Client) DownloadLicense(appType string, appID string, customerID string) ([]byte, error) {
 	if appType == "platform" {
 		return nil, errors.New("downloading customer licenses is not supported for platform applications")
@@ -69,11 +77,6 @@ func (c *Client) DownloadLicense(appType string, appID string, customerID string
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) ArchiveCustomer(appType string, customerID string) error {
-	if appType == "platform" {
-		return errors.New("archiving customer is not supported for platform applications")
-	} else if appType == "kots" {
-		return c.KotsClient.ArchiveCustomer(customerID)
-	}
-	return errors.Errorf("unknown app type %q", appType)
+func (c *Client) ArchiveCustomer(customerID string) error {
+	return c.KotsClient.ArchiveCustomer(customerID)
 }
