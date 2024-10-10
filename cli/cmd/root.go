@@ -166,7 +166,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	appCmd := runCmds.InitAppCommand(runCmds.rootCmd)
 	runCmds.InitAppList(appCmd)
 	runCmds.InitAppCreate(appCmd)
-	runCmds.InitAppDelete(appCmd)
+	runCmds.InitAppRm(appCmd)
+
+	enterprisePortalCmd := runCmds.InitEnterprisePortalCommand(runCmds.rootCmd)
+	enterprisePortalStatusCmd := runCmds.InitEnterprisePortalStatusCmd(enterprisePortalCmd)
+	runCmds.InitEnterprisePortalStatusGetCmd(enterprisePortalStatusCmd)
+	runCmds.InitEnterprisePortalStatusUpdateCmd(enterprisePortalStatusCmd)
 
 	registryCmd := runCmds.InitRegistryCommand(runCmds.rootCmd)
 	runCmds.InitRegistryList(registryCmd)
@@ -320,6 +325,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	customersCmd.PersistentPreRunE = prerunCommand
 	instanceCmd.PersistentPreRunE = prerunCommand
 	clusterPrepareCmd.PersistentPreRunE = prerunCommand
+	enterprisePortalCmd.PersistentPreRunE = prerunCommand
 
 	appCmd.PersistentPreRunE = preRunSetupAPIs
 	registryCmd.PersistentPreRunE = preRunSetupAPIs

@@ -9,27 +9,49 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitAppDelete(parent *cobra.Command) *cobra.Command {
+type deleteAppOpts struct {
+	force bool
+}
+
+func (r *runners) InitAppRm(parent *cobra.Command) *cobra.Command {
+	opts := deleteAppOpts{}
+	var outputFormat string
+
 	cmd := &cobra.Command{
-		Use:          "delete NAME",
-		Short:        "delete kots apps",
-		Long:         `Delete a kots app. There is no undo for this operation, use with caution.`,
-		RunE:         r.deleteApp,
+		Use:     "rm NAME",
+		Aliases: []string{"delete"},
+		Short:   "Delete an application",
+		Long: `Delete an application from your Replicated account.
+
+This command allows you to permanently remove an application from your account.
+Once deleted, the application and all associated data will be irretrievably lost.
+
+Use this command with caution as there is no way to undo this operation.`,
+		Example: `  # Delete a app named "My App"
+  replicated app delete "My App"
+
+  # Delete an app and skip the confirmation prompt
+  replicated app delete "Another App" --force
+
+  # Delete an app and output the result in JSON format
+  replicated app delete "Custom App" --output json`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) != 1 {
+				return errors.New("missing app slug or id")
+			}
+			return r.deleteApp(cmd, args[0], opts, outputFormat)
+		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().BoolVarP(&r.args.deleteAppForceYes, "force", "f", false, "Skip confirmation prompt. There is no undo for this action.")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().BoolVarP(&opts.force, "force", "f", false, "Skip confirmation prompt. There is no undo for this action.")
+	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	return cmd
 }
 
-func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
+func (r *runners) deleteApp(cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
 	log := logger.NewLogger(r.w)
-	if len(args) != 1 {
-		return errors.New("missing app slug or id")
-	}
-	appName := args[0]
 
 	log.ActionWithSpinner("Fetching App")
 	app, err := r.kotsAPI.GetApp(appName, true)
@@ -41,12 +63,12 @@ func (r *runners) deleteApp(_ *cobra.Command, args []string) error {
 
 	apps := []types.AppAndChannels{{App: app}}
 
-	err = print.Apps(r.outputFormat, r.w, apps)
+	err = print.Apps(outputFormat, r.w, apps)
 	if err != nil {
 		return errors.Wrap(err, "print app")
 	}
 
-	if !r.args.deleteAppForceYes {
+	if !opts.force {
 		answer, err := promptConfirmDelete()
 		if err != nil {
 			return errors.Wrap(err, "confirm deletion")
