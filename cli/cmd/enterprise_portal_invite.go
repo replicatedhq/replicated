@@ -61,12 +61,12 @@ func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, custo
 	}
 
 	for _, emailAddress := range emailAddresses {
-		err := r.kotsAPI.SendEnterprisePortalInvite(appID, c.ID, emailAddress)
+		url, err := r.kotsAPI.SendEnterprisePortalInvite(appID, c.ID, emailAddress)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("Sent invitation to %s\n", emailAddress)
+		fmt.Printf("%s: %s\n", emailAddress, url)
 	}
 	return nil
 }

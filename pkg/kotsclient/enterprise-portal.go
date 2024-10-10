@@ -34,6 +34,7 @@ func (c *VendorV3Client) UpdateEnterprisePortalStatus(appID string, status strin
 }
 
 type InviteEnterprisePortalResponse struct {
+	URL string `json:"url"`
 }
 
 type InviteEnterprisePortalRequest struct {
@@ -41,7 +42,7 @@ type InviteEnterprisePortalRequest struct {
 	EmailAddress string `json:"email_address"`
 }
 
-func (c *VendorV3Client) SendEnterprisePortalInvite(appID string, customerID string, emailAddress string) error {
+func (c *VendorV3Client) SendEnterprisePortalInvite(appID string, customerID string, emailAddress string) (string, error) {
 	var response = InviteEnterprisePortalResponse{}
 
 	var request = InviteEnterprisePortalRequest{
@@ -51,10 +52,10 @@ func (c *VendorV3Client) SendEnterprisePortalInvite(appID string, customerID str
 
 	err := c.DoJSON("POST", fmt.Sprintf("/v3/app/%s/enterprise-portal/customer-user", appID), http.StatusCreated, request, &response)
 	if err != nil {
-		return errors.Wrap(err, "send enterprise portal invite")
+		return "", errors.Wrap(err, "send enterprise portal invite")
 	}
 
-	return nil
+	return response.URL, nil
 }
 
 type EnterprisePortalUser struct {
