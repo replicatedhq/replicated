@@ -71,24 +71,24 @@ func (r *runners) gitSHABranch() (sha string, branch string, dirty bool, err err
 	rev := "HEAD"
 	repository, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
 	if err != nil {
-		return "", "", false, errors.Wrapf(err, "open %q", path)
+		return "", "", false, fmt.Errorf("git open '%q' failed: %w", path, err)
 	}
 	h, err := repository.ResolveRevision(plumbing.Revision(rev))
 	if err != nil {
-		return "", "", false, errors.Wrapf(err, "resolve revision")
+		return "", "", false, fmt.Errorf("git resolve revision '%q' failed: %w", rev, err)
 	}
 	head, err := repository.Head()
 	if err != nil {
-		return "", "", false, errors.Wrapf(err, "resolve HEAD")
+		return "", "", false, fmt.Errorf("git resolve HEAD failed: %w", err)
 	}
 
 	worktree, err := repository.Worktree()
 	if err != nil {
-		return "", "", false, errors.Wrap(err, "get git worktree")
+		return "", "", false, fmt.Errorf("git get worktree failed: %w", err)
 	}
 	status, err := worktree.Status()
 	if err != nil {
-		return "", "", false, errors.Wrap(err, "get git status")
+		return "", "", false, fmt.Errorf("git get status failed: %w", err)
 	}
 
 	branchName := head.Name().Short()
@@ -109,7 +109,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	rev, branch, isDirty, err := r.gitSHABranch()
 	if err != nil {
-		return errors.Wrapf(err, "get git properties")
+		return err
 	}
 	dirtyStatus := ""
 	if isDirty {
