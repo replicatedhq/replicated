@@ -41,6 +41,10 @@ func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, custo
 		c = cc
 	}
 
+	if appID == "" {
+		return errors.Errorf("app required")
+	}
+
 	if c == nil {
 		// try to get the customer as if we have a name
 		cc, err := r.api.GetCustomerByName(r.appID, customer)
@@ -57,7 +61,7 @@ func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, custo
 	}
 
 	for _, emailAddress := range emailAddresses {
-		err := r.kotsAPI.SendEnterprisePortalInvite(r.appID, c.ID, emailAddress)
+		err := r.kotsAPI.SendEnterprisePortalInvite(appID, c.ID, emailAddress)
 		if err != nil {
 			return err
 		}
