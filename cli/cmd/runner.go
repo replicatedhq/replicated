@@ -71,8 +71,6 @@ type runnerArgs struct {
 	updateReleaseYamlFile string
 	updateReleaseChart    string
 
-	customerArchiveNameOrId string
-
 	instanceInspectCustomer string
 	instanceInspectInstance string
 	instanceListCustomer    string
@@ -86,15 +84,12 @@ type runnerArgs struct {
 	createInstallerPromote              string
 	createInstallerPromoteEnsureChannel bool
 
-	customerLicenseInspectCustomer  string
-	customerLicenseInspectOutput    string
 	createReleaseAutoDefaults       bool
 	createReleaseAutoDefaultsAccept bool
 
 	releaseDownloadDest               string
 	createInstallerAutoDefaults       bool
 	createInstallerAutoDefaultsAccept bool
-	deleteAppForceYes                 bool
 
 	addRegistrySkipValidation             bool
 	addRegistryAuthType                   string
