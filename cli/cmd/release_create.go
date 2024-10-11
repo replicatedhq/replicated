@@ -109,7 +109,7 @@ func (r *runners) setKOTSDefaultReleaseParams() error {
 
 	rev, branch, isDirty, err := r.gitSHABranch()
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "get git properties")
 	}
 	dirtyStatus := ""
 	if isDirty {
