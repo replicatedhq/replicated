@@ -22,7 +22,7 @@ type CreateVMRequest struct {
 }
 
 type CreateVMResponse struct {
-	VM                     *types.VM         `json:"vm"`
+	VMs                    []*types.VM       `json:"vms"`
 	Errors                 []string          `json:"errors"`
 	SupportedDistributions map[string]string `json:"supported_distributions"`
 }
@@ -60,7 +60,7 @@ type VMValidationError struct {
 	SupportedDistributions []*types.VMVersion `json:"supported_distributions"`
 }
 
-func (c *VendorV3Client) CreateVM(opts CreateVMOpts) (*types.VM, *CreateVMErrorError, error) {
+func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErrorError, error) {
 	req := CreateVMRequest{
 		Name:         opts.Name,
 		Distribution: opts.Distribution,
@@ -78,7 +78,7 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) (*types.VM, *CreateVMErrorE
 	return c.doCreateVMRequest(req)
 }
 
-func (c *VendorV3Client) doCreateVMRequest(req CreateVMRequest) (*types.VM, *CreateVMErrorError, error) {
+func (c *VendorV3Client) doCreateVMRequest(req CreateVMRequest) ([]*types.VM, *CreateVMErrorError, error) {
 	resp := CreateVMResponse{}
 	endpoint := "/v3/vm"
 	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
@@ -98,10 +98,10 @@ func (c *VendorV3Client) doCreateVMRequest(req CreateVMRequest) (*types.VM, *Cre
 		return nil, nil, err
 	}
 
-	return resp.VM, nil, nil
+	return resp.VMs, nil, nil
 }
 
-func (c *VendorV3Client) doCreateVMDryRunRequest(req CreateVMRequest) (*types.VM, *CreateVMErrorError, error) {
+func (c *VendorV3Client) doCreateVMDryRunRequest(req CreateVMRequest) ([]*types.VM, *CreateVMErrorError, error) {
 	resp := CreateVMDryRunResponse{}
 	endpoint := "/v3/vm?dry-run=true"
 	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
@@ -112,10 +112,12 @@ func (c *VendorV3Client) doCreateVMDryRunRequest(req CreateVMRequest) (*types.VM
 	if resp.Error.Message != "" {
 		return nil, &resp.Error, nil
 	}
-	cl := &types.VM{
-		EstimatedCost: *resp.TotalCost,
-		TTL:           *resp.TTL,
+	vms := []*types.VM{
+		{
+			EstimatedCost: *resp.TotalCost,
+			TTL:           *resp.TTL,
+		},
 	}
 
-	return cl, nil, nil
+	return vms, nil, nil
 }

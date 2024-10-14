@@ -30,8 +30,8 @@ The command also supports a "--wait" flag to wait for the VMs to be ready before
 		Example: `  # Create a single Ubuntu 20.04 VM
   replicated vm create --distribution ubuntu --version 20.04
 
-  # Create 3 RHEL 9 VMs
-  replicated vm create --distribution ubuntu --version 20.04 --count 3
+  # Create 3 Ubuntu 22.04 VMs
+  replicated vm create --distribution ubuntu --version 22.04 --count 3
 
   # Create 5 Ubuntu VMs with a custom instance type and disk size
   replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
@@ -83,7 +83,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		DryRun:       r.args.createVMDryRun,
 	}
 
-	vm, err := r.createAndWaitForVM(opts)
+	vms, err := r.createAndWaitForVM(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrVMWaitDurationExceeded {
 			defer func() {
@@ -95,7 +95,11 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 	}
 
 	if opts.DryRun {
-		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(vm.EstimatedCost), vm.TTL)
+		// This should not happen, as count should be > 0
+		if len(vms) == 0 {
+			return errors.New("no vm will be created")
+		}
+		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(vms[0].EstimatedCost), vms[0].TTL)
 		_, err := fmt.Fprintln(r.w, estimatedCostMessage)
 		if err != nil {
 			return err
@@ -104,11 +108,11 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.VM(r.outputFormat, r.w, vm)
+	return print.VMs(r.outputFormat, r.w, vms, true)
 }
 
-func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) (*types.VM, error) {
-	vm, ve, err := r.kotsAPI.CreateVM(opts)
+func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM, error) {
+	vms, ve, err := r.kotsAPI.CreateVM(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -127,36 +131,51 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) (*types.VM, e
 	}
 
 	if opts.DryRun {
-		return vm, nil
+		return vms, nil
 	}
 
 	// if the wait flag was provided, we poll the api until the vm is ready, or a timeout
 	if r.args.createVMWaitDuration > 0 {
-		return waitForVM(r.kotsAPI, vm.ID, r.args.createVMWaitDuration)
+		return waitForVMs(r.kotsAPI, vms, r.args.createVMWaitDuration)
 	}
 
-	return vm, nil
+	return vms, nil
 }
 
-func waitForVM(kotsRestClient *kotsclient.VendorV3Client, id string, duration time.Duration) (*types.VM, error) {
+func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, duration time.Duration) ([]*types.VM, error) {
 	start := time.Now()
+	runningVMs := map[string]*types.VM{}
 	for {
-		vm, err := kotsRestClient.GetVM(id)
-		if err != nil {
-			return nil, errors.Wrap(err, "get vm")
-		}
+		for _, vm := range vms {
+			v, err := kotsRestClient.GetVM(vm.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "get vm")
+			}
 
-		if vm.Status == types.VMStatus(types.VMStatusRunning) {
-			return vm, nil
-		} else if vm.Status == types.VMStatus(types.VMStatusError) {
-			return nil, errors.New("vm failed to provision")
-		} else {
-			if time.Now().After(start.Add(duration)) {
-				// In case of timeout, return the vm and a WaitDurationExceeded error
-				return vm, ErrWaitDurationExceeded
+			if v.Status == types.VMStatus(types.VMStatusRunning) {
+				runningVMs[v.ID] = v
+				if len(runningVMs) == len(vms) {
+					return mapToSlice(runningVMs), nil
+				}
+			} else if vm.Status == types.VMStatus(types.VMStatusError) {
+				return nil, errors.New("vm failed to provision")
+			} else {
+				if time.Now().After(start.Add(duration)) {
+					// In case of timeout, return the vm and a WaitDurationExceeded error
+					return mapToSlice(runningVMs), ErrWaitDurationExceeded
+				}
 			}
 		}
 
 		time.Sleep(time.Second * 5)
 	}
+}
+
+// Convert map of VMs to slice of VMs
+func mapToSlice(vms map[string]*types.VM) []*types.VM {
+	var slice []*types.VM
+	for _, v := range vms {
+		slice = append(slice, v)
+	}
+	return slice
 }
