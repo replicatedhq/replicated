@@ -33,22 +33,13 @@ You must specify the customer using either their name or ID with the --customer 
   # Download license for a customer in a specific app (if you have multiple apps)
   replicated customer download-license --app myapp --customer "Acme Inc" --output license.yaml`,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
-
-			if customer, err = cmd.Flags().GetString("customer"); err != nil {
-				return err
-			}
-
-			if output, err = cmd.Flags().GetString("output"); err != nil {
-				return err
-			}
-
 			return r.downloadCustomerLicense(cmd, customer, output)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().String("customer", "", "The Customer Name or ID")
-	cmd.Flags().StringP("output", "o", "-", "Path to output license to. Defaults to stdout")
+	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID")
+	cmd.Flags().StringVarP(&output, "output", "o", "-", "Path to output license to. Defaults to stdout")
 	cmd.MarkFlagRequired("customer")
 
 	return cmd
