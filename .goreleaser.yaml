@@ -13,6 +13,7 @@ brews:
     owner: replicatedhq
     branch: main
   install: bin.install "replicated"
+  directory: HomebrewFormula
 universal_binaries:
 - ids:
   - cli
