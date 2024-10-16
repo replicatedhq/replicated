@@ -33,22 +33,6 @@ define LDFLAGS
 "
 endef
 
-.PHONY: docker
-docker:
-	docker build -t replicatedhq.replicated .
-
-.PHONY: shell
-shell:
-	docker run --rm -it \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicatedhq.replicated
-
-.PHONY: deps
-deps:
-	docker run --rm \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicatedhq.replicated glide install
-
 .PHONY: test
 test:
 	# pacts and unit
@@ -143,3 +127,7 @@ build:
 .PHONY: docs
 docs:
 	go run ./docs/
+
+.PHONE: release
+release:
+	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT --version $(version)

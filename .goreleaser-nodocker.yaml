@@ -1,0 +1,53 @@
+version: 2
+
+project_name: cli
+release:
+  github:
+    name: replicated
+    owner: replicatedhq
+brews:
+- homepage: https://docs.replicated.com/reference/replicated-cli-installing
+  description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
+  repository:
+    name: replicatedhq/replicated
+    owner: replicatedhq
+    branch: main
+  install: bin.install "replicated"
+  directory: HomebrewFormula
+universal_binaries:
+- ids:
+  - cli
+  replace: true
+  name_template: replicated
+builds:
+- goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+  - "386"
+  env:
+   - CGO_ENABLED=0
+  main: cli/main.go
+  ldflags: -s -w
+    -X github.com/replicatedhq/replicated/pkg/version.version={{.Version}}
+    -X github.com/replicatedhq/replicated/pkg/version.gitSHA={{.FullCommit}}
+    -X github.com/replicatedhq/replicated/pkg/version.buildTime={{.Date}}
+    -extldflags "-static"
+  flags: -tags netgo -installsuffix netgo
+  binary: replicated
+  hooks: {}
+archives:
+- format: tar.gz
+  name_template: "{{ .Binary }}_{{.Version}}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+  files:
+  - licence*
+  - LICENCE*
+  - license*
+  - LICENSE*
+  - readme*
+  - README*
+  - changelog*
+  - CHANGELOG*
+snapshot:
+  version_template: SNAPSHOT-{{ .Commit }}
