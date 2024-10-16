@@ -1,3 +1,5 @@
+version: 2
+
 project_name: cli
 release:
   github:
@@ -6,11 +8,12 @@ release:
 brews:
 - homepage: https://docs.replicated.com/reference/replicated-cli-installing
   description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
-  tap:
+  repository:
+    name: replicatedhq/replicated
     owner: replicatedhq
-    name: homebrew-replicated
-  folder: HomebrewFormula
+    branch: main
   install: bin.install "replicated"
+  directory: HomebrewFormula
 universal_binaries:
 - ids:
   - cli
@@ -47,9 +50,7 @@ archives:
   - changelog*
   - CHANGELOG*
 snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
-build:
-  hooks: {}
+  version_template: SNAPSHOT-{{ .Commit }}
 dockers:
   - dockerfile: deploy/Dockerfile
     image_templates:
