@@ -59,9 +59,6 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().MarkHidden("yaml-file")
 	cmd.Flags().MarkHidden("yaml")
 
-	// deprecated
-	cmd.Flags().MarkHidden("chart")
-
 	cmd.RunE = r.releaseCreate
 	return nil
 }
@@ -245,8 +242,6 @@ Prepared to create release with defaults:
 	}
 
 	if r.args.createReleaseChart != "" {
-		printChartDeprecationWarning()
-
 		fmt.Fprint(r.w, "You are creating a release that will only be installable with the helm CLI.\n"+
 			"For more information, see \n"+
 			"https://docs.replicated.com/vendor/helm-install#about-helm-installations-with-replicated\n")

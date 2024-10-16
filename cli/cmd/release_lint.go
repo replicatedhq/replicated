@@ -37,9 +37,6 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
-	// deprecated
-	cmd.Flags().MarkHidden("chart")
-
 	cmd.RunE = r.releaseLint
 }
 
@@ -63,7 +60,6 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		isBuildersRelease = isHelmChartsOnly
 		contentType = "application/tar"
 	} else if r.args.lintReleaseChart != "" {
-		printChartDeprecationWarning()
 		data, err := os.ReadFile(r.args.lintReleaseChart)
 		if err != nil {
 			return errors.Wrap(err, "failed to read chart file")
