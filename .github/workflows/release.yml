@@ -48,9 +48,9 @@ jobs:
           DOCKERHUB_DOCKER_USER: ${{ secrets.DOCKERHUB_USER }}
           DOCKERHUB_DOCKER_PASS: ${{ secrets.DOCKERHUB_PASSWORD }}
       - uses: replicatedhq/action-install-pact@v1
-      - run: make can-i-deploy 
+      - run: make can-i-deploy
       - name: run goreleaser
-        run: curl -sL https://git.io/goreleaser | VERSION=v1.6.1 bash
+        run: curl -sL https://git.io/goreleaser | VERSION=v2.3.2 bash
         env:
           GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
       - run: make record-release
