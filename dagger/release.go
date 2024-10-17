@@ -55,8 +55,15 @@ func (r *Replicated) Release(
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithExec([]string{"git", "remote", "add", "tag", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
 		WithExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}).
-		WithExec([]string{"git", "push", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})
-	if _, err := tag.Stdout(ctx); err != nil {
+		WithExec([]string{"git", "push", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}).
+		File(fmt.Sprintf("/go/src/github.com/replicatedhq/replicated/.git/refs/tags/%s", fmt.Sprintf("v%d.%d.%d", major, minor, patch)))
+	_, err = tag.Export(ctx, "/go/src/github.com/replicatedhq/replicated/TAG")
+	if err != nil {
+		return err
+	}
+
+	alpine := dag.Container().From("alpine:latest").Terminal()
+	if _, err := alpine.Stdout(ctx); err != nil {
 		return err
 	}
 
