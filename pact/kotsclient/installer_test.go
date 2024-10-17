@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,7 @@ func Test_CreateInstaller(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "repl-cli-create-installer-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		installerSpec, err := client.CreateInstaller("repl-cli-create-installer-app", testInstallerYAML)
 		assert.NoError(t, err)

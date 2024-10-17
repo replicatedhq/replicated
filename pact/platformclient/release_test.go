@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	swagger "github.com/replicatedhq/replicated/gen/go/v1"
+	realplatformclient "github.com/replicatedhq/replicated/pkg/platformclient"
 )
 
 func Test_CreateRelease(t *testing.T) {
@@ -19,7 +20,7 @@ func Test_CreateRelease(t *testing.T) {
 		token := "cli-create-release-auth"
 
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		client := NewHTTPClient(u, token)
+		client := realplatformclient.NewHTTPClient(u, token)
 
 		release, err := client.CreateRelease(appId, "")
 		assert.Nil(t, err)
@@ -111,7 +112,7 @@ func Test_GetRelease(t *testing.T) {
 		token := "cli-create-release-auth"
 
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		client := NewHTTPClient(u, token)
+		client := realplatformclient.NewHTTPClient(u, token)
 
 		release, err := client.GetRelease(appId, 2)
 		assert.Nil(t, err)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ func Test_CreateChannel(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-create-channel-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		channel, err := client.CreateChannel("replicated-cli-create-channel-app", "New Channel", "Description")
 		assert.Nil(t, err)
@@ -64,7 +65,7 @@ func Test_ListChannels(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-channels-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		channels, err := client.ListChannels("replicated-cli-list-channels-app", "")
 		assert.Nil(t, err)
@@ -111,7 +112,7 @@ func Test_GetChannel(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-get-channel-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		channel, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable")
 		assert.Nil(t, err)
@@ -153,7 +154,7 @@ func Test_RemoveChannels(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-rm-channel-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		err = client.ArchiveChannel("replicated-cli-rm-channel-app", "replicated-cli-rm-channel-beta")
 		assert.Nil(t, err)
@@ -216,7 +217,7 @@ func Test_AddRemoveSemver(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-semver-channel-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		channel := types.Channel{
 			Name: "Unstable",

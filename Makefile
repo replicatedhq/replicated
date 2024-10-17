@@ -33,32 +33,24 @@ define LDFLAGS
 "
 endef
 
-.PHONY: docker
-docker:
-	docker build -t replicatedhq.replicated .
+.PHONY: test-unit
+test-unit:
+	go test -v `go list ./... | grep -v /pact` -tags "$(BUILDTAGS)"
 
-.PHONY: shell
-shell:
-	docker run --rm -it \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicatedhq.replicated
+.PHONY: test-pact
+test-pact:
+	go test -v ./pact/... -tags "$(BUILDTAGS)"
 
-.PHONY: deps
-deps:
-	docker run --rm \
-		--volume `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicatedhq.replicated glide install
-
-.PHONY: test
-test:
-	# pacts and unit
-	go test -tags "$(BUILDTAGS)" -v ./...
-
+.PNONY: test-e2e
+test-e2e:
 	# integration and e2e
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicated-cli-test \
+		replicated-cli-test
+
+.PHONY: test
+test: test-unit test-pact test-e2e
 
 .PHONY: publish-pact
 publish-pact:
@@ -143,3 +135,7 @@ build:
 .PHONY: docs
 docs:
 	go run ./docs/
+
+.PHONE: release
+release:
+	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT --version $(version)
