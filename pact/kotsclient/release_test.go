@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,7 +15,7 @@ func Test_CreateGetRelease(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-kots-release-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		releaseInfo, err := client.CreateRelease("replicated-cli-kots-release-app", testMultiYAML)
 		assert.NoError(t, err)
@@ -84,7 +85,7 @@ func Test_ListReleases(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-releases-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		releases, err := client.ListReleases("replicated-cli-list-releases-app")
 		assert.NoError(t, err)
@@ -158,7 +159,7 @@ func Test_UpdateRelease(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-update-release-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		err = client.UpdateRelease("replicated-cli-update-release-app", 1, testMultiYAML)
 		assert.NoError(t, err)
@@ -194,7 +195,7 @@ func Test_PromoteRelease(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-promote-release-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		err = client.PromoteRelease("replicated-cli-promote-release-app", 1, "v0.0.1", "releasenotes", false, "replicated-cli-promote-release-unstable")
 		assert.NoError(t, err)

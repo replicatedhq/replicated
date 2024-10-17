@@ -33,16 +33,24 @@ define LDFLAGS
 "
 endef
 
-.PHONY: test
-test:
-	# pacts and unit
-	go test -tags "$(BUILDTAGS)" -v ./...
+.PHONY: test-unit
+test-unit:
+	go test -v `go list ./... | grep -v /pact` -tags "$(BUILDTAGS)"
 
+.PHONY: test-pact
+test-pact:
+	go test -v ./pact/... -tags "$(BUILDTAGS)"
+
+.PNONY: test-e2e
+test-e2e:
 	# integration and e2e
 	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
 	docker run --rm --name replicated-cli-tests \
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicated-cli-test \
+		replicated-cli-test
+
+.PHONY: test
+test: test-unit test-pact test-e2e
 
 .PHONY: publish-pact
 publish-pact:

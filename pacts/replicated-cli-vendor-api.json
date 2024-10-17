@@ -286,14 +286,13 @@
       "description": "A request to add semver to kots app channel",
       "providerState": "Add Semver to a KOTS app channel",
       "request": {
-        "method": "PUT",
+        "method": "PATCH",
         "path": "/v3/app/replicated-cli-semver-channel-app/channel/replicated-cli-semver-channel-unstable",
         "headers": {
           "Authorization": "replicated-cli-semver-channel-token",
           "Content-Type": "application/json"
         },
         "body": {
-          "name": "Unstable",
           "semverRequired": true
         }
       },
@@ -700,6 +699,7 @@
           ],
           "ignoreWarnings": false,
           "isRequired": false,
+          "omitDetailsInResponse": true,
           "releaseNotes": "releasenotes",
           "versionLabel": "v0.0.1"
         }
