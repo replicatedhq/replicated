@@ -53,7 +53,7 @@ func (r *runners) listApps(cmd *cobra.Command, args []string, outputFormat strin
 	}
 
 	if len(args) == 0 {
-		return print.Apps(r.outputFormat, r.w, kotsApps)
+		return print.Apps(outputFormat, r.w, kotsApps)
 	}
 
 	appSearch := args[0]
