@@ -28,7 +28,7 @@ func (s UpdateChecker) GetUpdateInfo() (*UpdateInfo, error) {
 
 	updateInfo, err := UpdateInfoFromVersions(s.version, latestVersion)
 	if err != nil {
-		return nil, errors.Wrap(err, "update info from versions")
+		return nil, nil
 	}
 	if updateInfo == nil {
 		return nil, nil

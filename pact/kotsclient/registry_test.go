@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -14,9 +15,9 @@ func Test_CreateRegistryDockerHubPassword(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "dockerhub",
 			Endpoint:       "index.docker.io",
 			AuthType:       "password",
@@ -74,9 +75,9 @@ func Test_CreateRegistryDockerHubAccessToken(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "dockerhub",
 			Endpoint:       "index.docker.io",
 			AuthType:       "token",
@@ -134,9 +135,9 @@ func Test_CreateRegistryECR(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "ecr",
 			Endpoint:       "0000000000.dkr.ecr.us-east-2.amazonaws.com",
 			AuthType:       "accesskey",
@@ -194,9 +195,9 @@ func Test_CreateRegistryGCR(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gcr",
 			Endpoint:       "gcr.io",
 			AuthType:       "serviceaccount",
@@ -254,9 +255,9 @@ func Test_CreateRegistryGARServiceAccount(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gar",
 			Endpoint:       "pkg.dev",
 			AuthType:       "serviceaccount",
@@ -314,9 +315,9 @@ func Test_CreateRegistryGARAccessToken(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-add-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		req := AddKOTSRegistryRequest{
+		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gar",
 			Endpoint:       "pkg.dev",
 			AuthType:       "token",
@@ -374,7 +375,7 @@ func Test_RemoveRegistryDockerHubPassword(t *testing.T) {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 		api := platformclient.NewHTTPClient(u, "replicated-cli-rm-registry-token")
-		client := VendorV3Client{HTTPClient: *api}
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		err = client.RemoveKOTSRegistry("index.docker.io")
 		assert.Nil(t, err)

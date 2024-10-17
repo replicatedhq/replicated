@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pact-foundation/pact-go/dsl"
+	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,7 +23,7 @@ func Test_ClusterList(t *testing.T) {
 				u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 				api := platformclient.NewHTTPClient(u, "replicated-cli-tokens-sa-token")
-				client := VendorV3Client{HTTPClient: *api}
+				client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 				_, err = client.ListClusters(true, nil, nil)
 				assert.Nil(t, err)
@@ -37,7 +38,7 @@ func Test_ClusterList(t *testing.T) {
 				u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
 
 				api := platformclient.NewHTTPClient(u, "replicated-cli-tokens-personal-token")
-				client := VendorV3Client{HTTPClient: *api}
+				client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 				_, err = client.ListClusters(true, nil, nil)
 				assert.Nil(t, err)
