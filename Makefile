@@ -138,4 +138,4 @@ docs:
 
 .PHONE: release
 release:
-	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT --version $(version)
+	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT_PRODUCTION --version $(version)

@@ -26,7 +26,7 @@ func (r *Replicated) Release(
 	// +default=false
 	clean bool,
 
-	onePasswordServiceAccount *dagger.Secret,
+	onePasswordServiceAccountProduction *dagger.Secret,
 ) error {
 	gitTreeOK, err := checkGitTree(ctx, source)
 	if err != nil {
@@ -67,8 +67,8 @@ func (r *Replicated) Release(
 		WithFile("/replicated", replicatedBinary)
 
 	username, err := dag.Onepassword().FindSecret(
-		onePasswordServiceAccount,
-		"Developer Automation",
+		onePasswordServiceAccountProduction,
+		"Developer Automation Production",
 		"Docker Hub Release Account",
 		"username",
 	).Plaintext(ctx)
@@ -76,8 +76,8 @@ func (r *Replicated) Release(
 		panic(err)
 	}
 	password := dag.Onepassword().FindSecret(
-		onePasswordServiceAccount,
-		"Developer Automation",
+		onePasswordServiceAccountProduction,
+		"Developer Automation Production",
 		"Docker Hub Release Account",
 		"password",
 	)
