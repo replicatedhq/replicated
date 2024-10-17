@@ -8,6 +8,8 @@ BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclud
 
 export GO111MODULE=on
 
+export CGO_ENABLED=0
+
 GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
 ifneq "$(GIT_TREE)" ""
 define GIT_UPDATE_INDEX_CMD
@@ -138,4 +140,8 @@ docs:
 
 .PHONE: release
 release:
-	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT_PRODUCTION --version $(version)
+	dagger call release \
+		--one-password-service-account-production env:OP_SERVICE_ACCOUNT_PRODUCTION \
+		--version $(version) \
+		--github-token env:GITHUB_TOKEN \
+		--progress plain
