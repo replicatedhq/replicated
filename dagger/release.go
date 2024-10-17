@@ -27,13 +27,15 @@ func (r *Replicated) Release(
 	clean bool,
 
 	onePasswordServiceAccountProduction *dagger.Secret,
+
+	githubToken *dagger.Secret,
 ) error {
 	gitTreeOK, err := checkGitTree(ctx, source)
 	if err != nil {
 		return err
 	}
 	if !gitTreeOK {
-		return fmt.Errorf("git tree is not clean")
+		return fmt.Errorf("Your git tree is not clean. You cannot release what's not commited.")
 	}
 
 	major, minor, patch, err := parseVersion(ctx, version)
@@ -41,17 +43,34 @@ func (r *Replicated) Release(
 		return err
 	}
 
-	_ = dag.Container().
+	fmt.Printf("Releasing as version %d.%d.%d\n", major, minor, patch)
+
+	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
+	if err != nil {
+		return err
+	}
+	tag := dag.Container().
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
+		WithExec([]string{"git", "remote", "add", "tag", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
 		WithExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}).
-		WithExec([]string{"git", "push", "origin", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})
+		WithExec([]string{"git", "push", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})
+	if _, err := tag.Stdout(ctx); err != nil {
+		return err
+	}
+
+	goModCache := dag.CacheVolume("replicated-go-mod-122")
+	goBuildCache := dag.CacheVolume("replicated-go-build-121")
 
 	replicatedBinary := dag.Container().
 		From("golang:1.22").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
+		WithMountedCache("/go/pkg/mod", goModCache).
+		WithEnvVariable("GOMODCACHE", "/go/pkg/mod").
+		WithMountedCache("/go/build-cache", goBuildCache).
+		WithEnvVariable("GOCACHE", "/go/build-cache").
 		WithExec([]string{"make", "build"}).
 		File("/go/src/github.com/replicatedhq/replicated/bin/replicated")
 
@@ -65,6 +84,10 @@ func (r *Replicated) Release(
 		WithWorkdir("/out").
 		WithEntrypoint([]string{"/replicated"}).
 		WithFile("/replicated", replicatedBinary)
+	_, err = dockerContainer.Stdout(ctx)
+	if err != nil {
+		return err
+	}
 
 	username, err := dag.Onepassword().FindSecret(
 		onePasswordServiceAccountProduction,
@@ -96,10 +119,14 @@ func (r *Replicated) Release(
 		panic(err)
 	}
 
+	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
+		Version: goreleaserVersion,
+	}).Ctr().WithSecretVariable("GITHUB_TOKEN", githubToken)
 	if snapshot {
 		_, err := dag.
 			Goreleaser(dagger.GoreleaserOpts{
 				Version: goreleaserVersion,
+				Ctr:     goreleaserContainer,
 			}).
 			WithSource(source).
 			Snapshot(ctx, dagger.GoreleaserSnapshotOpts{
@@ -112,6 +139,7 @@ func (r *Replicated) Release(
 		_, err := dag.
 			Goreleaser(dagger.GoreleaserOpts{
 				Version: goreleaserVersion,
+				Ctr:     goreleaserContainer,
 			}).
 			WithSource(source).
 			Release(ctx, dagger.GoreleaserReleaseOpts{
