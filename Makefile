@@ -7,6 +7,7 @@ DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
 
 export GO111MODULE=on
+export CGO_ENABLED=0
 
 GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
 ifneq "$(GIT_TREE)" ""
