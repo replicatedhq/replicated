@@ -111,7 +111,9 @@ func (r *Replicated) Release(
 		With(CacheBustingExec([]string{"make", "build"})).
 		File("/go/src/github.com/replicatedhq/replicated/bin/replicated")
 
-	dockerContainer := dag.Container().
+	dockerContainer := dag.Container(dagger.ContainerOpts{
+		Platform: "linux/amd64",
+	}).
 		From("alpine:latest").
 		WithExec([]string{"apk", "add", "--no-cache", "ca-certificates", "curl", "git", "nodejs", "npm"}).
 		WithExec([]string{"update-ca-certificates"}).

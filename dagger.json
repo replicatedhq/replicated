@@ -3,12 +3,12 @@
   "sdk": "go",
   "dependencies": [
     {
-      "name": "onepassword",
-      "source": "github.com/replicatedhq/daggerverse/onepassword@0b03c8c560c2067f34dab800c92154abc3834841"
-    },
-    {
       "name": "goreleaser",
       "source": "github.com/developer-guy/excoriate-daggerverse/goreleaser@b4bc20faec104b7f45c9a429b20f7d39d1531b79"
+    },
+    {
+      "name": "onepassword",
+      "source": "github.com/replicatedhq/daggerverse/onepassword@0b03c8c560c2067f34dab800c92154abc3834841"
     }
   ],
   "source": "dagger",
