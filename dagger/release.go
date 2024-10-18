@@ -37,7 +37,7 @@ func (r *Replicated) Release(
 		return err
 	}
 	if !gitTreeOK {
-		return fmt.Errorf("Your git tree is not clean. You cannot release what's not commited.")
+		return fmt.Errorf("Your git tree is not clean. You cannot release what's not committed.")
 	}
 
 	latestVersion, err := getLatestVersion(ctx)
@@ -244,7 +244,7 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		WithExec([]string{"git", "status", "--porcelain"})
+		With(CacheBustingExec([]string{"git", "status", "--porcelain"}))
 
 	output, err := container.Stdout(ctx)
 	if err != nil {
@@ -261,7 +261,7 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		WithExec([]string{"git", "branch"})
+		With(CacheBustingExec([]string{"git", "branch"}))
 
 	output, err = container.Stdout(ctx)
 	if err != nil {
@@ -278,7 +278,7 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		WithExec([]string{"git", "rev-parse", "HEAD"})
+		With(CacheBustingExec([]string{"git", "rev-parse", "HEAD"}))
 
 	commit, err := container.Stdout(ctx)
 	if err != nil {
