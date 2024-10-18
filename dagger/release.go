@@ -251,6 +251,8 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		return false, err
 	}
 
+	output = strings.TrimSpace(output)
+
 	if len(output) > 0 {
 		return false, ErrGitTreeNotClean
 	}
@@ -265,6 +267,8 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 	if err != nil {
 		return false, err
 	}
+
+	output = strings.TrimSpace(output)
 
 	if !strings.Contains(output, "* main") {
 		return false, ErrMainBranch
