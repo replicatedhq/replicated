@@ -37,7 +37,7 @@ func (r *Replicated) Release(
 		return err
 	}
 	if !gitTreeOK {
-		return fmt.Errorf("Your git tree is not clean. You cannot release what's not committed.")
+		return fmt.Errorf("git tree is not ok")
 	}
 
 	latestVersion, err := getLatestVersion(ctx)
@@ -233,7 +233,7 @@ func getLatestVersion(ctx context.Context) (string, error) {
 }
 
 var (
-	ErrGitTreeNotClean   = errors.New("Your git tree is not clean. You cannot release what's not commited.")
+	// ErrGitTreeNotClean   = errors.New("Your git tree is not clean. You cannot release what's not commited.")
 	ErrMainBranch        = errors.New("You must be on the main branch to release")
 	ErrCommitNotInGitHub = errors.New("You must merge your changes into the main branch before releasing")
 )
@@ -246,15 +246,16 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		With(CacheBustingExec([]string{"git", "status", "--porcelain"}))
 
-	output, err := container.Stdout(ctx)
+	gitStatusOutput, err := container.Stdout(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	output = strings.TrimSpace(output)
+	gitStatusOutput = strings.TrimSpace(gitStatusOutput)
 
-	if len(output) > 0 {
-		return false, ErrGitTreeNotClean
+	if len(gitStatusOutput) > 0 {
+		fmt.Printf("output: %s\n", gitStatusOutput)
+		return false, fmt.Errorf("error: dirty tree: %q", gitStatusOutput)
 	}
 
 	container = dag.Container().
@@ -263,14 +264,14 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		With(CacheBustingExec([]string{"git", "branch"}))
 
-	output, err = container.Stdout(ctx)
+	gitBranchOutput, err := container.Stdout(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	output = strings.TrimSpace(output)
+	gitBranchOutput = strings.TrimSpace(gitBranchOutput)
 
-	if !strings.Contains(output, "* main") {
+	if !strings.Contains(gitBranchOutput, "* git-tree-ditry") {
 		return false, ErrMainBranch
 	}
 
@@ -320,5 +321,5 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		return false, ErrCommitNotInGitHub
 	}
 
-	return false, nil
+	return true, nil
 }
