@@ -9,7 +9,7 @@ brews:
 - homepage: https://docs.replicated.com/reference/replicated-cli-installing
   description: "Package Replicated applications and manage releases, channels, customers and entitlements using a command-line interface."
   repository:
-    name: replicatedhq/replicated
+    name: homebrew-replicated
     owner: replicatedhq
     branch: main
   install: bin.install "replicated"
