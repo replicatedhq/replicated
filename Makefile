@@ -1,37 +1,10 @@
 API_PKGS=apps channels releases
 
-VERSION=$(shell git describe)
-ABBREV_VERSION=$(shell git describe --abbrev=0)
-VERSION_PACKAGE = github.com/replicatedhq/replicated/pkg/version
-DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"`
 BUILDTAGS = containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp
 
 export GO111MODULE=on
 
-GIT_TREE = $(shell git rev-parse --is-inside-work-tree 2>/dev/null)
-ifneq "$(GIT_TREE)" ""
-define GIT_UPDATE_INDEX_CMD
-git update-index --assume-unchanged
-endef
-define GIT_SHA
-`git rev-parse HEAD`
-endef
-else
-define GIT_UPDATE_INDEX_CMD
-echo "Not a git repo, skipping git update-index"
-endef
-define GIT_SHA
-""
-endef
-endif
-
-define LDFLAGS
--ldflags "\
-	-X ${VERSION_PACKAGE}.version=${VERSION} \
-	-X ${VERSION_PACKAGE}.gitSHA=${GIT_SHA} \
-	-X ${VERSION_PACKAGE}.buildTime=${DATE} \
-"
-endef
+export CGO_ENABLED=0
 
 .PHONY: test-unit
 test-unit:
@@ -138,4 +111,8 @@ docs:
 
 .PHONE: release
 release:
-	dagger call release --one-password-service-account env:OP_SERVICE_ACCOUNT_PRODUCTION --version $(version)
+	dagger call release \
+		--one-password-service-account-production env:OP_SERVICE_ACCOUNT_PRODUCTION \
+		--version $(version) \
+		--github-token env:GITHUB_TOKEN \
+		--progress plain
