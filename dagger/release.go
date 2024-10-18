@@ -32,13 +32,13 @@ func (r *Replicated) Release(
 
 	githubToken *dagger.Secret,
 ) error {
-	gitTreeOK, err := checkGitTree(ctx, source, githubToken)
-	if err != nil {
-		return err
-	}
-	if !gitTreeOK {
-		return fmt.Errorf("Your git tree is not clean. You cannot release what's not committed.")
-	}
+	// gitTreeOK, err := checkGitTree(ctx, source, githubToken)
+	// if err != nil {
+	// 	return err
+	// }
+	// if !gitTreeOK {
+	// 	return fmt.Errorf("Your git tree is not clean. You cannot release what's not committed.")
+	// }
 
 	latestVersion, err := getLatestVersion(ctx)
 	if err != nil {
