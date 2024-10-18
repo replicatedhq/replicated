@@ -281,6 +281,8 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 		return false, err
 	}
 
+	commit = strings.TrimSpace(commit)
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/replicatedhq/replicated/commits/%s", commit), nil)
 	if err != nil {
 		return false, err
