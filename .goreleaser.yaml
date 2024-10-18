@@ -51,3 +51,10 @@ archives:
   - CHANGELOG*
 snapshot:
   version_template: SNAPSHOT-{{ .Commit }}
+dockers:
+  - dockerfile: deploy/Dockerfile
+    image_templates:
+      - "replicated/vendor-cli:latest"
+      - "replicated/vendor-cli:{{ .Major }}"
+      - "replicated/vendor-cli:{{ .Major }}.{{ .Minor }}"
+      - "replicated/vendor-cli:{{ .Major }}.{{ .Minor }}.{{ .Patch }}"
