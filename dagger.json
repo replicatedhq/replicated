@@ -3,6 +3,10 @@
   "sdk": "go",
   "dependencies": [
     {
+      "name": "aws-sdk",
+      "source": "github.com/ernesto27/daggerverse/aws-sdk@4921d3afbdd99bc24a214d9a88c6ed8b50adca6c"
+    },
+    {
       "name": "goreleaser",
       "source": "github.com/developer-guy/excoriate-daggerverse/goreleaser@b4bc20faec104b7f45c9a429b20f7d39d1531b79"
     },
