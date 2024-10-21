@@ -20,8 +20,8 @@ type VM struct {
 
 	EstimatedCost int64 `json:"estimated_cost"` // Represents estimated credits for this vm based on the TTL
 
-	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
-	OverlayToken    string `json:"overlay_token,omitempty"`
+	SSHPort     int64  `json:"ssh_port,omitempty"`
+	SSHEndpoint string `json:"ssh_endpoint,omitempty"`
 
 	Tags []Tag `json:"tags"`
 }
