@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -25,7 +26,7 @@ func (c *VendorV3Client) ExposeClusterPort(clusterID string, portNumber int, pro
 	}
 
 	resp := ExposeClusterPortResponse{}
-	err := c.DoJSON("POST", fmt.Sprintf("/v3/cluster/%s/port", clusterID), http.StatusCreated, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", fmt.Sprintf("/v3/cluster/%s/port", clusterID), http.StatusCreated, req, &resp)
 	if err != nil {
 		return nil, err
 	}

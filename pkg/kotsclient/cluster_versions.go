@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -12,7 +13,7 @@ type ListClusterVersionsResponse struct {
 
 func (c *VendorV3Client) ListClusterVersions() ([]*types.ClusterVersion, error) {
 	clusters := ListClusterVersionsResponse{}
-	err := c.DoJSON("GET", "/v3/cluster/versions", http.StatusOK, nil, &clusters)
+	err := c.DoJSON(context.TODO(), "GET", "/v3/cluster/versions", http.StatusOK, nil, &clusters)
 	if err != nil {
 		return nil, err
 	}

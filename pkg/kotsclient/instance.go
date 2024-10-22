@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,7 +23,7 @@ func (c *VendorV3Client) SetIntanceTags(appID string, customerID string, instanc
 		Tags: tags,
 	}
 
-	err := c.DoJSON("PUT", path, http.StatusOK, &payload, &resp)
+	err := c.DoJSON(context.TODO(), "PUT", path, http.StatusOK, &payload, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to set instance tags")
 	}

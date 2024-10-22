@@ -1,6 +1,7 @@
 package platformclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 // ListApps returns all apps and their channels.
 func (c *HTTPClient) ListApps() ([]apps.AppAndChannels, error) {
 	appsAndChannels := make([]apps.AppAndChannels, 0)
-	err := c.DoJSON("GET", "/v1/apps", http.StatusOK, nil, &appsAndChannels)
+	err := c.DoJSON(context.TODO(), "GET", "/v1/apps", http.StatusOK, nil, &appsAndChannels)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +37,7 @@ func (c *HTTPClient) GetApp(slugOrID string) (*apps.App, error) {
 func (c *HTTPClient) CreateApp(opts *AppOptions) (*apps.App, error) {
 	reqBody := &apps.Body{Name: opts.Name}
 	app := &apps.App{}
-	err := c.DoJSON("POST", "/v1/app", http.StatusCreated, reqBody, app)
+	err := c.DoJSON(context.TODO(), "POST", "/v1/app", http.StatusCreated, reqBody, app)
 	if err != nil {
 		return nil, err
 	}

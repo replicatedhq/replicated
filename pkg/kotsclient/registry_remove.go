@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,7 +10,7 @@ import (
 )
 
 func (c *VendorV3Client) RemoveRegistry(endpoint string) error {
-	err := c.DoJSON("DELETE", fmt.Sprintf(`/v3/external_registry/%s`, url.QueryEscape(endpoint)), http.StatusNoContent, nil, nil)
+	err := c.DoJSON(context.TODO(), "DELETE", fmt.Sprintf(`/v3/external_registry/%s`, url.QueryEscape(endpoint)), http.StatusNoContent, nil, nil)
 	if err != nil {
 		return errors.Wrap(err, "remove registry")
 	}

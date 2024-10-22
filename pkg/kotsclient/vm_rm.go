@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -17,7 +18,7 @@ func (c *VendorV3Client) RemoveVM(id string) error {
 	resp := RemoveClusterResponse{}
 
 	url := fmt.Sprintf("/v3/vm/%s", id)
-	err := c.DoJSON("DELETE", url, http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "DELETE", url, http.StatusOK, nil, &resp)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -108,7 +109,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterErrorError, error) {
 	resp := CreateClusterResponse{}
 	endpoint := "/v3/cluster"
-	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error
@@ -131,7 +132,7 @@ func (c *VendorV3Client) doCreateClusterRequest(req CreateClusterRequest) (*type
 func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) (*types.Cluster, *CreateClusterErrorError, error) {
 	resp := CreateClusterDryRunResponse{}
 	endpoint := "/v3/cluster?dry-run=true"
-	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, nil, err
 	}

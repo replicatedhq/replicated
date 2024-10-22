@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -14,7 +15,7 @@ type GetEnterprisePortalStatusResponse struct {
 func (c *VendorV3Client) GetEnterprisePortalStatus(appID string) (string, error) {
 	var response = GetEnterprisePortalStatusResponse{}
 
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, nil, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "get enterprise portal status")
 	}
@@ -25,7 +26,7 @@ func (c *VendorV3Client) GetEnterprisePortalStatus(appID string) (string, error)
 func (c *VendorV3Client) UpdateEnterprisePortalStatus(appID string, status string) (string, error) {
 	var response = GetEnterprisePortalStatusResponse{}
 
-	err := c.DoJSON("PUT", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, status, &response)
+	err := c.DoJSON(context.TODO(), "PUT", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, status, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "update enterprise portal status")
 	}
@@ -50,7 +51,7 @@ func (c *VendorV3Client) SendEnterprisePortalInvite(appID string, customerID str
 		EmailAddress: emailAddress,
 	}
 
-	err := c.DoJSON("POST", fmt.Sprintf("/v3/app/%s/enterprise-portal/customer-user", appID), http.StatusCreated, request, &response)
+	err := c.DoJSON(context.TODO(), "POST", fmt.Sprintf("/v3/app/%s/enterprise-portal/customer-user", appID), http.StatusCreated, request, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "send enterprise portal invite")
 	}
@@ -72,7 +73,7 @@ func (c *VendorV3Client) ListEnterprisePortalUsers(appID string, includeInvites 
 		endpoint = fmt.Sprintf("%s?includeInvites=true", endpoint)
 	}
 
-	err := c.DoJSON("GET", endpoint, http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", endpoint, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list enterprise portal users")
 	}

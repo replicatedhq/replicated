@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -31,7 +32,7 @@ func (c *VendorV3Client) UpdateClusterTTL(clusterID string, opts UpdateClusterTT
 func (c *VendorV3Client) doUpdateClusterTTLRequest(clusterID string, req UpdateClusterTTLRequest) (*types.Cluster, error) {
 	resp := UpdateClusterTTLResponse{}
 	endpoint := fmt.Sprintf("/v3/cluster/%s/ttl", clusterID)
-	err := c.DoJSON("PUT", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, err
 	}

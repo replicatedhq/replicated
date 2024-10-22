@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -18,7 +19,7 @@ func (c *VendorV3Client) UpdateModelsInCollection(collectionID string, modelsToA
 		RemoveModels: modelsToRemove,
 	}
 
-	err := c.DoJSON("PATCH", fmt.Sprintf("/v3/models/collection/%s/models", collectionID), http.StatusOK, reqBody, nil)
+	err := c.DoJSON(context.TODO(), "PATCH", fmt.Sprintf("/v3/models/collection/%s/models", collectionID), http.StatusOK, reqBody, nil)
 	if err != nil {
 		return errors.Wrap(err, "update models in collection")
 	}

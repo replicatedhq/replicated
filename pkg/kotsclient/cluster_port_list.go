@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -13,7 +14,7 @@ type ListClusterPortsResponse struct {
 
 func (c *VendorV3Client) ListClusterPorts(clusterID string) ([]*types.ClusterPort, error) {
 	resp := ListClusterPortsResponse{}
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/cluster/%s/ports", clusterID), http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v3/cluster/%s/ports", clusterID), http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, err
 	}

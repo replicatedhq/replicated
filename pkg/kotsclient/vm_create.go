@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -81,7 +82,7 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErro
 func (c *VendorV3Client) doCreateVMRequest(req CreateVMRequest) ([]*types.VM, *CreateVMErrorError, error) {
 	resp := CreateVMResponse{}
 	endpoint := "/v3/vm"
-	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error
@@ -104,7 +105,7 @@ func (c *VendorV3Client) doCreateVMRequest(req CreateVMRequest) ([]*types.VM, *C
 func (c *VendorV3Client) doCreateVMDryRunRequest(req CreateVMRequest) ([]*types.VM, *CreateVMErrorError, error) {
 	resp := CreateVMDryRunResponse{}
 	endpoint := "/v3/vm?dry-run=true"
-	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, nil, err
 	}

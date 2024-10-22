@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -32,7 +33,7 @@ func (c *VendorV3Client) ListCustomers(appID string, includeTest bool) ([]types.
 		if includeTest {
 			path = fmt.Sprintf("%s&includeTest=true", path)
 		}
-		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+		err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list customers page %d", page)
 		}
@@ -55,7 +56,7 @@ type CustomerGetResponse struct {
 
 func (c *VendorV3Client) GetCustomerByID(customerID string) (*types.Customer, error) {
 	resp := CustomerGetResponse{}
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/customer/%s", customerID), http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v3/customer/%s", customerID), http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, err
 	}

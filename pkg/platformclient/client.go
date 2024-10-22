@@ -3,13 +3,17 @@ package platformclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/integration"
+	kotsclienttypes "github.com/replicatedhq/replicated/pkg/kotsclient/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 )
 
@@ -100,7 +104,43 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 	return bodyBytes, nil
 }
 
-func (c *HTTPClient) DoJSON(method string, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
+// DoJSON makes the request, and respBody is a pointer to the struct that we should unmarshal the response into
+func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
+	if ctx.Value(integration.APICallLogContextKey) != nil {
+		filename := ctx.Value(integration.APICallLogContextKey).(string)
+
+		// Open the file in append mode, create if it doesn't exist
+		f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return fmt.Errorf("error opening or creating file: %v", err)
+		}
+		defer f.Close()
+
+		// Format the log entry as METHOD:PATH
+		logEntry := fmt.Sprintf("%s:%s\n", strings.ToUpper(method), path)
+
+		// Write the log entry to the file
+		if _, err := f.WriteString(logEntry); err != nil {
+			return fmt.Errorf("error writing to file: %v", err)
+		}
+
+		f.Close()
+	}
+	if ctx.Value(integration.IntegrationTestContextKey) != nil {
+		if respBody != nil {
+			testResponse := integration.Response(ctx.Value(integration.IntegrationTestContextKey).(string)).(kotsclienttypes.KotsAppResponse)
+			encoded, err := json.Marshal(testResponse)
+			if err != nil {
+				return err
+			}
+			if err := json.NewDecoder(bytes.NewReader(encoded)).Decode(respBody); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {

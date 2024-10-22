@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,7 +25,7 @@ func (c *VendorV3Client) ListKotsChannels(appID string, channelName string, excl
 	}
 
 	url := fmt.Sprintf("/v3/app/%s/channels?%s", appID, v.Encode())
-	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list channels")
 	}
@@ -58,7 +59,7 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 	var response createChannelResponse
 
 	url := fmt.Sprintf("/v3/app/%s/channel", appID)
-	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
+	err := c.DoJSON(context.TODO(), "POST", url, http.StatusCreated, request, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "create channel")
 	}
@@ -73,7 +74,7 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Chan
 
 	response := getChannelResponse{}
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
-	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "get app channel")
 	}
@@ -84,7 +85,7 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Chan
 func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, url.QueryEscape(channelID))
 
-	err := c.DoJSON("DELETE", url, http.StatusOK, nil, nil)
+	err := c.DoJSON(context.TODO(), "DELETE", url, http.StatusOK, nil, nil)
 	if err != nil {
 		return errors.Wrap(err, "archive app channel")
 	}
@@ -102,7 +103,7 @@ func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *types.C
 	}{}
 
 	url := fmt.Sprintf("/v3/app/%s/channel/%s", appID, channel.ID)
-	err := c.DoJSON("PATCH", url, http.StatusOK, request, &response)
+	err := c.DoJSON(context.TODO(), "PATCH", url, http.StatusOK, request, &response)
 	if err != nil {
 		return errors.Wrap(err, "edit semantic versioning for channel")
 	}

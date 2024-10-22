@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -13,7 +14,7 @@ type GetClusterKubeconfigResponse struct {
 func (c *VendorV3Client) GetClusterKubeconfig(id string) ([]byte, error) {
 	kubeconfig := GetClusterKubeconfigResponse{}
 
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/cluster/%s/kubeconfig", id), http.StatusOK, nil, &kubeconfig)
+	err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v3/cluster/%s/kubeconfig", id), http.StatusOK, nil, &kubeconfig)
 	if err != nil {
 		return nil, err
 	}

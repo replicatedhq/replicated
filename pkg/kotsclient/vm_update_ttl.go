@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -31,7 +32,7 @@ func (c *VendorV3Client) UpdateVMTTL(vmID string, opts UpdateVMTTLOpts) (*types.
 func (c *VendorV3Client) doUpdateVMTTLRequest(vmID string, req UpdateVMTTLRequest) (*types.VM, error) {
 	resp := UpdateVMTTLResponse{}
 	endpoint := fmt.Sprintf("/v3/vm/%s/ttl", vmID)
-	err := c.DoJSON("PUT", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, err
 	}

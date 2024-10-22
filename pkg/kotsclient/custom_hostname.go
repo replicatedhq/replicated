@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -15,7 +16,7 @@ type CustomHostnamesListResponse struct {
 func (c *VendorV3Client) ListCustomHostnames(appID string) (*types.KotsAppCustomHostnames, error) {
 	resp := CustomHostnamesListResponse{}
 	path := fmt.Sprintf("/v3/app/%s/custom-hostnames", appID)
-	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrapf(err, "list custom hostnames appId %s", appID)
 	}

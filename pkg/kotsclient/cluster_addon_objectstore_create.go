@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,7 +42,7 @@ func (c *VendorV3Client) doCreateClusterAddonObjectStoreRequest(clusterID string
 	if dryRun {
 		endpoint = fmt.Sprintf("%s?dry-run=true", endpoint)
 	}
-	err := c.DoJSON("POST", endpoint, http.StatusCreated, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusCreated, req, &resp)
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error

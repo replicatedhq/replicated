@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -14,7 +15,7 @@ type modelsResponse struct {
 func (c *VendorV3Client) ListModels() ([]types.Model, error) {
 	var response = modelsResponse{}
 
-	err := c.DoJSON("GET", "/v3/models", http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", "/v3/models", http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list models")
 	}

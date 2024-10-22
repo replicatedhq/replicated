@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -21,7 +22,7 @@ type AddKOTSRegistryResponse struct {
 
 func (c *VendorV3Client) AddKOTSRegistry(reqBody AddKOTSRegistryRequest) (*types.Registry, error) {
 	registry := AddKOTSRegistryResponse{}
-	err := c.DoJSON("POST", "/v3/external_registry", http.StatusCreated, reqBody, &registry)
+	err := c.DoJSON(context.TODO(), "POST", "/v3/external_registry", http.StatusCreated, reqBody, &registry)
 	if err != nil {
 		return nil, err
 	}

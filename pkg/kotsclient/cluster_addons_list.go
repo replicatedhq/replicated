@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -15,7 +16,7 @@ func (c *VendorV3Client) ListClusterAddons(clusterID string) ([]*types.ClusterAd
 	resp := ListClusterAddonsResponse{}
 
 	endpoint := fmt.Sprintf("/v3/cluster/%s/addons", clusterID)
-	err := c.DoJSON("GET", endpoint, http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "GET", endpoint, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, err
 	}

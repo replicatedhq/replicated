@@ -1,6 +1,7 @@
 package platformclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sort"
@@ -27,7 +28,7 @@ func (acs AppChannels) Less(i, j int) bool {
 func (c *HTTPClient) ListChannels(appID string) ([]channels.AppChannel, error) {
 	path := fmt.Sprintf("/v1/app/%s/channels", appID)
 	appChannels := make([]channels.AppChannel, 0)
-	err := c.DoJSON("GET", path, http.StatusOK, nil, &appChannels)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &appChannels)
 	if err != nil {
 		return nil, fmt.Errorf("ListChannels: %w", err)
 	}
@@ -44,7 +45,7 @@ func (c *HTTPClient) CreateChannel(appID string, name string, description string
 		Description: description,
 	}
 	appChannels := make([]channels.AppChannel, 0)
-	err := c.DoJSON("POST", path, http.StatusOK, body, &appChannels)
+	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, body, &appChannels)
 	if err != nil {
 		return fmt.Errorf("CreateChannel: %w", err)
 	}
@@ -92,7 +93,7 @@ func (crs ChannelReleases) Less(i, j int) bool {
 func (c *HTTPClient) GetChannel(appID, channelID string) (*channels.AppChannel, []channels.ChannelRelease, error) {
 	path := fmt.Sprintf("/v1/app/%s/channel/%s/releases", appID, channelID)
 	respBody := channels.GetChannelInlineResponse200{}
-	err := c.DoJSON("GET", path, http.StatusOK, nil, &respBody)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &respBody)
 	if err != nil {
 		return nil, nil, fmt.Errorf("GetChannel: %w", err)
 	}

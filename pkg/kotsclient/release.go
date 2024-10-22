@@ -3,6 +3,7 @@ package kotsclient
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +36,7 @@ func (c *VendorV3Client) TestRelease(appID string, sequence int64) (string, erro
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v/test", appID, sequence)
 
-	err := c.DoJSON("POST", path, http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, nil, &resp)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to test release")
 	}
@@ -48,7 +49,7 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*types.AppRel
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v", appID, sequence)
 
-	err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get release")
 	}
@@ -86,7 +87,7 @@ func (c *VendorV3Client) CreateRelease(appID string, multiyaml string) (*types.R
 	response := types.KotsGetReleaseResponse{}
 
 	url := fmt.Sprintf("/v3/app/%s/release", appID)
-	err = c.DoJSON("POST", url, http.StatusCreated, request, &response)
+	err = c.DoJSON(context.TODO(), "POST", url, http.StatusCreated, request, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create release")
 	}
@@ -118,7 +119,7 @@ func (c *VendorV3Client) UpdateRelease(appID string, sequence int64, multiyaml s
 	}
 
 	url := fmt.Sprintf("/v3/app/%s/release/%d", appID, sequence)
-	err = c.DoJSON("PUT", url, http.StatusOK, request, nil)
+	err = c.DoJSON(context.TODO(), "PUT", url, http.StatusOK, request, nil)
 	if err != nil {
 		return errors.Wrap(err, "failed to create release")
 	}
@@ -133,7 +134,7 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	for !done {
 		resp := types.KotsListReleasesResponse{}
 		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
-		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+		err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			done = true
 			continue
@@ -182,7 +183,7 @@ func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label stri
 	}
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, sequence)
-	err := c.DoJSON("POST", path, http.StatusOK, request, nil)
+	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, request, nil)
 	if err != nil {
 		return err
 	}

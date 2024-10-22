@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -10,7 +12,7 @@ func (c *Client) ListApps(excludeChannels bool) ([]types.AppAndChannels, error) 
 		return nil, err
 	}
 
-	kotsApps, err := c.KotsClient.ListApps(excludeChannels)
+	kotsApps, err := c.KotsClient.ListApps(context.TODO(), excludeChannels)
 	if err != nil {
 		return nil, err
 	}

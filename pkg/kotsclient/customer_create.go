@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -94,7 +95,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		request.ExpiresAt = opts.ExpiresAt
 	}
 	var response CreateCustomerResponse
-	err := c.DoJSON("POST", "/v3/customer", http.StatusCreated, request, &response)
+	err := c.DoJSON(context.TODO(), "POST", "/v3/customer", http.StatusCreated, request, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "create customer")
 	}

@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -33,7 +34,7 @@ func (c *VendorV3Client) ListVMs(includeTerminated bool, startTime *time.Time, e
 		v.Set("currentPage", strconv.Itoa(page))
 		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
 		url := fmt.Sprintf("/v3/vms?%s", v.Encode())
-		err := c.DoJSON("GET", url, http.StatusOK, nil, &vms)
+		err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &vms)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list vms page %d", page)
 		}
