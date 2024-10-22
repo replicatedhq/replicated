@@ -69,7 +69,7 @@ func (r *runners) listApps(ctx context.Context, cmd *cobra.Command, args []strin
 	appSearch := args[0]
 	var resultApps []types.AppAndChannels
 	for _, app := range kotsApps {
-		if strings.Contains(app.App.ID, appSearch) || strings.Contains(app.App.Slug, appSearch) || strings.Contains(app.App.Name, appSearch) {
+		if strings.Contains(app.App.ID, appSearch) || strings.Contains(app.App.Slug, appSearch) || strings.Contains(strings.ToLower(app.App.Name), strings.ToLower(appSearch)) {
 			resultApps = append(resultApps, app)
 		}
 	}
