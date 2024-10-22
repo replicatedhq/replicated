@@ -37,6 +37,7 @@ The command also supports a "--wait" flag to wait for the VMs to be ready before
   replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
 		SilenceUsage: true,
 		RunE:         r.createVM,
+		Args:         cobra.NoArgs,
 	}
 	parent.AddCommand(cmd)
 
