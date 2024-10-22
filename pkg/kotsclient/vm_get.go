@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -15,7 +16,7 @@ type GetVMResponse struct {
 func (c *VendorV3Client) GetVM(id string) (*types.VM, error) {
 	vm := GetVMResponse{}
 
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/vm/%s", id), http.StatusOK, nil, &vm)
+	err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v3/vm/%s", id), http.StatusOK, nil, &vm)
 	if err != nil {
 		return nil, err
 	}

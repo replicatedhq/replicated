@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -21,7 +22,7 @@ func (c *VendorV3Client) ListCustomersByAppAndVersion(appID string, appVersion s
 	for {
 		resp := CustomerListWithInstancesResponse{}
 		path := fmt.Sprintf("/v3/app/%s/customers?currentPage=%d", appID, page)
-		err := c.DoJSON("GET", path, http.StatusOK, nil, &resp)
+		err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			return nil, errors.Wrapf(err, "List Customers By App Version page %d", page)
 		}

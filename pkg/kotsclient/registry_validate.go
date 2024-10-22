@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 )
 
@@ -20,7 +21,7 @@ func (c *VendorV3Client) TestKOTSRegistry(hostname string, image string) (int, e
 	}
 
 	resp := TestKOTSRegistryResponse{}
-	err := c.DoJSON("PUT", "/v3/external_registry/test", http.StatusOK, reqBody, &resp)
+	err := c.DoJSON(context.TODO(), "PUT", "/v3/external_registry/test", http.StatusOK, reqBody, &resp)
 	if err != nil {
 		return 0, err
 	}

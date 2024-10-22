@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -22,7 +23,7 @@ func (c *VendorV3Client) CreateCollection(name string) (*types.ModelCollection, 
 		Name: name,
 	}
 
-	err := c.DoJSON("POST", "/v3/models/collection", http.StatusCreated, reqBody, &response)
+	err := c.DoJSON(context.TODO(), "POST", "/v3/models/collection", http.StatusCreated, reqBody, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list collections")
 	}

@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -18,7 +19,7 @@ type CreateKOTSAppResponse struct {
 func (c *VendorV3Client) CreateKOTSApp(name string) (*types.KotsAppWithChannels, error) {
 	reqBody := &CreateKOTSAppRequest{Name: name}
 	app := CreateKOTSAppResponse{}
-	err := c.DoJSON("POST", "/v3/app", http.StatusCreated, reqBody, &app)
+	err := c.DoJSON(context.TODO(), "POST", "/v3/app", http.StatusCreated, reqBody, &app)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (c *VendorV3Client) CreateKOTSApp(name string) (*types.KotsAppWithChannels,
 func (c *VendorV3Client) DeleteKOTSApp(id string) error {
 	url := fmt.Sprintf("/v3/app/%s", id)
 
-	err := c.DoJSON("DELETE", url, http.StatusOK, nil, nil)
+	err := c.DoJSON(context.TODO(), "DELETE", url, http.StatusOK, nil, nil)
 	if err != nil {
 		return err
 	}

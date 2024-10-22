@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -17,7 +18,7 @@ func Test_ListApps(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-apps-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		apps, err := client.ListApps(false)
+		apps, err := client.ListApps(context.TODO(), false)
 		assert.Nil(t, err)
 
 		assert.Len(t, apps, 1)
@@ -74,7 +75,7 @@ func Test_RemoveApp(t *testing.T) {
 		err = client.DeleteKOTSApp("replicated-cli-rm-app-app")
 		assert.Nil(t, err)
 
-		apps, err := client.ListApps(false)
+		apps, err := client.ListApps(context.TODO(), false)
 		assert.Nil(t, err)
 
 		assert.Len(t, apps, 0)

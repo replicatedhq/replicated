@@ -8,11 +8,15 @@ export CGO_ENABLED=0
 
 .PHONY: test-unit
 test-unit:
-	go test -v `go list ./... | grep -v /pact` -tags "$(BUILDTAGS)"
+	go test -v `go list ./... | grep -v /pact | grep -v /pkg/integration` -tags "$(BUILDTAGS)"
 
 .PHONY: test-pact
 test-pact:
 	go test -v ./pact/... -tags "$(BUILDTAGS)"
+
+.PHONY: test-integration
+test-integration: build
+	go test -v ./pkg/integration/...
 
 .PNONY: test-e2e
 test-e2e:

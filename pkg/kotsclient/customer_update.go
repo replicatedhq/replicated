@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -82,7 +83,7 @@ func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOp
 	}
 	var response UpdateCustomerResponse
 	endpoint := fmt.Sprintf("/v3/customer/%s", customerID)
-	err := c.DoJSON("PUT", endpoint, http.StatusOK, request, &response)
+	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusOK, request, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "update customer")
 	}

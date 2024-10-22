@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +38,15 @@ either table or JSON format.`,
   # Search for an application and display results in table format
   replicated app ls "App Name" --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.listApps(cmd, args, outputFormat)
+			ctx := context.Background()
+			if integrationTest != "" {
+				ctx = context.WithValue(ctx, integration.IntegrationTestContextKey, integrationTest)
+			}
+			if logAPICalls != "" {
+				ctx = context.WithValue(ctx, integration.APICallLogContextKey, logAPICalls)
+			}
+
+			return r.listApps(ctx, cmd, args, outputFormat)
 		},
 		SilenceUsage: true,
 	}
@@ -46,8 +56,8 @@ either table or JSON format.`,
 	return cmd
 }
 
-func (r *runners) listApps(cmd *cobra.Command, args []string, outputFormat string) error {
-	kotsApps, err := r.kotsAPI.ListApps(false)
+func (r *runners) listApps(ctx context.Context, cmd *cobra.Command, args []string, outputFormat string) error {
+	kotsApps, err := r.kotsAPI.ListApps(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "list apps")
 	}
@@ -59,7 +69,7 @@ func (r *runners) listApps(cmd *cobra.Command, args []string, outputFormat strin
 	appSearch := args[0]
 	var resultApps []types.AppAndChannels
 	for _, app := range kotsApps {
-		if strings.Contains(app.App.ID, appSearch) || strings.Contains(app.App.Slug, appSearch) {
+		if strings.Contains(app.App.ID, appSearch) || strings.Contains(app.App.Slug, appSearch) || strings.Contains(strings.ToLower(app.App.Name), strings.ToLower(appSearch)) {
 			resultApps = append(resultApps, app)
 		}
 	}

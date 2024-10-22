@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -33,7 +34,7 @@ func (c *VendorV3Client) ListClusters(includeTerminated bool, startTime *time.Ti
 		v.Set("currentPage", strconv.Itoa(page))
 		v.Set("show-terminated", strconv.FormatBool(includeTerminated))
 		url := fmt.Sprintf("/v3/clusters?%s", v.Encode())
-		err := c.DoJSON("GET", url, http.StatusOK, nil, &clusters)
+		err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &clusters)
 		if err != nil {
 			return nil, errors.Wrapf(err, "list clusters page %d", page)
 		}

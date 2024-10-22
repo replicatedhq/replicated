@@ -1,6 +1,7 @@
 package platformclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -23,7 +24,7 @@ func (c *HTTPClient) ListCollectors(appID string, appType string) ([]types.Colle
 	}{}
 
 	url := fmt.Sprintf("/v1/collector/specs?%s", params.Encode())
-	if err := c.DoJSON("GET", url, http.StatusOK, nil, &collectors); err != nil {
+	if err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &collectors); err != nil {
 		return nil, fmt.Errorf("list specs: %w", err)
 	}
 
@@ -35,7 +36,7 @@ func (c *HTTPClient) GetCollector(appID string, specID string) (*types.Collector
 		Spec types.CollectorSpec `json:"spec"`
 	}{}
 
-	if err := c.DoJSON("GET", fmt.Sprintf("/v1/collector/spec/%s", specID), http.StatusOK, nil, &collector); err != nil {
+	if err := c.DoJSON(context.TODO(), "GET", fmt.Sprintf("/v1/collector/spec/%s", specID), http.StatusOK, nil, &collector); err != nil {
 		return nil, fmt.Errorf("get collector: %w", err)
 	}
 
@@ -56,7 +57,7 @@ func (c *HTTPClient) CreateCollector(appID string, name string, yaml string) (*t
 	}{}
 
 	path := fmt.Sprintf("/v1/app/%s/collector", appID)
-	if err := c.DoJSON("POST", path, http.StatusOK, requestBody, &responseBody); err != nil {
+	if err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, requestBody, &responseBody); err != nil {
 		return nil, fmt.Errorf("create collector: %w", err)
 	}
 
@@ -75,7 +76,7 @@ func (c *HTTPClient) UpdateCollector(appID string, specID string, yaml string, n
 	}
 
 	path := fmt.Sprintf("/v1/app/%s/collector/%s", appID, specID)
-	if err := c.DoJSON("PUT", path, http.StatusOK, requestBody, nil); err != nil {
+	if err := c.DoJSON(context.TODO(), "PUT", path, http.StatusOK, requestBody, nil); err != nil {
 		return fmt.Errorf("update collector: %w", err)
 	}
 
@@ -88,7 +89,7 @@ func (c *HTTPClient) PromoteCollector(appID string, specID string, channelIDs ..
 	body := &v1.BodyPromoteCollector{
 		ChannelIDs: channelIDs,
 	}
-	if err := c.DoJSON("POST", path, http.StatusOK, body, nil); err != nil {
+	if err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, body, nil); err != nil {
 		return fmt.Errorf("PromoteCollector: %w", err)
 	}
 	return nil

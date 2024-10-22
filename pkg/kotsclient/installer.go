@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -13,7 +14,7 @@ func (c *VendorV3Client) ListInstallers(appID string) ([]types.InstallerSpec, er
 	var response types.ListInstallersResponse
 
 	url := fmt.Sprintf("/v3/app/%s/installers", appID)
-	err := c.DoJSON("GET", url, http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +38,7 @@ func (c *VendorV3Client) CreateInstaller(appID string, yaml string) (*types.Inst
 	var response types.InstallerSpecResponse
 
 	url := fmt.Sprintf("/v3/app/%s/installer", appID)
-	err := c.DoJSON("POST", url, http.StatusCreated, request, &response)
+	err := c.DoJSON(context.TODO(), "POST", url, http.StatusCreated, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +54,7 @@ func (c *VendorV3Client) PromoteInstaller(appID string, sequence int64, channelI
 	}
 
 	url := fmt.Sprintf("/v3/app/%s/installer/promote", appID)
-	err := c.DoJSON("POST", url, http.StatusOK, request, nil)
+	err := c.DoJSON(context.TODO(), "POST", url, http.StatusOK, request, nil)
 	if err != nil {
 		return err
 	}

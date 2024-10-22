@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,7 +54,7 @@ func (c *VendorV3Client) UpdateClusterNodegroup(clusterID string, nodegroupID st
 func (c *VendorV3Client) doUpdateClusterNodegroupRequest(clusterID string, nodegroupID string, req UpdateClusterNodegroupRequest) (*types.Cluster, *UpdateClusterNodegroupErrorError, error) {
 	resp := UpdateClusterNodegroupResponse{}
 	endpoint := fmt.Sprintf("/v3/cluster/%s/nodegroup/%s", clusterID, nodegroupID)
-	err := c.DoJSON("PUT", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error

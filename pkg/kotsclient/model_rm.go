@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,7 +12,7 @@ import (
 func (c *VendorV3Client) RemoveModel(modelName string) ([]types.Model, error) {
 	var response = modelsResponse{}
 
-	err := c.DoJSON("DELETE", fmt.Sprintf("/v3/models/%s", modelName), http.StatusOK, nil, &response)
+	err := c.DoJSON(context.TODO(), "DELETE", fmt.Sprintf("/v3/models/%s", modelName), http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list models")
 	}

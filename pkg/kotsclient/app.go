@@ -1,21 +1,19 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/pkg/errors"
+	kotsclienttypes "github.com/replicatedhq/replicated/pkg/kotsclient/types"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type kotsAppResponse struct {
-	Apps []types.KotsAppWithChannels `json:"apps"`
-}
+func (c *VendorV3Client) ListApps(ctx context.Context, excludeChannels bool) ([]types.AppAndChannels, error) {
+	var response = kotsclienttypes.KotsAppResponse{}
 
-func (c *VendorV3Client) ListApps(excludeChannels bool) ([]types.AppAndChannels, error) {
-	var response = kotsAppResponse{}
-
-	err := c.DoJSON("GET", fmt.Sprintf("/v3/apps?excludeChannels=%t", excludeChannels), http.StatusOK, nil, &response)
+	err := c.DoJSON(ctx, "GET", fmt.Sprintf("/v3/apps?excludeChannels=%t", excludeChannels), http.StatusOK, nil, &response)
 	if err != nil {
 		return nil, errors.Wrap(err, "list apps")
 	}
@@ -39,7 +37,7 @@ func (c *VendorV3Client) ListApps(excludeChannels bool) ([]types.AppAndChannels,
 }
 
 func (c *VendorV3Client) GetApp(appID string, excludeChannels bool) (*types.App, error) {
-	apps, err := c.ListApps(excludeChannels)
+	apps, err := c.ListApps(context.TODO(), excludeChannels)
 	if err != nil {
 		return nil, err
 	}

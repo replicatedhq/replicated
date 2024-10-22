@@ -2,6 +2,7 @@ package kotsclient
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -36,7 +37,7 @@ func (c *VendorV3Client) ReportReleaseCompatibility(appID string, sequence int64
 	}
 
 	path := fmt.Sprintf("/v3/app/%s/release/%v/compatibility", appID, sequence)
-	err := c.DoJSON("POST", path, http.StatusCreated, request, nil)
+	err := c.DoJSON(context.TODO(), "POST", path, http.StatusCreated, request, nil)
 	if err != nil {
 		if err, ok := errors.Cause(err).(platformclient.APIError); ok && err.StatusCode == http.StatusBadRequest {
 			// parse the error response body

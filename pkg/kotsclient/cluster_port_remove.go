@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,7 +17,7 @@ func (c *VendorV3Client) RemoveClusterPort(clusterID string, portNumber int, pro
 	urlProtocols := strings.Join(protocols, ",")
 
 	resp := RemoveClusterPortResponse{}
-	err := c.DoJSON("DELETE", fmt.Sprintf("/v3/cluster/%s/port/%d?protocols=%s", clusterID, portNumber, urlProtocols), http.StatusOK, nil, &resp)
+	err := c.DoJSON(context.TODO(), "DELETE", fmt.Sprintf("/v3/cluster/%s/port/%d?protocols=%s", clusterID, portNumber, urlProtocols), http.StatusOK, nil, &resp)
 	if err != nil {
 		return nil, err
 	}

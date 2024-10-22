@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -40,7 +41,7 @@ func (c *VendorV3Client) UpgradeCluster(clusterID string, opts UpgradeClusterOpt
 func (c *VendorV3Client) doUpgradeClusterRequest(clusterID string, req UpgradeClusterRequest) (*types.Cluster, *ClusterValidationError, error) {
 	resp := UpgradeClusterResponse{}
 	endpoint := fmt.Sprintf("/v3/cluster/%s/upgrade", clusterID)
-	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		// if err is APIError and the status code is 400, then we have a validation error
 		// and we can return the validation error
@@ -62,7 +63,7 @@ func (c *VendorV3Client) doUpgradeClusterRequest(clusterID string, req UpgradeCl
 func (c *VendorV3Client) doUpgradeClusterDryRunRequest(clusterID string, req UpgradeClusterRequest) (*ClusterValidationError, error) {
 	resp := ClusterValidationError{}
 	endpoint := fmt.Sprintf("/v3/cluster/%s/upgrade?dry-run=true", clusterID)
-	err := c.DoJSON("POST", endpoint, http.StatusOK, req, &resp)
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		return nil, err
 	}
