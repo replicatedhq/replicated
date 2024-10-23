@@ -10,42 +10,64 @@ import (
 
 func TestApp(t *testing.T) {
 	tests := []struct {
-		name       string
-		cli        string
-		wantFormat format
-		wantLines  int
-		wantMethod string
-		wantPath   string
+		name            string
+		cli             string
+		wantFormat      format
+		wantLines       int
+		wantAPIRequests []string
+		ignoreCLIOutput bool
 	}{
 		{
 			name:       "app-ls-empty",
 			cli:        "app ls",
 			wantFormat: FormatTable,
 			wantLines:  1,
-			wantMethod: "GET",
-			wantPath:   "/v3/apps?excludeChannels=false",
+			wantAPIRequests: []string{
+				"GET:/v3/apps?excludeChannels=false",
+			},
 		},
 		{
 			name:       "app-ls-empty",
 			cli:        "app ls --output json",
 			wantFormat: FormatJSON,
-			wantMethod: "GET",
-			wantPath:   "/v3/apps?excludeChannels=false",
+			wantAPIRequests: []string{
+				"GET:/v3/apps?excludeChannels=false",
+			},
 		},
 		{
 			name:       "app-ls-single",
 			cli:        "app ls",
 			wantFormat: FormatTable,
 			wantLines:  2,
-			wantMethod: "GET",
-			wantPath:   "/v3/apps?excludeChannels=false",
+			wantAPIRequests: []string{
+				"GET:/v3/apps?excludeChannels=false",
+			},
 		},
 		{
 			name:       "app-ls-single",
 			cli:        "app ls --output json",
 			wantFormat: FormatJSON,
-			wantMethod: "GET",
-			wantPath:   "/v3/apps?excludeChannels=false",
+			wantAPIRequests: []string{
+				"GET:/v3/apps?excludeChannels=false",
+			},
+		},
+		{
+			name: "app-rm",
+			cli:  "app rm slug --force",
+			wantAPIRequests: []string{
+				"GET:/v3/apps?excludeChannels=true",
+				"DELETE:/v3/app/id",
+			},
+			ignoreCLIOutput: true,
+		},
+		{
+			name:       "app-create",
+			cli:        "app create name",
+			wantFormat: FormatTable,
+			wantLines:  2,
+			wantAPIRequests: []string{
+				"POST:/v3/app",
+			},
 		},
 	}
 
@@ -69,8 +91,11 @@ func TestApp(t *testing.T) {
 				t.Errorf("error running cli: %v", err)
 			}
 
-			AssertCLIOutput(t, string(out), tt.wantFormat, tt.wantLines)
-			AssertAPIRequests(t, tt.wantMethod, tt.wantPath, apiCallLog.Name())
+			if !tt.ignoreCLIOutput {
+				AssertCLIOutput(t, string(out), tt.wantFormat, tt.wantLines)
+			}
+
+			AssertAPIRequests(t, tt.wantAPIRequests, apiCallLog.Name())
 		})
 	}
 }

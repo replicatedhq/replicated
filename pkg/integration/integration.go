@@ -28,6 +28,7 @@ var (
 				Name: "channel-name",
 			},
 		},
+		Id:           "id",
 		Slug:         "slug",
 		Name:         "name",
 		IsFoundation: true,
@@ -37,19 +38,22 @@ var (
 func Response(key string) interface{} {
 	switch key {
 	case "app-ls-empty":
-		return kotsclienttypes.KotsAppResponse{
+		return &kotsclienttypes.KotsAppResponse{
 			Apps: []types.KotsAppWithChannels{},
 		}
-	case "app-ls-single":
-		return kotsclienttypes.KotsAppResponse{
+	case "app-ls-single", "app-rm":
+		return &kotsclienttypes.KotsAppResponse{
 			Apps: []types.KotsAppWithChannels{
 				typeKOTSAppWithChannels,
 			},
 		}
+	case "app-create":
+		return &kotsclienttypes.CreateKOTSAppResponse{
+			App: &typeKOTSAppWithChannels,
+		}
 	default:
 		panic(fmt.Sprintf("unknown integration test: %s", key))
 	}
-
 }
 
 func CLIPath() string {

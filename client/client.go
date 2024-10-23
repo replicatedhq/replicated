@@ -1,6 +1,8 @@
 package client
 
 import (
+	"context"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
@@ -22,7 +24,7 @@ func NewClient(platformOrigin string, apiToken string, kurlOrigin string) Client
 	return client
 }
 
-func (c *Client) GetAppType(appID string, excludeChannels bool) (*types.App, string, error) {
+func (c *Client) GetAppType(ctx context.Context, appID string, excludeChannels bool) (*types.App, string, error) {
 	platformSwaggerApp, err1 := c.PlatformClient.GetApp(appID)
 	if err1 == nil && platformSwaggerApp != nil {
 		platformApp := &types.App{
@@ -34,7 +36,7 @@ func (c *Client) GetAppType(appID string, excludeChannels bool) (*types.App, str
 		return platformApp, "platform", nil
 	}
 
-	kotsApp, err2 := c.KotsClient.GetApp(appID, excludeChannels)
+	kotsApp, err2 := c.KotsClient.GetApp(ctx, appID, excludeChannels)
 	if err2 == nil && kotsApp != nil {
 		return kotsApp, "kots", nil
 	}
