@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -17,7 +18,7 @@ func Test_AppCreate(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-app-create-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		createdApp, err := client.CreateKOTSApp("app-create-1")
+		createdApp, err := client.CreateKOTSApp(context.TODO(), "app-create-1")
 		assert.Nil(t, err)
 
 		assert.Equal(t, "app-create-1", createdApp.Name)
