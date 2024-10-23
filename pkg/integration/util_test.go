@@ -29,13 +29,34 @@ func AssertCLIOutput(t *testing.T, got string, wantFormat format, wantLines int)
 	}
 }
 
-func AssertAPIRequests(t *testing.T, wantMethod string, wantPath string, apiCallLogFilename string) {
+func AssertAPIRequests(t *testing.T, wantAPIRequests []string, apiCallLogFilename string) {
 	apiCallLog, err := os.ReadFile(apiCallLogFilename)
 	if err != nil {
 		t.Errorf("error reading api call log: %v", err)
+		return
 	}
 
-	if string(apiCallLog) != fmt.Sprintf("%s:%s\n", wantMethod, wantPath) {
-		t.Errorf("got %s, want %s", apiCallLog, fmt.Sprintf("%s:%s\n", wantMethod, wantPath))
+	gotAPIRequests := strings.Split(string(apiCallLog), "\n")
+
+	cleaned := []string{}
+	for _, line := range gotAPIRequests {
+		if strings.TrimSpace(line) != "" {
+			cleaned = append(cleaned, line)
+		}
+	}
+	gotAPIRequests = cleaned
+
+	if len(gotAPIRequests) != len(wantAPIRequests) {
+		fmt.Printf("got: %v\n", gotAPIRequests)
+		fmt.Printf("want: %v\n", wantAPIRequests)
+		t.Errorf("got %d requests, want %d", len(gotAPIRequests), len(wantAPIRequests))
+		return
+	}
+
+	for i, wantAPIRequest := range wantAPIRequests {
+		gotAPIRequest := gotAPIRequests[i]
+		if gotAPIRequest != wantAPIRequest {
+			t.Errorf("got %s, want %s", gotAPIRequest, wantAPIRequest)
+		}
 	}
 }

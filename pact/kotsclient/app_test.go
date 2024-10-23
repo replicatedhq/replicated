@@ -72,7 +72,7 @@ func Test_RemoveApp(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-rm-app-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		err = client.DeleteKOTSApp("replicated-cli-rm-app-app")
+		err = client.DeleteKOTSApp(context.TODO(), "replicated-cli-rm-app-app")
 		assert.Nil(t, err)
 
 		apps, err := client.ListApps(context.TODO(), false)

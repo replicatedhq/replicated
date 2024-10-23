@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"context"
+
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -36,10 +39,18 @@ Use this command with caution as there is no way to undo this operation.`,
   # Delete an app and output the result in JSON format
   replicated app delete "Custom App" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := context.Background()
+			if integrationTest != "" {
+				ctx = context.WithValue(ctx, integration.IntegrationTestContextKey, integrationTest)
+			}
+			if logAPICalls != "" {
+				ctx = context.WithValue(ctx, integration.APICallLogContextKey, logAPICalls)
+			}
+
 			if len(args) != 1 {
 				return errors.New("missing app slug or id")
 			}
-			return r.deleteApp(cmd, args[0], opts, outputFormat)
+			return r.deleteApp(ctx, cmd, args[0], opts, outputFormat)
 		},
 		SilenceUsage: true,
 	}
@@ -50,18 +61,22 @@ Use this command with caution as there is no way to undo this operation.`,
 	return cmd
 }
 
-func (r *runners) deleteApp(cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
+func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
 	log := logger.NewLogger(r.w)
 
 	log.ActionWithSpinner("Fetching App")
-	app, err := r.kotsAPI.GetApp(appName, true)
+	app, err := r.kotsAPI.GetApp(ctx, appName, true)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "list apps")
 	}
 	log.FinishSpinner()
 
-	apps := []types.AppAndChannels{{App: app}}
+	apps := []types.AppAndChannels{
+		{
+			App: app,
+		},
+	}
 
 	err = print.Apps(outputFormat, r.w, apps)
 	if err != nil {
@@ -80,7 +95,7 @@ func (r *runners) deleteApp(cmd *cobra.Command, appName string, opts deleteAppOp
 	}
 
 	log.ActionWithSpinner("Deleting App")
-	err = r.kotsAPI.DeleteKOTSApp(app.ID)
+	err = r.kotsAPI.DeleteKOTSApp(ctx, app.ID)
 	if err != nil {
 		log.FinishSpinnerWithError()
 		return errors.Wrap(err, "delete app")
@@ -98,7 +113,6 @@ var templates = &promptui.PromptTemplates{
 }
 
 func promptConfirmDelete() (string, error) {
-
 	prompt := promptui.Prompt{
 		Label:     "Delete the above listed application? There is no undo:",
 		Templates: templates,

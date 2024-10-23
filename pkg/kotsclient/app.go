@@ -36,14 +36,14 @@ func (c *VendorV3Client) ListApps(ctx context.Context, excludeChannels bool) ([]
 	return results, nil
 }
 
-func (c *VendorV3Client) GetApp(appID string, excludeChannels bool) (*types.App, error) {
-	apps, err := c.ListApps(context.TODO(), excludeChannels)
+func (c *VendorV3Client) GetApp(ctx context.Context, appIDOrSlug string, excludeChannels bool) (*types.App, error) {
+	apps, err := c.ListApps(ctx, excludeChannels)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, app := range apps {
-		if app.App.ID == appID || app.App.Slug == appID {
+		if app.App.ID == appIDOrSlug || app.App.Slug == appIDOrSlug {
 			return &types.App{
 				ID:           app.App.ID,
 				Name:         app.App.Name,
@@ -54,5 +54,5 @@ func (c *VendorV3Client) GetApp(appID string, excludeChannels bool) (*types.App,
 		}
 	}
 
-	return nil, errors.New("App not found: " + appID)
+	return nil, errors.New("App not found: " + appIDOrSlug)
 }
