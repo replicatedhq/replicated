@@ -49,6 +49,7 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
   replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h`,
 		SilenceUsage: true,
 		RunE:         r.createCluster,
+		Args:         cobra.NoArgs,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
