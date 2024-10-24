@@ -10,6 +10,6 @@ func validatePerformance(
 
 	// +defaultPath="./"
 	source *dagger.Directory,
-) error {
-	return nil
+) (bool, map[string]Logs, error) {
+	return true, map[string]Logs{}, nil
 }
