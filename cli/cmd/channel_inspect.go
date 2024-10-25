@@ -21,6 +21,10 @@ func (r *runners) InitChannelInspect(parent *cobra.Command) {
 }
 
 func (r *runners) channelInspect(_ *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(args) != 1 {
 		return errors.New("channel name or ID is required")
 	}

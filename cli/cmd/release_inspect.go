@@ -22,6 +22,10 @@ func (r *runners) InitReleaseInspect(parent *cobra.Command) {
 }
 
 func (r *runners) releaseInspect(_ *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(args) != 1 {
 		return errors.New("release sequence is required")
 	}

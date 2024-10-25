@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,10 @@ func (r *runners) InitCollectorList(parent *cobra.Command) {
 }
 
 func (r *runners) collectorList(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	collectors, err := r.api.ListCollectors(r.appID, r.appType)
 	if err != nil {
 		return err
