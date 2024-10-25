@@ -160,7 +160,9 @@ func (r *Replicated) Release(
 
 	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
 		Version: goreleaserVersion,
-	}).Ctr().WithSecretVariable("GITHUB_TOKEN", githubToken)
+	}).Ctr().
+		WithSecretVariable("GITHUB_TOKEN", githubToken).
+		WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
 
 	if snapshot {
 		_, err := dag.
