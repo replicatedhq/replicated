@@ -7,3 +7,4 @@ bin/
 vendor/
 .idea
 .vscode
+do-not-commit/
