@@ -28,6 +28,10 @@ func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
 }
 
 func (r *runners) releaseUpdate(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	specSources := []string{
 		r.args.updateReleaseYaml,
 		r.args.updateReleaseYamlFile,

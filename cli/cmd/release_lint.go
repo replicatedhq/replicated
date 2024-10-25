@@ -44,6 +44,10 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 // the hosted version (lint.replicated.com). There are not changes and no auth required or sent.
 // This could be vendored in and run locally (respecting the size of the polcy files)
 func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	var isBuildersRelease bool
 	var lintReleaseData []byte
 	var contentType string

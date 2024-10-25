@@ -29,6 +29,10 @@ func (r *runners) tagInstance(cmd *cobra.Command, _ []string) (err error) {
 		printIfError(cmd, err)
 	}()
 
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if r.args.instanceTagCustomer == "" {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}

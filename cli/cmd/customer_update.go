@@ -104,8 +104,13 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts, ou
 	defer func() {
 		printIfError(cmd, err)
 	}()
+
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if opts.CustomerID == "" {
-		return errors.Errorf("missing or invalid parameters: customer")
+		return errors.New("missing or invalid parameters: customer")
 	}
 
 	// all of the following validation occurs in the API also, but

@@ -46,6 +46,10 @@ You must specify the customer using either their name or ID with the --customer 
 }
 
 func (r *runners) downloadCustomerLicense(cmd *cobra.Command, customer string, output string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	customerNameOrId, err := cmd.Flags().GetString("customer")
 	if err != nil {
 		return errors.Wrap(err, "get customer flag")
