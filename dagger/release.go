@@ -271,7 +271,7 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 
 	gitBranchOutput = strings.TrimSpace(gitBranchOutput)
 
-	if !strings.Contains(gitBranchOutput, "* git-tree-ditry") {
+	if !strings.Contains(gitBranchOutput, "* main") {
 		return false, ErrMainBranch
 	}
 
