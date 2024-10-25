@@ -1,14 +1,15 @@
 package client
 
 import (
+	"context"
 	"errors"
 
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo, error) {
+func (c *Client) ListReleases(ctx context.Context, appID string, appType string) ([]types.ReleaseInfo, error) {
 	if appType == "platform" {
-		platformReleases, err := c.PlatformClient.ListReleases(appID)
+		platformReleases, err := c.PlatformClient.ListReleases(ctx, appID)
 		if err != nil {
 			return nil, err
 		}
@@ -41,7 +42,7 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 		return releaseInfos, nil
 
 	} else if appType == "kots" {
-		return c.KotsClient.ListReleases(appID)
+		return c.KotsClient.ListReleases(ctx, appID)
 	}
 
 	return nil, errors.New("unknown app type")

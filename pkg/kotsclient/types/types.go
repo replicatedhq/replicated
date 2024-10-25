@@ -9,3 +9,8 @@ type KotsAppResponse struct {
 type CreateKOTSAppResponse struct {
 	App *types.KotsAppWithChannels `json:"app"`
 }
+
+// KotsListReleasesResponse contains the JSON releases list
+type KotsListReleasesResponse struct {
+	Releases []*types.KotsAppRelease `json:"releases"`
+}

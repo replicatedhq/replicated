@@ -11,6 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
+	kotsclienttypes "github.com/replicatedhq/replicated/pkg/kotsclient/types"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -127,14 +128,15 @@ func (c *VendorV3Client) UpdateRelease(appID string, sequence int64, multiyaml s
 	return nil
 }
 
-func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
+func (c *VendorV3Client) ListReleases(ctx context.Context, appID string) ([]types.ReleaseInfo, error) {
 	allReleases := []types.ReleaseInfo{}
 	done := false
 	page := 0
+
 	for !done {
-		resp := types.KotsListReleasesResponse{}
+		resp := kotsclienttypes.KotsListReleasesResponse{}
 		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
-		err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
+		err := c.DoJSON(ctx, "GET", path, http.StatusOK, nil, &resp)
 		if err != nil {
 			done = true
 			continue

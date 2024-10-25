@@ -1,6 +1,7 @@
 package kotsclient
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -87,7 +88,7 @@ func Test_ListReleases(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-releases-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		releases, err := client.ListReleases("replicated-cli-list-releases-app")
+		releases, err := client.ListReleases(context.TODO(), "replicated-cli-list-releases-app")
 		assert.NoError(t, err)
 
 		assert.Len(t, releases, 2)
