@@ -30,3 +30,8 @@ var funcs = template.FuncMap{
 		return t.Local().Format("2006-01-02 15:04 MST")
 	},
 }
+
+func CreditsToDollarsDisplay(credits int64) string {
+	dollars := float64(credits) / 100000.0
+	return fmt.Sprintf("$%.2f", dollars)
+}

@@ -14,9 +14,9 @@ type VM struct {
 
 	TTL string `json:"ttl"`
 
-	CreditsPerHourPerVM int64 `json:"credits_per_hour_per_vm"`
-	FlatFee             int64 `json:"flat_fee"`
-	TotalCredits        int64 `json:"total_credits"`
+	CreditsPerHour int64 `json:"credits_per_hour"`
+	FlatFee        int64 `json:"flat_fee"`
+	TotalCredits   int64 `json:"total_credits"`
 
 	EstimatedCost int64 `json:"estimated_cost"` // Represents estimated credits for this vm based on the TTL
 

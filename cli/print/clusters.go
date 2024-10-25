@@ -46,11 +46,6 @@ DISTRIBUTION: {{ $d.Name }}
 {{ end }}`
 var clusterVersionsTmpl = template.Must(template.New("clusterVersions").Funcs(funcs).Parse(clusterVersionsTmplSrc))
 
-func CreditsToDollarsDisplay(credits int64) string {
-	dollars := float64(credits) / 100000.0
-	return fmt.Sprintf("$%.2f", dollars)
-}
-
 func Clusters(outputFormat string, w *tabwriter.Writer, clusters []*types.Cluster, header bool) error {
 	for _, cluster := range clusters {
 		updateEstimatedCost(cluster)
