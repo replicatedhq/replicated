@@ -12,10 +12,10 @@ import (
 )
 
 // ListReleases lists all releases for an app.
-func (c *HTTPClient) ListReleases(appID string) ([]releases.AppReleaseInfo, error) {
+func (c *HTTPClient) ListReleases(ctx context.Context, appID string) ([]releases.AppReleaseInfo, error) {
 	path := fmt.Sprintf("/v1/app/%s/releases", appID)
 	releases := make([]releases.AppReleaseInfo, 0)
-	if err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &releases); err != nil {
+	if err := c.DoJSON(ctx, "GET", path, http.StatusOK, nil, &releases); err != nil {
 		return nil, fmt.Errorf("ListReleases: %w", err)
 	}
 	return releases, nil

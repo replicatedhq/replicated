@@ -3,6 +3,7 @@ package integration
 import (
 	"fmt"
 	"path"
+	"time"
 
 	kotsclienttypes "github.com/replicatedhq/replicated/pkg/kotsclient/types"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -33,6 +34,25 @@ var (
 		Name:         "name",
 		IsFoundation: true,
 	}
+
+	typesKOTSAppRelease = types.KotsAppRelease{
+		AppID:                "app-id",
+		Sequence:             1,
+		CreatedAt:            time.Now(),
+		IsArchived:           false,
+		Spec:                 "spec",
+		ReleaseNotes:         "release-notes",
+		IsReleaseNotEditable: false,
+		Channels: []*types.Channel{
+			{
+				ID:   "channel-id",
+				Name: "channel-name",
+			},
+		},
+		Charts:               []types.Chart{},
+		CompatibilityResults: []types.CompatibilityResult{},
+		IsHelmOnly:           false,
+	}
 )
 
 func Response(key string) interface{} {
@@ -50,6 +70,12 @@ func Response(key string) interface{} {
 	case "app-create":
 		return &kotsclienttypes.CreateKOTSAppResponse{
 			App: &typeKOTSAppWithChannels,
+		}
+	case "release-ls":
+		return kotsclienttypes.KotsListReleasesResponse{
+			Releases: []*types.KotsAppRelease{
+				&typesKOTSAppRelease,
+			},
 		}
 	default:
 		panic(fmt.Sprintf("unknown integration test: %s", key))
