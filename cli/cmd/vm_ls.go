@@ -119,6 +119,8 @@ func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 					vmsToPrint = append(vmsToPrint, newVM)
 				} else {
 					// Check if properties of existing vms have changed
+					// reset EstimatedCost (as it is calculated on the fly and not stored in the API response)
+					oldVM.EstimatedCost = 0
 					if !reflect.DeepEqual(newVM, oldVM) {
 						vmsToPrint = append(vmsToPrint, newVM)
 					}

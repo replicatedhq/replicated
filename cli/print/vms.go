@@ -10,23 +10,27 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
+var vmFuncs = template.FuncMap{
+	"CreditsToDollarsDisplay": CreditsToDollarsDisplay,
+}
+
 // Table formatting
-var vmsTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES`
+var vmsTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	COST`
 var vmsTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}
 {{ end }}`
 var vmsTmplTableSrc = fmt.Sprintln(vmsTmplTableHeaderSrc) + vmsTmplTableRowSrc
-var vmsTmplTable = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplTableSrc))
-var vmsTmplTableNoHeader = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplTableRowSrc))
+var vmsTmplTable = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplTableSrc))
+var vmsTmplTableNoHeader = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplTableRowSrc))
 
 // Wide table formatting
-var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	TAGS`
+var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	CREATED	EXPIRES	COST	TAGS`
 var vmsTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
 {{ end }}`
 var vmsTmplWideSrc = fmt.Sprintln(vmsTmplWideHeaderSrc) + vmsTmplWideRowSrc
-var vmsTmplWide = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplWideSrc))
-var vmsTmplWideNoHeader = template.Must(template.New("vms").Funcs(funcs).Parse(vmsTmplWideRowSrc))
+var vmsTmplWide = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplWideSrc))
+var vmsTmplWideNoHeader = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplWideRowSrc))
 
 // VM versions
 var vmVersionsTmplSrc = `Supported VM distributions and versions are:
@@ -42,6 +46,9 @@ DISTRIBUTION: {{ $d.Name }}
 var vmVersionsTmpl = template.Must(template.New("vmVersions").Funcs(funcs).Parse(vmVersionsTmplSrc))
 
 func VMs(outputFormat string, w *tabwriter.Writer, vms []*types.VM, header bool) error {
+	for _, vm := range vms {
+		updateEstimatedVMCost(vm)
+	}
 	switch outputFormat {
 	case "table":
 		if header {
@@ -165,7 +172,7 @@ func updateEstimatedVMCost(vm *types.VM) {
 	} else {
 		expireDuration, _ := time.ParseDuration(vm.TTL)
 		minutesRunning := int64(expireDuration.Minutes())
-		totalCredits := int64(minutesRunning) * vm.CreditsPerHourPerVM / 60.0
+		totalCredits := int64(minutesRunning) * vm.CreditsPerHour / 60.0
 		vm.EstimatedCost = vm.FlatFee + totalCredits
 	}
 }
