@@ -55,6 +55,10 @@ The customer can be specified by either their name or ID.`,
 	return cmd
 }
 func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(customers) == 0 {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}

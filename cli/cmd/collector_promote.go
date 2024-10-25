@@ -22,6 +22,10 @@ func (r *runners) InitCollectorPromote(parent *cobra.Command) {
 }
 
 func (r *runners) collectorPromote(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	// parse spec ID and channel ID positional arguments
 	if len(args) != 2 {
 		return errors.New("collector spec ID and channel ID are required")

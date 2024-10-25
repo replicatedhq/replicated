@@ -19,6 +19,10 @@ func (r *runners) InitChannelAdoption(parent *cobra.Command) {
 }
 
 func (r *runners) channelAdoption(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(args) != 1 {
 		return errors.New("channel ID is required")
 	}

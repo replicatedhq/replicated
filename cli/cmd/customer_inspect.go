@@ -52,6 +52,10 @@ func (r *runners) InitCustomersInspectCommand(parent *cobra.Command) *cobra.Comm
 }
 
 func (r *runners) inspectCustomer(cmd *cobra.Command, customer string, outputFormat string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if customer == "" {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}

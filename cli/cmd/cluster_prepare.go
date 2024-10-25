@@ -150,6 +150,10 @@ func validateClusterPrepareFlags(args runnerArgs) error {
 }
 
 func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	log := logger.NewLogger(r.w)
 
 	release, err := prepareRelease(r, log)

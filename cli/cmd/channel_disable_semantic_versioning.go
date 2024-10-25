@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -21,6 +22,10 @@ func (r *runners) InitChannelDisableSemanticVersioning(parent *cobra.Command) {
 }
 
 func (r *runners) channelDisableSemanticVersioning(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(args) != 1 {
 		return errors.New("channel ID is required")
 	}

@@ -34,6 +34,10 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		printIfError(cmd, err)
 	}()
 
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	// parse sequence and channel ID positional arguments
 	if len(args) != 2 {
 		return errors.New("release sequence and channel ID are required")

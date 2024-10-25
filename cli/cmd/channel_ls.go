@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +20,10 @@ func (r *runners) InitChannelList(parent *cobra.Command) {
 }
 
 func (r *runners) channelList(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	channels, err := r.api.ListChannels(r.appID, r.appType, "")
 	if err != nil {
 		return err

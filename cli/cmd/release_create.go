@@ -160,6 +160,10 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 
 	log := logger.NewLogger(r.w)
 
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
 		err = r.setKOTSDefaultReleaseParams()

@@ -104,6 +104,10 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 	}()
 
 	// Validation
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if err := validateCustomerType(opts.CustomerType); err != nil {
 		return errors.Wrap(err, "validate customer type")
 	}

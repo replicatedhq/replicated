@@ -31,6 +31,13 @@ type runners struct {
 	args    runnerArgs
 }
 
+func (r *runners) hasApp() bool {
+	if r.appID == "" && r.appType == "" && r.appSlug == "" {
+		return false
+	}
+	return true
+}
+
 type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string

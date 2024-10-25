@@ -46,6 +46,10 @@ The command requires an app to be set using the --app flag.`,
 }
 
 func (r *runners) listCustomers(appVersion string, includeTest bool, outputFormat string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if appVersion == "" {
 		customers, err := r.api.ListCustomers(r.appID, r.appType, includeTest)
 		if err != nil {

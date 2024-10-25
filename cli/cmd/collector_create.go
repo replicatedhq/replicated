@@ -26,6 +26,10 @@ func (r *runners) InitCollectorCreate(parent *cobra.Command) {
 }
 
 func (r *runners) collectorCreate(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if r.args.createCollectorName == "" {
 		return errors.New("collector name is required")
 	}

@@ -18,6 +18,10 @@ func (r *runners) InitChannelRemove(parent *cobra.Command) {
 }
 
 func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if len(args) != 1 {
 		return errors.New("channel ID is required")
 	}

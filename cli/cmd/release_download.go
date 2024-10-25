@@ -23,6 +23,10 @@ func (r *runners) InitReleaseDownload(parent *cobra.Command) {
 }
 
 func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
+	if !r.hasApp() {
+		return errors.New("no app specified")
+	}
+
 	if r.appType != "kots" {
 		return r.releaseInspect(command, args)
 	}
