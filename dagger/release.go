@@ -78,7 +78,7 @@ func (r *Replicated) Release(
 		WithExec([]string{"git", "checkout", "-b", releaseBranchName}).
 		WithExec([]string{"git", "add", "pkg/version/build.go"}).
 		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)}).
-		WithExec([]string{"git", "push", "dagger", releaseBranchName}).
+		WithExec([]string{"git", "push", "dagger", releaseBranchName})
 	_, err = gitCommitContainer.Stdout(ctx)
 	if err != nil {
 		return err
