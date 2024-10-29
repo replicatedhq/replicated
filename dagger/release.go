@@ -60,6 +60,12 @@ func (r *Replicated) Release(
 	buildFileContent = strings.ReplaceAll(buildFileContent, "const version = \"unknown\"", fmt.Sprintf("const version = \"%d.%d.%d\"", major, minor, patch))
 	updatedSource := source.WithNewFile("./pkg/version/build.go", buildFileContent)
 
+	releaseBranchName := fmt.Sprintf("release-%d.%d.%d", major, minor, patch)
+	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
+	if err != nil {
+		return err
+	}
+
 	// mount that and commit the updated build.go to git (don't push)
 	// so that goreleaser won't have a dirty git tree error
 	gitCommitContainer := dag.Container().
@@ -68,25 +74,23 @@ func (r *Replicated) Release(
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithExec([]string{"git", "config", "user.email", "release@replicated.com"}).
 		WithExec([]string{"git", "config", "user.name", "Replicated Release Pipeline"}).
+		WithExec([]string{"git", "remote", "add", "dagger", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
+		WithExec([]string{"git", "checkout", "-b", releaseBranchName}).
 		WithExec([]string{"git", "add", "pkg/version/build.go"}).
-		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)})
+		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)}).
+		WithExec([]string{"git", "push", "dagger", releaseBranchName}).
 	_, err = gitCommitContainer.Stdout(ctx)
 	if err != nil {
 		return err
 	}
 	updatedSource = gitCommitContainer.Directory("/go/src/github.com/replicatedhq/replicated")
 
-	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
-	if err != nil {
-		return err
-	}
 	tagContainer := dag.Container().
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		WithExec([]string{"git", "remote", "add", "tag", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
 		With(CacheBustingExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "push", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}))
+		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
 		return err
@@ -161,8 +165,9 @@ func (r *Replicated) Release(
 	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
 		Version: goreleaserVersion,
 	}).Ctr().
-		WithSecretVariable("GITHUB_TOKEN", githubToken).
-		WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
+		WithSecretVariable("GITHUB_TOKEN", githubToken)
+		// TODO: add back after next release
+		// WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
 
 	if snapshot {
 		_, err := dag.
