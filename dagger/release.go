@@ -74,11 +74,11 @@ func (r *Replicated) Release(
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithExec([]string{"git", "config", "user.email", "release@replicated.com"}).
 		WithExec([]string{"git", "config", "user.name", "Replicated Release Pipeline"}).
-		WithExec([]string{"git", "remote", "add", "tag", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
+		WithExec([]string{"git", "remote", "add", "dagger", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
 		WithExec([]string{"git", "checkout", "-b", releaseBranchName}).
 		WithExec([]string{"git", "add", "pkg/version/build.go"}).
 		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)}).
-		WithExec([]string{"git", "push", "tag", releaseBranchName}).
+		WithExec([]string{"git", "push", "dagger", releaseBranchName}).
 	_, err = gitCommitContainer.Stdout(ctx)
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func (r *Replicated) Release(
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		With(CacheBustingExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "push", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}))
+		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
 		return err
