@@ -96,7 +96,8 @@ func (r *Replicated) Release(
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		With(CacheBustingExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
 		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "fetch", "dagger", latestReleaseBranchName}))
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", latestReleaseBranchName})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
 		return err
