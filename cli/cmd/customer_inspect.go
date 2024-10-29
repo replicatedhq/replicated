@@ -75,7 +75,7 @@ func (r *runners) inspectCustomer(cmd *cobra.Command, customer string, outputFor
 		return errors.Wrapf(err, "get registry hostname for customer %q", customer)
 	}
 
-	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, c); err != nil {
+	if err = print.CustomerAttrs(outputFormat, r.w, r.appType, r.appSlug, ch, regHost, c); err != nil {
 		return errors.Wrap(err, "print customer attrs")
 	}
 
