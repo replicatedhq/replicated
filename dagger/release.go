@@ -45,7 +45,12 @@ func (r *Replicated) Release(
 		return err
 	}
 
-	major, minor, patch, err := parseVersion(ctx, latestVersion, version)
+	latestReleaseBranchName, err := getReleaseBranchName(ctx, latestVersion)
+	if err != nil {
+		return err
+	}
+
+	major, minor, patch, err := getNextVersion(ctx, latestVersion, version)
 	if err != nil {
 		return err
 	}
@@ -90,7 +95,9 @@ func (r *Replicated) Release(
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		With(CacheBustingExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)}))
+		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", latestReleaseBranchName})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
 		return err
@@ -165,9 +172,8 @@ func (r *Replicated) Release(
 	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
 		Version: goreleaserVersion,
 	}).Ctr().
-		WithSecretVariable("GITHUB_TOKEN", githubToken)
-		// TODO: add back after next release
-		// WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
+		WithSecretVariable("GITHUB_TOKEN", githubToken).
+		WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
 
 	if snapshot {
 		_, err := dag.
@@ -200,7 +206,7 @@ func (r *Replicated) Release(
 	return nil
 }
 
-func parseVersion(ctx context.Context, latestVersion string, version string) (int64, int64, int64, error) {
+func getNextVersion(ctx context.Context, latestVersion string, version string) (int64, int64, int64, error) {
 	parsedLatestVersion, err := semver.NewVersion(latestVersion)
 	if err != nil {
 		return 0, 0, 0, err
@@ -220,6 +226,15 @@ func parseVersion(ctx context.Context, latestVersion string, version string) (in
 		}
 		return v.Major(), v.Minor(), v.Patch(), nil
 	}
+}
+
+func getReleaseBranchName(ctx context.Context, latestVersion string) (string, error) {
+	parsedLatestVersion, err := semver.NewVersion(latestVersion)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("release-%d.%d.%d", parsedLatestVersion.Major(), parsedLatestVersion.Minor(), parsedLatestVersion.Patch()), nil
 }
 
 func getLatestVersion(ctx context.Context) (string, error) {
