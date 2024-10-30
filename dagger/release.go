@@ -40,17 +40,17 @@ func (r *Replicated) Release(
 		return fmt.Errorf("git tree is not ok")
 	}
 
-	latestVersion, err := getLatestVersion(ctx)
+	previousVersionTag, err := getLatestVersion(ctx)
 	if err != nil {
 		return err
 	}
 
-	latestReleaseBranchName, err := getReleaseBranchName(ctx, latestVersion)
+	previousReleaseBranchName, err := getReleaseBranchName(ctx, previousVersionTag)
 	if err != nil {
 		return err
 	}
 
-	major, minor, patch, err := getNextVersion(ctx, latestVersion, version)
+	major, minor, patch, err := getNextVersion(ctx, previousVersionTag, version)
 	if err != nil {
 		return err
 	}
@@ -90,13 +90,15 @@ func (r *Replicated) Release(
 	}
 	updatedSource = gitCommitContainer.Directory("/go/src/github.com/replicatedhq/replicated")
 
+	nextVersionTag := fmt.Sprintf("v%d.%d.%d", major, minor, patch)
+
 	tagContainer := dag.Container().
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		With(CacheBustingExec([]string{"git", "tag", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "push", "dagger", fmt.Sprintf("v%d.%d.%d", major, minor, patch)})).
-		With(CacheBustingExec([]string{"git", "fetch", "dagger", latestReleaseBranchName})).
+		With(CacheBustingExec([]string{"git", "tag", nextVersionTag})).
+		With(CacheBustingExec([]string{"git", "push", "dagger", nextVersionTag})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", previousReleaseBranchName})).
 		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
@@ -173,7 +175,8 @@ func (r *Replicated) Release(
 		Version: goreleaserVersion,
 	}).Ctr().
 		WithSecretVariable("GITHUB_TOKEN", githubToken).
-		WithEnvVariable("GORELEASER_CURRENT_TAG", latestVersion)
+		WithEnvVariable("GORELEASER_CURRENT_TAG", nextVersionTag).
+		WithEnvVariable("GORELEASER_PREVIOUS_TAG", previousVersionTag)
 
 	if snapshot {
 		_, err := dag.
