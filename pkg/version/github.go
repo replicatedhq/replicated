@@ -50,7 +50,7 @@ var (
 // a path to the extracted file in the archive
 // it's the responsibility of the caller to clean up the extracted file
 func downloadVersion(version string, requireChecksumMatch bool) (string, error) {
-	releaseInfo, err := getReleaseDetails(http.DefaultClient.Timeout, "github.com", "replicatedhq", "replicated", version)
+	releaseInfo, err := getReleaseDetails(http.DefaultClient.Timeout, "api.github.com", "replicatedhq", "replicated", version)
 	if err != nil {
 		return "", errors.Wrap(err, "get release details")
 	}
@@ -339,9 +339,9 @@ func getReleaseDetails(timeout time.Duration, host string, owner string, repo st
 	uri := ""
 
 	if releaseName == "latest" {
-		uri = fmt.Sprintf("%s/repos/%s/%s/releases/latest", host, owner, repo)
+		uri = fmt.Sprintf("https://%s/repos/%s/%s/releases/latest", host, owner, repo)
 	} else {
-		uri = fmt.Sprintf("%s/repos/%s/%s/releases/tags/%s", host, owner, repo, releaseName)
+		uri = fmt.Sprintf("https://%s/repos/%s/%s/releases/tags/%s", host, owner, repo, releaseName)
 	}
 
 	req, err := http.NewRequest("GET", uri, nil)
