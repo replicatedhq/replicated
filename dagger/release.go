@@ -116,6 +116,7 @@ func (r *Replicated) Release(
 	}).
 		From("golang:1.22").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
+		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).
 		WithEnvVariable("GOMODCACHE", "/go/pkg/mod").
