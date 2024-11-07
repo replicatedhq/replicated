@@ -14,8 +14,9 @@ func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
 	)
 
 	customersLsCmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List customers for the current application",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List customers for the current application",
 		Long: `List customers associated with the current application.
 
 This command displays information about customers linked to your application.

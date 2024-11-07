@@ -15,8 +15,9 @@ func (r *runners) InitClusterAddonRm(parent *cobra.Command) *cobra.Command {
 	args := clusterAddonRmArgs{}
 
 	cmd := &cobra.Command{
-		Use:   "rm CLUSTER_ID --id ADDON_ID",
-		Short: "Remove cluster add-on by ID.",
+		Use:     "rm CLUSTER_ID --id ADDON_ID",
+		Aliases: []string{"delete"},
+		Short:   "Remove cluster add-on by ID.",
 		Long: `The 'cluster addon rm' command allows you to remove a specific add-on from a cluster by specifying the cluster ID and the add-on ID.
 
 This command is useful when you want to deprovision an add-on that is no longer needed or when troubleshooting issues related to specific add-ons. The add-on will be removed immediately, and you will receive confirmation upon successful removal.`,

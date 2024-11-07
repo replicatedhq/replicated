@@ -14,8 +14,9 @@ import (
 
 func (r *runners) InitVMList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List test VMs and their status, with optional filters for start/end time and terminated VMs.",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List test VMs and their status, with optional filters for start/end time and terminated VMs.",
 		Long: `List all test VMs in your account, including their current status, distribution, version, and more. You can use optional flags to filter the output based on VM termination status, start time, or end time. This command can also watch the VM status in real-time.
 
 By default, the command will return a table of all VMs, but you can switch to JSON or wide output formats for more detailed information. The command supports filtering to show only terminated VMs or to specify a time range for the query.
