@@ -12,7 +12,7 @@ func (c *Client) CreateInstaller(appId string, appType string, yaml string) (*ty
 		return c.KotsClient.CreateInstaller(appId, yaml)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) ListInstallers(appId string, appType string) ([]types.InstallerSpec, error) {
@@ -23,7 +23,7 @@ func (c *Client) ListInstallers(appId string, appType string) ([]types.Installer
 		return c.KotsClient.ListInstallers(appId)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 
 }
 
@@ -34,6 +34,6 @@ func (c *Client) PromoteInstaller(appId string, appType string, sequence int64, 
 		return c.KotsClient.PromoteInstaller(appId, sequence, channelID, versionLabel)
 	}
 
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 
 }

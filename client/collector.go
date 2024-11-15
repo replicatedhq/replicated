@@ -42,5 +42,5 @@ func (c *Client) PromoteCollector(appID string, appType string, specID string, c
 		return c.PlatformClient.PromoteCollector(appID, specID, channelIDs...)
 	}
 
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 }

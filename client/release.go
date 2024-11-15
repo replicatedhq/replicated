@@ -1,8 +1,7 @@
 package client
 
 import (
-	"errors"
-
+	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -44,7 +43,7 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 		return c.KotsClient.ListReleases(appID)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) CreateRelease(appID string, appType string, yaml string) (*types.ReleaseInfo, error) {
@@ -78,7 +77,7 @@ func (c *Client) CreateRelease(appID string, appType string, yaml string) (*type
 		return c.KotsClient.CreateRelease(appID, yaml)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) UpdateRelease(appID string, appType string, sequence int64, yaml string) error {
@@ -88,7 +87,7 @@ func (c *Client) UpdateRelease(appID string, appType string, sequence int64, yam
 	} else if appType == "kots" {
 		return c.KotsClient.UpdateRelease(appID, sequence, yaml)
 	}
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) TestRelease(appID string, appType string, sequence int64) (string, error) {
@@ -116,7 +115,7 @@ func (c *Client) GetRelease(appID string, appType string, sequence int64) (*type
 	} else if appType == "kots" {
 		return c.KotsClient.GetRelease(appID, sequence)
 	}
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) PromoteRelease(appID string, appType string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
@@ -126,7 +125,7 @@ func (c *Client) PromoteRelease(appID string, appType string, sequence int64, la
 	} else if appType == "kots" {
 		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
 	}
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 }
 
 // data is a []byte describing a tarred yaml-dir, created by tarYAMLDir()
@@ -138,5 +137,5 @@ func (c *Client) LintRelease(appType string, data []byte, isBuildersRelease bool
 		return c.KotsClient.LintRelease(data, isBuildersRelease, contentType)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
