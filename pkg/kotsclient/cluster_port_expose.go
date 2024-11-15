@@ -19,7 +19,7 @@ type ExposeClusterPortResponse struct {
 }
 
 func (c *VendorV3Client) ExposeClusterPort(clusterID string, portNumber int, protocols []string, isWildcard bool) (*types.ClusterPort, error) {
-	req := ExportClusterPortRequest{
+	req := ExportVMPortRequest{
 		Port:       portNumber,
 		Protocols:  protocols,
 		IsWildcard: isWildcard,

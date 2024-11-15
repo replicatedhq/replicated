@@ -45,3 +45,31 @@ type VMVersion struct {
 	InstanceTypes []string                   `json:"instance_types"`
 	Status        *ClusterDistributionStatus `json:"status,omitempty"`
 }
+
+type VMAddonStatus string
+
+const (
+	VMAddonStatusPending  VMAddonStatus = "pending"  // No attempts to install this addon
+	VMAddonStatusApplied  VMAddonStatus = "applied"  // The addon has been applied to the vm
+	VMAddonStatusRunning  VMAddonStatus = "ready"    // The addon is ready to be used
+	VMAddonStatusError    VMAddonStatus = "error"    // The addon has an error
+	VMAddonStatusRemoving VMAddonStatus = "removing" // The addon is being removed
+	VMAddonStatusRemoved  VMAddonStatus = "removed"  // The addon has been removed
+)
+
+type VMExposedPort struct {
+	Protocol    string `json:"protocol"`
+	ExposedPort int    `json:"exposed_port"`
+}
+
+type VMPort struct {
+	VMID         string          `json:"vm_id"`
+	AddonID      string          `json:"addon_id"`
+	UpstreamPort int             `json:"upstream_port"`
+	ExposedPorts []VMExposedPort `json:"exposed_ports"`
+	IsWildcard   bool            `json:"is_wildcard"`
+	CreatedAt    time.Time       `json:"created_at"`
+	Hostname     string          `json:"hostname"`
+	PortName     string          `json:"port_name"`
+	State        VMAddonStatus   `json:"state"`
+}

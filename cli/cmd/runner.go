@@ -238,4 +238,9 @@ type runnerArgs struct {
 
 	updateVMName string
 	updateVMID   string
+
+	vmExposePortPort       int
+	vmExposePortProtocols  []string
+	vmExposePortIsWildcard bool
+	vmPortRemoveAddonID    string
 }
