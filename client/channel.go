@@ -35,7 +35,7 @@ func (c *Client) ListChannels(appID string, appType string, channelName string) 
 		return c.KotsClient.ListChannels(appID, channelName)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) GetChannel(appID string, appType string, channelID string) (*types.Channel, error) {
@@ -55,7 +55,7 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ty
 	} else if appType == "kots" {
 		return c.KotsClient.GetChannel(appID, channelID)
 	}
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 func (c *Client) ArchiveChannel(appID string, appType string, channelID string) error {
@@ -64,7 +64,7 @@ func (c *Client) ArchiveChannel(appID string, appType string, channelID string) 
 	} else if appType == "kots" {
 		return c.KotsClient.ArchiveChannel(appID, channelID)
 	}
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 
 }
 
@@ -82,7 +82,7 @@ func (c *Client) CreateChannel(appID string, appType string, name string, descri
 		return c.KotsClient.ListChannels(appID, name)
 	}
 
-	return nil, errors.New("unknown app type")
+	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
 type GetOrCreateChannelOptions struct {
@@ -162,5 +162,5 @@ func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string
 		return err
 	}
 
-	return errors.New("unknown app type")
+	return errors.Errorf("unknown app type %q", appType)
 }

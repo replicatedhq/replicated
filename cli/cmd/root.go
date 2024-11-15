@@ -342,7 +342,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			}
 
 			if app != nil {
-				runCmds.appType = app.Scheduler
+				if app.Scheduler == "native" {
+					runCmds.appType = "platform"
+				} else {
+					runCmds.appType = app.Scheduler
+				}
 				runCmds.appID = app.ID
 				runCmds.appSlug = app.Slug
 			}
