@@ -47,5 +47,4 @@ func (r *runners) vmPortRemove(_ *cobra.Command, args []string) error {
 	}
 
 	return print.VMPorts(r.outputFormat, r.w, ports, true)
-
 }
