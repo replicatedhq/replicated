@@ -263,6 +263,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
 
+	vmPortCmd := runCmds.InitVMPort(vmCmd)
+	runCmds.InitVMPortLs(vmPortCmd)
+	runCmds.InitVMPortExpose(vmPortCmd)
+	runCmds.InitVMPortRm(vmPortCmd)
+
 	networkCmd := runCmds.InitNetworkCommand(runCmds.rootCmd)
 	runCmds.InitNetworkCreate(networkCmd)
 	runCmds.InitNetworkList(networkCmd)
