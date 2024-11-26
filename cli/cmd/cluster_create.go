@@ -28,25 +28,29 @@ This command supports creating clusters on multiple Kubernetes distributions, in
 
 Use the '--dry-run' flag to simulate the creation process and get an estimated cost without actually provisioning the cluster.`,
 		Example: `  # Create a new cluster with basic configuration
-  replicated cluster create --distribution eks --version 1.21 --nodes 3 --instance-type t3.large --disk 100 --ttl 24h
+  replicated cluster create --distribution eks --version 1.29 --nodes 3 --instance-type t3.large --disk 100 --ttl 24h
 
   # Create a cluster with a custom node group
-  replicated cluster create --distribution eks --version 1.21 --nodegroup name=workers,instance-type=t3.large,nodes=5 --ttl 24h
+  replicated cluster create --distribution eks --version 1.29 --nodegroup name=workers,instance-type=t3.large,nodes=5 --ttl 24h
 
   # Simulate cluster creation (dry-run)
-  replicated cluster create --distribution eks --version 1.21 --nodes 3 --disk 100 --ttl 24h --dry-run
+  replicated cluster create --distribution eks --version 1.29 --nodes 3 --disk 100 --ttl 24h --dry-run
 
   # Create a cluster with autoscaling configuration
-  replicated cluster create --distribution eks --version 1.21 --min-nodes 2 --max-nodes 5 --instance-type t3.large --ttl 24h
+  replicated cluster create --distribution eks --version 1.29 --min-nodes 2 --max-nodes 5 --instance-type t3.large --ttl 24h
 
   # Create a cluster with multiple node groups
-  replicated cluster create --distribution eks --version 1.21 \
+  replicated cluster create --distribution eks --version 1.29 \
     --nodegroup name=workers,instance-type=t3.large,nodes=3 \
     --nodegroup name=cpu-intensive,instance-type=c5.2xlarge,nodes=2 \
     --ttl 24h
 
+  # Create a cluster with Embedded Cluster and a customer license
+  replicated cluster create --distribution embedded-cluster --version 1.29 \
+    --license-id 2jbfVR0m7tIy1tDec5ktplXYZZ
+
   # Create a cluster with custom tags
-  replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h`,
+  replicated cluster create --distribution eks --version 1.29 --nodes 3 --tag env=test --tag project=demo --ttl 24h`,
 		SilenceUsage: true,
 		RunE:         r.createCluster,
 		Args:         cobra.NoArgs,
