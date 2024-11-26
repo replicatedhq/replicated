@@ -46,7 +46,7 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
     --ttl 24h
 
   # Create a cluster with Embedded Cluster and a customer license
-  replicated cluster create --distribution embedded-cluster --version 1.29 \
+  replicated cluster create --distribution embedded-cluster \
     --license-id 2jbfVR0m7tIy1tDec5ktplXYZZ
 
   # Create a cluster with custom tags
