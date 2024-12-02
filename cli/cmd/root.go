@@ -389,6 +389,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	registryCmd.PersistentPreRunE = preRunSetupAPIs
 	clusterCmd.PersistentPreRunE = preRunSetupAPIs
 	vmCmd.PersistentPreRunE = preRunSetupAPIs
+	networkCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
 
