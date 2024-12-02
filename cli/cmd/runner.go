@@ -243,4 +243,8 @@ type runnerArgs struct {
 	vmExposePortProtocols  []string
 	vmExposePortIsWildcard bool
 	vmPortRemoveAddonID    string
+
+	lsNetworkStartTime string
+	lsNetworkEndTime   string
+	lsNetworkWatch     bool
 }
