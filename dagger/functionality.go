@@ -10,9 +10,11 @@ func validateFunctionality(
 
 	// +defaultPath="./"
 	source *dagger.Directory,
-) error {
+) (bool, map[string]Logs, error) {
 	goModCache := dag.CacheVolume("replicated-go-mod-122")
 	goBuildCache := dag.CacheVolume("replicated-go-build-121")
+
+	checkLogs := map[string]Logs{}
 
 	// unit tests
 	unitTest := dag.Container().
@@ -25,10 +27,18 @@ func validateFunctionality(
 		WithEnvVariable("GOCACHE", "/go/build-cache").
 		With(CacheBustingExec([]string{"make", "test-unit"}))
 
-	_, err := unitTest.Stderr(ctx)
+	unitTestStdout, err := unitTest.Stdout(ctx)
 	if err != nil {
-		return err
+		return false, nil, err
+	}
+	unitTestStderr, err := unitTest.Stderr(ctx)
+	if err != nil {
+		return false, nil, err
+	}
+	checkLogs["unit-tests"] = Logs{
+		Stdout: unitTestStdout,
+		Stderr: unitTestStderr,
 	}
 
-	return nil
+	return true, checkLogs, nil
 }

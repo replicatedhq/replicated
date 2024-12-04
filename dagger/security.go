@@ -10,9 +10,11 @@ func validateSecurity(
 
 	// +defaultPath="./"
 	source *dagger.Directory,
-) error {
+) (bool, map[string]Logs, error) {
 	goModCache := dag.CacheVolume("replicated-go-mod-122")
 	goBuildCache := dag.CacheVolume("replicated-go-build-121")
+
+	checkLogs := map[string]Logs{}
 
 	// run semgrep
 	semgrep := dag.Container().
@@ -25,10 +27,18 @@ func validateSecurity(
 		WithEnvVariable("GOCACHE", "/go/build-cache").
 		With(CacheBustingExec([]string{"semgrep", "scan", "--config=p/golang", "."}))
 
-	_, err := semgrep.Stderr(ctx)
+	semgrepStdout, err := semgrep.Stdout(ctx)
 	if err != nil {
-		return err
+		return false, nil, err
+	}
+	semgrepStderr, err := semgrep.Stderr(ctx)
+	if err != nil {
+		return false, nil, err
+	}
+	checkLogs["semgrep"] = Logs{
+		Stdout: semgrepStdout,
+		Stderr: semgrepStderr,
 	}
 
-	return nil
+	return true, checkLogs, nil
 }
