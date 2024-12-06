@@ -92,20 +92,12 @@ func (r *runners) customerChannel(customer *types.Customer) (*types.KotsChannel,
 	}
 	ch = &customer.Channels[0]
 
-	// TODO: fix GET /v3/app/{appID}/customer/{customerID} and/or GET /v3/app/{appID}/channel/{channelID} to
-	// include chartNames in channels, like List does. Also ?channelName selector wrongly excludes details
-	channels, err := r.kotsAPI.ListKotsChannels(r.appID, "", false)
+	channel, err := r.kotsAPI.GetKotsChannel(r.appID, ch.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "list channels for customer %q", customer.Name)
 	}
 
-	for _, detailedChan := range channels {
-		if ch.ID == detailedChan.Id {
-			return detailedChan, nil
-		}
-	}
-
-	return nil, nil
+	return channel, nil
 }
 
 func (r *runners) registryHostname(customer *types.Customer, ch *types.KotsChannel) (string, error) {

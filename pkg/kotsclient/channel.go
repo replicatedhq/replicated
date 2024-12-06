@@ -68,6 +68,15 @@ func (c *VendorV3Client) CreateChannel(appID, name, description string) (*types.
 }
 
 func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Channel, error) {
+	channel, err := c.GetKotsChannel(appID, channelID)
+	if err != nil {
+		return nil, errors.Wrap(err, "get kots channel")
+	}
+
+	return channel.ToChannel(), nil
+}
+
+func (c *VendorV3Client) GetKotsChannel(appID string, channelID string) (*types.KotsChannel, error) {
 	type getChannelResponse struct {
 		Channel types.KotsChannel `json:"channel"`
 	}
@@ -79,7 +88,7 @@ func (c *VendorV3Client) GetChannel(appID string, channelID string) (*types.Chan
 		return nil, errors.Wrap(err, "get app channel")
 	}
 
-	return response.Channel.ToChannel(), nil
+	return &response.Channel, nil
 }
 
 func (c *VendorV3Client) ArchiveChannel(appID, channelID string) error {
