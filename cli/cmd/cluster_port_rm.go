@@ -8,8 +8,9 @@ import (
 
 func (r *runners) InitClusterPortRm(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rm CLUSTER_ID --id PORT_ID",
-		Short: "Remove cluster port by ID.",
+		Use:     "rm CLUSTER_ID --id PORT_ID",
+		Aliases: []string{"delete"},
+		Short:   "Remove cluster port by ID.",
 		Long: `The 'cluster port rm' command removes a specific port from a cluster. You must provide either the ID of the port or the port number and protocol(s) to remove.
 
 This command is useful for managing the network settings of your test clusters by allowing you to clean up unused or incorrect ports. After removing a port, the updated list of ports will be displayed.

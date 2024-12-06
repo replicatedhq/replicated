@@ -14,10 +14,11 @@ import (
 
 func (r *runners) InitNetworkList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List test networks",
-		Long:  ``,
-		RunE:  r.listNetworks,
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List test networks",
+		Long:    ``,
+		RunE:    r.listNetworks,
 	}
 	parent.AddCommand(cmd)
 

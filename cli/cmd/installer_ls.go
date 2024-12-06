@@ -8,9 +8,10 @@ import (
 
 func (r *runners) InitInstallerList(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List an app's Kubernetes Installers",
-		Long:  "List an app's https://kurl.sh Kubernetes Installers",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List an app's Kubernetes Installers",
+		Long:    "List an app's https://kurl.sh Kubernetes Installers",
 	}
 
 	parent.AddCommand(cmd)

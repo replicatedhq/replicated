@@ -9,6 +9,7 @@ import (
 func (r *runners) InitCollectionList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "ls",
+		Aliases:      []string{"list"},
 		Short:        "list model collections",
 		Long:         `list model collections`,
 		RunE:         r.listCollections,

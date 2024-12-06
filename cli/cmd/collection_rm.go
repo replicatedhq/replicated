@@ -9,6 +9,7 @@ import (
 func (r *runners) InitCollectionRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "rm COLLECTION_ID",
+		Aliases:      []string{"delete"},
 		Short:        "remove a collection",
 		Long:         `remove a collection, unlinking any model from the collection (but not deleting the model)`,
 		RunE:         r.removeCollection,

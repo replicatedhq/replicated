@@ -12,6 +12,7 @@ import (
 func (r *runners) InitRegistryList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "ls [NAME]",
+		Aliases:      []string{"list"},
 		Short:        "list registries",
 		Long:         `list registries, or a single registry by name`,
 		RunE:         r.listRegistries,

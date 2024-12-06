@@ -14,8 +14,9 @@ func (r *runners) InitClusterAddonLs(parent *cobra.Command) *cobra.Command {
 	args := clusterAddonLsArgs{}
 
 	cmd := &cobra.Command{
-		Use:   "ls CLUSTER_ID",
-		Short: "List cluster add-ons for a cluster.",
+		Use:     "ls CLUSTER_ID",
+		Aliases: []string{"list"},
+		Short:   "List cluster add-ons for a cluster.",
 		Long: `The 'cluster addon ls' command allows you to list all add-ons for a specific cluster. This command provides a detailed overview of the add-ons currently installed on the cluster, including their status and any relevant configuration details.
 
 This can be useful for monitoring the health and configuration of add-ons or performing troubleshooting tasks.`,

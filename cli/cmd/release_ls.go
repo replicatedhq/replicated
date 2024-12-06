@@ -8,9 +8,10 @@ import (
 
 func (r *runners) IniReleaseList(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List all of an app's releases",
-		Long:  "List all of an app's releases",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List all of an app's releases",
+		Long:    "List all of an app's releases",
 	}
 
 	parent.AddCommand(cmd)

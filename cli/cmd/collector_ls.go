@@ -8,9 +8,10 @@ import (
 
 func (r *runners) InitCollectorList(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List all of an app's collectors",
-		Long:  "List all of an app's collectors",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List all of an app's collectors",
+		Long:    "List all of an app's collectors",
 	}
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)

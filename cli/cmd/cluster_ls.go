@@ -14,8 +14,9 @@ import (
 
 func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List test clusters.",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List test clusters.",
 		Long: `The 'cluster ls' command lists all test clusters. This command provides information about the clusters, such as their status, name, distribution, version, and creation time. The output can be formatted in different ways, depending on your needs.
 
 You can filter the list of clusters by time range and status (e.g., show only terminated clusters). You can also watch clusters in real-time, which updates the list every few seconds.

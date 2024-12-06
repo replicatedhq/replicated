@@ -8,6 +8,7 @@ import (
 func (r *runners) InitModelRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "rm NAME",
+		Aliases:      []string{"delete"},
 		Short:        "remove a model",
 		Long:         `remove a model`,
 		RunE:         r.removeModel,

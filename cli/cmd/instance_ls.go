@@ -9,6 +9,7 @@ import (
 func (r *runners) InitInstanceLSCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "ls",
+		Aliases:       []string{"list"},
 		Short:         "list customer instances",
 		Long:          `list customer instances`,
 		RunE:          r.listInstances,

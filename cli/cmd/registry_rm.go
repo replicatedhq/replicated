@@ -10,6 +10,7 @@ import (
 func (r *runners) InitRegistryRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "rm [ENDPOINT]",
+		Aliases:      []string{"delete"},
 		Short:        "remove registry",
 		Long:         `remove registry by endpoint`,
 		RunE:         r.removeRegistry,
