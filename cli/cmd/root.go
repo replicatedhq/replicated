@@ -241,7 +241,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitClusterAddonRm(clusterAddonCmd)
 	clusterAddonCreateCmd := runCmds.InitClusterAddonCreate(clusterAddonCmd)
 	runCmds.InitClusterAddonCreateObjectStore(clusterAddonCreateCmd)
-	runCmds.InitClusterAddonCreatePostgres(clusterAddonCreateCmd)
 
 	clusterPortCmd := runCmds.InitClusterPort(clusterCmd)
 	runCmds.InitClusterPortLs(clusterPortCmd)

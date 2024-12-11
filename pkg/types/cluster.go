@@ -101,7 +101,6 @@ type ClusterAddon struct {
 	CreatedAt time.Time          `json:"created_at"`
 
 	ObjectStore *ClusterAddonObjectStore `json:"object_store,omitempty"`
-	Postgres    *ClusterAddonPostgres    `json:"postgres,omitempty"`
 }
 
 type ClusterAddonObjectStore struct {
@@ -112,20 +111,10 @@ type ClusterAddonObjectStore struct {
 	ServiceAccountNameReadOnly string `json:"service_account_name_read_only,omitempty"`
 }
 
-type ClusterAddonPostgres struct {
-	Version      string `json:"version"`
-	DiskGiB      int64  `json:"disk_gib"`
-	InstanceType string `json:"instance_type"`
-
-	URI string `json:"uri,omitempty"`
-}
-
 func (addon *ClusterAddon) TypeName() string {
 	switch {
 	case addon.ObjectStore != nil:
 		return "Object Store"
-	case addon.Postgres != nil:
-		return "Postgres"
 	default:
 		return "Unknown"
 	}
