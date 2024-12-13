@@ -26,8 +26,8 @@ func (r *runners) InitClusterCommand(parent *cobra.Command) *cobra.Command {
   # Remove a specific cluster by ID
   replicated cluster rm <cluster-id>
 
-  # Create a node group within a specific cluster
-  replicated cluster nodegroup create --cluster-id <cluster-id> --instance-type m6.large --nodes 3`,
+  # List all nodegroups in a specific cluster
+  replicated cluster nodegroup ls <cluster-id>`,
 	}
 	parent.AddCommand(cmd)
 
