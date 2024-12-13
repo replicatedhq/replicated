@@ -10,8 +10,9 @@ import (
 
 func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rm ID [ID …]",
-		Short: "Remove test clusters.",
+		Use:     "rm ID [ID …]",
+		Aliases: []string{"delete"},
+		Short:   "Remove test clusters.",
 		Long: `The 'rm' command removes test clusters immediately.
 
 You can remove clusters by specifying a cluster ID, or by using other criteria such as cluster names or tags. Alternatively, you can remove all clusters in your account at once.

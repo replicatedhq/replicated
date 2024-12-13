@@ -9,9 +9,10 @@ import (
 
 func (r *runners) InitChannelRemove(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "rm CHANNEL_ID",
-		Short: "Remove (archive) a channel",
-		Long:  "Remove (archive) a channel",
+		Use:     "rm CHANNEL_ID",
+		Aliases: []string{"delete"},
+		Short:   "Remove (archive) a channel",
+		Long:    "Remove (archive) a channel",
 	}
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelRemove

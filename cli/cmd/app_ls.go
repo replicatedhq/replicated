@@ -15,8 +15,9 @@ func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
 	var outputFormat string
 
 	cmd := &cobra.Command{
-		Use:   "ls [NAME]",
-		Short: "List applications",
+		Use:     "ls [NAME]",
+		Aliases: []string{"list"},
+		Short:   "List applications",
 		Long: `List all applications in your Replicated account,
 or search for a specific application by name or ID.
 

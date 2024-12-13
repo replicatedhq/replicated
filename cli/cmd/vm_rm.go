@@ -10,8 +10,9 @@ import (
 
 func (r *runners) InitVMRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rm ID [ID …]",
-		Short: "Remove test VM(s) immediately, with options to filter by name, tag, or remove all VMs.",
+		Use:     "rm ID [ID …]",
+		Aliases: []string{"delete"},
+		Short:   "Remove test VM(s) immediately, with options to filter by name, tag, or remove all VMs.",
 		Long: `The 'rm' command allows you to remove test VMs from your account immediately. You can specify one or more VM IDs directly, or use flags to filter which VMs to remove based on their name, tags, or simply remove all VMs at once.
 
 This command supports multiple filtering options, including removing VMs by their name, by specific tags, or by specifying the '--all' flag to remove all VMs in your account.

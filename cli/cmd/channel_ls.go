@@ -8,9 +8,10 @@ import (
 
 func (r *runners) InitChannelList(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List all channels in your app",
-		Long:  "List all channels in your app",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List all channels in your app",
+		Long:    "List all channels in your app",
 	}
 
 	parent.AddCommand(cmd)

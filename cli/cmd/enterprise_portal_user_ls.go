@@ -15,8 +15,9 @@ func (r *runners) InitEnterprisePortalUserLsCmd(parent *cobra.Command) *cobra.Co
 	var outputFormat string
 
 	cmd := &cobra.Command{
-		Use:   "ls",
-		Short: "List Enterprise Portal users",
+		Use:     "ls",
+		Aliases: []string{"list"},
+		Short:   "List Enterprise Portal users",
 		Long: `List all users associated with the Enterprise Portal for an application.
 
 This command retrieves and displays information about users who have access to
