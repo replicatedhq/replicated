@@ -29,6 +29,7 @@ type updateCustomerOpts struct {
 	IsHelmVMDownloadEnabled      bool
 	IsIdentityServiceSupported   bool
 	IsSupportBundleUploadEnabled bool
+	IsDeveloperModeEnabled       bool
 	Email                        string
 	Type                         string
 }
@@ -68,7 +69,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 			return r.updateCustomer(cmd, opts, outputFormat)
 		},
 		SilenceUsage:  false,
-		SilenceErrors: true, // this command uses custom error printing
+		SilenceErrors: false,
 	}
 
 	parent.AddCommand(cmd)
@@ -89,6 +90,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
 	cmd.Flags().BoolVar(&opts.IsSupportBundleUploadEnabled, "support-bundle-upload", false, "If set, the license will allow uploading support bundles.")
+	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be updated.")
 	cmd.Flags().StringVar(&opts.Type, "type", "dev", "The license type to update. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
@@ -186,6 +188,7 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts, ou
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
 		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
 		LicenseType:                      opts.Type,
 		Email:                            opts.Email,
 	}
