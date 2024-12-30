@@ -13,17 +13,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type clusterAddonCreateObjectStoreArgs struct {
-	objectStoreBucket string
-	clusterID         string
-	waitDuration      time.Duration
-	dryRun            bool
-	outputFormat      string
-}
-
 func (r *runners) InitClusterAddonCreateObjectStore(parent *cobra.Command) *cobra.Command {
-	args := clusterAddonCreateObjectStoreArgs{}
-
 	cmd := &cobra.Command{
 		Use:   "object-store CLUSTER_ID --bucket-prefix BUCKET_PREFIX",
 		Short: "Create an object store bucket for a cluster.",
@@ -48,13 +38,13 @@ Examples:
   05929b24    Object Store    pending         {"bucket_prefix":"mybucket"}`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, cmdArgs []string) error {
-			args.clusterID = cmdArgs[0]
-			return r.clusterAddonCreateObjectStoreCreateRun(args)
+			r.args.clusterAddonCreateObjectStoreClusterID = cmdArgs[0]
+			return r.clusterAddonCreateObjectStoreCreateRun()
 		},
 	}
 	parent.AddCommand(cmd)
 
-	err := clusterAddonCreateObjectStoreFlags(cmd, &args)
+	err := r.clusterAddonCreateObjectStoreFlags(cmd)
 	if err != nil {
 		panic(err)
 	}
@@ -62,26 +52,26 @@ Examples:
 	return cmd
 }
 
-func clusterAddonCreateObjectStoreFlags(cmd *cobra.Command, args *clusterAddonCreateObjectStoreArgs) error {
-	cmd.Flags().StringVar(&args.objectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required)")
+func (r *runners) clusterAddonCreateObjectStoreFlags(cmd *cobra.Command) error {
+	cmd.Flags().StringVar(&r.args.clusterAddonCreateObjectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required)")
 	err := cmd.MarkFlagRequired("bucket-prefix")
 	if err != nil {
 		return err
 	}
-	cmd.Flags().DurationVar(&args.waitDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
-	cmd.Flags().BoolVar(&args.dryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
-	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().DurationVar(&r.args.clusterAddonCreateObjectStoreDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
+	cmd.Flags().BoolVar(&r.args.clusterAddonCreateObjectStoreDryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
+	cmd.Flags().StringVar(&r.args.clusterAddonCreateObjectStoreOutput, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
 	return nil
 }
 
-func (r *runners) clusterAddonCreateObjectStoreCreateRun(args clusterAddonCreateObjectStoreArgs) error {
+func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 	opts := kotsclient.CreateClusterAddonObjectStoreOpts{
-		ClusterID: args.clusterID,
-		Bucket:    args.objectStoreBucket,
-		DryRun:    args.dryRun,
+		ClusterID: r.args.clusterAddonCreateObjectStoreClusterID,
+		Bucket:    r.args.clusterAddonCreateObjectStoreBucket,
+		DryRun:    r.args.clusterAddonCreateObjectStoreDryRun,
 	}
 
-	addon, err := r.createAndWaitForClusterAddonCreateObjectStore(opts, args.waitDuration)
+	addon, err := r.createAndWaitForClusterAddonCreateObjectStore(opts, r.args.clusterAddonCreateObjectStoreDuration)
 	if err != nil {
 		if errors.Cause(err) == ErrWaitDurationExceeded {
 			defer func() {
@@ -97,7 +87,7 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun(args clusterAddonCreate
 		return err
 	}
 
-	return print.Addon(args.outputFormat, r.w, addon)
+	return print.Addon(r.args.clusterAddonCreateObjectStoreOutput, r.w, addon)
 }
 
 func (r *runners) createAndWaitForClusterAddonCreateObjectStore(opts kotsclient.CreateClusterAddonObjectStoreOpts, waitDuration time.Duration) (*types.ClusterAddon, error) {

@@ -46,7 +46,10 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
     --ttl 24h
 
   # Create a cluster with custom tags
-  replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h`,
+  replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h
+
+  # Create a cluster with addons
+  replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon object-store --ttl 24h`,
 		SilenceUsage: true,
 		RunE:         r.createCluster,
 		Args:         cobra.NoArgs,
@@ -67,6 +70,8 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
 	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format, can be specified multiple times). For each nodegroup, at least one flag must be specified. The flags min-nodes and max-nodes are mutually dependent.")
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
+
+	cmd.Flags().StringArrayVar(&r.args.createClusterAddons, "addon", []string{}, "Addons to install on the cluster (can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
@@ -136,6 +141,23 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 			return err
 		}
 	}
+
+	if r.args.createClusterAddons != nil {
+		for _, addon := range r.args.createClusterAddons {
+			if addon == "object-store" {
+				err := r.clusterAddonCreateObjectStoreCreateRun(clusterAddonCreateObjectStoreArgs{
+					clusterID:    cl.ID,
+					dryRun:       r.args.createClusterDryRun,
+					waitDuration: r.args.createClusterWaitDuration,
+				})
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	r.createAndWaitForClusterAddonCreateObjectStore()
 
 	if opts.DryRun {
 		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), cl.TTL)
