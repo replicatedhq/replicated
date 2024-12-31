@@ -26,6 +26,7 @@ type UpdateCustomerRequest struct {
 	IsHelmVMDownloadEnabled          bool               `json:"is_helm_vm_download_enabled"`
 	IsIdentityServiceSupported       bool               `json:"is_identity_service_supported"`
 	IsSupportBundleUploadEnabled     bool               `json:"is_support_bundle_upload_enabled"`
+	IsDeveloperModeEnabled           bool               `json:"is_dev_mode_enabled"`
 	Email                            string             `json:"email,omitempty"`
 	EntitlementValues                []EntitlementValue `json:"entitlementValues"`
 }
@@ -50,6 +51,7 @@ type UpdateCustomerOpts struct {
 	IsHelmVMDownloadEnabled          bool
 	IsIdentityServiceSupported       bool
 	IsSupportBundleUploadEnabled     bool
+	IsDeveloperModeEnabled           bool
 	LicenseType                      string
 	Email                            string
 	EntitlementValues                []EntitlementValue
@@ -71,6 +73,7 @@ func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOp
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
 		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
 		Email:                            opts.Email,
 		EntitlementValues:                opts.EntitlementValues,
 	}

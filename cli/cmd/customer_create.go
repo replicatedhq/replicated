@@ -29,6 +29,7 @@ type createCustomerOpts struct {
 	IsIdentityServiceSupported   bool
 	IsInstallerSupportEnabled    bool
 	IsSupportBundleUploadEnabled bool
+	IsDeveloperModeEnabled       bool
 	Email                        string
 	CustomerType                 string
 }
@@ -69,7 +70,7 @@ The --app flag must be set to specify the target application.`,
 			return r.createCustomer(cmd, opts, outputFormat)
 		},
 		SilenceUsage:  false,
-		SilenceErrors: true,
+		SilenceErrors: false,
 	}
 
 	parent.AddCommand(cmd)
@@ -89,6 +90,7 @@ The --app flag must be set to specify the target application.`,
 	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
 	cmd.Flags().BoolVar(&opts.IsInstallerSupportEnabled, "installer-support", false, "If set, the license will allow installer support.")
 	cmd.Flags().BoolVar(&opts.IsSupportBundleUploadEnabled, "support-bundle-upload", false, "If set, the license will allow uploading support bundles.")
+	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be created.")
 	cmd.Flags().StringVar(&opts.CustomerType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
 	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
@@ -180,6 +182,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
 		IsInstallerSupportEnabled:        opts.IsInstallerSupportEnabled,
 		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
 		LicenseType:                      opts.CustomerType,
 		Email:                            opts.Email,
 	}

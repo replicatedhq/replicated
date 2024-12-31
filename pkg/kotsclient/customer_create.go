@@ -37,6 +37,7 @@ type CreateCustomerRequest struct {
 	IsIdentityServiceSupported       bool               `json:"is_identity_service_supported"`
 	IsInstallerSupportEnabled        bool               `json:"is_installer_support_enabled"`
 	IsSupportBundleUploadEnabled     bool               `json:"is_support_bundle_upload_enabled"`
+	IsDeveloperModeEnabled           bool               `json:"is_dev_mode_enabled"`
 	Email                            string             `json:"email,omitempty"`
 	EntitlementValues                []EntitlementValue `json:"entitlementValues"`
 }
@@ -62,6 +63,7 @@ type CreateCustomerOpts struct {
 	IsIdentityServiceSupported       bool
 	IsInstallerSupportEnabled        bool
 	IsSupportBundleUploadEnabled     bool
+	IsDeveloperModeEnabled           bool
 	LicenseType                      string
 	Email                            string
 	EntitlementValues                []EntitlementValue
@@ -84,6 +86,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
 		IsInstallerSupportEnabled:        opts.IsInstallerSupportEnabled,
 		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
 		Email:                            opts.Email,
 		EntitlementValues:                opts.EntitlementValues,
 	}
