@@ -129,6 +129,7 @@ type runnerArgs struct {
 	createClusterInstanceType           string
 	createClusterNodeGroups             []string
 	createClusterTags                   []string
+	createClusterAddons                 []string
 
 	upgradeClusterKubernetesVersion string
 	upgradeClusterDryRun            bool
@@ -247,4 +248,10 @@ type runnerArgs struct {
 	lsNetworkStartTime string
 	lsNetworkEndTime   string
 	lsNetworkWatch     bool
+
+	clusterAddonCreateObjectStoreBucket    string
+	clusterAddonCreateObjectStoreClusterID string
+	clusterAddonCreateObjectStoreDuration  time.Duration
+	clusterAddonCreateObjectStoreDryRun    bool
+	clusterAddonCreateObjectStoreOutput    string
 }
