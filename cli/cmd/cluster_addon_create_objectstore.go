@@ -83,7 +83,7 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 	}
 
 	if opts.DryRun {
-		_, err := fmt.Fprintln(r.w, "Dry run succeeded.")
+		_, err := fmt.Fprintln(r.w, "Dry run succeeded for addon object-store creation.")
 		return err
 	}
 
