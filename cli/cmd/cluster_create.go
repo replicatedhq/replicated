@@ -46,7 +46,10 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
     --ttl 24h
 
   # Create a cluster with custom tags
-  replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h`,
+  replicated cluster create --distribution eks --version 1.21 --nodes 3 --tag env=test --tag project=demo --ttl 24h
+
+  # Create a cluster with addons
+  replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon object-store --ttl 24h`,
 		SilenceUsage: true,
 		RunE:         r.createCluster,
 		Args:         cobra.NoArgs,
@@ -68,6 +71,9 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")
 
+	cmd.Flags().StringArrayVar(&r.args.createClusterAddons, "addon", []string{}, "Addons to install on the cluster (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.clusterAddonCreateObjectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required by '--addon object-store')")
+
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
@@ -77,7 +83,24 @@ Use the '--dry-run' flag to simulate the creation process and get an estimated c
 	return cmd
 }
 
-func (r *runners) createCluster(_ *cobra.Command, args []string) error {
+func (r *runners) validateAddonArgs(cmd *cobra.Command) error {
+	for _, addon := range r.args.createClusterAddons {
+		if addon == "object-store" {
+			if r.args.clusterAddonCreateObjectStoreBucket == "" {
+				if err := cmd.Help(); err != nil {
+					return err
+				}
+				return errors.New("bucket-prefix is required for object-store addon")
+			}
+		} else {
+			return errors.Errorf("unknown addon: %s", addon)
+		}
+	}
+
+	return nil
+}
+
+func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 	if r.args.createClusterName == "" {
 		r.args.createClusterName = generateClusterName()
 	}
@@ -90,6 +113,10 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 	nodeGroups, err := parseClusterNodeGroups(r.args.createClusterNodeGroups)
 	if err != nil {
 		return errors.Wrap(err, "parse node groups")
+	}
+
+	if err := r.validateAddonArgs(cmd); err != nil {
+		return errors.Wrap(err, "validate addon args")
 	}
 
 	opts := kotsclient.CreateClusterOpts{
@@ -137,17 +164,44 @@ func (r *runners) createCluster(_ *cobra.Command, args []string) error {
 		}
 	}
 
+	if r.args.createClusterAddons != nil {
+		if err := r.createAndWaitForAddons(cl.ID); err != nil {
+			return err
+		}
+	}
+
 	if opts.DryRun {
 		estimatedCostMessage := fmt.Sprintf("Estimated cost: %s (if run to TTL of %s)", print.CreditsToDollarsDisplay(cl.EstimatedCost), cl.TTL)
 		_, err := fmt.Fprintln(r.w, estimatedCostMessage)
 		if err != nil {
 			return err
 		}
-		_, err = fmt.Fprintln(r.w, "Dry run succeeded.")
+		_, err = fmt.Fprintln(r.w, "Dry run succeeded for cluster create.")
 		return err
 	}
 
 	return print.Cluster(r.outputFormat, r.w, cl)
+}
+
+func (r *runners) createAndWaitForAddons(clusterID string) error {
+	for _, addon := range r.args.createClusterAddons {
+		if addon == "object-store" {
+			// ClusterID, DryRun, Duration and Output are common to all
+			// addons and cluster create, so they are inherited from the
+			// cluster create command.
+			r.args.clusterAddonCreateObjectStoreClusterID = clusterID
+			r.args.clusterAddonCreateObjectStoreDryRun = r.args.createClusterDryRun
+			r.args.clusterAddonCreateObjectStoreDuration = r.args.createClusterWaitDuration
+			r.args.clusterAddonCreateObjectStoreOutput = r.outputFormat
+
+			err := r.clusterAddonCreateObjectStoreCreateRun()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *runners) createAndWaitForCluster(opts kotsclient.CreateClusterOpts) (*types.Cluster, error) {
