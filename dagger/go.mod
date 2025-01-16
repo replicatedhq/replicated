@@ -21,6 +21,8 @@ require (
 	google.golang.org/grpc v1.65.0
 )
 
+require github.com/aws/aws-sdk-go v1.55.5 // indirect
+
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

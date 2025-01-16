@@ -113,6 +113,12 @@ build:
 docs:
 	go run ./docs/
 
+.PHONY: validate
+validate:
+	dagger call validate \
+		--one-password-service-account env:OP_SERVICE_ACCOUNT \
+		--progress plain
+
 .PHONE: release
 release:
 	dagger call release \
