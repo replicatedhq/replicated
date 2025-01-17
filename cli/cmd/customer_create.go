@@ -23,6 +23,8 @@ type createCustomerOpts struct {
 	IsGitopsSupported            bool
 	IsSnapshotSupported          bool
 	IsKotsInstallEnabled         bool
+	IsHelmInstallEnabled         bool
+	IsKurlInstallEnabled         bool
 	IsEmbeddedClusterEnabled     bool
 	IsGeoaxisSupported           bool
 	IsHelmVMDownloadEnabled      bool
@@ -84,6 +86,8 @@ The --app flag must be set to specify the target application.`,
 	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&opts.IsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
 	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
+	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
+	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
 	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
@@ -185,6 +189,13 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
 		LicenseType:                      opts.CustomerType,
 		Email:                            opts.Email,
+	}
+
+	if cmd.Flags().Changed("helm-install") {
+		createOpts.IsHelmInstallEnabled = &opts.IsHelmInstallEnabled
+	}
+	if cmd.Flags().Changed("kurl-install") {
+		createOpts.IsKurlInstallEnabled = &opts.IsKurlInstallEnabled
 	}
 
 	customer, err := r.api.CreateCustomer(r.appType, createOpts)
