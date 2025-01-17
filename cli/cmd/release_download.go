@@ -13,9 +13,15 @@ import (
 
 func (r *runners) InitReleaseDownload(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "download SEQUENCE",
-		Short: "Download the YAML config for a release. Same as 'release inspect' for non-KOTS apps",
-		Long:  "Download the YAML config for a release. Same as 'release inspect' for non-KOTS apps",
+		Use:   "download RELEASE_SEQUENCE",
+		Short: "Download application manifests for a release.",
+		Long: `Download application manifests for a release to a specified directory.
+
+For non-KOTS applications, this is equivalent to the 'release inspect' command.
+
+Example:
+replicated release download 1 --dest ./manifests`,
+		Args: cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
 	cmd.RunE = r.releaseDownload
@@ -31,9 +37,6 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		return r.releaseInspect(command, args)
 	}
 
-	if len(args) != 1 {
-		return errors.New("release sequence is required")
-	}
 	seq, err := strconv.ParseInt(args[0], 10, 64)
 	if err != nil {
 		return fmt.Errorf("Failed to parse sequence argument %q", args[0])
