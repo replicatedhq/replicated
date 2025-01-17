@@ -1,6 +1,8 @@
 package print
 
 import (
+	"encoding/json"
+	"fmt"
 	"text/tabwriter"
 	"text/template"
 
@@ -21,9 +23,16 @@ CONFIG:
 
 var releaseTmpl = template.Must(template.New("Release").Funcs(funcs).Parse(releaseTmplSrc))
 
-func Release(w *tabwriter.Writer, release *types.AppRelease) error {
-	if err := releaseTmpl.Execute(w, release); err != nil {
-		return err
+func Release(outputFormat string, w *tabwriter.Writer, release *types.AppRelease) error {
+	if outputFormat == "table" {
+		if err := releaseTmpl.Execute(w, release); err != nil {
+			return err
+		}
+	} else if outputFormat == "json" {
+		cAsByte, _ := json.MarshalIndent(release, "", "  ")
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }
