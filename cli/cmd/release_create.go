@@ -30,7 +30,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new release",
-		Long: `Create a new release by providing YAML configuration for the next release in
+		Long: `Create a new release by providing application manifests for the next release in
   your sequence.`,
 		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
@@ -58,6 +58,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().MarkHidden("required")
 	cmd.Flags().MarkHidden("yaml-file")
 	cmd.Flags().MarkHidden("yaml")
+	cmd.Flags().MarkHidden("chart")
 
 	cmd.RunE = r.releaseCreate
 	return nil
