@@ -32,11 +32,12 @@ type updateCustomerOpts struct {
 	IsDeveloperModeEnabled       bool
 	Email                        string
 	Type                         string
+	IsHelmInstallEnabled         bool
+	IsKurlInstallEnabled         bool
 }
 
 func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Command {
 	opts := updateCustomerOpts{}
-	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "update --customer <id> --name <name> [options]",
@@ -66,7 +67,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	  # Update a customer and output the result in JSON format
 	  replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.updateCustomer(cmd, opts, outputFormat)
+			return r.updateCustomer(cmd, opts)
 		},
 		SilenceUsage:  false,
 		SilenceErrors: false,
@@ -85,6 +86,8 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&opts.IsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
 	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
+	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
+	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
 	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
@@ -93,7 +96,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be updated.")
 	cmd.Flags().StringVar(&opts.Type, "type", "dev", "The license type to update. One of: dev|trial|paid|community|test (default: dev)")
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
 
 	cmd.MarkFlagRequired("customer")
 	cmd.MarkFlagRequired("channel")
@@ -102,7 +105,7 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	return cmd
 }
 
-func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts, outputFormat string) (err error) {
+func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (err error) {
 	defer func() {
 		printIfError(cmd, err)
 	}()
@@ -193,12 +196,19 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts, ou
 		Email:                            opts.Email,
 	}
 
+	if cmd.Flags().Changed("helm-install") {
+		updateOpts.IsHelmInstallEnabled = &opts.IsHelmInstallEnabled
+	}
+	if cmd.Flags().Changed("kurl-install") {
+		updateOpts.IsKurlInstallEnabled = &opts.IsKurlInstallEnabled
+	}
+
 	customer, err := r.api.UpdateCustomer(r.appType, opts.CustomerID, updateOpts)
 	if err != nil {
 		return errors.Wrap(err, "update customer")
 	}
 
-	err = print.Customer(outputFormat, r.w, customer)
+	err = print.Customer(r.outputFormat, r.w, customer)
 	if err != nil {
 		return errors.Wrap(err, "print customer")
 	}
