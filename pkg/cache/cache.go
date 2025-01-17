@@ -115,6 +115,14 @@ func (c *Cache) SetDefault(defaultType string, defaultValue string) error {
 
 	return nil
 }
+func (c *Cache) GetDefault(defaultType string) (string, error) {
+	switch defaultType {
+	case "app":
+		return c.DefaultApp, nil
+	default:
+		return "", errors.Errorf("unknown default type: %s", defaultType)
+	}
+}
 
 func (c *Cache) ClearDefault(defaultType string) error {
 	switch defaultType {
