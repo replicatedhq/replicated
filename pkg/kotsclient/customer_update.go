@@ -29,6 +29,11 @@ type UpdateCustomerRequest struct {
 	IsDeveloperModeEnabled           bool               `json:"is_dev_mode_enabled"`
 	Email                            string             `json:"email,omitempty"`
 	EntitlementValues                []EntitlementValue `json:"entitlementValues"`
+
+	// These fields were added after the "built in" fields feature was released.
+	// If they are not pointer types, they will override the defaults.
+	IsHelmInstallEnabled *bool `json:"is_helm_install_enabled,omitempty"`
+	IsKurlInstallEnabled *bool `json:"is_kurl_install_enabled,omitempty"`
 }
 
 type UpdateCustomerResponse struct {
@@ -46,6 +51,8 @@ type UpdateCustomerOpts struct {
 	IsGitopsSupported                bool
 	IsSnapshotSupported              bool
 	IsKotsInstallEnabled             bool
+	IsHelmInstallEnabled             *bool
+	IsKurlInstallEnabled             *bool
 	IsEmbeddedClusterDownloadEnabled bool
 	IsGeoaxisSupported               bool
 	IsHelmVMDownloadEnabled          bool
@@ -68,6 +75,8 @@ func (c *VendorV3Client) UpdateCustomer(customerID string, opts UpdateCustomerOp
 		IsGitopsSupported:                opts.IsGitopsSupported,
 		IsSnapshotSupported:              opts.IsSnapshotSupported,
 		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
+		IsHelmInstallEnabled:             opts.IsHelmInstallEnabled,
+		IsKurlInstallEnabled:             opts.IsKurlInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterDownloadEnabled,
 		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,

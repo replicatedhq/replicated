@@ -24,6 +24,8 @@ func (r *runners) InitReleaseUpdate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.updateReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.updateReleaseChart, "chart", "", "Helm chart to create the release from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 
+	cmd.Flags().MarkHidden("chart")
+
 	cmd.RunE = r.releaseUpdate
 }
 

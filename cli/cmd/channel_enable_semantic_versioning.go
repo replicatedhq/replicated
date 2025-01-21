@@ -16,7 +16,6 @@ func (r *runners) InitChannelEnableSemanticVersioning(parent *cobra.Command) {
  Example:
  replicated channel enable-semantic-versioning CHANNEL_ID`,
 	}
-	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelEnableSemanticVersioning
 }
