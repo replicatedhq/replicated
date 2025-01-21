@@ -14,7 +14,7 @@ var channelAttrsTmplSrc = `ID:	{{ .Chan.ID }}
 NAME:	{{ .Chan.Name }}
 DESCRIPTION:	{{ .Chan.Description }}
 RELEASE:	{{ if ge .Chan.ReleaseSequence 1 }}{{ .Chan.ReleaseSequence }}{{ else }}	{{ end }}
-CHANNEL SEQUENCE:	{{ .Chan.ChannelSequence }}
+CHANNEL SEQUENCE:	{{ if ge .Chan.ChannelSequence 1 }}{{ .Chan.ChannelSequence }}{{ else }}	{{ end }}
 VERSION:	{{ .Chan.ReleaseLabel }}
 {{ if not .Chan.IsHelmOnly -}}
 {{ with .Existing -}}
