@@ -140,6 +140,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitChannelRemove(channelCmd)
 	runCmds.InitChannelEnableSemanticVersioning(channelCmd)
 	runCmds.InitChannelDisableSemanticVersioning(channelCmd)
+	runCmds.InitChannelReleaseDemote(channelCmd)
+	runCmds.InitChannelReleaseUnDemote(channelCmd)
 
 	runCmds.rootCmd.AddCommand(releaseCmd)
 	err := runCmds.InitReleaseCreate(releaseCmd)
@@ -429,11 +431,4 @@ func parseTags(tags []string) ([]types.Tag, error) {
 		})
 	}
 	return parsedTags, nil
-}
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE")
 }

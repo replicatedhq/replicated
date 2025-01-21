@@ -15,17 +15,15 @@ import (
 // Runner holds the I/O dependencies and configurations used by individual
 // commands, which are defined as methods on this type.
 type runners struct {
-	appID           string
-	appSlug         string
-	appType         string
-	isFoundationApp bool
-	api             client.Client
-	platformAPI     *platformclient.HTTPClient
-	kotsAPI         *kotsclient.VendorV3Client
-	stdin           io.Reader
-	dir             string
-	outputFormat    string
-	w               *tabwriter.Writer
+	appID        string
+	appSlug      string
+	appType      string
+	api          client.Client
+	platformAPI  *platformclient.HTTPClient
+	kotsAPI      *kotsclient.VendorV3Client
+	stdin        io.Reader
+	outputFormat string
+	w            *tabwriter.Writer
 
 	rootCmd *cobra.Command
 	args    runnerArgs
@@ -53,13 +51,7 @@ type runnerArgs struct {
 	createReleaseYamlFile             string
 	createReleaseYamlDir              string
 	createReleaseChart                string
-	createReleaseConfigYaml           string
-	createReleaseDeploymentYaml       string
-	createReleaseServiceYaml          string
-	createReleasePreflightYaml        string
-	createReleaseSupportBundleYaml    string
 	createReleasePromote              string
-	createReleasePromoteDir           string
 	createReleasePromoteRequired      bool
 	createReleasePromoteNotes         string
 	createReleasePromoteVersion       string
@@ -177,7 +169,6 @@ type runnerArgs struct {
 	modelCollectionRmModelName          string
 	modelCollectionRmModelCollectionID  string
 
-	lsAppVersion           string
 	lsVersionsDistribution string
 
 	lsClusterShowTerminated bool
@@ -254,4 +245,9 @@ type runnerArgs struct {
 	clusterAddonCreateObjectStoreDuration  time.Duration
 	clusterAddonCreateObjectStoreDryRun    bool
 	clusterAddonCreateObjectStoreOutput    string
+
+	demoteReleaseSequence   int64
+	demoteChannelSequence   int64
+	unDemoteReleaseSequence int64
+	unDemoteChannelSequence int64
 }

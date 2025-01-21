@@ -38,6 +38,7 @@ func (c *KotsChannel) ToChannel() *Channel {
 		Description:     c.Description,
 		Slug:            c.ChannelSlug,
 		ReleaseSequence: int64(c.ReleaseSequence),
+		ChannelSequence: int64(c.ChannelSequence),
 		ReleaseLabel:    c.CurrentVersion,
 		IsArchived:      c.IsArchived,
 		IsHelmOnly:      c.IsHelmOnly,
@@ -95,6 +96,8 @@ type Channel struct {
 
 	ReleaseSequence int64  `json:"releaseSequence"`
 	ReleaseLabel    string `json:"releaseLabel"`
+
+	ChannelSequence int64 `json:"channelSequence"`
 
 	IsArchived bool `json:"isArchived"`
 	IsHelmOnly bool `json:"isHelmOnly"`
