@@ -432,10 +432,3 @@ func parseTags(tags []string) ([]types.Tag, error) {
 	}
 	return parsedTags, nil
 }
-
-func homeDir() string {
-	if h := os.Getenv("HOME"); h != "" {
-		return h
-	}
-	return os.Getenv("USERPROFILE")
-}
