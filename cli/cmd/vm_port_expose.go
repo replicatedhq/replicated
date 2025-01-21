@@ -15,17 +15,17 @@ func (r *runners) InitVMPortExpose(parent *cobra.Command) *cobra.Command {
 You can also create a wildcard DNS entry and TLS certificate by specifying the "--wildcard" flag. Please note that creating a wildcard certificate may take additional time.
 
 This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.`,
-		Example: `  # Expose port 8080 with HTTPS protocol and wildcard DNS
-  replicated vm port expose VM_ID --port 8080 --protocol https --wildcard
+		Example: `# Expose port 8080 with HTTPS protocol and wildcard DNS
+replicated vm port expose VM_ID --port 8080 --protocol https --wildcard
 
-  # Expose port 3000 with HTTP protocol
-  replicated vm port expose VM_ID --port 3000 --protocol http
+# Expose port 3000 with HTTP protocol
+replicated vm port expose VM_ID --port 3000 --protocol http
 
-  # Expose port 8080 with multiple protocols
-  replicated vm port expose VM_ID --port 8080 --protocol http,https
+# Expose port 8080 with multiple protocols
+replicated vm port expose VM_ID --port 8080 --protocol http,https
 
-  # Expose port 8080 and display the result in JSON format
-  replicated vm port expose VM_ID --port 8080 --protocol https --output json`,
+# Expose port 8080 and display the result in JSON format
+replicated vm port expose VM_ID --port 8080 --protocol https --output json`,
 		RunE:              r.vmPortExpose,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,

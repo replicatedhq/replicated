@@ -9,12 +9,10 @@ import (
 
 func (r *runners) InitChannelDisableSemanticVersioning(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "disable-semantic-versioning CHANNEL_ID",
-		Short: "Disable semantic versioning for CHANNEL_ID",
-		Long: `Disable semantic versioning for the CHANNEL_ID.
-
- Example:
- replicated channel disable-semantic-versioning CHANNEL_ID`,
+		Use:     "disable-semantic-versioning CHANNEL_ID",
+		Short:   "Disable semantic versioning for CHANNEL_ID",
+		Long:    `Disable semantic versioning for the CHANNEL_ID.`,
+		Example: `replicated channel disable-semantic-versioning CHANNEL_ID`,
 	}
 	parent.AddCommand(cmd)
 	cmd.RunE = r.channelDisableSemanticVersioning

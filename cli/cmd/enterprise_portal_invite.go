@@ -24,17 +24,17 @@ the customer (by name or ID) and provide one or more email addresses of the user
 you want to invite.
 
 The command will generate and return unique invitation URLs for each email address.`,
-		Example: `  # Invite a single user to the Enterprise Portal for a customer
-  replicated enterprise-portal invite --customer "ACME Inc" user@example.com
+		Example: `# Invite a single user to the Enterprise Portal for a customer
+replicated enterprise-portal invite --customer "ACME Inc" user@example.com
 
-  # Invite multiple users to the Enterprise Portal for a customer
-  replicated enterprise-portal invite --customer "cus_abcdef123456" user1@example.com user2@example.com
+# Invite multiple users to the Enterprise Portal for a customer
+replicated enterprise-portal invite --customer "cus_abcdef123456" user1@example.com user2@example.com
 
-  # Invite a user and specify JSON output format
-  replicated enterprise-portal invite --customer "ACME Inc" --output json user@example.com
+# Invite a user and specify JSON output format
+replicated enterprise-portal invite --customer "ACME Inc" --output json user@example.com
 
-  # Invite users to the Enterprise Portal for a specific app (if you have multiple apps)
-  replicated enterprise-portal invite --app myapp --customer "ACME Inc" user1@example.com user2@example.com`,
+# Invite users to the Enterprise Portal for a specific app (if you have multiple apps)
+replicated enterprise-portal invite --app myapp --customer "ACME Inc" user1@example.com user2@example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.enterprisePortalInvite(cmd, r.appID, customer, args, outputFormat)
 		},

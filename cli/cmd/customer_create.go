@@ -50,24 +50,24 @@ custom ID, channels, license type, and feature flags. You can set expiration dat
 enable or disable specific features, and assign the customer to one or more channels.
 
 The --app flag must be set to specify the target application.`,
-		Example: `  # Create a basic customer with a name and assigned to a channel
-  replicated customer create --app myapp --name "Acme Inc" --channel stable
+		Example: `# Create a basic customer with a name and assigned to a channel
+replicated customer create --app myapp --name "Acme Inc" --channel stable
 
-  # Create a customer with multiple channels and a custom ID
-  replicated customer create --app myapp --name "Beta Corp" --custom-id "BETA123" --channel beta --channel stable
+# Create a customer with multiple channels and a custom ID
+replicated customer create --app myapp --name "Beta Corp" --custom-id "BETA123" --channel beta --channel stable
 
-  # Create a paid customer with specific features enabled
-  replicated customer create --app myapp --name "Enterprise Ltd" --type paid --channel enterprise --airgap --snapshot
+# Create a paid customer with specific features enabled
+replicated customer create --app myapp --name "Enterprise Ltd" --type paid --channel enterprise --airgap --snapshot
 
-  # Create a trial customer with an expiration date
-  replicated customer create --app myapp --name "Trial User" --type trial --channel stable --expires-in 720h
+# Create a trial customer with an expiration date
+replicated customer create --app myapp --name "Trial User" --type trial --channel stable --expires-in 720h
 
-  # Create a customer with all available options
-  replicated customer create --app myapp --name "Full Options Inc" --custom-id "FULL001" \
-    --channel stable --channel beta --default-channel stable --type paid \
-    --email "contact@fulloptions.com" --expires-in 8760h \
-    --airgap --snapshot --kots-install --embedded-cluster-download \
-    --support-bundle-upload --ensure-channel`,
+# Create a customer with all available options
+replicated customer create --app myapp --name "Full Options Inc" --custom-id "FULL001" \
+	--channel stable --channel beta --default-channel stable --type paid \
+	--email "contact@fulloptions.com" --expires-in 8760h \
+	--airgap --snapshot --kots-install --embedded-cluster-download \
+	--support-bundle-upload --ensure-channel`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.createCustomer(cmd, opts, outputFormat)
 		},

@@ -13,11 +13,11 @@ func (r *runners) InitEnterprisePortalUserCmd(parent *cobra.Command) *cobra.Comm
 This command provides subcommands for listing, adding, and removing users
 from the Enterprise Portal. You can use these subcommands to control access
 to the Enterprise Portal for your application.`,
-		Example: `  # List all users with access to the Enterprise Portal
-  replicated enterprise-portal user ls
+		Example: `# List all users with access to the Enterprise Portal
+replicated enterprise-portal user ls
 
-  # List users for a specific application
-  replicated enterprise-portal user ls --app myapp`,
+# List users for a specific application
+replicated enterprise-portal user ls --app myapp`,
 	}
 	parent.AddCommand(cmd)
 

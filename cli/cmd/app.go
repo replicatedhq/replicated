@@ -20,23 +20,23 @@ Use the various subcommands to:
 - View details of a specific application
 - Update application settings
 - Delete applications from your account`,
-		Example: `  # List all applications
-  replicated app ls
+		Example: `# List all applications
+replicated app ls
 
-  # Create a new application
-  replicated app create "My New App"
+# Create a new application
+replicated app create "My New App"
 
-  # View details of a specific application
-  replicated app inspect "My App Name"
+# View details of a specific application
+replicated app inspect "My App Name"
 
-  # Delete an application
-  replicated app delete "App to Remove"
+# Delete an application
+replicated app delete "App to Remove"
 
-  # Update an application's settings
-  replicated app update "My App" --channel stable
+# Update an application's settings
+replicated app update "My App" --channel stable
 
-  # List applications with custom output format
-  replicated app ls --output json`,
+# List applications with custom output format
+replicated app ls --output json`,
 	}
 	parent.AddCommand(cmd)
 

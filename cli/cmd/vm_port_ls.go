@@ -12,14 +12,14 @@ func (r *runners) InitVMPortLs(parent *cobra.Command) *cobra.Command {
 		Long: `The 'vm port ls' command lists all the ports configured for a specific vm. You must provide the vm ID to retrieve and display the ports.
 
 This command is useful for viewing the current port configurations, protocols, and other related settings of your test vm. The output format can be customized to suit your needs, and the available formats include table, JSON, and wide views.`,
-		Example: `  # List ports for a vm in the default table format
-  replicated vm port ls VM_ID
+		Example: `# List ports for a vm in the default table format
+replicated vm port ls VM_ID
 
-  # List ports for a vm in JSON format
-  replicated vm port ls VM_ID --output json
+# List ports for a vm in JSON format
+replicated vm port ls VM_ID --output json
 
-  # List ports for a vm in wide format
-  replicated vm port ls VM_ID --output wide`,
+# List ports for a vm in wide format
+replicated vm port ls VM_ID --output wide`,
 		RunE:              r.vmPortList,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,

@@ -27,17 +27,17 @@ If no application is specified, the command will use the default application
 set in your configuration.
 
 The new status must be provided using the --status flag.`,
-		Example: `  # Update the Enterprise Portal status for the default application
-  replicated enterprise-portal status update --status active
+		Example: `# Update the Enterprise Portal status for the default application
+replicated enterprise-portal status update --status active
 
-  # Update the Enterprise Portal status for a specific application
-  replicated enterprise-portal status update --app myapp --status inactive
+# Update the Enterprise Portal status for a specific application
+replicated enterprise-portal status update --app myapp --status inactive
 
-  # Update the Enterprise Portal status and output in JSON format
-  replicated enterprise-portal status update --status pending --output json
+# Update the Enterprise Portal status and output in JSON format
+replicated enterprise-portal status update --status pending --output json
 
-  # Update the Enterprise Portal status and output in table format (default)
-  replicated enterprise-portal status update --status active --output table`,
+# Update the Enterprise Portal status and output in table format (default)
+replicated enterprise-portal status update --status active --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.enterprisePortalStatusUpdate(cmd, r.appID, opts, outputFormat)
 		},

@@ -21,11 +21,11 @@ This command displays detailed information about a specific release of an applic
 The output can be customized using the --output flag to display results in
 either table or JSON format.
 		`,
-		Example: `  # Display information about a release
-  replicated release inspect 123
+		Example: `# Display information about a release
+replicated release inspect 123
 
-  # Display information about a release in JSON format
-  replicated release inspect 123 --output json`,
+# Display information about a release in JSON format
+replicated release inspect 123 --output json`,
 		Args: cobra.ExactArgs(1),
 	}
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")

@@ -27,14 +27,14 @@ This command allows you to provision VMs with different distributions (e.g., Ubu
 By default, the command provisions one VM, but you can customize the number of VMs to create by using the "--count" flag. Additionally, you can use the "--dry-run" flag to simulate the creation without actually provisioning the VMs.
 
 The command also supports a "--wait" flag to wait for the VMs to be ready before returning control, with a customizable timeout duration.`,
-		Example: `  # Create a single Ubuntu 20.04 VM
-  replicated vm create --distribution ubuntu --version 20.04
+		Example: `# Create a single Ubuntu 20.04 VM
+replicated vm create --distribution ubuntu --version 20.04
 
-  # Create 3 Ubuntu 22.04 VMs
-  replicated vm create --distribution ubuntu --version 22.04 --count 3
+# Create 3 Ubuntu 22.04 VMs
+replicated vm create --distribution ubuntu --version 22.04 --count 3
 
-  # Create 5 Ubuntu VMs with a custom instance type and disk size
-  replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
+# Create 5 Ubuntu VMs with a custom instance type and disk size
+replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
 		SilenceUsage: true,
 		RunE:         r.createVM,
 		Args:         cobra.NoArgs,

@@ -109,14 +109,16 @@ build:
 		-o bin/replicated \
 		cli/main.go
 
-.PHONY: docs
-docs:
-	go run ./docs/
-
-.PHONE: release
+.PHONY: release
 release:
 	dagger call release \
 		--one-password-service-account-production env:OP_SERVICE_ACCOUNT_PRODUCTION \
 		--version $(version) \
+		--github-token env:GITHUB_TOKEN \
+		--progress plain
+
+.PHONY: docs
+docs:
+	dagger --progress plain call generate-docs \
 		--github-token env:GITHUB_TOKEN \
 		--progress plain

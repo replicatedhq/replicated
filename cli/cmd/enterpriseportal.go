@@ -9,7 +9,7 @@ func (r *runners) InitEnterprisePortalCommand(parent *cobra.Command) *cobra.Comm
 		Use:     "enterprise-portal",
 		Short:   "Manage enterprise portal",
 		Long:    ``,
-		Example: `  `,
+		Example: ``,
 		Hidden:  true,
 	}
 	parent.AddCommand(cmd)

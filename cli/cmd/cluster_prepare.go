@@ -56,7 +56,7 @@ You can also pass entitlement values to configure the cluster's customer entitle
 Note:
 - The '--chart' flag cannot be used with '--yaml', '--yaml-file', or '--yaml-dir'.
 - If deploying a Helm chart, use the '--set' flags to pass chart values. When deploying a KOTS application, the '--shared-password' flag is required.`,
-		Example: `  replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 --chart ./your-chart.tgz --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
+		Example: `replicated cluster prepare --distribution eks --version 1.27 --instance-type c6.xlarge --node-count 3 --chart ./your-chart.tgz --values ./values.yaml --set chart-key=value --set chart-key2=value2`,
 		RunE:    r.prepareCluster,
 	}
 

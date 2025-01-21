@@ -17,12 +17,8 @@ uses your local credentials and prints the response unmodified.
 
 We recommend piping the output to jq for easier reading.
 
-Pass the PATH of the request as the final argument. Do not include the host or version.
-
-Example:
-  replicated api patch /v3/customer/2VffY549paATVfHSGpJhjh6Ehpy -b '{"name":"Valuable Customer"}'
-  
-`,
+Pass the PATH of the request as the final argument. Do not include the host or version.`,
+		Example:      `replicated api patch /v3/customer/2VffY549paATVfHSGpJhjh6Ehpy -b '{"name":"Valuable Customer"}'`,
 		RunE:         r.apiPatch,
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),

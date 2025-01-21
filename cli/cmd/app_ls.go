@@ -27,17 +27,17 @@ filter the results to show only applications that match the given name or ID.
 
 The output can be customized using the --output flag to display results in
 either table or JSON format.`,
-		Example: `  # List all applications
-  replicated app ls
+		Example: `# List all applications
+replicated app ls
 
-  # Search for a specific application by name
-  replicated app ls "My App"
+# Search for a specific application by name
+replicated app ls "My App"
 
-  # List applications and output in JSON format
-  replicated app ls --output json
+# List applications and output in JSON format
+replicated app ls --output json
 
-  # Search for an application and display results in table format
-  replicated app ls "App Name" --output table`,
+# Search for an application and display results in table format
+replicated app ls "App Name" --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			if integrationTest != "" {

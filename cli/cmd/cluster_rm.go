@@ -20,11 +20,11 @@ You can remove clusters by specifying a cluster ID, or by using other criteria s
 This command can also be used in a dry-run mode to simulate the removal without actually deleting anything.
 
 You cannot mix the use of cluster IDs with other options like removing by name, tag, or removing all clusters at once.`,
-		Example: `  # Remove a specific cluster by ID
-  replicated cluster rm CLUSTER_ID
+		Example: `# Remove a specific cluster by ID
+replicated cluster rm CLUSTER_ID
 
-  # Remove all clusters
-  replicated cluster rm --all`,
+# Remove all clusters
+replicated cluster rm --all`,
 		RunE:              r.removeClusters,
 		ValidArgsFunction: r.completeClusterIDs,
 	}

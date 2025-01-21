@@ -21,17 +21,17 @@ whether the Enterprise Portal is active, pending, or in any other state.
 
 If no application is specified, the command will use the default application
 set in your configuration.`,
-		Example: `  # Get the Enterprise Portal status for the default application
-  replicated enterprise-portal status get
+		Example: `# Get the Enterprise Portal status for the default application
+replicated enterprise-portal status get
 
-  # Get the Enterprise Portal status for a specific application
-  replicated enterprise-portal status get --app myapp
+# Get the Enterprise Portal status for a specific application
+replicated enterprise-portal status get --app myapp
 
-  # Get the Enterprise Portal status and output in JSON format
-  replicated enterprise-portal status get --output json
+# Get the Enterprise Portal status and output in JSON format
+replicated enterprise-portal status get --output json
 
-  # Get the Enterprise Portal status and output in table format (default)
-  replicated enterprise-portal status get --output table`,
+# Get the Enterprise Portal status and output in table format (default)
+replicated enterprise-portal status get --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.enterprisePortalStatusGet(cmd, r.appID, outputFormat)
 		},

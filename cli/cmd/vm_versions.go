@@ -16,14 +16,14 @@ func (r *runners) InitVMVersions(parent *cobra.Command) *cobra.Command {
 
 - You can filter the list by a specific distribution using the '--distribution' flag.
 - The output can be formatted as a table or in JSON format using the '--output' flag.`,
-		Example: `  # List all available VM versions
-  replicated vm versions
+		Example: `# List all available VM versions
+replicated vm versions
 
-  # List VM versions for a specific distribution (e.g., Ubuntu)
-  replicated vm versions --distribution ubuntu
+# List VM versions for a specific distribution (e.g., Ubuntu)
+replicated vm versions --distribution ubuntu
 
-  # Display the output in JSON format
-  replicated vm versions --output json`,
+# Display the output in JSON format
+replicated vm versions --output json`,
 		RunE: r.listVMVersions,
 	}
 	parent.AddCommand(cmd)

@@ -8,16 +8,15 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
-
-	"github.com/replicatedhq/replicated/pkg/credentials"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/types"
-	"github.com/replicatedhq/replicated/pkg/version"
-
 	"github.com/replicatedhq/replicated/client"
 	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
+	"github.com/replicatedhq/replicated/pkg/credentials"
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +78,7 @@ Aliases:
   {{.NameAndAliases}}{{end}}{{if .HasExample}}
 
 Example:
-{{.Example}}{{end}}{{if .HasAvailableSubCommands}}
+{{.Example |  indent 2}}{{end}}{{if .HasAvailableSubCommands}}
 
 Available Commands:{{range .Commands}}{{if .IsAvailableCommand}}
   {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
@@ -282,6 +281,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitAPIPut(apiCmd)
 	runCmds.InitAPIPatch(apiCmd)
 
+	cobra.AddTemplateFunc("indent", sprig.FuncMap()["indent"])
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {

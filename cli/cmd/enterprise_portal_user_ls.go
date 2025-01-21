@@ -26,20 +26,20 @@ pending invitations as well.
 
 Use the --include-invites flag to also list users who have been invited but
 haven't yet accepted their invitations.`,
-		Example: `  # List all active Enterprise Portal users
-  replicated enterprise-portal user ls
+		Example: `# List all active Enterprise Portal users
+replicated enterprise-portal user ls
 
-  # List all Enterprise Portal users, including pending invitations
-  replicated enterprise-portal user ls --include-invites
+# List all Enterprise Portal users, including pending invitations
+replicated enterprise-portal user ls --include-invites
 
-  # List Enterprise Portal users for a specific application
-  replicated enterprise-portal user ls --app myapp
+# List Enterprise Portal users for a specific application
+replicated enterprise-portal user ls --app myapp
 
-  # List Enterprise Portal users and output in JSON format
-  replicated enterprise-portal user ls --output json
+# List Enterprise Portal users and output in JSON format
+replicated enterprise-portal user ls --output json
 
-  # List all users, including invites, for a specific app in table format
-  replicated enterprise-portal user ls --app myapp --include-invites --output table`,
+# List all users, including invites, for a specific app in table format
+replicated enterprise-portal user ls --app myapp --include-invites --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.enterprisePortalUserLs(cmd, r.appID, opts, outputFormat)
 		},

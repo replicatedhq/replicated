@@ -7,7 +7,7 @@ func (r *runners) InitDefaultCommand(parent *cobra.Command) *cobra.Command {
 		Use:     "default",
 		Short:   "Manage default values used by other commands",
 		Long:    ``,
-		Example: `  `,
+		Example: ``,
 	}
 
 	parent.AddCommand(cmd)

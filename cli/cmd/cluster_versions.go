@@ -13,14 +13,14 @@ func (r *runners) InitClusterVersions(parent *cobra.Command) *cobra.Command {
 		Use:   "versions",
 		Short: "List cluster versions.",
 		Long:  `The 'versions' command lists available Kubernetes versions for supported distributions. You can filter the versions by specifying a distribution and choose between different output formats.`,
-		Example: `  # List all available Kubernetes cluster versions
-  replicated cluster versions
+		Example: `# List all available Kubernetes cluster versions
+replicated cluster versions
 
-  # List available versions for a specific distribution (e.g., eks)
-  replicated cluster versions --distribution eks
+# List available versions for a specific distribution (e.g., eks)
+replicated cluster versions --distribution eks
 
-  # Output the versions in JSON format
-  replicated cluster versions --output json`,
+# Output the versions in JSON format
+replicated cluster versions --output json`,
 		RunE: r.listClusterVersions,
 	}
 	parent.AddCommand(cmd)

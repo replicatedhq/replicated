@@ -26,13 +26,13 @@ By default, it shows all non-test customers. You can use flags to:
 - Change the output format (table or JSON)
 
 The command requires an app to be set using the --app flag.`,
-		Example: `  # List all customers for the current application
-  replicated customer ls --app myapp
-  # Output results in JSON format
-  replicated customer ls --app myapp --output json
+		Example: `# List all customers for the current application
+replicated customer ls --app myapp
+# Output results in JSON format
+replicated customer ls --app myapp --output json
 
-  # Combine multiple flags
-  replicated customer ls --app myapp --output json`,
+# Combine multiple flags
+replicated customer ls --app myapp --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.listCustomers(appVersion, includeTest, outputFormat)
 		},

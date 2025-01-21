@@ -17,12 +17,8 @@ uses your local credentials and prints the response unmodified.
 
 We recommend piping the output to jq for easier reading.
 
-Pass the PATH of the request as the final argument. Do not include the host or version.
-
-Example:
-  replicated api get /v3/apps
-  
-`,
+Pass the PATH of the request as the final argument. Do not include the host or version.`,
+		Example:      `replicated api get /v3/apps`,
 		RunE:         r.apiGet,
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),

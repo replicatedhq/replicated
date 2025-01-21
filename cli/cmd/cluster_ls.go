@@ -22,23 +22,23 @@ func (r *runners) InitClusterList(parent *cobra.Command) *cobra.Command {
 You can filter the list of clusters by time range and status (e.g., show only terminated clusters). You can also watch clusters in real-time, which updates the list every few seconds.
 
 Clusters that have been deleted will be shown with a 'deleted' status.`,
-		Example: `  # List all clusters with default table output
-  replicated cluster ls
+		Example: `# List all clusters with default table output
+replicated cluster ls
 
-  # Show clusters created after a specific date
-  replicated cluster ls --start-time 2023-01-01T00:00:00Z
+# Show clusters created after a specific date
+replicated cluster ls --start-time 2023-01-01T00:00:00Z
 
-  # Watch for real-time updates
-  replicated cluster ls --watch
+# Watch for real-time updates
+replicated cluster ls --watch
 
-  # List clusters with JSON output
-  replicated cluster ls --output json
+# List clusters with JSON output
+replicated cluster ls --output json
 
-  # List only terminated clusters
-  replicated cluster ls --show-terminated
+# List only terminated clusters
+replicated cluster ls --show-terminated
 
-  # List clusters with wide table output
-  replicated cluster ls --output wide`,
+# List clusters with wide table output
+replicated cluster ls --output wide`,
 		RunE: r.listClusters,
 	}
 	parent.AddCommand(cmd)
