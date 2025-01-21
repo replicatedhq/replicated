@@ -12,10 +12,11 @@ func (r *runners) InitChannelReleaseDemote(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:   "demote CHANNEL_ID_OR_NAME",
 		Short: "Demote a release from a channel",
-		Long: `Demote a release from a channel.
-
-  Example:
+		Long:  "Demote a channel release from a channel using a channel sequence or release sequence.",
+		Example: `  # Demote a release from a channel by channel sequence
   replicated channel release demote Beta --channel-sequence 15
+
+  # Demote a release from a channel by release sequence
   replicated channel release demote Beta --release-sequence 12`,
 		Args: cobra.ExactArgs(1),
 	}
