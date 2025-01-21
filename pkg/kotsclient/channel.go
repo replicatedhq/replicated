@@ -119,3 +119,33 @@ func (c *VendorV3Client) UpdateSemanticVersioning(appID string, channel *types.C
 
 	return nil
 }
+
+func (c *VendorV3Client) DemoteChannelRelease(appID string, channelID string, channelSequence int64) (*types.ChannelRelease, error) {
+	url := fmt.Sprintf("/v3/app/%s/channel/%s/release/%d/demote", appID, url.QueryEscape(channelID), channelSequence)
+
+	response := struct {
+		Release types.ChannelRelease `json:"release"`
+	}{}
+
+	err := c.DoJSON(context.TODO(), "POST", url, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "demote channel release")
+	}
+
+	return &response.Release, nil
+}
+
+func (c *VendorV3Client) UnDemoteChannelRelease(appID string, channelID string, channelSequence int64) (*types.ChannelRelease, error) {
+	url := fmt.Sprintf("/v3/app/%s/channel/%s/release/%d/undemote", appID, url.QueryEscape(channelID), channelSequence)
+
+	response := struct {
+		Release types.ChannelRelease `json:"release"`
+	}{}
+
+	err := c.DoJSON(context.TODO(), "POST", url, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "un-demote channel release")
+	}
+
+	return &response.Release, nil
+}

@@ -254,4 +254,9 @@ type runnerArgs struct {
 	clusterAddonCreateObjectStoreDuration  time.Duration
 	clusterAddonCreateObjectStoreDryRun    bool
 	clusterAddonCreateObjectStoreOutput    string
+
+	demoteReleaseSequence   int64
+	demoteChannelSequence   int64
+	unDemoteReleaseSequence int64
+	unDemoteChannelSequence int64
 }

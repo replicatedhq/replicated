@@ -164,3 +164,21 @@ func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string
 
 	return errors.Errorf("unknown app type %q", appType)
 }
+
+func (c *Client) ChannelReleaseDemote(appID string, appType string, channelID string, channelSequence int64) (*types.ChannelRelease, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.DemoteChannelRelease(appID, channelID, channelSequence)
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
+func (c *Client) ChannelReleaseUnDemote(appID string, appType string, channelID string, channelSequence int64) (*types.ChannelRelease, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.UnDemoteChannelRelease(appID, channelID, channelSequence)
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}

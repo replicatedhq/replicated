@@ -140,6 +140,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitChannelRemove(channelCmd)
 	runCmds.InitChannelEnableSemanticVersioning(channelCmd)
 	runCmds.InitChannelDisableSemanticVersioning(channelCmd)
+	runCmds.InitChannelReleaseDemote(channelCmd)
+	runCmds.InitChannelReleaseUnDemote(channelCmd)
 
 	runCmds.rootCmd.AddCommand(releaseCmd)
 	err := runCmds.InitReleaseCreate(releaseCmd)
