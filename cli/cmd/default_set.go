@@ -22,8 +22,8 @@ Supported keys:
 
 The output can be customized using the --output flag to display results in
 either table or JSON format.`,
-		Example: `  # Set default application
-  replicated default set app my-app-slug`,
+		Example: `# Set default application
+replicated default set app my-app-slug`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.setDefault(cmd, args[0], args[1], outputFormat)

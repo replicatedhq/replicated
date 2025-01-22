@@ -24,14 +24,14 @@ to stdout or saves it to a file. The license contains crucial information about
 the customer's subscription and usage rights.
 
 You must specify the customer using either their name or ID with the --customer flag.`,
-		Example: `  # Download license for a customer by ID and output to stdout
-  replicated customer download-license --customer cus_abcdef123456
+		Example: `# Download license for a customer by ID and output to stdout
+replicated customer download-license --customer cus_abcdef123456
 
-  # Download license for a customer by name and save to a file
-  replicated customer download-license --customer "Acme Inc" --output license.yaml
+# Download license for a customer by name and save to a file
+replicated customer download-license --customer "Acme Inc" --output license.yaml
 
-  # Download license for a customer in a specific app (if you have multiple apps)
-  replicated customer download-license --app myapp --customer "Acme Inc" --output license.yaml`,
+# Download license for a customer in a specific app (if you have multiple apps)
+replicated customer download-license --app myapp --customer "Acme Inc" --output license.yaml`,
 		RunE: func(cmd *cobra.Command, args []string) (err error) {
 			return r.downloadCustomerLicense(cmd, customer, output)
 		},

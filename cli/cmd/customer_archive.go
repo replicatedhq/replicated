@@ -23,17 +23,17 @@ will make their license inactive and remove them from active customer lists.
 This action is reversible - you can unarchive a customer later if needed.
 
 The customer can be specified by either their name or ID.`,
-		Example: `  # Archive a customer by name
-  replicated customer archive "Acme Inc"
+		Example: `# Archive a customer by name
+replicated customer archive "Acme Inc"
 
-  # Archive a customer by ID
-  replicated customer archive cus_abcdef123456
+# Archive a customer by ID
+replicated customer archive cus_abcdef123456
 
-  # Archive multiple customers by ID
-  replicated customer archive cus_abcdef123456 cus_xyz9876543210
+# Archive multiple customers by ID
+replicated customer archive cus_abcdef123456 cus_xyz9876543210
 
-  # Archive a customer in a specific app (if you have multiple apps)
-  replicated customer archive --app myapp "Acme Inc"`,
+# Archive a customer in a specific app (if you have multiple apps)
+replicated customer archive --app myapp "Acme Inc"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// for compatibility reasons, we want to continue to support --customer but also read from args[0] if that's set
 			customers := []string{}

@@ -9,8 +9,8 @@ func (r *runners) InitDefaultClearAllCommand(parent *cobra.Command) *cobra.Comma
 		Long: `Clears all default values that are used by other commands.
 
 This command removes all default values that are used by other commands run by the current user.`,
-		Example: `  # Clear all default values
-  replicated default clear-all`,
+		Example: `# Clear all default values
+replicated default clear-all`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.clearAllDefaults(cmd)
 		},

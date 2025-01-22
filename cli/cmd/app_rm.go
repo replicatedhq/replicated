@@ -30,14 +30,14 @@ This command allows you to permanently remove an application from your account.
 Once deleted, the application and all associated data will be irretrievably lost.
 
 Use this command with caution as there is no way to undo this operation.`,
-		Example: `  # Delete a app named "My App"
-  replicated app delete "My App"
+		Example: `# Delete a app named "My App"
+replicated app delete "My App"
 
-  # Delete an app and skip the confirmation prompt
-  replicated app delete "Another App" --force
+# Delete an app and skip the confirmation prompt
+replicated app delete "Another App" --force
 
-  # Delete an app and output the result in JSON format
-  replicated app delete "Custom App" --output json`,
+# Delete an app and output the result in JSON format
+replicated app delete "Custom App" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			if integrationTest != "" {

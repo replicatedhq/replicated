@@ -11,11 +11,10 @@ import (
 
 func (r *runners) InitReleasePromote(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "promote SEQUENCE CHANNEL_ID",
-		Short: "Set the release for a channel",
-		Long: `Set the release for a channel
-
-  Example: replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
+		Use:           "promote SEQUENCE CHANNEL_ID",
+		Short:         "Set the release for a channel",
+		Long:          `Set the release for a channel`,
+		Example:       `replicated release promote 15 fe4901690971757689f022f7a460f9b2`,
 		SilenceErrors: true, // this command uses custom error printing
 	}
 

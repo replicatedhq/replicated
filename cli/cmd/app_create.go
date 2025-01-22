@@ -29,14 +29,15 @@ and managed using the KOTS platform. When you create a new app, it will be set u
 with default configurations, which you can later customize.
 
 The NAME argument is required and will be used as the application's name.`,
-		Example: `  # Create a new app named "My App"
-  replicated app create "My App"
+		Example: `# Create a new app named "My App"
+replicated app create "My App"
 
-  # Create a new app and output the result in JSON format
-  replicated app create "Another App" --output json
+# Create a new app and output the result in JSON format
+replicated app create "Another App" --output json
 
-  # Create a new app with a specific name and view details in table format
-  replicated app create "Custom App" --output table`,
+# Create a new app with a specific name and view details in table format
+replicated app create "Custom App" --output table`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
 			if integrationTest != "" {

@@ -17,11 +17,9 @@ func (r *runners) InitReleaseDownload(parent *cobra.Command) {
 		Short: "Download application manifests for a release.",
 		Long: `Download application manifests for a release to a specified directory.
 
-For non-KOTS applications, this is equivalent to the 'release inspect' command.
-
-Example:
-replicated release download 1 --dest ./manifests`,
-		Args: cobra.ExactArgs(1),
+For non-KOTS applications, this is equivalent to the 'release inspect' command.`,
+		Example: `replicated release download 1 --dest ./manifests`,
+		Args:    cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
 	cmd.RunE = r.releaseDownload

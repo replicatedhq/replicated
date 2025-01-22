@@ -12,11 +12,11 @@ func (r *runners) InitVMPortRm(parent *cobra.Command) *cobra.Command {
 		Long: `The 'vm port rm' command removes a specific port from a vm. You must provide the ID of the port to remove.
 
 This command is useful for managing the network settings of your test vms by allowing you to clean up unused or incorrect ports. After removing a port, the updated list of ports will be displayed.`,
-		Example: `  # Remove a port using its ID
-  replicated vm port rm VM_ID --id PORT_ID
+		Example: `# Remove a port using its ID
+replicated vm port rm VM_ID --id PORT_ID
 
-  # Remove a port and display the result in JSON format
-  replicated vm port rm VM_ID --id PORT_ID --output json`,
+# Remove a port and display the result in JSON format
+replicated vm port rm VM_ID --id PORT_ID --output json`,
 		RunE:              r.vmPortRemove,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,

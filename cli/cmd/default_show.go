@@ -24,8 +24,8 @@ Supported keys:
 
 The output can be customized using the --output flag to display results in
 either table or JSON format.`,
-		Example: `  # Show default application
-  replicated default show app
+		Example: `# Show default application
+replicated default show app
 `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

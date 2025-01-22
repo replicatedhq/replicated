@@ -15,17 +15,17 @@ and updating it. You can use these subcommands to monitor and control the state 
 Enterprise Portal for your application.
 
 Use 'status get' to retrieve the current status and 'status update' to change the status.`,
-		Example: `  # Get the current status of the Enterprise Portal
-  replicated enterprise-portal status get
+		Example: `# Get the current status of the Enterprise Portal
+replicated enterprise-portal status get
 
-  # Update the status of the Enterprise Portal
-  replicated enterprise-portal status update --status active
+# Update the status of the Enterprise Portal
+replicated enterprise-portal status update --status active
 
-  # Get the status for a specific application
-  replicated enterprise-portal status get --app myapp
+# Get the status for a specific application
+replicated enterprise-portal status get --app myapp
 
-  # Update the status for a specific application
-  replicated enterprise-portal status update --app myapp --status inactive`,
+# Update the status for a specific application
+replicated enterprise-portal status update --app myapp --status inactive`,
 	}
 	parent.AddCommand(cmd)
 

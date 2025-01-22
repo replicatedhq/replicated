@@ -9,11 +9,10 @@ import (
 
 func (r *runners) InitCollectorPromote(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "promote SPEC_ID CHANNEL_ID",
-		Short: "Set the collector for a channel",
-		Long: `Set the collector for a channel
-
-  Example: replicated collectors promote skd204095829040 fe4901690971757689f022f7a460f9b2`,
+		Use:     "promote SPEC_ID CHANNEL_ID",
+		Short:   "Set the collector for a channel",
+		Long:    `Set the collector for a channel`,
+		Example: `replicated collectors promote skd204095829040 fe4901690971757689f022f7a460f9b2`,
 	}
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)

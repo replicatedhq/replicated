@@ -17,12 +17,8 @@ uses your local credentials and prints the response unmodified.
 
 We recommend piping the output to jq for easier reading.
 
-Pass the PATH of the request as the final argument. Do not include the host or version.
-
-Example:
-  replicated api put /v3/app/2EuFxKLDxKjPNk2jxMTmF6Vxvxu/channel/2QLPm10JPkta7jO3Z3Mk4aXTPyZ -b '{"name":"marc-waz-here2"}'
-  
-`,
+Pass the PATH of the request as the final argument. Do not include the host or version.`,
+		Example:      `replicated api put /v3/app/2EuFxKLDxKjPNk2jxMTmF6Vxvxu/channel/2QLPm10JPkta7jO3Z3Mk4aXTPyZ -b '{"name":"marc-waz-here2"}'`,
 		RunE:         r.apiPut,
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),

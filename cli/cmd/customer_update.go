@@ -49,23 +49,23 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 	enable or disable specific features, and change channel assignments.
 
 	The --customer flag is required to specify which customer to update.`,
-		Example: `  # Update a customer's name
-	  replicated customer update --customer cus_abcdef123456 --name "New Company Name"
+		Example: `# Update a customer's name
+replicated customer update --customer cus_abcdef123456 --name "New Company Name"
 
-	  # Change a customer's channel and make it the default
-	  replicated customer update --customer cus_abcdef123456 --channel stable --default-channel stable
+# Change a customer's channel and make it the default
+replicated customer update --customer cus_abcdef123456 --channel stable --default-channel stable
 
-	  # Enable airgap installations for a customer
-	  replicated customer update --customer cus_abcdef123456 --airgap
+# Enable airgap installations for a customer
+replicated customer update --customer cus_abcdef123456 --airgap
 
-	  # Update multiple attributes at once
-	  replicated customer update --customer cus_abcdef123456 --name "Updated Corp" --type paid --channel enterprise --airgap --snapshot
+# Update multiple attributes at once
+replicated customer update --customer cus_abcdef123456 --name "Updated Corp" --type paid --channel enterprise --airgap --snapshot
 
-	  # Set an expiration date for a customer's license
-	  replicated customer update --customer cus_abcdef123456 --expires-in 8760h
+# Set an expiration date for a customer's license
+replicated customer update --customer cus_abcdef123456 --expires-in 8760h
 
-	  # Update a customer and output the result in JSON format
-	  replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --output json`,
+# Update a customer and output the result in JSON format
+replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.updateCustomer(cmd, opts)
 		},

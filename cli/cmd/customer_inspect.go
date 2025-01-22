@@ -26,17 +26,17 @@ func (r *runners) InitCustomersInspectCommand(parent *cobra.Command) *cobra.Comm
 	It's useful for getting an in-depth view of a customer's configuration and status.
 
 	You must specify the customer using either their name or ID with the --customer flag.`,
-		Example: `  # Inspect a customer by ID
-	  replicated customer inspect --customer cus_abcdef123456
+		Example: `# Inspect a customer by ID
+replicated customer inspect --customer cus_abcdef123456
 
-	  # Inspect a customer by name
-	  replicated customer inspect --customer "Acme Inc"
+# Inspect a customer by name
+replicated customer inspect --customer "Acme Inc"
 
-	  # Inspect a customer and output in JSON format
-	  replicated customer inspect --customer cus_abcdef123456 --output json
+# Inspect a customer and output in JSON format
+replicated customer inspect --customer cus_abcdef123456 --output json
 
-	  # Inspect a customer for a specific app (if you have multiple apps)
-	  replicated customer inspect --app myapp --customer "Acme Inc"`,
+# Inspect a customer for a specific app (if you have multiple apps)
+replicated customer inspect --app myapp --customer "Acme Inc"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.inspectCustomer(cmd, customer, outputFormat)
 		},

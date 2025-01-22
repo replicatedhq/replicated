@@ -4,12 +4,12 @@ import (
 	"context"
 	"dagger/replicated/internal/dagger"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/Masterminds/semver"
+	"github.com/pkg/errors"
 )
 
 var goreleaserVersion = "v2.3.2"
@@ -32,27 +32,24 @@ func (r *Replicated) Release(
 
 	githubToken *dagger.Secret,
 ) error {
-	gitTreeOK, err := checkGitTree(ctx, source, githubToken)
+	err := checkGitTree(ctx, source, githubToken)
 	if err != nil {
-		return err
-	}
-	if !gitTreeOK {
-		return fmt.Errorf("git tree is not ok")
+		return errors.Wrap(err, "failed to check git tree")
 	}
 
 	previousVersionTag, err := getLatestVersion(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get latest version")
 	}
 
 	previousReleaseBranchName, err := getReleaseBranchName(ctx, previousVersionTag)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get release branch name")
 	}
 
 	major, minor, patch, err := getNextVersion(ctx, previousVersionTag, version)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get next version")
 	}
 
 	fmt.Printf("Releasing as version %d.%d.%d\n", major, minor, patch)
@@ -60,7 +57,7 @@ func (r *Replicated) Release(
 	// replace the version in the Makefile
 	buildFileContent, err := source.File("./pkg/version/build.go").Contents(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get build file contents")
 	}
 	buildFileContent = strings.ReplaceAll(buildFileContent, "const version = \"unknown\"", fmt.Sprintf("const version = \"%d.%d.%d\"", major, minor, patch))
 	updatedSource := source.WithNewFile("./pkg/version/build.go", buildFileContent)
@@ -68,7 +65,7 @@ func (r *Replicated) Release(
 	releaseBranchName := fmt.Sprintf("release-%d.%d.%d", major, minor, patch)
 	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get github token plaintext")
 	}
 
 	// mount that and commit the updated build.go to git (don't push)
@@ -86,7 +83,7 @@ func (r *Replicated) Release(
 		WithExec([]string{"git", "push", "dagger", releaseBranchName})
 	_, err = gitCommitContainer.Stdout(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get git commit stdout")
 	}
 	updatedSource = gitCommitContainer.Directory("/go/src/github.com/replicatedhq/replicated")
 
@@ -102,7 +99,7 @@ func (r *Replicated) Release(
 		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
 	_, err = tagContainer.Stdout(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get tag stdout")
 	}
 
 	// copy the source that has the tag included in it
@@ -139,7 +136,7 @@ func (r *Replicated) Release(
 		WithFile("/replicated", replicatedBinary)
 	_, err = dockerContainer.Stdout(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get docker container stdout")
 	}
 
 	username, err := dag.Onepassword().FindSecret(
@@ -149,7 +146,7 @@ func (r *Replicated) Release(
 		"username",
 	).Plaintext(ctx)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to get docker hub username")
 	}
 	password := dag.Onepassword().FindSecret(
 		onePasswordServiceAccountProduction,
@@ -160,16 +157,16 @@ func (r *Replicated) Release(
 
 	dockerContainer = dockerContainer.WithRegistryAuth("", username, password)
 	if _, err := dockerContainer.Publish(ctx, "replicated/vendor-cli:latest"); err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to publish latest docker container")
 	}
 	if _, err := dockerContainer.Publish(ctx, fmt.Sprintf("replicated/vendor-cli:%d", major)); err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to publish major docker container")
 	}
 	if _, err := dockerContainer.Publish(ctx, fmt.Sprintf("replicated/vendor-cli:%d.%d", major, minor)); err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to publish minor docker container")
 	}
 	if _, err := dockerContainer.Publish(ctx, fmt.Sprintf("replicated/vendor-cli:%d.%d.%d", major, minor, patch)); err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed to publish patch docker container")
 	}
 
 	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
@@ -190,7 +187,7 @@ func (r *Replicated) Release(
 				Clean: clean,
 			})
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to snapshot goreleaser")
 		}
 	} else {
 		_, err := dag.
@@ -203,7 +200,7 @@ func (r *Replicated) Release(
 				Clean: clean,
 			})
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to release goreleaser")
 		}
 	}
 
@@ -264,8 +261,8 @@ var (
 	ErrCommitNotInGitHub = errors.New("You must merge your changes into the main branch before releasing")
 )
 
-// checkGitTree will return true if the local git tree is clean
-func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *dagger.Secret) (bool, error) {
+// checkGitTree will return nil if the local git tree is clean or an error if it's not
+func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *dagger.Secret) error {
 	container := dag.Container().
 		From("alpine/git:latest").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
@@ -274,14 +271,14 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 
 	gitStatusOutput, err := container.Stdout(ctx)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to get git status")
 	}
 
 	gitStatusOutput = strings.TrimSpace(gitStatusOutput)
 
 	if len(gitStatusOutput) > 0 {
 		fmt.Printf("output: %s\n", gitStatusOutput)
-		return false, fmt.Errorf("error: dirty tree: %q", gitStatusOutput)
+		return fmt.Errorf("error: dirty tree: %q", gitStatusOutput)
 	}
 
 	container = dag.Container().
@@ -292,13 +289,13 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 
 	gitBranchOutput, err := container.Stdout(ctx)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to get git branch")
 	}
 
 	gitBranchOutput = strings.TrimSpace(gitBranchOutput)
 
 	if !strings.Contains(gitBranchOutput, "* main") {
-		return false, ErrMainBranch
+		return ErrMainBranch
 	}
 
 	container = dag.Container().
@@ -309,26 +306,26 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 
 	commit, err := container.Stdout(ctx)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to get git commit")
 	}
 
 	commit = strings.TrimSpace(commit)
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/repos/replicatedhq/replicated/commits/%s", commit), nil)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to create github request")
 	}
 
 	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to get github token plaintext")
 	}
 
 	req.Header.Set("Authorization", fmt.Sprintf("token %s", githubTokenPlaintext))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to do github request")
 	}
 	defer resp.Body.Close()
 
@@ -340,12 +337,12 @@ func checkGitTree(ctx context.Context, source *dagger.Directory, githubToken *da
 
 	var ghResp GitHubResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ghResp); err != nil {
-		return false, err
+		return errors.Wrap(err, "failed to decode github response")
 	}
 
 	if ghResp.Status == "422" {
-		return false, ErrCommitNotInGitHub
+		return ErrCommitNotInGitHub
 	}
 
-	return true, nil
+	return nil
 }

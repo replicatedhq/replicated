@@ -15,8 +15,8 @@ This command removes default values that are used by other commands run by the c
 
 Supported keys:
 - app: the default application to use`,
-		Example: `  # Clear default application
-  replicated default clear app`,
+		Example: `# Clear default application
+replicated default clear app`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.clearDefault(cmd, args[0])

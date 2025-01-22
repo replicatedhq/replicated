@@ -12,17 +12,17 @@ func (r *runners) InitVMCommand(parent *cobra.Command) *cobra.Command {
 		Use:   "vm",
 		Short: "Manage test virtual machines.",
 		Long:  `The 'vm' command allows you to manage and interact with virtual machines (VMs) used for testing purposes. With this command, you can create, list, remove, update, and manage VMs, as well as retrieve information about available VM versions.`,
-		Example: `  # Create a single Ubuntu VM
-  replicated vm create --distribution ubuntu --version 20.04
+		Example: `# Create a single Ubuntu VM
+replicated vm create --distribution ubuntu --version 20.04
 
-  # List all VMs
-  replicated vm ls
+# List all VMs
+replicated vm ls
 
-  # Remove a specific VM by ID
-  replicated vm rm <vm-id>
+# Remove a specific VM by ID
+replicated vm rm <vm-id>
 
-  # Update TTL for a specific VM
-  replicated vm update ttl <vm-id> --ttl 24h`,
+# Update TTL for a specific VM
+replicated vm update ttl <vm-id> --ttl 24h`,
 	}
 	parent.AddCommand(cmd)
 

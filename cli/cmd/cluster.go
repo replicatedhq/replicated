@@ -17,17 +17,17 @@ func (r *runners) InitClusterCommand(parent *cobra.Command) *cobra.Command {
 		Use:   "cluster",
 		Short: "Manage test Kubernetes clusters.",
 		Long:  `The 'cluster' command allows you to manage and interact with Kubernetes clusters used for testing purposes. With this command, you can create, list, remove, and manage node groups within clusters, as well as retrieve information about available clusters.`,
-		Example: `  # Create a single-node EKS cluster
-  replicated cluster create --distribution eks --version 1.31
+		Example: `# Create a single-node EKS cluster
+replicated cluster create --distribution eks --version 1.31
 
-  # List all clusters
-  replicated cluster ls
+# List all clusters
+replicated cluster ls
 
-  # Remove a specific cluster by ID
-  replicated cluster rm <cluster-id>
+# Remove a specific cluster by ID
+replicated cluster rm <cluster-id>
 
-  # List all nodegroups in a specific cluster
-  replicated cluster nodegroup ls <cluster-id>`,
+# List all nodegroups in a specific cluster
+replicated cluster nodegroup ls <cluster-id>`,
 	}
 	parent.AddCommand(cmd)
 
