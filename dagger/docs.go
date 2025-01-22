@@ -192,7 +192,11 @@ func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) 
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		if strings.Contains(line, `reference/replicated-cli-`) {
+		if strings.Contains(line, `reference/replicated-cli-`) { // CLI commands that are generated.
+			continue
+		}
+
+		if strings.Contains(line, `'reference/replicated'`) { // CLI root command that is also generated.
 			continue
 		}
 
@@ -203,8 +207,7 @@ func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) 
 		}
 
 		if foundCLILabel && !wroteNewList && strings.Contains(line, `items: [`) {
-			newDocLines = append(newDocLines, `    items: [`)
-			newDocLines = append(newDocLines, `      // This list is generated. Do not edit.`)
+			newDocLines = append(newDocLines, `    items: [ // This list is generated. Do not edit.`)
 			// 'reference/replicated-cli-installing' is a special file that's not a CLI doc and should at the top of the list
 			newDocLines = append(newDocLines, `      'reference/replicated-cli-installing',`)
 			for _, newDocFilename := range newDocFilenames {
