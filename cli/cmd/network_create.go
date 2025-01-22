@@ -49,9 +49,7 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 	network, err := r.createAndWaitForNetwork(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrVMWaitDurationExceeded {
-			defer func() {
-				os.Exit(124)
-			}()
+			defer os.Exit(124)
 		} else {
 			return err
 		}
@@ -100,13 +98,13 @@ func waitForNetwork(kotsRestClient *kotsclient.VendorV3Client, network *types.Ne
 
 		if network.Status == types.NetworkStatusRunning {
 			return network, nil
-		} else if network.Status == types.NetworkStatusError {
+		}
+		if network.Status == types.NetworkStatusError {
 			return nil, errors.New("network failed to provision")
-		} else {
-			if time.Now().After(start.Add(duration)) {
-				// In case of timeout, return the network and a WaitDurationExceeded error
-				return network, ErrWaitDurationExceeded
-			}
+		}
+		if time.Now().After(start.Add(duration)) {
+			// In case of timeout, return the network and a WaitDurationExceeded error
+			return network, ErrWaitDurationExceeded
 		}
 
 		time.Sleep(time.Second * 5)

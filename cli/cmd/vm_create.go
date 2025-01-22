@@ -88,9 +88,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 	vms, err := r.createAndWaitForVM(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrVMWaitDurationExceeded {
-			defer func() {
-				os.Exit(124)
-			}()
+			defer os.Exit(124)
 		} else {
 			return err
 		}

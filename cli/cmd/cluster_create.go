@@ -156,9 +156,7 @@ func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrWaitDurationExceeded {
-			defer func() {
-				os.Exit(124)
-			}()
+			defer os.Exit(124)
 		} else {
 			return err
 		}
@@ -247,13 +245,13 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 
 		if cluster.Status == types.ClusterStatusRunning {
 			return cluster, nil
-		} else if cluster.Status == types.ClusterStatusError || cluster.Status == types.ClusterStatusUpgradeError {
+		}
+		if cluster.Status == types.ClusterStatusError || cluster.Status == types.ClusterStatusUpgradeError {
 			return nil, errors.New("cluster failed to provision")
-		} else {
-			if time.Now().After(start.Add(duration)) {
-				// In case of timeout, return the cluster and a WaitDurationExceeded error
-				return cluster, ErrWaitDurationExceeded
-			}
+		}
+		if time.Now().After(start.Add(duration)) {
+			// In case of timeout, return the cluster and a WaitDurationExceeded error
+			return cluster, ErrWaitDurationExceeded
 		}
 
 		time.Sleep(time.Second * 5)
