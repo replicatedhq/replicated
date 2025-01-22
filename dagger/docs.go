@@ -93,14 +93,9 @@ func (r *Replicated) GenerateDocs(
 			return errors.Wrap(err, "failed to get generated doc contents")
 		}
 
-		// Header must be level 1 in order for white spaces to be rendered correctly ("replicated api get" vs "replicated_api_get")
-		if strings.HasPrefix(content, "## ") {
-			content = content[1:]
-		}
+		content = cleanContent(content, entries)
 
-		destFilename := entry
-		destFilename = strings.ReplaceAll(destFilename, "replicated_", "replicated-cli-")
-		destFilename = strings.ReplaceAll(destFilename, "_", "-")
+		destFilename := cobraFileNameToDocsFileName(entry)
 
 		docsDirectory = docsDirectory.WithNewFile(destFilename, content)
 		newDocFilenames = append(newDocFilenames, destFilename)
@@ -139,7 +134,7 @@ func (r *Replicated) GenerateDocs(
 		return errors.Wrap(err, "failed to get github token plaintext")
 	}
 
-	branchName := fmt.Sprintf("update-cli-docs-%s-%s", latestVersion, time.Now().Format("202501221200"))
+	branchName := fmt.Sprintf("update-cli-docs-%s-%s", latestVersion, time.Now().Format("2006-01-02-150405"))
 	docsContainer = docsContainer.
 		WithExec([]string{"git", "config", "user.email", "release@replicated.com"}).
 		WithExec([]string{"git", "config", "user.name", "Replicated Release Pipeline"}).
@@ -162,6 +157,32 @@ func (r *Replicated) GenerateDocs(
 	return nil
 }
 
+// Change names like "replicated_channel_inspect.md" to "replicated-cli-channel-inspect.mdx"
+func cobraFileNameToDocsFileName(filename string) string {
+	filename = strings.ReplaceAll(filename, "replicated_", "replicated-cli-")
+	filename = strings.ReplaceAll(filename, "_", "-")
+	if filepath.Ext(filename) == ".md" {
+		filename = strings.TrimSuffix(filename, filepath.Ext(filename)) + ".mdx"
+	}
+	return filename
+}
+
+func cleanContent(content string, filenames []string) string {
+	// Header must be level 1 in order for white spaces to be rendered correctly ("replicated api get" vs "replicated_api_get")
+	if strings.HasPrefix(content, "## ") {
+		content = content[1:]
+	}
+
+	// Replace all filenames in the content with the new filenames
+	for _, filename := range filenames {
+		topicLink := cobraFileNameToDocsFileName(filename)
+		topicLink = strings.TrimSuffix(topicLink, filepath.Ext(topicLink))
+		content = strings.ReplaceAll(content, filename, topicLink)
+	}
+
+	return content
+}
+
 func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) (string, error) {
 	scanner := bufio.NewScanner(strings.NewReader(sidebarContent))
 
@@ -171,8 +192,7 @@ func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) 
 	for scanner.Scan() {
 		line := scanner.Text()
 
-		// 'reference/replicated-cli-installing' is a special file that's not a CLI doc
-		if strings.Contains(line, `reference/replicated-cli-`) && !strings.Contains(line, `'reference/replicated-cli-installing'`) {
+		if strings.Contains(line, `reference/replicated-cli-`) {
 			continue
 		}
 
@@ -185,6 +205,8 @@ func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) 
 		if foundCLILabel && !wroteNewList && strings.Contains(line, `items: [`) {
 			newDocLines = append(newDocLines, `    items: [`)
 			newDocLines = append(newDocLines, `      // This list is generated. Do not edit.`)
+			// 'reference/replicated-cli-installing' is a special file that's not a CLI doc and should at the top of the list
+			newDocLines = append(newDocLines, `      'reference/replicated-cli-installing',`)
 			for _, newDocFilename := range newDocFilenames {
 				newDocLines = append(newDocLines, fmt.Sprintf(`      'reference/%s',`, strings.TrimSuffix(newDocFilename, filepath.Ext(newDocFilename))))
 			}
