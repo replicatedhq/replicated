@@ -4,6 +4,7 @@ go 1.22.0
 
 require (
 	github.com/Masterminds/semver v1.5.0
+	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/creack/pty v1.1.21
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/fatih/color v1.17.0
@@ -23,7 +24,7 @@ require (
 	github.com/replicatedhq/troubleshoot v0.93.0
 	github.com/schollz/progressbar/v3 v3.14.5
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.10.0
 	github.com/tj/go-spin v1.1.0
@@ -50,7 +51,6 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
-	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.12.0-rc.3 // indirect
@@ -77,7 +77,7 @@ require (
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.1.9 // indirect
 	github.com/containers/storage v1.53.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.5 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/distribution/v3 v3.0.0-alpha.1 // indirect
@@ -286,3 +286,6 @@ require (
 
 // patches CVE-2024-6257
 replace github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.7.5
+
+// Support for Aliases in generated CLI docs
+replace github.com/spf13/cobra => github.com/replicatedhq/cobra v0.0.0-20250122191147-ae35f9573b05
