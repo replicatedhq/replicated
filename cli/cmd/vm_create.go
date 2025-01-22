@@ -78,6 +78,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		Version:      r.args.createVMVersion,
 		Count:        r.args.createVMCount,
 		DiskGiB:      r.args.createVMDiskGiB,
+		Network:      r.args.createVMNetwork,
 		TTL:          r.args.createVMTTL,
 		InstanceType: r.args.createVMInstanceType,
 		Tags:         tags,

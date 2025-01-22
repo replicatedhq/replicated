@@ -17,6 +17,7 @@ type CreateVMRequest struct {
 	Version      string      `json:"version"`
 	Count        int         `json:"count"`
 	DiskGiB      int64       `json:"disk_gib"`
+	NetworkID    string      `json:"network_id"`
 	TTL          string      `json:"ttl"`
 	InstanceType string      `json:"instance_type"`
 	Tags         []types.Tag `json:"tags"`
@@ -40,6 +41,7 @@ type CreateVMOpts struct {
 	Version      string
 	Count        int
 	DiskGiB      int64
+	Network      string
 	TTL          string
 	InstanceType string
 	Tags         []types.Tag
@@ -68,6 +70,7 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErro
 		Version:      opts.Version,
 		Count:        opts.Count,
 		DiskGiB:      opts.DiskGiB,
+		NetworkID:    opts.Network,
 		TTL:          opts.TTL,
 		InstanceType: opts.InstanceType,
 		Tags:         opts.Tags,

@@ -111,7 +111,7 @@ func (r *runners) listNetworks(_ *cobra.Command, args []string) error {
 			// Check for removed networks and print them, changing their status to be "deleted"
 			for id, network := range oldNetworkMap {
 				if _, found := newNetworkMap[id]; !found {
-					network.Status = types.StatusDeleted
+					network.Status = types.NetworkStatusDeleted
 					networksToPrint = append(networksToPrint, network)
 				}
 			}

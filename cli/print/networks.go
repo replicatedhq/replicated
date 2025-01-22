@@ -63,6 +63,30 @@ func Networks(outputFormat string, w *tabwriter.Writer, networks []*types.Networ
 	return w.Flush()
 }
 
+func Network(outputFormat string, w *tabwriter.Writer, network *types.Network) error {
+	switch outputFormat {
+	case "table":
+		if err := networksTmplTable.Execute(w, []*types.Network{network}); err != nil {
+			return err
+		}
+	case "wide":
+		if err := networksTmplWide.Execute(w, []*types.Network{network}); err != nil {
+			return err
+		}
+	case "json":
+		cAsByte, err := json.MarshalIndent([]*types.Network{network}, "", "  ")
+		if err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+			return err
+		}
+	default:
+		return fmt.Errorf("invalid output format: %s", outputFormat)
+	}
+	return w.Flush()
+}
+
 func NoNetworks(outputFormat string, w *tabwriter.Writer) error {
 	switch outputFormat {
 	case "table", "wide":

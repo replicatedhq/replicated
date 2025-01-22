@@ -19,14 +19,14 @@ type Network struct {
 type NetworkStatus string
 
 const (
-	StatusQueued       NetworkStatus = "queued"       // Not assigned to a runner yet
-	StatusAssigned     NetworkStatus = "assigned"     // Assigned to a runner, but have not heard back from the runner
-	StatusPreparing    NetworkStatus = "preparing"    // The runner sets this when is receives the request
-	StatusProvisioning NetworkStatus = "provisioning" // The runner sets this when it starts provisioning
-	StatusVerifying    NetworkStatus = "verifying"    // The runner sets this when it is done provisioning and available
-	StatusRunning      NetworkStatus = "running"      // The runner sets this when it is done verifying and available
-	StatusDeleting     NetworkStatus = "deleting"     // The runner sets this when it is deleting the network
-	StatusDeleted      NetworkStatus = "deleted"      // The runner sets this when it has deleted the network
-	StatusTerminated   NetworkStatus = "terminated"   // This is set when the vm is moved to the history table
-	StatusError        NetworkStatus = "error"        // Something unexpected
+	NetworkStatusQueued       NetworkStatus = "queued"       // Not assigned to a runner yet
+	NetworkStatusAssigned     NetworkStatus = "assigned"     // Assigned to a runner, but have not heard back from the runner
+	NetworkStatusPreparing    NetworkStatus = "preparing"    // The runner sets this when is receives the request
+	NetworkStatusProvisioning NetworkStatus = "provisioning" // The runner sets this when it starts provisioning
+	NetworkStatusVerifying    NetworkStatus = "verifying"    // The runner sets this when it is done provisioning and available
+	NetworkStatusRunning      NetworkStatus = "running"      // The runner sets this when it is done verifying and available
+	NetworkStatusDeleting     NetworkStatus = "deleting"     // The runner sets this when it is deleting the network
+	NetworkStatusDeleted      NetworkStatus = "deleted"      // The runner sets this when it has deleted the network
+	NetworkStatusTerminated   NetworkStatus = "terminated"   // This is set when the vm is moved to the history table
+	NetworkStatusError        NetworkStatus = "error"        // Something unexpected
 )
