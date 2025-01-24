@@ -78,6 +78,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		Version:      r.args.createVMVersion,
 		Count:        r.args.createVMCount,
 		DiskGiB:      r.args.createVMDiskGiB,
+		Network:      r.args.createVMNetwork,
 		TTL:          r.args.createVMTTL,
 		InstanceType: r.args.createVMInstanceType,
 		Tags:         tags,
@@ -87,9 +88,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 	vms, err := r.createAndWaitForVM(opts)
 	if err != nil {
 		if errors.Cause(err) == ErrVMWaitDurationExceeded {
-			defer func() {
-				os.Exit(124)
-			}()
+			defer os.Exit(124)
 		} else {
 			return err
 		}

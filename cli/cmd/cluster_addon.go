@@ -43,13 +43,13 @@ func waitForAddon(kotsRestClient *kotsclient.VendorV3Client, clusterID, id strin
 
 		if addon.Status == types.ClusterAddonStatusRunning {
 			return addon, nil
-		} else if addon.Status == types.ClusterAddonStatusError {
+		}
+		if addon.Status == types.ClusterAddonStatusError {
 			return nil, errors.New("cluster addon failed to provision")
-		} else {
-			if time.Now().After(start.Add(duration)) {
-				// In case of timeout, return the cluster and a WaitDurationExceeded error
-				return addon, ErrWaitDurationExceeded
-			}
+		}
+		if time.Now().After(start.Add(duration)) {
+			// In case of timeout, return the cluster and a WaitDurationExceeded error
+			return addon, ErrWaitDurationExceeded
 		}
 
 		time.Sleep(time.Second * 5)

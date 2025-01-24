@@ -236,6 +236,11 @@ type runnerArgs struct {
 	vmExposePortIsWildcard bool
 	vmPortRemoveAddonID    string
 
+	createNetworkName         string
+	createNetworkTTL          string
+	createNetworkWaitDuration time.Duration
+	createNetworkDryRun       bool
+
 	lsNetworkStartTime string
 	lsNetworkEndTime   string
 	lsNetworkWatch     bool

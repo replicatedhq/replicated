@@ -70,9 +70,7 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 	addon, err := r.createAndWaitForClusterAddonCreateObjectStore(opts, r.args.clusterAddonCreateObjectStoreDuration)
 	if err != nil {
 		if errors.Cause(err) == ErrWaitDurationExceeded {
-			defer func() {
-				os.Exit(124)
-			}()
+			defer os.Exit(124)
 		} else {
 			return err
 		}
