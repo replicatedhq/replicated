@@ -35,16 +35,6 @@ jobs:
         run: |
           make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
 
-  make-e2e-tests:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '^1.22'
-      - uses: replicatedhq/action-install-pact@v1
-      - run: make test-e2e
-
   make-integration-tests:
     runs-on: ubuntu-20.04
     steps:

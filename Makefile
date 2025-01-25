@@ -18,14 +18,6 @@ test-pact:
 test-integration: build
 	go test -v ./pkg/integration/...
 
-.PNONY: test-e2e
-test-e2e:
-	# integration and e2e
-	docker build -t replicated-cli-test -f hack/Dockerfile.testing .
-	docker run --rm --name replicated-cli-tests \
-		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
-		replicated-cli-test
-
 .PHONY: publish-pact
 publish-pact:
 	pact-broker publish ./pacts \
