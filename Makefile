@@ -26,9 +26,6 @@ test-e2e:
 		-v `pwd`:/go/src/github.com/replicatedhq/replicated \
 		replicated-cli-test
 
-.PHONY: test
-test: test-unit test-pact test-e2e
-
 .PHONY: publish-pact
 publish-pact:
 	pact-broker publish ./pacts \
