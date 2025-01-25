@@ -14,7 +14,7 @@ func getCommand(cliArgs []string, server *httptest.Server) *exec.Cmd {
 	cmd := exec.Command(CLIPath(), cliArgs...)
 	cmd.Env = append(cmd.Env, "REPLICATED_API_ORIGIN="+server.URL)
 	cmd.Env = append(cmd.Env, "REPLICATED_API_TOKEN=test-token")
-	cmd.Env = append(cmd.Env, "CI="+os.Getenv("CI")) // disable update checks
+	cmd.Env = append(cmd.Env, "CI=true") // disable update checks
 	cmd.Env = append(cmd.Env, "HOME="+os.TempDir())
 	return cmd
 }
@@ -22,7 +22,7 @@ func getCommand(cliArgs []string, server *httptest.Server) *exec.Cmd {
 func getCommandWithoutToken(cliArgs []string, server *httptest.Server) *exec.Cmd {
 	cmd := exec.Command(CLIPath(), cliArgs...)
 	cmd.Env = append(cmd.Env, "REPLICATED_API_ORIGIN="+server.URL)
-	cmd.Env = append(cmd.Env, "CI="+os.Getenv("CI")) // disable update checks
+	cmd.Env = append(cmd.Env, "CI=true") // disable update checks
 	cmd.Env = append(cmd.Env, "HOME="+os.TempDir())
 	return cmd
 }
@@ -38,12 +38,12 @@ func AssertCLIOutput(t *testing.T, got string, wantFormat format, wantLines int)
 	gotLines := strings.Split(strings.TrimSpace(string(got)), "\n")
 
 	if gotFormat != wantFormat {
-		t.Errorf("got format %s, want %s: %s", gotFormat, wantFormat, got)
+		t.Errorf("got format %s, want %s:\n%s", gotFormat, wantFormat, got)
 	}
 
 	if wantFormat == FormatTable {
 		if len(gotLines) != wantLines {
-			t.Errorf("got %d lines, want %d: %s", len(gotLines), wantLines, got)
+			t.Errorf("got %d lines, want %d:\n%s", len(gotLines), wantLines, got)
 		}
 	}
 }

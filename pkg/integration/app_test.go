@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppLs(t *testing.T) {
+func TestApp(t *testing.T) {
 	tests := []struct {
 		name            string
 		cliArgs         []string
