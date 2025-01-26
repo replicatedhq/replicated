@@ -14,6 +14,8 @@ type Network struct {
 
 	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
 	OverlayToken    string `json:"overlay_token,omitempty"`
+
+	Outbound string `json:"outbound,omitempty"`
 }
 
 type NetworkStatus string

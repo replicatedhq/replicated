@@ -10,18 +10,18 @@ import (
 )
 
 // Table formatting
-var networksTmplTableHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES`
+var networksTmplTableHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	OUTBOUND`
 var networksTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Outbound ""}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (.Outbound)) 30 }}{{end}}
 {{ end }}`
 var networksTmplTableSrc = fmt.Sprintln(networksTmplTableHeaderSrc) + networksTmplTableRowSrc
 var networksTmplTable = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableSrc))
 var networksTmplTableNoHeader = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableRowSrc))
 
 // Wide table formatting
-var networksTmplWideHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES`
+var networksTmplWideHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	OUTBOUND`
 var networksTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Outbound ""}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (.Outbound)) 30 }}{{end}}
 {{ end }}`
 var networksTmplWideSrc = fmt.Sprintln(networksTmplWideHeaderSrc) + networksTmplWideRowSrc
 var networksTmplWide = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplWideSrc))

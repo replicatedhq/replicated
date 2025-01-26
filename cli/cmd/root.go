@@ -273,6 +273,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitNetworkList(networkCmd)
 	runCmds.InitNetworkRemove(networkCmd)
 	runCmds.InitNetworkJoin(networkCmd)
+	
+	networkUpdateCmd := runCmds.InitNetworkUpdateCommand(networkCmd)
+	runCmds.InitNetworkUpdateOutbound(networkUpdateCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
