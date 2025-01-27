@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/version"
 )
 
@@ -104,42 +103,6 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 
 // DoJSON makes the request, and respBody is a pointer to the struct that we should unmarshal the response into
 func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, successStatus int, reqBody interface{}, respBody interface{}) error {
-	if ctx.Value(integration.APICallLogContextKey) != nil {
-		// Log the API call to the file specified in the context
-		logFile := ctx.Value(integration.APICallLogContextKey).(string)
-		apiCall := fmt.Sprintf("%s:%s", method, path)
-
-		// create the file if it doesn't exist
-		if _, err := os.Stat(logFile); os.IsNotExist(err) {
-			if _, err := os.Create(logFile); err != nil {
-				return fmt.Errorf("failed to create log file: %w", err)
-			}
-		}
-
-		f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to open log file: %w", err)
-		}
-
-		if _, err := f.WriteString(apiCall + "\n"); err != nil {
-			return fmt.Errorf("failed to write to log file: %w", err)
-		}
-	}
-	if ctx.Value(integration.IntegrationTestContextKey) != nil {
-		if respBody != nil {
-			testResponse := integration.Response(ctx.Value(integration.IntegrationTestContextKey).(string))
-			encoded, err := json.Marshal(testResponse)
-			if err != nil {
-				return err
-			}
-			if err := json.NewDecoder(bytes.NewReader(encoded)).Decode(respBody); err != nil {
-				return err
-			}
-		}
-
-		return nil
-	}
-
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf bytes.Buffer
 	if reqBody != nil {

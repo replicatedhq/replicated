@@ -30,8 +30,6 @@ const (
 
 var appSlugOrID string
 var apiToken string
-var integrationTest string
-var logAPICalls string
 var platformOrigin = "https://api.replicated.com/vendor"
 var kurlDotSHOrigin = "https://kurl.sh"
 var cache *replicatedcache.Cache
@@ -58,12 +56,6 @@ func GetRootCmd() *cobra.Command {
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
-
-	rootCmd.PersistentFlags().StringVar(&integrationTest, "integration-test", "", "Set to the name of the integration test to run")
-	rootCmd.Flags().MarkHidden("integration-test")
-
-	rootCmd.PersistentFlags().StringVar(&logAPICalls, "log-api-calls", "", "Log the API calls to the specified file")
-	rootCmd.Flags().MarkHidden("log-api-calls")
 
 	return rootCmd
 }

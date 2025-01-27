@@ -6,7 +6,6 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/logger"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -40,13 +39,6 @@ replicated app delete "Another App" --force
 replicated app delete "Custom App" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			if integrationTest != "" {
-				ctx = context.WithValue(ctx, integration.IntegrationTestContextKey, integrationTest)
-			}
-			if logAPICalls != "" {
-				ctx = context.WithValue(ctx, integration.APICallLogContextKey, logAPICalls)
-			}
-
 			if len(args) != 1 {
 				return errors.New("missing app slug or id")
 			}

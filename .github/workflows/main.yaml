@@ -7,11 +7,16 @@ on:
       - main
 
 jobs:
-  make-tests:
-    env:
-      PACT_VERSION: ${{ github.sha }}
-      PACT_BROKER_BASE_URL: ${{ secrets.PACT_BROKER_BASE_URL }}
-      PACT_BROKER_TOKEN: ${{ secrets.PACT_BROKER_TOKEN }}
+  make-unit-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.22'
+      - run: make test-unit
+
+  make-pact-tests:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
@@ -19,12 +24,30 @@ jobs:
         with:
           go-version: '^1.22'
       - uses: replicatedhq/action-install-pact@v1
-      - run: make test
-      - if: github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository )
+      - name: setup pact environment
+        run: |
+          if [[ $GITHUB_REF_NAME == 'main' ]]; then
+              echo "Adding pact environment variables"
+              echo "PACT_VERSION=${{ github.sha }}" >> "$GITHUB_ENV"
+              echo "PACT_BROKER_BASE_URL=${{ secrets.PACT_BROKER_BASE_URL }}" >> "$GITHUB_ENV"
+              echo "PACT_BROKER_TOKEN=${{ secrets.PACT_BROKER_TOKEN }}" >> "$GITHUB_ENV"
+          fi
+      - run: make test-pact
+      - if: github.ref == 'refs/heads/main' && ( github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository ) )
         run: make publish-pact
-      - if: github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository )
+      - if: github.ref == 'refs/heads/main' && ( github.event_name == 'push' || ( github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository ) )
         run: |
           make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
+
+  make-integration-tests:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.22'
+      - run: make test-integration
+
   make-build:
     runs-on: ubuntu-20.04
     steps:
