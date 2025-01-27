@@ -27,15 +27,17 @@ func initBuild() {
 		return
 	}
 
-	build.UpdateInfo, err = updateChecker.GetUpdateInfo()
-	if err != nil {
-		if errors.Cause(err) == ErrTimeoutExceeded {
-			// i'm going to leave this println out for now because it could be really noisy
-			// for someone with a slow connection
-			// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
-			return
+	if os.Getenv("CI") != "true" {
+		build.UpdateInfo, err = updateChecker.GetUpdateInfo()
+		if err != nil {
+			if errors.Cause(err) == ErrTimeoutExceeded {
+				// i'm going to leave this println out for now because it could be really noisy
+				// for someone with a slow connection
+				// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
+				return
+			}
+			fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
 		}
-		fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
 	}
 }
 

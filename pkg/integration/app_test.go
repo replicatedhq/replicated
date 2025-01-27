@@ -1,101 +1,115 @@
 package integration
 
 import (
-	"log"
-	"os"
-	"os/exec"
-	"strings"
+	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestApp(t *testing.T) {
 	tests := []struct {
 		name            string
-		cli             string
+		cliArgs         []string
+		getServer       func() *httptest.Server
 		wantFormat      format
 		wantLines       int
 		wantAPIRequests []string
 		ignoreCLIOutput bool
 	}{
 		{
-			name:       "app-ls-empty",
-			cli:        "app ls",
-			wantFormat: FormatTable,
-			wantLines:  1,
-			wantAPIRequests: []string{
-				"GET:/v3/apps?excludeChannels=false",
+			name:    "app ls table",
+			cliArgs: []string{"app", "ls"},
+			getServer: func() *httptest.Server {
+				r := mux.NewRouter()
+
+				r.Methods(http.MethodGet).Path("/v3/apps").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`{"apps": [{"id": "123", "name": "test-app"}]}`))
+				})
+
+				return httptest.NewServer(r)
 			},
-		},
-		{
-			name:       "app-ls-empty",
-			cli:        "app ls --output json",
-			wantFormat: FormatJSON,
-			wantAPIRequests: []string{
-				"GET:/v3/apps?excludeChannels=false",
-			},
-		},
-		{
-			name:       "app-ls-single",
-			cli:        "app ls",
 			wantFormat: FormatTable,
 			wantLines:  2,
-			wantAPIRequests: []string{
-				"GET:/v3/apps?excludeChannels=false",
-			},
 		},
 		{
-			name:       "app-ls-single",
-			cli:        "app ls --output json",
+			name:    "app ls json",
+			cliArgs: []string{"app", "ls", "--output", "json"},
+			getServer: func() *httptest.Server {
+				r := mux.NewRouter()
+
+				r.Methods(http.MethodGet).Path("/v3/apps").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`{"apps": [{"id": "123", "name": "test-app"}]}`))
+				})
+
+				return httptest.NewServer(r)
+			},
 			wantFormat: FormatJSON,
-			wantAPIRequests: []string{
-				"GET:/v3/apps?excludeChannels=false",
-			},
+			wantLines:  0,
 		},
 		{
-			name: "app-rm",
-			cli:  "app rm slug --force",
-			wantAPIRequests: []string{
-				"GET:/v3/apps?excludeChannels=true",
-				"DELETE:/v3/app/id",
+			name:    "app rm",
+			cliArgs: []string{"app", "rm", "app-slug", "--force"},
+			getServer: func() *httptest.Server {
+				r := mux.NewRouter()
+
+				r.Methods(http.MethodGet).Path("/v3/apps").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+					w.Write([]byte(`{"apps": [{"id": "123", "name": "test-app", "slug": "app-slug"}]}`))
+				})
+
+				r.Methods(http.MethodDelete).Path("/v3/app/123").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				})
+
+				return httptest.NewServer(r)
 			},
-			ignoreCLIOutput: true,
+			wantFormat: FormatTable,
+			wantLines:  4, // fetching and deleting progress plus 2 lines for the table
 		},
 		{
-			name:       "app-create",
-			cli:        "app create name",
+			name:    "app create",
+			cliArgs: []string{"app", "create", "App Name"},
+			getServer: func() *httptest.Server {
+				r := mux.NewRouter()
+
+				r.Methods(http.MethodPost).Path("/v3/app").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					// Validate the request body
+					body, err := io.ReadAll(r.Body)
+					assert.NoError(t, err)
+					requestPayload := make(map[string]string)
+					err = json.Unmarshal(body, &requestPayload)
+					assert.NoError(t, err)
+					assert.Equal(t, "App Name", requestPayload["name"])
+
+					// Return a response
+					w.WriteHeader(http.StatusCreated)
+					w.Write([]byte(`{"app": {"id": "123", "name": "App Name", "slug": "app-slug"}}`))
+				})
+
+				return httptest.NewServer(r)
+			},
 			wantFormat: FormatTable,
 			wantLines:  2,
-			wantAPIRequests: []string{
-				"POST:/v3/app",
-			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			args := strings.Split(tt.cli, " ")
-			args = append(args, "--integration-test", tt.name)
+			server := tt.getServer()
+			defer server.Close()
 
-			apiCallLog, err := os.CreateTemp("", "")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			defer os.RemoveAll(apiCallLog.Name())
-
-			args = append(args, "--log-api-calls", apiCallLog.Name())
-
-			cmd := exec.Command(CLIPath(), args...)
+			cmd := getCommand(tt.cliArgs, server)
 			out, err := cmd.CombinedOutput()
-			if err != nil {
-				t.Errorf("error running cli: %v", err)
-			}
+			assert.NoError(t, err)
 
-			if !tt.ignoreCLIOutput {
-				AssertCLIOutput(t, string(out), tt.wantFormat, tt.wantLines)
-			}
-
-			AssertAPIRequests(t, tt.wantAPIRequests, apiCallLog.Name())
+			AssertCLIOutput(t, string(out), tt.wantFormat, tt.wantLines)
 		})
 	}
 }

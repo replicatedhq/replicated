@@ -5,7 +5,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -40,12 +39,6 @@ replicated app create "Custom App" --output table`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			if integrationTest != "" {
-				ctx = context.WithValue(ctx, integration.IntegrationTestContextKey, integrationTest)
-			}
-			if logAPICalls != "" {
-				ctx = context.WithValue(ctx, integration.APICallLogContextKey, logAPICalls)
-			}
 
 			if len(args) != 1 {
 				return errors.New("missing app name")

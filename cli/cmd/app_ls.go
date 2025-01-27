@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/integration"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -40,13 +39,6 @@ replicated app ls --output json
 replicated app ls "App Name" --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			if integrationTest != "" {
-				ctx = context.WithValue(ctx, integration.IntegrationTestContextKey, integrationTest)
-			}
-			if logAPICalls != "" {
-				ctx = context.WithValue(ctx, integration.APICallLogContextKey, logAPICalls)
-			}
-
 			return r.listApps(ctx, cmd, args, outputFormat)
 		},
 		SilenceUsage: true,
