@@ -245,6 +245,11 @@ type runnerArgs struct {
 	lsNetworkEndTime   string
 	lsNetworkWatch     bool
 
+	updateNetworkOutbound string
+
+	updateNetworkName string
+	updateNetworkID   string
+
 	clusterAddonCreateObjectStoreBucket    string
 	clusterAddonCreateObjectStoreClusterID string
 	clusterAddonCreateObjectStoreDuration  time.Duration
