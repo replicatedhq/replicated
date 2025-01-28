@@ -2,7 +2,7 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 
@@ -20,7 +20,9 @@ func main() {
 	}
 
 	rootCmd := cmd.GetRootCmd()
-	err = cmd.Execute(rootCmd, &stdin, ioutil.Discard, ioutil.Discard)
+	rootCmd.DisableAutoGenTag = true
+
+	err = cmd.Execute(rootCmd, &stdin, io.Discard, io.Discard)
 	if err != nil {
 		log.Fatal(err)
 	}
