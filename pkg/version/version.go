@@ -30,7 +30,7 @@ func initBuild() {
 	if os.Getenv("CI") != "true" {
 		build.UpdateInfo, err = updateChecker.GetUpdateInfo()
 		if err != nil {
-			if errors.Cause(err) == ErrTimeoutExceeded {
+			if os.IsTimeout(errors.Cause(err)) {
 				// i'm going to leave this println out for now because it could be really noisy
 				// for someone with a slow connection
 				// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
