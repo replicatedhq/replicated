@@ -25,7 +25,6 @@ var (
 	ErrNoAssets                  = errors.New("no assets")
 	ErrChecksumMismatch          = errors.New("checksum mismatch")
 	ErrUnsupportedChecksumFormat = errors.New("unsupported checksum format")
-	ErrTimeoutExceeded           = errors.New("timeout exceeded")
 )
 
 type githubAsset struct {
@@ -97,10 +96,7 @@ func downloadAndParseChecksum(timeout time.Duration, url string, assetName strin
 	}
 	resp, err := httpClient.Get(url)
 	if err != nil {
-		if os.IsTimeout(err) {
-			return "", ErrTimeoutExceeded
-		}
-		return "", err
+		return "", errors.Wrap(err, "http get")
 	}
 	defer resp.Body.Close()
 
@@ -223,9 +219,6 @@ func downloadFile(url string, timeout time.Duration) (string, string, error) {
 	}
 	resp, err := httpClient.Get(url)
 	if err != nil {
-		if os.IsTimeout(err) {
-			return "", "", ErrTimeoutExceeded
-		}
 		return "", "", errors.Wrap(err, "get file")
 	}
 	defer resp.Body.Close()
@@ -356,9 +349,6 @@ func getReleaseDetails(timeout time.Duration, host string, owner string, repo st
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		if os.IsTimeout(err) {
-			return nil, ErrTimeoutExceeded
-		}
 		return nil, errors.Wrap(err, "do request")
 	}
 	defer resp.Body.Close()
