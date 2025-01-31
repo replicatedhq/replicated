@@ -44,8 +44,9 @@ func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error
 	network, err := r.kotsAPI.UpdateNetworkOutbound(r.args.updateNetworkID, opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
-		return errors.Wrap(err, "update network outbound")
+	}
+	if err != nil {
+		return err
 	}
 
 	return print.Network(r.outputFormat, r.w, network)
