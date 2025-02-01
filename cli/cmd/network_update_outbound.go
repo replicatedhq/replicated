@@ -46,7 +46,7 @@ func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error
 		return ErrCompatibilityMatrixTermsNotAccepted
 	}
 	if err != nil {
-		return err
+		return errors.Wrap(err, "update network outbound")
 	}
 
 	return print.Network(r.outputFormat, r.w, network)
