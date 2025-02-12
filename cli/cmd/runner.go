@@ -250,6 +250,10 @@ type runnerArgs struct {
 	updateNetworkName string
 	updateNetworkID   string
 
+	removeNetworkAll    bool
+	removeNetworkNames  []string
+	removeNetworkDryRun bool
+
 	clusterAddonCreateObjectStoreBucket    string
 	clusterAddonCreateObjectStoreClusterID string
 	clusterAddonCreateObjectStoreDuration  time.Duration
