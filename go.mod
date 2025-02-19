@@ -15,7 +15,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/minio/selfupdate v0.6.0
-	github.com/moby/moby v24.0.3+incompatible
+	github.com/moby/moby v26.1.0+incompatible
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/pact-foundation/pact-go v1.7.0
