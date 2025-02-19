@@ -25,6 +25,7 @@ type Cluster struct {
 	NodeGroups             []*NodeGroup `json:"node_groups"`
 
 	Status    ClusterStatus `json:"status"`
+	Network   string        `json:"network_id"`
 	CreatedAt time.Time     `json:"created_at"`
 	ExpiresAt time.Time     `json:"expires_at"`
 
