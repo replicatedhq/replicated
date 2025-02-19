@@ -15,18 +15,18 @@ var clusterFuncs = template.FuncMap{
 }
 
 // Table formatting
-var clustersTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS     NETWORK	CREATED	EXPIRES	COST`
+var clustersTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS       NETWORK	CREATED	EXPIRES	COST`
 var clustersTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 10 }} {{ padding (printf "%.8s" .Network) 10 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }} {{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}
 {{ end }}`
 var clustersTmplTableSrc = fmt.Sprintln(clustersTmplTableHeaderSrc) + clustersTmplTableRowSrc
 var clustersTmplTable = template.Must(template.New("clusters").Funcs(clusterFuncs).Funcs(funcs).Parse(clustersTmplTableSrc))
 var clustersTmplTableNoHeader = template.Must(template.New("clusters").Funcs(clusterFuncs).Funcs(funcs).Parse(clustersTmplTableRowSrc))
 
 // Wide table formatting
-var clustersTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS     NETWORK	CREATED	EXPIRES	COST	TOTAL NODES	NODEGROUPS	TAGS`
+var clustersTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS       NETWORK	CREATED	EXPIRES	COST	TOTAL NODES	NODEGROUPS	TAGS`
 var clustersTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 10 }} {{ padding (printf "%.8s" .Network) 10 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ padding (printf "%d" $nodecount) 11 }}	{{ len .NodeGroups}}	{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .KubernetesDistribution 12 }}	{{ padding .KubernetesVersion 10 }}	{{ padding (printf "%s" .Status) 12 }} {{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{$nodecount:=0}}{{ range $index, $ng := .NodeGroups}}{{$nodecount = add $nodecount $ng.NodeCount}}{{ end }}{{ padding (printf "%d" $nodecount) 11 }}	{{ len .NodeGroups}}	{{ if eq (len .Tags) 0 }}{{ padding "-" 11 }}{{ else }}{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}{{ end }}
 {{ end }}`
 var clustersTmplWideSrc = fmt.Sprintln(clustersTmplWideHeaderSrc) + clustersTmplWideRowSrc
 var clustersTmplWide = template.Must(template.New("clusters").Funcs(clusterFuncs).Funcs(funcs).Parse(clustersTmplWideSrc))
