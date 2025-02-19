@@ -57,7 +57,9 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.createClusterName, "name", "", "Cluster name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesDistribution, "distribution", "", "Kubernetes distribution of the cluster to provision")
+	cmd.RegisterFlagCompletionFunc("distribution", r.completeClusterDistributions)
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
+	cmd.RegisterFlagCompletionFunc("version", r.completeClusterVersions)
 	cmd.Flags().StringVar(&r.args.createClusterIPFamily, "ip-family", "", "IP Family to use for the cluster (ipv4|ipv6|dual).")
 	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster distribution)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
@@ -67,6 +69,7 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 	cmd.Flags().StringVar(&r.args.createClusterTTL, "ttl", "", "Cluster TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createClusterWaitDuration, "wait", time.Second*0, "Wait duration for cluster to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createClusterInstanceType, "instance-type", "", "The type of instance to use (e.g. m6i.large)")
+	cmd.RegisterFlagCompletionFunc("instance-type", r.completeClusterInstanceTypes)
 	cmd.Flags().StringArrayVar(&r.args.createClusterNodeGroups, "nodegroup", []string{}, "Node group to create (name=?,instance-type=?,nodes=?,min-nodes=?,max-nodes=?,disk=? format, can be specified multiple times). For each nodegroup, at least one flag must be specified. The flags min-nodes and max-nodes are mutually dependent.")
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterTags, "tag", []string{}, "Tag to apply to the cluster (key=value format, can be specified multiple times)")

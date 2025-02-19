@@ -85,3 +85,61 @@ func (r *runners) completeClusterNames(cmd *cobra.Command, args []string, toComp
 	}
 	return clusterNames, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (r *runners) completeClusterDistributions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initClusterClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var distributions []string
+	clusterVersions, err := r.kotsAPI.ListClusterVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, clusterVersion := range clusterVersions {
+		distributions = append(distributions, clusterVersion.Name)
+	}
+	return distributions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeClusterVersions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initClusterClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var versions []string
+	clusterVersions, err := r.kotsAPI.ListClusterVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, clusterVersion := range clusterVersions {
+		if clusterVersion.Name == r.args.createClusterKubernetesDistribution {
+			versions = append(versions, clusterVersion.Versions...)
+		}
+	}
+	return versions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeClusterInstanceTypes(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initClusterClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var instanceTypes []string
+	clusterVersions, err := r.kotsAPI.ListClusterVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, clusterVersion := range clusterVersions {
+		if clusterVersion.Name == r.args.createClusterKubernetesDistribution {
+			instanceTypes = append(instanceTypes, clusterVersion.InstanceTypes...)
+		}
+	}
+	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
+}
