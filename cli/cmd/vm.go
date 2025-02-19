@@ -80,3 +80,61 @@ func (r *runners) completeVMNames(cmd *cobra.Command, args []string, toComplete 
 	}
 	return vmNames, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (r *runners) completeVMDistributions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var distributions []string
+	vmVersions, err := r.kotsAPI.ListVMVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, vmVersion := range vmVersions {
+		distributions = append(distributions, vmVersion.Name)
+	}
+	return distributions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeVMVersions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var versions []string
+	vmVersions, err := r.kotsAPI.ListVMVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, vmVersion := range vmVersions {
+		if vmVersion.Name == r.args.createVMDistribution {
+			versions = append(versions, vmVersion.Versions...)
+		}
+	}
+	return versions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeVMInstanceTypes(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var instanceTypes []string
+	vmVersions, err := r.kotsAPI.ListVMVersions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, vmVersion := range vmVersions {
+		if vmVersion.Name == r.args.createVMDistribution {
+			instanceTypes = append(instanceTypes, vmVersion.InstanceTypes...)
+		}
+	}
+	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
+}

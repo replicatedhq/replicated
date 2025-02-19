@@ -43,12 +43,15 @@ replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-
 
 	cmd.Flags().StringVar(&r.args.createVMName, "name", "", "VM name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createVMDistribution, "distribution", "", "Distribution of the vm to provision")
+	cmd.RegisterFlagCompletionFunc("distribution", r.completeVMDistributions)
 	cmd.Flags().StringVar(&r.args.createVMVersion, "version", "", "Vversion to provision (format is distribution dependent)")
+	cmd.RegisterFlagCompletionFunc("version", r.completeVMVersions)
 	cmd.Flags().IntVar(&r.args.createVMCount, "count", int(1), "Number of matching VMs to create")
 	cmd.Flags().Int64Var(&r.args.createVMDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
 	cmd.Flags().StringVar(&r.args.createVMTTL, "ttl", "", "VM TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createVMWaitDuration, "wait", time.Second*0, "Wait duration for VM(s) to be ready (leave empty to not wait)")
 	cmd.Flags().StringVar(&r.args.createVMInstanceType, "instance-type", "", "The type of instance to use (e.g. r1.medium)")
+	cmd.RegisterFlagCompletionFunc("instance-type", r.completeVMInstanceTypes)
 	cmd.Flags().StringVar(&r.args.createVMNetwork, "network", "", "The network to use for the VM(s). If not supplied, create a new network")
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
