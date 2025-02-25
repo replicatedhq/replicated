@@ -9,6 +9,7 @@ require (
 	github.com/docker/docker v27.3.1+incompatible
 	github.com/fatih/color v1.17.0
 	github.com/go-git/go-git/v5 v5.13.0
+	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
 	github.com/manifoldco/promptui v0.9.0
@@ -129,7 +130,6 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
@@ -284,8 +284,8 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-// patches CVE-2024-6257
-replace github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.7.5
+// patches CVE-2024-6257, CVE-2024-6257
+replace github.com/hashicorp/go-getter => github.com/hashicorp/go-getter v1.7.6
 
 // Support for Aliases in generated CLI docs
 replace github.com/spf13/cobra => github.com/replicatedhq/cobra v0.0.0-20250122191147-ae35f9573b05
