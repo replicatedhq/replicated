@@ -21,7 +21,7 @@ func (c *VendorV3Client) SSHIntoVM(id string, sshUserFlag string) error {
 
 	// Check if VM is running
 	if vm.Status != types.VMStatusRunning {
-		return fmt.Errorf("VM %s is not running (current status: %s). SSH connection requires a running VM", id, vm.Status)
+		return fmt.Errorf("VM: %s is not running (current status: %q): SSH connection requires a running VM", vmID, vm.Status)
 	}
 
 	// Try to get the SSH user in order of precedence
