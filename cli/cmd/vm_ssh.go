@@ -93,7 +93,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 		fmt.Println("No running VMs found. The following VMs are available but not running:")
 		for _, vm := range nonTerminatedVMs {
 			if vm.Status != types.VMStatusTerminated {
-				fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
+				fmt.Printf("  • %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
 			}
 		}
 		return errors.New("SSH connection requires a running VM. Please start a VM before connecting")
