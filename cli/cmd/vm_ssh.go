@@ -57,9 +57,12 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 
 	sshUser, _ := cmd.Flags().GetString("user")
 
-	// If VM ID is provided, directly SSH into it if it's running
+	// Get VM ID - either directly provided or selected
+	var vmID string
+
 	if len(args) == 1 {
-		vmID := args[0]
+		// VM ID provided directly
+		vmID = args[0]
 
 		// Check VM status before connecting
 		vm, err := r.kotsAPI.GetVM(vmID)
@@ -71,41 +74,48 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 		if !isVMRunning(vm) {
 			return fmt.Errorf("VM %s is not running (current status: %s). Cannot connect to a non-running VM", vmID, vm.Status)
 		}
-
-		return r.kotsAPI.SSHIntoVM(vmID, sshUser)
-	}
-
-	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
-	if err != nil {
-		return errors.Wrap(err, "failed to list VMs")
-	}
-
-	// Filter to only show running VMs
-	runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
-	if len(runningVMs) == 0 {
-		// Show information about non-running VMs if they exist
-		nonTerminatedVMs := filterVMsByStatus(vms, "")
-		if len(nonTerminatedVMs) == 0 {
-			return errors.New("no active VMs found")
+	} else {
+		// Need to select a VM
+		vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+		if err != nil {
+			return errors.Wrap(err, "failed to list VMs")
 		}
 
-		// List non-running VMs with their statuses
-		fmt.Println("No running VMs found. The following VMs are available but not running:")
-		for _, vm := range nonTerminatedVMs {
-			if vm.Status != types.VMStatusTerminated {
-				fmt.Printf("  • %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
-			}
+		// Filter to only show running VMs
+		runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
+		if len(runningVMs) == 0 {
+			return handleNoRunningVMs(vms)
 		}
-		return errors.New("SSH connection requires a running VM. Please start a VM before connecting")
+
+		// Select VM from running VMs
+		selectedVM, err := selectVM(runningVMs, "Select VM to SSH into")
+		if err != nil {
+			return errors.Wrap(err, "failed to select VM")
+		}
+
+		vmID = selectedVM.ID
 	}
 
-	// Always prompt for VM selection, even if there's only one VM
-	selectedVM, err := selectVM(runningVMs, "Select VM to SSH into")
-	if err != nil {
-		return errors.Wrap(err, "failed to select VM")
+	return r.kotsAPI.SSHIntoVM(vmID, sshUser)
+}
+
+// handleNoRunningVMs handles the case when no running VMs are found
+// It displays information about non-running VMs if they exist
+func handleNoRunningVMs(vms []*types.VM) error {
+	// Show information about non-running VMs if they exist
+	nonTerminatedVMs := filterVMsByStatus(vms, "")
+	if len(nonTerminatedVMs) == 0 {
+		return errors.New("no active VMs found")
 	}
 
-	return r.kotsAPI.SSHIntoVM(selectedVM.ID, sshUser)
+	// List non-running VMs with their statuses
+	fmt.Println("No running VMs found. The following VMs are available but not running:")
+	for _, vm := range nonTerminatedVMs {
+		if vm.Status != types.VMStatusTerminated {
+			fmt.Printf("  • %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
+		}
+	}
+	return errors.New("SSH connection requires a running VM. Please start a VM before connecting")
 }
 
 // filterVMsByStatus returns a slice of VMs with the specified status

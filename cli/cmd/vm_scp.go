@@ -77,90 +77,21 @@ func (r *runners) scpVM(cmd *cobra.Command, args []string) error {
 		return errors.New("at least one of source or destination must be a VM path (prefixed with VM_ID:)")
 	}
 
-	// Handle the case where we need to select a VM
-	if sourceIsRemote && sourceVMID == "" {
-		// Get all VMs
-		vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+	// Handle VM selection and validation for source
+	if sourceIsRemote {
+		var err error
+		sourceVMID, err = validateOrSelectVM(r, sourceVMID, "Select source VM for SCP transfer")
 		if err != nil {
-			return errors.Wrap(err, "failed to list VMs")
-		}
-
-		// Only show running VMs
-		runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
-		if len(runningVMs) == 0 {
-			// Show information about non-running VMs if they exist
-			nonTerminatedVMs := filterVMsByStatus(vms, "")
-			if len(nonTerminatedVMs) == 0 {
-				return errors.New("no active VMs found")
-			}
-
-			// List non-running VMs with their statuses
-			fmt.Println("No running VMs found. The following VMs are available but not running:")
-			for _, vm := range nonTerminatedVMs {
-				if vm.Status != types.VMStatusTerminated {
-					fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
-				}
-			}
-			return errors.New("SCP connection requires a running VM. Please start a VM before connecting")
-		}
-
-		// Always prompt for VM selection, even if there's only one VM
-		selectedVM, err := selectVM(runningVMs, "Select source VM for SCP transfer")
-		if err != nil {
-			return errors.Wrap(err, "failed to select VM")
-		}
-		sourceVMID = selectedVM.ID
-	} else if sourceIsRemote {
-		// Check VM status if ID is provided
-		vm, err := r.kotsAPI.GetVM(sourceVMID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get VM")
-		}
-		if !isVMRunning(vm) {
-			return fmt.Errorf("Source VM %s is not running (current status: %s). Cannot connect to a non-running VM", sourceVMID, vm.Status)
+			return err
 		}
 	}
 
-	if destIsRemote && destVMID == "" {
-		// Get all VMs
-		vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+	// Handle VM selection and validation for destination
+	if destIsRemote {
+		var err error
+		destVMID, err = validateOrSelectVM(r, destVMID, "Select destination VM for SCP transfer")
 		if err != nil {
-			return errors.Wrap(err, "failed to list VMs")
-		}
-
-		// Only show running VMs
-		runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
-		if len(runningVMs) == 0 {
-			// Show information about non-running VMs if they exist
-			nonTerminatedVMs := filterVMsByStatus(vms, "")
-			if len(nonTerminatedVMs) == 0 {
-				return errors.New("no active VMs found")
-			}
-
-			// List non-running VMs with their statuses
-			fmt.Println("No running VMs found. The following VMs are available but not running:")
-			for _, vm := range nonTerminatedVMs {
-				if vm.Status != types.VMStatusTerminated {
-					fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
-				}
-			}
-			return errors.New("SCP connection requires a running VM. Please start a VM before connecting")
-		}
-
-		// Always prompt for VM selection, even if there's only one VM
-		selectedVM, err := selectVM(runningVMs, "Select destination VM for SCP transfer")
-		if err != nil {
-			return errors.Wrap(err, "failed to select VM")
-		}
-		destVMID = selectedVM.ID
-	} else if destIsRemote {
-		// Check VM status if ID is provided
-		vm, err := r.kotsAPI.GetVM(destVMID)
-		if err != nil {
-			return errors.Wrap(err, "failed to get VM")
-		}
-		if !isVMRunning(vm) {
-			return fmt.Errorf("Destination VM %s is not running (current status: %s). Cannot connect to a non-running VM", destVMID, vm.Status)
+			return err
 		}
 	}
 
@@ -172,6 +103,41 @@ func (r *runners) scpVM(cmd *cobra.Command, args []string) error {
 		// Copy from local to VM
 		return r.kotsAPI.SCPToVM(destVMID, sshUser, sourcePath, destPath)
 	}
+}
+
+// validateOrSelectVM validates a VM ID if provided, or prompts the user to select a VM
+// Returns the validated or selected VM ID
+func validateOrSelectVM(r *runners, vmID string, selectionPrompt string) (string, error) {
+	if vmID != "" {
+		// Check VM status if ID is provided
+		vm, err := r.kotsAPI.GetVM(vmID)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get VM")
+		}
+		if !isVMRunning(vm) {
+			return "", fmt.Errorf("VM %s is not running (current status: %s). Cannot connect to a non-running VM", vmID, vm.Status)
+		}
+		return vmID, nil
+	}
+
+	// Get all VMs
+	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list VMs")
+	}
+
+	// Only show running VMs
+	runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
+	if len(runningVMs) == 0 {
+		return "", handleNoRunningVMs(vms)
+	}
+
+	// Always prompt for VM selection, even if there's only one VM
+	selectedVM, err := selectVM(runningVMs, selectionPrompt)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to select VM")
+	}
+	return selectedVM.ID, nil
 }
 
 // parseScpPath parses a path string to determine if it contains a VM ID
