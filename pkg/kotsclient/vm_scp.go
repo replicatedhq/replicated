@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
-	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 // SCPToVM copies a file to a VM using SCP
@@ -17,11 +15,6 @@ func (c *VendorV3Client) SCPToVM(vmID string, sshUserFlag string, localPath stri
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
 		return fmt.Errorf("VM %s does not have SSH access configured", vmID)
-	}
-
-	// Check if VM is running
-	if vm.Status != types.VMStatusRunning {
-		return fmt.Errorf("VM %s is not running (current status: %s). SCP connection requires a running VM", vmID, vm.Status)
 	}
 
 	// Try to get the SSH user in order of precedence
@@ -50,19 +43,14 @@ func (c *VendorV3Client) SCPToVM(vmID string, sshUserFlag string, localPath stri
 }
 
 // SCPFromVM copies a file from a VM using SCP
-func (c *VendorV3Client) SCPFromVM(id string, sshUserFlag string, remotePath string, localPath string) error {
-	vm, err := c.GetVM(id)
+func (c *VendorV3Client) SCPFromVM(vmID string, sshUserFlag string, remotePath string, localPath string) error {
+	vm, err := c.GetVM(vmID)
 	if err != nil {
 		return err
 	}
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
-		return fmt.Errorf("VM %s does not have SSH access configured", id)
-	}
-
-	// Check if VM is running
-	if vm.Status != types.VMStatusRunning {
-		return fmt.Errorf("VM %s is not running (current status: %s). SCP connection requires a running VM", id, vm.Status)
+		return fmt.Errorf("VM %s does not have SSH access configured", vmID)
 	}
 
 	// Try to get the SSH user in order of precedence

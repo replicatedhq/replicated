@@ -45,6 +45,11 @@ replicated vm ssh`,
 	return cmd
 }
 
+// isVMRunning checks if a VM is running
+func isVMRunning(vm *types.VM) bool {
+	return vm.Status == types.VMStatusRunning
+}
+
 func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 	if err := r.initVMClient(); err != nil {
 		return err
@@ -52,7 +57,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 
 	sshUser, _ := cmd.Flags().GetString("user")
 
-	// If VM ID is provided, directly SSH into it
+	// If VM ID is provided, directly SSH into it if it's running
 	if len(args) == 1 {
 		vmID := args[0]
 
@@ -62,8 +67,9 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to get VM")
 		}
 
-		if vm.Status != types.VMStatusRunning {
-			return fmt.Errorf("VM %s is not running (current status: %s). SSH connection requires a running VM", vmID, vm.Status)
+		// Only connect if VM is running
+		if !isVMRunning(vm) {
+			return fmt.Errorf("VM %s is not running (current status: %s). Cannot connect to a non-running VM", vmID, vm.Status)
 		}
 
 		return r.kotsAPI.SSHIntoVM(vmID, sshUser)
@@ -94,7 +100,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 	}
 
 	// Always prompt for VM selection, even if there's only one VM
-	selectedVM, err := selectVM(runningVMs)
+	selectedVM, err := selectVM(runningVMs, "Select VM to SSH into")
 	if err != nil {
 		return errors.Wrap(err, "failed to select VM")
 	}
@@ -119,14 +125,14 @@ func filterVMsByStatus(vms []*types.VM, status types.VMStatus) []*types.VM {
 }
 
 // selectVM prompts the user to select a VM from the list
-func selectVM(vms []*types.VM) (*types.VM, error) {
+func selectVM(vms []*types.VM, label string) (*types.VM, error) {
 	var vmOptions []string
 	for _, vm := range vms {
 		vmOptions = append(vmOptions, fmt.Sprintf("%s (%s)", vm.Name, vm.Status))
 	}
 
 	prompt := promptui.Select{
-		Label: "Select VM to connect to",
+		Label: label,
 		Items: vmOptions,
 	}
 
