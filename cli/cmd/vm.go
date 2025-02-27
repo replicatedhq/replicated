@@ -22,7 +22,13 @@ replicated vm ls
 replicated vm rm <vm-id>
 
 # Update TTL for a specific VM
-replicated vm update ttl <vm-id> --ttl 24h`,
+replicated vm update ttl <vm-id> --ttl 24h
+
+# SSH into a VM
+replicated vm ssh <vm-id>
+
+# Copy files to/from a VM
+replicated vm scp localfile.txt <vm-id>:/path/on/vm/`,
 	}
 	parent.AddCommand(cmd)
 
