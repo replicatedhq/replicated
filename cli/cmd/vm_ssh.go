@@ -20,7 +20,7 @@ func (r *runners) InitVMSSH(parent *cobra.Command) *cobra.Command {
 If a VM ID is provided, it will directly connect to that VM. Otherwise, if multiple VMs are available, you will be prompted to select the VM you want to connect to. The command will then establish an SSH connection to the selected VM using the appropriate credentials and configuration.
 
 The SSH user can be specified in order of precedence:
-1. -u flag
+1. By specifying the -u flag
 2. REPLICATED_SSH_USER environment variable
 3. GITHUB_ACTOR environment variable (from GitHub Actions)
 4. GITHUB_USER environment variable
