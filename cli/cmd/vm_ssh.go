@@ -78,15 +78,17 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 	runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
 	if len(runningVMs) == 0 {
 		// Show information about non-running VMs if they exist
-		activeVMs := filterActiveVMs(vms)
-		if len(activeVMs) == 0 {
+		nonTerminatedVMs := filterVMsByStatus(vms, "")
+		if len(nonTerminatedVMs) == 0 {
 			return errors.New("no active VMs found")
 		}
 
 		// List non-running VMs with their statuses
 		fmt.Println("No running VMs found. The following VMs are available but not running:")
-		for _, vm := range activeVMs {
-			fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
+		for _, vm := range nonTerminatedVMs {
+			if vm.Status != types.VMStatusTerminated {
+				fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
+			}
 		}
 		return fmt.Errorf("SSH connection requires a running VM. Please start a VM before connecting")
 	}
@@ -106,25 +108,19 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 }
 
 // filterVMsByStatus returns a slice of VMs with the specified status
+// If status is empty, returns all VMs
 func filterVMsByStatus(vms []*types.VM, status types.VMStatus) []*types.VM {
 	var filteredVMs []*types.VM
 	for _, vm := range vms {
-		if vm.Status == status {
+		if status == "" || vm.Status == status {
+			// If status is empty, include all VMs except terminated ones
+			if status == "" && vm.Status == types.VMStatusTerminated {
+				continue
+			}
 			filteredVMs = append(filteredVMs, vm)
 		}
 	}
 	return filteredVMs
-}
-
-// filterActiveVMs returns a slice of non-terminated VMs
-func filterActiveVMs(vms []*types.VM) []*types.VM {
-	var activeVMs []*types.VM
-	for _, vm := range vms {
-		if vm.Status != types.VMStatusTerminated {
-			activeVMs = append(activeVMs, vm)
-		}
-	}
-	return activeVMs
 }
 
 // selectVM prompts the user to select a VM from the list
