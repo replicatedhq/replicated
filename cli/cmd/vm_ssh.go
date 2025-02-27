@@ -90,7 +90,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 				fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
 			}
 		}
-		return fmt.Errorf("SSH connection requires a running VM. Please start a VM before connecting")
+		return errors.New("SSH connection requires a running VM. Please start a VM before connecting")
 	}
 
 	// If only one running VM, use it directly
