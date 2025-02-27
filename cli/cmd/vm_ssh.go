@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -21,7 +23,9 @@ The SSH user can be specified in order of precedence:
 1. -u flag
 2. REPLICATED_SSH_USER environment variable
 3. GITHUB_ACTOR environment variable (from GitHub Actions)
-4. GITHUB_USER environment variable`,
+4. GITHUB_USER environment variable
+
+Note: Only running VMs can be connected to via SSH.`,
 		Example: `# SSH into a specific VM by ID
 replicated vm ssh <id>
 
@@ -50,7 +54,19 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 
 	// If VM ID is provided, directly SSH into it
 	if len(args) == 1 {
-		return r.kotsAPI.SSHIntoVM(args[0], sshUser)
+		vmID := args[0]
+
+		// Check VM status before connecting
+		vm, err := r.kotsAPI.GetVM(vmID)
+		if err != nil {
+			return errors.Wrap(err, "failed to get VM")
+		}
+
+		if vm.Status != types.VMStatusRunning {
+			return fmt.Errorf("VM %s is not running (current status: %s). SSH connection requires a running VM", vmID, vm.Status)
+		}
+
+		return r.kotsAPI.SSHIntoVM(vmID, sshUser)
 	}
 
 	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
@@ -58,24 +74,46 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to list VMs")
 	}
 
-	// Filter out terminated VMs
-	activeVMs := filterActiveVMs(vms)
-	if len(activeVMs) == 0 {
-		return errors.New("no active VMs found")
+	// Filter to only show running VMs
+	runningVMs := filterVMsByStatus(vms, types.VMStatusRunning)
+	if len(runningVMs) == 0 {
+		// Show information about non-running VMs if they exist
+		activeVMs := filterActiveVMs(vms)
+		if len(activeVMs) == 0 {
+			return errors.New("no active VMs found")
+		}
+
+		// List non-running VMs with their statuses
+		fmt.Println("No running VMs found. The following VMs are available but not running:")
+		for _, vm := range activeVMs {
+			fmt.Printf("  - %s (ID: %s, Status: %s)\n", vm.Name, vm.ID, vm.Status)
+		}
+		return fmt.Errorf("SSH connection requires a running VM. Please start a VM before connecting")
 	}
 
-	// If only one VM, use it directly
-	if len(activeVMs) == 1 {
-		return r.kotsAPI.SSHIntoVM(activeVMs[0].ID, sshUser)
+	// If only one running VM, use it directly
+	if len(runningVMs) == 1 {
+		return r.kotsAPI.SSHIntoVM(runningVMs[0].ID, sshUser)
 	}
 
-	// Create VM selection prompt
-	selectedVM, err := selectVM(activeVMs)
+	// Create VM selection prompt for running VMs
+	selectedVM, err := selectVM(runningVMs)
 	if err != nil {
 		return errors.Wrap(err, "failed to select VM")
 	}
 
 	return r.kotsAPI.SSHIntoVM(selectedVM.ID, sshUser)
+}
+
+// filterVMsByStatus returns a slice of VMs with the specified status
+func filterVMsByStatus(vms []*types.VM, status types.VMStatus) []*types.VM {
+	var filteredVMs []*types.VM
+	for _, vm := range vms {
+		if vm.Status == status {
+			filteredVMs = append(filteredVMs, vm)
+		}
+	}
+	return filteredVMs
 }
 
 // filterActiveVMs returns a slice of non-terminated VMs
@@ -93,7 +131,7 @@ func filterActiveVMs(vms []*types.VM) []*types.VM {
 func selectVM(vms []*types.VM) (*types.VM, error) {
 	var vmOptions []string
 	for _, vm := range vms {
-		vmOptions = append(vmOptions, vm.Name)
+		vmOptions = append(vmOptions, fmt.Sprintf("%s (%s)", vm.Name, vm.Status))
 	}
 
 	prompt := promptui.Select{

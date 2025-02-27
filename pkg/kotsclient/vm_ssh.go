@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+
+	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 // SSHIntoVM connects to a VM via SSH using the provided ID and optional user flag
@@ -15,6 +17,11 @@ func (c *VendorV3Client) SSHIntoVM(id string, sshUserFlag string) error {
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
 		return fmt.Errorf("VM %s does not have SSH access configured", id)
+	}
+
+	// Check if VM is running
+	if vm.Status != types.VMStatusRunning {
+		return fmt.Errorf("VM %s is not running (current status: %s). SSH connection requires a running VM", id, vm.Status)
 	}
 
 	// Try to get the SSH user in order of precedence
