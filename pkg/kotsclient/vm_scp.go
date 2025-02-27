@@ -9,19 +9,19 @@ import (
 )
 
 // SCPToVM copies a file to a VM using SCP
-func (c *VendorV3Client) SCPToVM(id string, sshUserFlag string, localPath string, remotePath string) error {
-	vm, err := c.GetVM(id)
+func (c *VendorV3Client) SCPToVM(vmID string, sshUserFlag string, localPath string, remotePath string) error {
+	vm, err := c.GetVM(vmID)
 	if err != nil {
 		return err
 	}
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
-		return fmt.Errorf("VM %s does not have SSH access configured", id)
+		return fmt.Errorf("VM %s does not have SSH access configured", vmID)
 	}
 
 	// Check if VM is running
 	if vm.Status != types.VMStatusRunning {
-		return fmt.Errorf("VM %s is not running (current status: %s). SCP connection requires a running VM", id, vm.Status)
+		return fmt.Errorf("VM %s is not running (current status: %s). SCP connection requires a running VM", vmID, vm.Status)
 	}
 
 	// Try to get the SSH user in order of precedence

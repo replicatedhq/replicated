@@ -146,11 +146,6 @@ func selectRunningVM(kotsAPI *kotsclient.VendorV3Client) (*types.VM, error) {
 		return nil, errors.New("SCP connection requires a running VM. Please start a VM before connecting")
 	}
 
-	// If only one running VM, use it directly
-	if len(runningVMs) == 1 {
-		return runningVMs[0], nil
-	}
-
-	// Create VM selection prompt for running VMs
+	// Always prompt for VM selection, even if there's only one VM
 	return selectVM(runningVMs)
 }

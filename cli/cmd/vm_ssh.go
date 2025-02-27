@@ -93,12 +93,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 		return errors.New("SSH connection requires a running VM. Please start a VM before connecting")
 	}
 
-	// If only one running VM, use it directly
-	if len(runningVMs) == 1 {
-		return r.kotsAPI.SSHIntoVM(runningVMs[0].ID, sshUser)
-	}
-
-	// Create VM selection prompt for running VMs
+	// Always prompt for VM selection, even if there's only one VM
 	selectedVM, err := selectVM(runningVMs)
 	if err != nil {
 		return errors.Wrap(err, "failed to select VM")

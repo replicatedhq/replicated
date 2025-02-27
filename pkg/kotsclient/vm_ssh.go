@@ -9,14 +9,14 @@ import (
 )
 
 // SSHIntoVM connects to a VM via SSH using the provided ID and optional user flag
-func (c *VendorV3Client) SSHIntoVM(id string, sshUserFlag string) error {
-	vm, err := c.GetVM(id)
+func (c *VendorV3Client) SSHIntoVM(vmID string, sshUserFlag string) error {
+	vm, err := c.GetVM(vmID)
 	if err != nil {
 		return err
 	}
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
-		return fmt.Errorf("VM %s does not have SSH access configured", id)
+		return fmt.Errorf("VM %s does not have SSH access configured", vmID)
 	}
 
 	// Check if VM is running
