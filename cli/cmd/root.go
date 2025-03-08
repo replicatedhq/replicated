@@ -33,6 +33,7 @@ var apiToken string
 var platformOrigin = "https://api.replicated.com/vendor"
 var kurlDotSHOrigin = "https://kurl.sh"
 var cache *replicatedcache.Cache
+var debugFlag bool
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -45,6 +46,12 @@ func init() {
 		panic(err)
 	}
 	cache = c
+	
+	// Set debug mode from environment variable
+	if os.Getenv("REPLICATED_DEBUG") == "1" || os.Getenv("REPLICATED_DEBUG") == "true" {
+		debugFlag = true
+		version.SetDebugMode(true)
+	}
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -56,6 +63,7 @@ func GetRootCmd() *cobra.Command {
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
+	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Enable debug output")
 
 	return rootCmd
 }
@@ -106,6 +114,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	}
 	if stdout != nil {
 		runCmds.rootCmd.SetOut(stdout)
+	}
+	
+	// Setup PersistentPreRun to handle --debug flag
+	runCmds.rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
+		// Enable debug mode if flag is set
+		if debugFlag {
+			version.SetDebugMode(true)
+		}
 	}
 
 	channelCmd := &cobra.Command{
@@ -310,7 +326,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		commonAPI := client.NewClient(platformOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
+		// Print update info from cache, then start background update for next time
 		version.PrintIfUpgradeAvailable()
+		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
 
 		return nil
 	}

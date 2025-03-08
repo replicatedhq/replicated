@@ -21,7 +21,7 @@ type Option func(*UpdateChecker) error
 func NewUpdateChecker(version string, homebrewFormula string) (*UpdateChecker, error) {
 	updateChecker := UpdateChecker{
 		version:     version,
-		httpTimeout: 3 * time.Second,
+		httpTimeout: 3 * time.Second, // Default timeout
 	}
 
 	if homebrewFormula != "" {

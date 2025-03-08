@@ -3,8 +3,6 @@ package version
 import (
 	"fmt"
 	"os"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -21,24 +19,28 @@ type Build struct {
 func initBuild() {
 	build.Version = version
 
-	var err error
-	updateChecker, err := NewUpdateChecker(build.Version, "replicatedhq/replicated/cli")
-	if err != nil {
+	// Don't check for updates in CI environments
+	if os.Getenv("CI") == "true" {
 		return
 	}
 
-	if os.Getenv("CI") != "true" {
-		build.UpdateInfo, err = updateChecker.GetUpdateInfo()
-		if err != nil {
-			if os.IsTimeout(errors.Cause(err)) {
-				// i'm going to leave this println out for now because it could be really noisy
-				// for someone with a slow connection
-				// fmt.Fprintln(os.Stderr, "Unable to check for updates, timeout exceeded.")
-				return
-			}
-			fmt.Fprintf(os.Stderr, "Error getting update info: %s", err)
+	// Try to load update info from cache
+	updateCache, _ := LoadUpdateCache()
+	if updateCache != nil {
+		// Only use cached update info if it's for the current version
+		if updateCache.Version == build.Version {
+			debugLog("Using cached update info for version %s", build.Version)
+			build.UpdateInfo = &updateCache.UpdateInfo
+		} else {
+			debugLog("Cached update info is for version %s, current version is %s - clearing cache", 
+				updateCache.Version, build.Version)
+			// Clear the cache when CLI version has changed
+			ClearUpdateCache()
 		}
 	}
+
+	// Start background update check (never blocks)
+	CheckForUpdatesInBackground(build.Version, "replicatedhq/replicated/cli")
 }
 
 func GetBuild() Build {
@@ -47,6 +49,11 @@ func GetBuild() Build {
 
 func Version() string {
 	return build.Version
+}
+
+// SetUpdateInfo updates the current build's update info
+func SetUpdateInfo(updateInfo *UpdateInfo) {
+	build.UpdateInfo = updateInfo
 }
 
 func Print() {
