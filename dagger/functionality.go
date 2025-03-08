@@ -16,7 +16,7 @@ func validateFunctionality(
 
 	// unit tests
 	unitTest := dag.Container().
-		From("golang:1.22").
+		From("golang:1.23").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).

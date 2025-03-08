@@ -111,7 +111,7 @@ func (r *Replicated) Release(
 	replicatedBinary := dag.Container(dagger.ContainerOpts{
 		Platform: "linux/amd64",
 	}).
-		From("golang:1.22").
+		From("golang:1.23").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
