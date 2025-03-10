@@ -42,7 +42,7 @@ replicated vm ls --watch`,
 	cmd.Flags().BoolVar(&r.args.lsVMShowTerminated, "show-terminated", false, "when set, only show terminated vms")
 	cmd.Flags().StringVar(&r.args.lsVMStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVar(&r.args.lsVMEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 	cmd.Flags().BoolVarP(&r.args.lsVMWatch, "watch", "w", false, "watch vms")
 
 	return cmd
@@ -93,7 +93,6 @@ func (r *runners) listVMs(_ *cobra.Command, args []string) error {
 		// Runs until ctrl C is recognized
 		for range time.Tick(2 * time.Second) {
 			newVMs, err := r.kotsAPI.ListVMs(r.args.lsVMShowTerminated, startTime, endTime)
-
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					return errors.New("interrupted")

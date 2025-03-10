@@ -58,7 +58,7 @@ replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	_ = cmd.MarkFlagRequired("distribution")
 
