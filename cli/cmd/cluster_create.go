@@ -79,7 +79,7 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	_ = cmd.MarkFlagRequired("distribution")
 

@@ -30,7 +30,7 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().BoolVar(&r.args.createNetworkDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	return cmd
 }
@@ -61,7 +61,6 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 	}
 
 	return print.Network(r.outputFormat, r.w, network)
-
 }
 
 func (r *runners) createAndWaitForNetwork(opts kotsclient.CreateNetworkOpts) (*types.Network, error) {

@@ -39,7 +39,7 @@ replicated vm port expose VM_ID --port 8080 --protocol https --output json`,
 	}
 	cmd.Flags().StringSliceVar(&r.args.vmExposePortProtocols, "protocol", []string{"http", "https"}, `Protocol to expose (valid values are "http", "https", "ws" and "wss")`)
 	cmd.Flags().BoolVar(&r.args.vmExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	return cmd
 }

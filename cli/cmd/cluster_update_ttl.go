@@ -22,7 +22,7 @@ replicated cluster update ttl CLUSTER_ID --ttl 24h`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.updateClusterTTL, "ttl", "", "Update TTL which starts from the moment the cluster is running (duration, max 48h).")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
 
 	cmd.MarkFlagRequired("ttl")
 
