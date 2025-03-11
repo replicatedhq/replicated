@@ -42,7 +42,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVar(&r.args.createReleaseYamlFile, "yaml-file", "", "The file name with YAML config for this release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.createReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the --yaml flag.")
 	cmd.Flags().StringVar(&r.args.createReleaseChart, "chart", "", "Helm chart to create the release from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
-	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name or id to promote this release to")
+	cmd.Flags().StringVar(&r.args.createReleasePromote, "promote", "", "Channel name (case sensitive) or id to promote this release to")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteNotes, "release-notes", "", "When used with --promote <channel>, sets the **markdown** release notes")
 	cmd.Flags().StringVar(&r.args.createReleasePromoteVersion, "version", "", "When used with --promote <channel>, sets the version label for the release in this channel")
 	// Fail-on linting flag (from release_lint.go)
