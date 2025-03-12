@@ -1,11 +1,17 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
+)
+
+const (
+	noneTranslatedPolicy = "airgap"
+	anyTranslatedPolicy  = "open"
 )
 
 func (r *runners) InitNetworkUpdateOutbound(parent *cobra.Command) *cobra.Command {
@@ -17,6 +23,7 @@ func (r *runners) InitNetworkUpdateOutbound(parent *cobra.Command) *cobra.Comman
 replicated network update outbound NETWORK_ID --outbound any`,
 		RunE:              r.updateNetworkOutbound,
 		SilenceUsage:      true,
+		Hidden:            true,
 		ValidArgsFunction: r.completeNetworkIDs,
 	}
 	parent.AddCommand(cmd)
@@ -30,6 +37,8 @@ replicated network update outbound NETWORK_ID --outbound any`,
 }
 
 func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error {
+	fmt.Println("Note: 'replicated network update outbound' is deprecated. Use 'replicated network update policy' instead.")
+
 	if err := r.ensureUpdateNetworkIDArg(args); err != nil {
 		return errors.Wrap(err, "ensure network id arg")
 	}
@@ -38,15 +47,23 @@ func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error
 		return errors.New("outbound must be either 'none' or 'any'")
 	}
 
-	opts := kotsclient.UpdateNetworkOutboundOpts{
-		Outbound: r.args.updateNetworkOutbound,
+	var updateOpts kotsclient.UpdateNetworkPolicyOpts
+	if r.args.updateNetworkOutbound == "none" {
+		fmt.Println("Updating policy to 'airgap' to match 'none' outbound setting")
+		updateOpts = kotsclient.UpdateNetworkPolicyOpts{
+			Policy: noneTranslatedPolicy,
+		}
 	}
-	network, err := r.kotsAPI.UpdateNetworkOutbound(r.args.updateNetworkID, opts)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
+	if r.args.updateNetworkOutbound == "any" {
+		fmt.Println("Updating policy to 'open' to match 'any' outbound setting")
+		updateOpts = kotsclient.UpdateNetworkPolicyOpts{
+			Policy: anyTranslatedPolicy,
+		}
 	}
+
+	network, err := r.kotsAPI.UpdateNetworkPolicy(r.args.updateNetworkID, updateOpts)
 	if err != nil {
-		return errors.Wrap(err, "update network outbound")
+		return errors.Wrap(err, "update network policy")
 	}
 
 	return print.Network(r.outputFormat, r.w, network)
