@@ -16,6 +16,7 @@ type Network struct {
 	OverlayToken    string `json:"overlay_token,omitempty"`
 
 	Outbound string `json:"outbound,omitempty"`
+	Policy   string `json:"policy,omitempty"`
 }
 
 type NetworkStatus string

@@ -28,12 +28,14 @@ const (
 	padChar  = ' '
 )
 
-var appSlugOrID string
-var apiToken string
-var platformOrigin = "https://api.replicated.com/vendor"
-var kurlDotSHOrigin = "https://kurl.sh"
-var cache *replicatedcache.Cache
-var debugFlag bool
+var (
+	appSlugOrID     string
+	apiToken        string
+	platformOrigin  = "https://api.replicated.com/vendor"
+	kurlDotSHOrigin = "https://kurl.sh"
+	cache           *replicatedcache.Cache
+	debugFlag       bool
+)
 
 func init() {
 	originFromEnv := os.Getenv("REPLICATED_API_ORIGIN")
@@ -46,7 +48,7 @@ func init() {
 		panic(err)
 	}
 	cache = c
-	
+
 	// Set debug mode from environment variable
 	if os.Getenv("REPLICATED_DEBUG") == "1" || os.Getenv("REPLICATED_DEBUG") == "true" {
 		debugFlag = true
@@ -115,7 +117,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	if stdout != nil {
 		runCmds.rootCmd.SetOut(stdout)
 	}
-	
+
 	// Setup PersistentPreRun to handle --debug flag
 	runCmds.rootCmd.PersistentPreRun = func(cmd *cobra.Command, args []string) {
 		// Enable debug mode if flag is set
@@ -129,7 +131,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		Short: "List channels",
 		Long:  "List channels",
 	}
-	var releaseCmd = &cobra.Command{
+	releaseCmd := &cobra.Command{
 		Use:   "release",
 		Short: "Manage app releases",
 		Long:  `The release command allows vendors to create, display, and promote their releases.`,
@@ -285,6 +287,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	networkUpdateCmd := runCmds.InitNetworkUpdateCommand(networkCmd)
 	runCmds.InitNetworkUpdateOutbound(networkUpdateCmd)
+	runCmds.InitNetworkUpdatePolicy(networkUpdateCmd)
 
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
