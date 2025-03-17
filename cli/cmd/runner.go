@@ -246,9 +246,9 @@ type runnerArgs struct {
 	lsNetworkWatch     bool
 
 	updateNetworkOutbound string
-
-	updateNetworkName string
-	updateNetworkID   string
+	updateNetworkPolicy   string
+	updateNetworkName     string
+	updateNetworkID       string
 
 	removeNetworkAll    bool
 	removeNetworkNames  []string
