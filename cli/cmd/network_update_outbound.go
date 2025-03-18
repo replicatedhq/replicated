@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
@@ -37,7 +38,7 @@ replicated network update outbound NETWORK_ID --outbound any`,
 }
 
 func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error {
-	fmt.Println("Note: 'replicated network update outbound' is deprecated. Use 'replicated network update policy' instead.")
+	fmt.Fprintln(os.Stderr, "Note: 'replicated network update outbound' is deprecated. Use 'replicated network update policy' instead.")
 
 	if err := r.ensureUpdateNetworkIDArg(args); err != nil {
 		return errors.Wrap(err, "ensure network id arg")
@@ -49,13 +50,13 @@ func (r *runners) updateNetworkOutbound(cmd *cobra.Command, args []string) error
 
 	var updateOpts kotsclient.UpdateNetworkPolicyOpts
 	if r.args.updateNetworkOutbound == "none" {
-		fmt.Println("Updating policy to 'airgap' to match 'none' outbound setting")
+		fmt.Fprintln(os.Stderr, "Updating policy to 'airgap' to match 'none' outbound setting")
 		updateOpts = kotsclient.UpdateNetworkPolicyOpts{
 			Policy: noneTranslatedPolicy,
 		}
 	}
 	if r.args.updateNetworkOutbound == "any" {
-		fmt.Println("Updating policy to 'open' to match 'any' outbound setting")
+		fmt.Fprintln(os.Stderr, "Updating policy to 'open' to match 'any' outbound setting")
 		updateOpts = kotsclient.UpdateNetworkPolicyOpts{
 			Policy: anyTranslatedPolicy,
 		}
