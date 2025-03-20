@@ -48,7 +48,7 @@ replicated enterprise-portal user ls --app myapp --include-invites --output tabl
 	parent.AddCommand(cmd)
 
 	cmd.Flags().BoolVar(&opts.includeInvites, "include-invites", false, "Include pending invitations in the list")
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

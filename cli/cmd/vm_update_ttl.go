@@ -31,7 +31,7 @@ replicated vm update ttl aaaaa11 --ttl 30m`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.updateVMTTL, "ttl", "", "Update TTL which starts from the moment the vm is running (duration, max 48h).")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	cmd.MarkFlagRequired("ttl")
 

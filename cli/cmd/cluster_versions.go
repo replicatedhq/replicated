@@ -26,7 +26,7 @@ replicated cluster versions --output json`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.lsVersionsDistribution, "distribution", "", "Kubernetes distribution to filter by.")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

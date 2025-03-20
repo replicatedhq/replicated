@@ -42,9 +42,9 @@ replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createVMName, "name", "", "VM name (defaults to random name)")
-	cmd.Flags().StringVar(&r.args.createVMDistribution, "distribution", "", "Distribution of the vm to provision")
+	cmd.Flags().StringVar(&r.args.createVMDistribution, "distribution", "", "Distribution of the VM to provision")
 	cmd.RegisterFlagCompletionFunc("distribution", r.completeVMDistributions)
-	cmd.Flags().StringVar(&r.args.createVMVersion, "version", "", "Vversion to provision (format is distribution dependent)")
+	cmd.Flags().StringVar(&r.args.createVMVersion, "version", "", "Version to provision (format is distribution dependent)")
 	cmd.RegisterFlagCompletionFunc("version", r.completeVMVersions)
 	cmd.Flags().IntVar(&r.args.createVMCount, "count", int(1), "Number of matching VMs to create")
 	cmd.Flags().Int64Var(&r.args.createVMDiskGiB, "disk", int64(50), "Disk Size (GiB) to request per node")
@@ -58,7 +58,7 @@ replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	_ = cmd.MarkFlagRequired("distribution")
 

@@ -30,7 +30,7 @@ replicated default set app my-app-slug`,
 		},
 	}
 
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	parent.AddCommand(cmd)
 
 	return cmd

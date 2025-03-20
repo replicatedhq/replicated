@@ -56,7 +56,7 @@ func (r *runners) clusterAddonCreateObjectStoreFlags(cmd *cobra.Command) error {
 	}
 	cmd.Flags().DurationVar(&r.args.clusterAddonCreateObjectStoreDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
 	cmd.Flags().BoolVar(&r.args.clusterAddonCreateObjectStoreDryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
-	cmd.Flags().StringVar(&r.args.clusterAddonCreateObjectStoreOutput, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.args.clusterAddonCreateObjectStoreOutput, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	return nil
 }
 

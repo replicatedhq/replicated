@@ -41,7 +41,7 @@ replicated customer ls --app myapp --output json`,
 	parent.AddCommand(customersLsCmd)
 	customersLsCmd.Flags().StringVar(&appVersion, "app-version", "", "Filter customers by a specific app version")
 	customersLsCmd.Flags().BoolVar(&includeTest, "include-test", false, "Include test customers in the results")
-	customersLsCmd.Flags().StringVar(&outputFormat, "output", "table", "Output format: json|table (default: table)")
+	customersLsCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return customersLsCmd
 }

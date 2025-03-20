@@ -21,7 +21,7 @@ func (r *runners) InitCollectionCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.modelCollectionCreateName, "name", "", "The name of the collection")
 	cmd.MarkFlagRequired("name")
 
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

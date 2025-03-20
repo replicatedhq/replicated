@@ -30,7 +30,7 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().BoolVar(&r.args.createNetworkDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }

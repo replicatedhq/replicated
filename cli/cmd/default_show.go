@@ -33,7 +33,7 @@ replicated default show app
 		},
 	}
 
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	parent.AddCommand(cmd)
 
 	return cmd

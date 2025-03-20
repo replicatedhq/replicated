@@ -20,7 +20,7 @@ func (r *runners) InitInstanceLSCommand(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.instanceListCustomer, "customer", "", "Customer Name or ID")
 	cmd.Flags().StringArrayVar(&r.args.instanceListTags, "tag", []string{}, "Tags to use to filter instances (key=value format, can be specified multiple times). Only one tag needs to match (an OR operation)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

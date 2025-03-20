@@ -46,7 +46,7 @@ replicated cluster addon ls CLUSTER_ID --output wide`,
 }
 
 func clusterAddonLsFlags(cmd *cobra.Command, args *clusterAddonLsArgs) error {
-	cmd.Flags().StringVar(&args.outputFormat, "output", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&args.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	return nil
 }
 

@@ -30,7 +30,7 @@ replicated network update outbound NETWORK_ID --outbound any`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.updateNetworkOutbound, "outbound", "", "Update outbound setting (must be 'none' or 'any')")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	cmd.MarkFlagRequired("outbound")
 
