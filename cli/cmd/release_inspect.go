@@ -28,7 +28,7 @@ replicated release inspect 123
 replicated release inspect 123 --output json`,
 		Args: cobra.ExactArgs(1),
 	}
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	parent.AddCommand(cmd)
 
 	cmd.RunE = r.releaseInspect

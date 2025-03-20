@@ -19,7 +19,7 @@ func (r *runners) InitInstanceTagCommand(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.instanceTagCustomer, "customer", "", "Customer Name or ID")
 	cmd.Flags().StringVar(&r.args.instanceTagInstacne, "instance", "", "Instance Name or ID")
 	cmd.Flags().StringArrayVar(&r.args.instanceTagTags, "tag", []string{}, "Tags to apply to instance. Leave value empty to remove tag. Tags not specified will not be removed.")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

@@ -24,7 +24,7 @@ func (r *runners) InitNetworkList(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().StringVar(&r.args.lsNetworkStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVar(&r.args.lsNetworkEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	cmd.Flags().BoolVarP(&r.args.lsNetworkWatch, "watch", "w", false, "watch networks")
 
 	return cmd

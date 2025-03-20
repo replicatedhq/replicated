@@ -26,7 +26,7 @@ func (r *runners) InitRegistryAddGAR(parent *cobra.Command) {
 	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key from stdin")
 	cmd.Flags().StringVar(&r.args.addRegistryToken, "token", "", "The token to use to auth to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddGAR
 }

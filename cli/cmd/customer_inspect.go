@@ -44,7 +44,7 @@ replicated customer inspect --app myapp --customer "Acme Inc"`,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID")
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("customer")
 

@@ -96,7 +96,7 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be updated.")
 	cmd.Flags().StringVar(&opts.Type, "type", "dev", "The license type to update. One of: dev|trial|paid|community|test (default: dev)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("customer")
 	cmd.MarkFlagRequired("channel")

@@ -34,7 +34,7 @@ replicated cluster update nodegroup CLUSTER_ID --nodegroup-id NODEGROUP_ID --min
 	cmd.Flags().StringVar(&r.args.updateClusterNodeGroupMinCount, "min-nodes", "", "The minimum number of nodes in the nodegroup")
 	cmd.Flags().StringVar(&r.args.updateClusterNodeGroupMaxCount, "max-nodes", "", "The maximum number of nodes in the nodegroup")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }

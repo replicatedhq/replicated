@@ -45,7 +45,7 @@ replicated enterprise-portal status update --status active --output table`,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&opts.status, "status", "", "The status to set for the enterprise portal")
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("status")
 

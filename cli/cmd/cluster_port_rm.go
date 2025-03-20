@@ -31,7 +31,7 @@ replicated cluster port rm CLUSTER_ID --id PORT_ID --output json`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.clusterPortRemoveAddonID, "id", "", "ID of the port to remove (required)")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	// Deprecated flags
 	cmd.Flags().IntVar(&r.args.clusterPortRemovePort, "port", 0, "Port to remove")

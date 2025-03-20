@@ -35,7 +35,7 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.lintReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.lintReleaseChart, "chart", "", "Helm chart to lint from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.Flags().MarkHidden("chart")
 

@@ -22,7 +22,7 @@ func (r *runners) InitRegistryAddQuay(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.addRegistryUsername, "username", "", "The userame to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistryPassword, "password", "", "The password to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryPasswordFromStdIn, "password-stdin", false, "Take the password from stdin")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddQuay
 

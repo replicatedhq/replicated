@@ -49,7 +49,7 @@ replicated app create "Custom App" --output table`,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

@@ -43,7 +43,7 @@ replicated enterprise-portal invite --app myapp --customer "ACME Inc" user1@exam
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&customer, "customer", "", "The customer name or ID to invite")
-	cmd.Flags().StringVar(&outputFormat, "output", "table", "The output format to use. One of: json|table (default: table)")
+	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("customer")
 
