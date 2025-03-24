@@ -68,7 +68,6 @@ type VMPort struct {
 	AddonID      string          `json:"addon_id"`
 	UpstreamPort int             `json:"upstream_port"`
 	ExposedPorts []VMExposedPort `json:"exposed_ports"`
-	IsWildcard   bool            `json:"is_wildcard"`
 	CreatedAt    time.Time       `json:"created_at"`
 	Hostname     string          `json:"hostname"`
 	PortName     string          `json:"port_name"`

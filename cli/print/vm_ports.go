@@ -10,15 +10,14 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	WILDCARD	STATUS`
+var vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
 var vmPortsTmplRowSrc = `{{- range . }}
 {{- $id := .AddonID }}
 {{- $upstreamPort := .UpstreamPort }}
 {{- $hostname := .Hostname }}
-{{- $isWildcard := .IsWildcard }}
 {{- $state := .State }}
 {{- range .ExposedPorts }}
-{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ printf "%-12s" $state }}
+{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
 {{ end }}
 {{ end }}`
 var vmPortsTmplSrc = fmt.Sprintln(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc

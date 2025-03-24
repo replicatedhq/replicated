@@ -9,20 +9,18 @@ import (
 )
 
 type ExportVMPortRequest struct {
-	Port       int      `json:"port"`
-	Protocols  []string `json:"protocols"`
-	IsWildcard bool     `json:"is_wildcard"`
+	Port      int      `json:"port"`
+	Protocols []string `json:"protocols"`
 }
 
 type ExposeVMPortResponse struct {
 	Port *types.VMPort `json:"port"`
 }
 
-func (c *VendorV3Client) ExposeVMPort(vmID string, portNumber int, protocols []string, isWildcard bool) (*types.VMPort, error) {
+func (c *VendorV3Client) ExposeVMPort(vmID string, portNumber int, protocols []string) (*types.VMPort, error) {
 	req := ExportVMPortRequest{
-		Port:       portNumber,
-		Protocols:  protocols,
-		IsWildcard: isWildcard,
+		Port:      portNumber,
+		Protocols: protocols,
 	}
 
 	resp := ExposeVMPortResponse{}
