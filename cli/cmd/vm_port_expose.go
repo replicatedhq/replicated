@@ -12,11 +12,9 @@ func (r *runners) InitVMPortExpose(parent *cobra.Command) *cobra.Command {
 		Short: "Expose a port on a vm to the public internet.",
 		Long: `The 'vm port expose' command is used to expose a specified port on a vm to the public internet. When exposing a port, the command automatically creates a DNS entry and, if using the "https" protocol, provisions a TLS certificate for secure communication.
 
-You can also create a wildcard DNS entry and TLS certificate by specifying the "--wildcard" flag. Please note that creating a wildcard certificate may take additional time.
-
 This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.`,
-		Example: `# Expose port 8080 with HTTPS protocol and wildcard DNS
-replicated vm port expose VM_ID --port 8080 --protocol https --wildcard
+		Example: `# Expose port 8080 with HTTPS protocol
+replicated vm port expose VM_ID --port 8080 --protocol https
 
 # Expose port 3000 with HTTP protocol
 replicated vm port expose VM_ID --port 3000 --protocol http
@@ -38,7 +36,6 @@ replicated vm port expose VM_ID --port 8080 --protocol https --output json`,
 		panic(err)
 	}
 	cmd.Flags().StringSliceVar(&r.args.vmExposePortProtocols, "protocol", []string{"http", "https"}, `Protocol to expose (valid values are "http", "https", "ws" and "wss")`)
-	cmd.Flags().BoolVar(&r.args.vmExposePortIsWildcard, "wildcard", false, "Create a wildcard DNS entry and TLS certificate for this port")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
@@ -53,7 +50,7 @@ func (r *runners) vmPortExpose(_ *cobra.Command, args []string) error {
 
 	port, err := r.kotsAPI.ExposeVMPort(
 		vmID,
-		r.args.vmExposePortPort, r.args.vmExposePortProtocols, r.args.vmExposePortIsWildcard,
+		r.args.vmExposePortPort, r.args.vmExposePortProtocols,
 	)
 	if err != nil {
 		return err
