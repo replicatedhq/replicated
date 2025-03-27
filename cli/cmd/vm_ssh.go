@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -10,7 +12,10 @@ import (
 )
 
 func (r *runners) InitVMSSH(parent *cobra.Command) *cobra.Command {
-	var sshUser string
+	var (
+		sshUser         string
+		sshIdentityFile string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "ssh [VM_ID]",
@@ -29,6 +34,9 @@ Note: Only running VMs can be connected to via SSH.`,
 		Example: `# SSH into a specific VM by ID
 replicated vm ssh <id>
 
+# SSH with a specified identity file
+replicated vm ssh <id> -i ~/.ssh/id_rsa
+
 # SSH into a VM with a specific user
 replicated vm ssh <id> -u myuser
 
@@ -41,7 +49,7 @@ replicated vm ssh`,
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVarP(&sshUser, "user", "u", "", "SSH user to connect with")
-
+	cmd.Flags().StringVarP(&sshIdentityFile, "identity-file", "i", "", "SSH identity file to use")
 	return cmd
 }
 
@@ -56,6 +64,18 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 	}
 
 	sshUser, _ := cmd.Flags().GetString("user")
+	sshIdentityFile, _ := cmd.Flags().GetString("identity-file")
+
+	if sshIdentityFile != "" {
+		sshIdentityFile, err := filepath.Abs(sshIdentityFile)
+		if err != nil {
+			return errors.Wrap(err, "failed to get absolute path for identity file")
+		}
+		_, err = os.Stat(sshIdentityFile)
+		if err != nil {
+			return errors.Wrap(err, "identity file does not exist or is not accessible")
+		}
+	}
 
 	// Get VM ID - either directly provided or selected
 	var vmID string
@@ -96,7 +116,7 @@ func (r *runners) sshVM(cmd *cobra.Command, args []string) error {
 		vmID = selectedVM.ID
 	}
 
-	return r.kotsAPI.SSHIntoVM(vmID, sshUser)
+	return r.kotsAPI.SSHIntoVM(vmID, sshUser, sshIdentityFile)
 }
 
 // handleNoRunningVMs handles the case when no running VMs are found
