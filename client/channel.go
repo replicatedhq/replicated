@@ -95,10 +95,15 @@ type GetOrCreateChannelOptions struct {
 
 func (c *Client) GetOrCreateChannelByName(opts GetOrCreateChannelOptions) (*types.Channel, error) {
 	gqlNotFoundErr := fmt.Sprintf("channel %s not found", opts.NameOrID)
+	// The backing api endpoint technically only accepts a channel id, and names will always 404.
+	// We rely on this to fall through to the list channels call when passed as a name. Additionally,,
+	// in some rbac configurations, we get a 403 instead of a 404 when a channel name is passed
+	// even if the user has access to the channel id. In exchange for still getting a early return
+	// when we're passed a channel id that exists and is accessible we need to fall through in both cases.
 	channel, err := c.GetChannel(opts.AppID, opts.AppType, opts.NameOrID)
 	if err == nil {
 		return channel, nil
-	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) {
+	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) && !errors.Is(err, platformclient.ErrForbidden) {
 		return nil, errors.Wrap(err, "get channel")
 	}
 
