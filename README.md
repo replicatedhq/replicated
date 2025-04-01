@@ -178,6 +178,14 @@ The release process:
 4. Builds and publishes binaries to GitHub Releases
 5. Publishes Docker images to Docker Hub (as `replicated/vendor-cli`)
 
+Once the release is out, if there any changes to CLI commands or parameters, new docs have to be generated:
+
+```bash
+make docs
+```
+
+This will create a PR in https://github.com/replicatedhq/replicated-docs, which then needs to be reviewed and merged.
+
 ### Regenerating Client Code
 
 When the swagger definitions change, you can regenerate the Client code from the swagger spec with
