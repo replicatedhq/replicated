@@ -8,7 +8,7 @@ on:
 
 jobs:
   make-unit-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -17,7 +17,7 @@ jobs:
       - run: make test-unit
 
   make-pact-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -40,7 +40,7 @@ jobs:
           make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
 
   make-integration-tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -49,7 +49,7 @@ jobs:
       - run: make test-integration
 
   make-build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
