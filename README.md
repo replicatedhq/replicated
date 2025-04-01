@@ -159,10 +159,24 @@ The models are generated from the API's swagger spec.
 * ```REPLICATED_REGISTRY_ORIGIN``` may be set to overrride the registry endpoint 
 
 ### Releases
-Releases are created on Travis when a tag is pushed. This will also update the docs container.
+
+Releases of the Replicated Vendor CLI are automated using [Dagger](https://dagger.io/) and [GoReleaser](https://goreleaser.com/).
+
+To create a new release:
+
+```bash
+# Create a major, minor, or patch release:
+make release version=major
+make release version=minor
+make release version=patch
 ```
-git tag -a v0.1.0 -m "First release" && git push upstream v0.1.0
-```
+
+The release process:
+1. Ensures you're on the `main` branch with a clean git tree
+2. Updates the version in the codebase
+3. Creates a git tag for the release
+4. Builds and publishes binaries to GitHub Releases
+5. Publishes Docker images to Docker Hub (as `replicated/vendor-cli`)
 
 ### Regenerating Client Code
 
