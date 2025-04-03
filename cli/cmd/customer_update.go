@@ -179,23 +179,24 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 
 	updateOpts := kotsclient.UpdateCustomerOpts{
-		Name:                             opts.Name,
-		CustomID:                         opts.CustomID,
-		Channels:                         channels,
-		AppID:                            r.appID,
-		ExpiresAtDuration:                opts.ExpiryDuration,
-		IsAirgapEnabled:                  opts.IsAirgapEnabled,
-		IsGitopsSupported:                opts.IsGitopsSupported,
-		IsSnapshotSupported:              opts.IsSnapshotSupported,
-		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
-		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterDownloadEnabled,
-		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
-		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
-		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
-		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
-		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
-		LicenseType:                      opts.Type,
-		Email:                            opts.Email,
+		Name:                               opts.Name,
+		CustomID:                           opts.CustomID,
+		Channels:                           channels,
+		AppID:                              r.appID,
+		ExpiresAtDuration:                  opts.ExpiryDuration,
+		IsAirgapEnabled:                    opts.IsAirgapEnabled,
+		IsGitopsSupported:                  opts.IsGitopsSupported,
+		IsSnapshotSupported:                opts.IsSnapshotSupported,
+		IsKotsInstallEnabled:               opts.IsKotsInstallEnabled,
+		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
+		IsEmbeddedClusterMultinodeDisabled: !opts.IsEmbeddedClusterMultinodeEnabled,
+		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
+		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
+		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,
+		IsSupportBundleUploadEnabled:       opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:             opts.IsDeveloperModeEnabled,
+		LicenseType:                        opts.Type,
+		Email:                              opts.Email,
 	}
 
 	if cmd.Flags().Changed("helm-install") {
@@ -203,13 +204,6 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 	if cmd.Flags().Changed("kurl-install") {
 		updateOpts.IsKurlInstallEnabled = &opts.IsKurlInstallEnabled
-	}
-	// If EC is disabled, we don't set the multi-node flag as it defaults to true and will cause a
-	// bad request error.
-	// Use the customer provided value if the flag was explicitly set which may result in an error
-	// from the API if EC is disabled.
-	if opts.IsEmbeddedClusterDownloadEnabled || cmd.Flags().Changed("embedded-cluster-multinode") {
-		updateOpts.IsEmbeddedClusterMultinodeEnabled = opts.IsEmbeddedClusterMultinodeEnabled
 	}
 
 	customer, err := r.api.UpdateCustomer(r.appType, opts.CustomerID, updateOpts)
