@@ -13,27 +13,28 @@ import (
 )
 
 type updateCustomerOpts struct {
-	CustomerID                   string
-	Name                         string
-	CustomID                     string
-	Channels                     []string
-	DefaultChannel               string
-	ExpiryDuration               time.Duration
-	EnsureChannel                bool
-	IsAirgapEnabled              bool
-	IsGitopsSupported            bool
-	IsSnapshotSupported          bool
-	IsKotsInstallEnabled         bool
-	IsEmbeddedClusterEnabled     bool
-	IsGeoaxisSupported           bool
-	IsHelmVMDownloadEnabled      bool
-	IsIdentityServiceSupported   bool
-	IsSupportBundleUploadEnabled bool
-	IsDeveloperModeEnabled       bool
-	Email                        string
-	Type                         string
-	IsHelmInstallEnabled         bool
-	IsKurlInstallEnabled         bool
+	CustomerID                        string
+	Name                              string
+	CustomID                          string
+	Channels                          []string
+	DefaultChannel                    string
+	ExpiryDuration                    time.Duration
+	EnsureChannel                     bool
+	IsAirgapEnabled                   bool
+	IsGitopsSupported                 bool
+	IsSnapshotSupported               bool
+	IsKotsInstallEnabled              bool
+	IsEmbeddedClusterDownloadEnabled  bool
+	IsEmbeddedClusterMultinodeEnabled bool
+	IsGeoaxisSupported                bool
+	IsHelmVMDownloadEnabled           bool
+	IsIdentityServiceSupported        bool
+	IsSupportBundleUploadEnabled      bool
+	IsDeveloperModeEnabled            bool
+	Email                             string
+	Type                              string
+	IsHelmInstallEnabled              bool
+	IsKurlInstallEnabled              bool
 }
 
 func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Command {
@@ -88,7 +89,8 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
 	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
 	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
-	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow Embedded Cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterMultinodeEnabled, "embedded-cluster-multinode", true, "If set, users can add nodes to Embedded Cluster instances.")
 	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
@@ -177,23 +179,24 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 
 	updateOpts := kotsclient.UpdateCustomerOpts{
-		Name:                             opts.Name,
-		CustomID:                         opts.CustomID,
-		Channels:                         channels,
-		AppID:                            r.appID,
-		ExpiresAtDuration:                opts.ExpiryDuration,
-		IsAirgapEnabled:                  opts.IsAirgapEnabled,
-		IsGitopsSupported:                opts.IsGitopsSupported,
-		IsSnapshotSupported:              opts.IsSnapshotSupported,
-		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
-		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterEnabled,
-		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
-		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
-		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
-		IsSupportBundleUploadEnabled:     opts.IsSupportBundleUploadEnabled,
-		IsDeveloperModeEnabled:           opts.IsDeveloperModeEnabled,
-		LicenseType:                      opts.Type,
-		Email:                            opts.Email,
+		Name:                               opts.Name,
+		CustomID:                           opts.CustomID,
+		Channels:                           channels,
+		AppID:                              r.appID,
+		ExpiresAtDuration:                  opts.ExpiryDuration,
+		IsAirgapEnabled:                    opts.IsAirgapEnabled,
+		IsGitopsSupported:                  opts.IsGitopsSupported,
+		IsSnapshotSupported:                opts.IsSnapshotSupported,
+		IsKotsInstallEnabled:               opts.IsKotsInstallEnabled,
+		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
+		IsEmbeddedClusterMultinodeDisabled: !opts.IsEmbeddedClusterMultinodeEnabled,
+		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
+		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
+		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,
+		IsSupportBundleUploadEnabled:       opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:             opts.IsDeveloperModeEnabled,
+		LicenseType:                        opts.Type,
+		Email:                              opts.Email,
 	}
 
 	if cmd.Flags().Changed("helm-install") {
