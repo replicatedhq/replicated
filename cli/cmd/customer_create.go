@@ -13,27 +13,28 @@ import (
 )
 
 type createCustomerOpts struct {
-	Name                         string
-	CustomID                     string
-	ChannelNames                 []string
-	DefaultChannel               string
-	ExpiryDuration               time.Duration
-	EnsureChannel                bool
-	IsAirgapEnabled              bool
-	IsGitopsSupported            bool
-	IsSnapshotSupported          bool
-	IsKotsInstallEnabled         bool
-	IsHelmInstallEnabled         bool
-	IsKurlInstallEnabled         bool
-	IsEmbeddedClusterEnabled     bool
-	IsGeoaxisSupported           bool
-	IsHelmVMDownloadEnabled      bool
-	IsIdentityServiceSupported   bool
-	IsInstallerSupportEnabled    bool
-	IsSupportBundleUploadEnabled bool
-	IsDeveloperModeEnabled       bool
-	Email                        string
-	CustomerType                 string
+	Name                              string
+	CustomID                          string
+	ChannelNames                      []string
+	DefaultChannel                    string
+	ExpiryDuration                    time.Duration
+	EnsureChannel                     bool
+	IsAirgapEnabled                   bool
+	IsGitopsSupported                 bool
+	IsSnapshotSupported               bool
+	IsKotsInstallEnabled              bool
+	IsHelmInstallEnabled              bool
+	IsKurlInstallEnabled              bool
+	IsEmbeddedClusterDownloadEnabled  bool
+	IsEmbeddedClusterMultinodeEnabled bool
+	IsGeoaxisSupported                bool
+	IsHelmVMDownloadEnabled           bool
+	IsIdentityServiceSupported        bool
+	IsInstallerSupportEnabled         bool
+	IsSupportBundleUploadEnabled      bool
+	IsDeveloperModeEnabled            bool
+	Email                             string
+	CustomerType                      string
 }
 
 func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Command {
@@ -88,7 +89,8 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
 	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
 	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
-	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterEnabled, "embedded-cluster-download", false, "If set, the license will allow embedded cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow Embedded Cluster downloads.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterMultinodeEnabled, "embedded-cluster-multinode", true, "If set, the license will allow Embedded Cluster multi-node downloads.")
 	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
@@ -180,7 +182,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		IsGitopsSupported:                opts.IsGitopsSupported,
 		IsSnapshotSupported:              opts.IsSnapshotSupported,
 		IsKotsInstallEnabled:             opts.IsKotsInstallEnabled,
-		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterEnabled,
+		IsEmbeddedClusterDownloadEnabled: opts.IsEmbeddedClusterDownloadEnabled,
 		IsGeoaxisSupported:               opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:          opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:       opts.IsIdentityServiceSupported,
@@ -196,6 +198,13 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 	}
 	if cmd.Flags().Changed("kurl-install") {
 		createOpts.IsKurlInstallEnabled = &opts.IsKurlInstallEnabled
+	}
+	// If EC is disabled, we don't set the multi-node flag as it defaults to true and will cause a
+	// bad request error.
+	// Use the customer provided value if the flag was explicitly set which may result in an error
+	// from the API if EC is disabled.
+	if opts.IsEmbeddedClusterDownloadEnabled || cmd.Flags().Changed("embedded-cluster-multinode") {
+		createOpts.IsEmbeddedClusterMultinodeEnabled = &opts.IsEmbeddedClusterMultinodeEnabled
 	}
 
 	customer, err := r.api.CreateCustomer(r.appType, createOpts)
