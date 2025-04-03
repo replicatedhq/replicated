@@ -90,7 +90,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
 	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
 	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow Embedded Cluster downloads.")
-	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterMultinodeEnabled, "embedded-cluster-multinode", true, "If set, the license will allow Embedded Cluster multi-node downloads.")
+	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterMultinodeEnabled, "embedded-cluster-multinode", true, "If set, users can add nodes to Embedded Cluster instances.")
 	cmd.Flags().BoolVar(&opts.IsGeoaxisSupported, "geo-axis", false, "If set, the license will allow Geo Axis usage.")
 	cmd.Flags().BoolVar(&opts.IsHelmVMDownloadEnabled, "helmvm-cluster-download", false, "If set, the license will allow helmvm cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsIdentityServiceSupported, "identity-service", false, "If set, the license will allow Identity Service usage.")
