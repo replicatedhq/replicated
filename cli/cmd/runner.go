@@ -236,6 +236,7 @@ type runnerArgs struct {
 	vmPortRemoveAddonID   string
 
 	createNetworkName         string
+	createNetworkDistribution string
 	createNetworkTTL          string
 	createNetworkWaitDuration time.Duration
 	createNetworkDryRun       bool
