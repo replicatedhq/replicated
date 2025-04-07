@@ -6,6 +6,7 @@ type VM struct {
 	ID           string `json:"id"`
 	Name         string `json:"name"`
 	Distribution string `json:"distribution"`
+	InstanceType string `json:"instance_type"`
 	Version      string `json:"version"`
 	Network      string `json:"network_id"`
 
