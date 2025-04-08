@@ -183,7 +183,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		IsSnapshotSupported:                opts.IsSnapshotSupported,
 		IsKotsInstallEnabled:               opts.IsKotsInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
-		IsEmbeddedClusterMultinodeDisabled: !opts.IsEmbeddedClusterMultinodeEnabled,
+		IsEmbeddedClusterMultinodeEnabled:  opts.IsEmbeddedClusterMultinodeEnabled,
 		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,

@@ -189,7 +189,7 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 		IsSnapshotSupported:                opts.IsSnapshotSupported,
 		IsKotsInstallEnabled:               opts.IsKotsInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
-		IsEmbeddedClusterMultinodeDisabled: !opts.IsEmbeddedClusterMultinodeEnabled,
+		IsEmbeddedClusterMultinodeEnabled:  opts.IsEmbeddedClusterMultinodeEnabled,
 		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,

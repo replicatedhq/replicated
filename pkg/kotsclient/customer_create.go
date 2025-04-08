@@ -32,7 +32,7 @@ type CreateCustomerRequest struct {
 	IsSnapshotSupported                bool               `json:"is_snapshot_supported"`
 	IsKotsInstallEnabled               bool               `json:"is_kots_install_enabled"`
 	IsEmbeddedClusterDownloadEnabled   bool               `json:"is_embedded_cluster_download_enabled"`
-	IsEmbeddedClusterMultinodeDisabled bool               `json:"is_embedded_cluster_multinode_disabled"`
+	IsEmbeddedClusterMultinodeEnabled  bool               `json:"is_embedded_cluster_multinode_enabled"`
 	IsGeoaxisSupported                 bool               `json:"is_geoaxis_supported"`
 	IsHelmVMDownloadEnabled            bool               `json:"is_helm_vm_download_enabled"`
 	IsIdentityServiceSupported         bool               `json:"is_identity_service_supported"`
@@ -66,7 +66,7 @@ type CreateCustomerOpts struct {
 	IsHelmInstallEnabled               *bool
 	IsKurlInstallEnabled               *bool
 	IsEmbeddedClusterDownloadEnabled   bool
-	IsEmbeddedClusterMultinodeDisabled bool
+	IsEmbeddedClusterMultinodeEnabled  bool
 	IsGeoaxisSupported                 bool
 	IsHelmVMDownloadEnabled            bool
 	IsIdentityServiceSupported         bool
@@ -92,7 +92,7 @@ func (c *VendorV3Client) CreateCustomer(opts CreateCustomerOpts) (*types.Custome
 		IsHelmInstallEnabled:               opts.IsHelmInstallEnabled,
 		IsKurlInstallEnabled:               opts.IsKurlInstallEnabled,
 		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
-		IsEmbeddedClusterMultinodeDisabled: opts.IsEmbeddedClusterMultinodeDisabled,
+		IsEmbeddedClusterMultinodeEnabled:  opts.IsEmbeddedClusterMultinodeEnabled,
 		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
 		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
 		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,
