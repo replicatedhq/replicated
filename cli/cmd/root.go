@@ -274,6 +274,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
 
+	vmGetCmd := runCmds.InitVMGetCommand(vmCmd)
+	runCmds.InitVMGetSSHEndpoint(vmGetCmd)
+
 	vmPortCmd := runCmds.InitVMPort(vmCmd)
 	runCmds.InitVMPortLs(vmPortCmd)
 	runCmds.InitVMPortExpose(vmPortCmd)
