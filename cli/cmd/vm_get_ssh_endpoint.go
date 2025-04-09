@@ -37,6 +37,18 @@ func (r *runners) getVMSSHEndpoint(cmd *cobra.Command, args []string) error {
 		return errors.Errorf("VM %s does not have SSH endpoint configured", vm.ID)
 	}
 
-	fmt.Printf("ssh://%s:%d\n", vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	// Get GitHub username from API
+	githubUsername, err := r.kotsAPI.GetGitHubUsername()
+	if err != nil {
+		return errors.Wrap(err, "get github username")
+	}
+
+	// Format the SSH endpoint with username if available
+	if githubUsername != "" {
+		fmt.Printf("ssh://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	} else {
+		fmt.Printf("ssh://%s:%d\n", vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	}
+
 	return nil
 }
