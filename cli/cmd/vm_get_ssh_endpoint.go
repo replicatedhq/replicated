@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -29,20 +28,9 @@ replicated vm ssh-endpoint <id>`,
 func (r *runners) getVMSSHEndpoint(cmd *cobra.Command, args []string) error {
 	vmID := args[0]
 
-	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+	vm, err := r.kotsAPI.GetVM(vmID)
 	if err != nil {
-		return errors.Wrap(err, "list vms")
-	}
-
-	var vm *types.VM
-	for _, v := range vms {
-		if v.ID == vmID {
-			vm = v
-			break
-		}
-	}
-	if vm == nil {
-		return errors.Errorf("VM %s not found", vmID)
+		return errors.Wrap(err, "get vm")
 	}
 
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
