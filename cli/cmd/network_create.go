@@ -25,9 +25,8 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.createNetworkName, "name", "", "Network name (defaults to random name)")
-	// Distribution: headscale (default) or vxlan - hidden flag
-	cmd.Flags().StringVar(&r.args.createNetworkDistribution, "distribution", "headscale", "Distribution to use for the network")
-	cmd.Flags().MarkHidden("distribution")
+	cmd.Flags().StringVar(&r.args.createNetworkVersion, "version", "v1", "Network version to use: v1 (default) or v2 (alpha)")
+	cmd.Flags().MarkHidden("version")
 	cmd.Flags().StringVar(&r.args.createNetworkTTL, "ttl", "", "Network TTL (duration, max 48h)")
 	cmd.Flags().DurationVar(&r.args.createNetworkWaitDuration, "wait", time.Second*0, "Wait duration for Network to be ready (leave empty to not wait)")
 
@@ -44,10 +43,10 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 	}
 
 	opts := kotsclient.CreateNetworkOpts{
-		Name:         r.args.createNetworkName,
-		Distribution: r.args.createNetworkDistribution,
-		TTL:          r.args.createNetworkTTL,
-		DryRun:       r.args.createNetworkDryRun,
+		Name:    r.args.createNetworkName,
+		Version: r.args.createNetworkVersion,
+		TTL:     r.args.createNetworkTTL,
+		DryRun:  r.args.createNetworkDryRun,
 	}
 
 	network, err := r.createAndWaitForNetwork(opts)
