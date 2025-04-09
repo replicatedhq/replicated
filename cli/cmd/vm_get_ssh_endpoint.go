@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitVMGetSSHEndpoint(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitVMSSHEndpoint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ssh-endpoint VM_ID",
 		Short: "Get the SSH endpoint of a VM",
@@ -16,7 +16,7 @@ func (r *runners) InitVMGetSSHEndpoint(parent *cobra.Command) *cobra.Command {
 
 The output will be in the format: hostname:port`,
 		Example: `# Get SSH endpoint for a specific VM by ID
-replicated vm get ssh-endpoint <id>`,
+replicated vm ssh-endpoint <id>`,
 		RunE:              r.getVMSSHEndpoint,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,
