@@ -16,7 +16,7 @@ func (r *runners) InitVMSSHEndpoint(parent *cobra.Command) *cobra.Command {
 The output will be in the format: hostname:port`,
 		Example: `# Get SSH endpoint for a specific VM by ID
 replicated vm ssh-endpoint <id>`,
-		RunE:              r.getVMSSHEndpoint,
+		RunE:              r.VMSSHEndpoint,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,
 	}
@@ -25,7 +25,7 @@ replicated vm ssh-endpoint <id>`,
 	return cmd
 }
 
-func (r *runners) getVMSSHEndpoint(cmd *cobra.Command, args []string) error {
+func (r *runners) VMSSHEndpoint(cmd *cobra.Command, args []string) error {
 	vmID := args[0]
 
 	vm, err := r.kotsAPI.GetVM(vmID)
@@ -44,11 +44,12 @@ func (r *runners) getVMSSHEndpoint(cmd *cobra.Command, args []string) error {
 	}
 
 	// Format the SSH endpoint with username if available
-	if githubUsername != "" {
-		fmt.Printf("ssh://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
-	} else {
-		fmt.Printf("ssh://%s:%d\n", vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	if githubUsername == "" {
+		return errors.New(`no github account associated with vendor portal user
+Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
+
+	fmt.Printf("ssh://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
 
 	return nil
 }
