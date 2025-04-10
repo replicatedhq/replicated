@@ -12,8 +12,9 @@ import (
 )
 
 type CreateNetworkRequest struct {
-	Name string `json:"name"`
-	TTL  string `json:"ttl"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	TTL     string `json:"ttl"`
 }
 
 type CreateNetworkResponse struct {
@@ -27,9 +28,10 @@ type CreateNetworkDryRunResponse struct {
 }
 
 type CreateNetworkOpts struct {
-	Name   string
-	TTL    string
-	DryRun bool
+	Name    string
+	Version string
+	TTL     string
+	DryRun  bool
 }
 
 type CreateNetworkErrorResponse struct {
@@ -42,8 +44,9 @@ type CreateNetworkErrorError struct {
 
 func (c *VendorV3Client) CreateNetwork(opts CreateNetworkOpts) (*types.Network, *CreateNetworkErrorError, error) {
 	req := CreateNetworkRequest{
-		Name: opts.Name,
-		TTL:  opts.TTL,
+		Name:    opts.Name,
+		Version: opts.Version,
+		TTL:     opts.TTL,
 	}
 
 	if opts.DryRun {
