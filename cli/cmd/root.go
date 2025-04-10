@@ -271,6 +271,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitVMRemove(vmCmd)
 	runCmds.InitVMSSH(vmCmd)
 	runCmds.InitVMSCP(vmCmd)
+	runCmds.InitVMSSHEndpoint(vmCmd)
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
 
