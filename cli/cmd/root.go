@@ -330,6 +330,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		runCmds.api = commonAPI
 
 		// Print update info from cache, then start background update for next time
+		// add override for update check for if you're running a locally built version
+		disableUpdateCheck := os.Getenv("REPLICATED_DISABLE_UPDATE_CHECK")
+		if disableUpdateCheck == "true" {
+			return nil
+		}
+
 		version.PrintIfUpgradeAvailable()
 		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
 
