@@ -18,7 +18,7 @@ type Customer struct {
 	Entitlements                       []Entitlement `json:"entitlements"`
 	IsAirgapEnabled                    bool          `json:"airgap"`
 	IsEmbeddedClusterDownloadEnabled   bool          `json:"isEmbeddedClusterDownloadEnabled"`
-	IsEmbeddedClusterMultinodeDisabled bool          `json:"isEmbeddedClusterMultinodeDisabled"`
+	IsEmbeddedClusterMultinodeEnabled  bool          `json:"isEmbeddedClusterMultinodeEnabled"`
 	IsGeoaxisSupported                 bool          `json:"isGeoaxisSupported"`
 	IsHelmVMDownloadEnabled            bool          `json:"isHelmVmDownloadEnabled"`
 	IsIdentityServiceSupported         bool          `json:"isIdentityServiceSupported"`

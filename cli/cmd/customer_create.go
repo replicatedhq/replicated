@@ -173,25 +173,23 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 	}
 
 	createOpts := kotsclient.CreateCustomerOpts{
-		Name:                               opts.Name,
-		CustomID:                           opts.CustomID,
-		Channels:                           channels,
-		AppID:                              r.appID,
-		ExpiresAtDuration:                  opts.ExpiryDuration,
-		IsAirgapEnabled:                    opts.IsAirgapEnabled,
-		IsGitopsSupported:                  opts.IsGitopsSupported,
-		IsSnapshotSupported:                opts.IsSnapshotSupported,
-		IsKotsInstallEnabled:               opts.IsKotsInstallEnabled,
-		IsEmbeddedClusterDownloadEnabled:   opts.IsEmbeddedClusterDownloadEnabled,
-		IsEmbeddedClusterMultinodeDisabled: !opts.IsEmbeddedClusterMultinodeEnabled,
-		IsGeoaxisSupported:                 opts.IsGeoaxisSupported,
-		IsHelmVMDownloadEnabled:            opts.IsHelmVMDownloadEnabled,
-		IsIdentityServiceSupported:         opts.IsIdentityServiceSupported,
-		IsInstallerSupportEnabled:          opts.IsInstallerSupportEnabled,
-		IsSupportBundleUploadEnabled:       opts.IsSupportBundleUploadEnabled,
-		IsDeveloperModeEnabled:             opts.IsDeveloperModeEnabled,
-		LicenseType:                        opts.CustomerType,
-		Email:                              opts.Email,
+		Name:                         opts.Name,
+		CustomID:                     opts.CustomID,
+		Channels:                     channels,
+		AppID:                        r.appID,
+		ExpiresAtDuration:            opts.ExpiryDuration,
+		IsAirgapEnabled:              opts.IsAirgapEnabled,
+		IsGitopsSupported:            opts.IsGitopsSupported,
+		IsSnapshotSupported:          opts.IsSnapshotSupported,
+		IsKotsInstallEnabled:         opts.IsKotsInstallEnabled,
+		IsGeoaxisSupported:           opts.IsGeoaxisSupported,
+		IsHelmVMDownloadEnabled:      opts.IsHelmVMDownloadEnabled,
+		IsIdentityServiceSupported:   opts.IsIdentityServiceSupported,
+		IsInstallerSupportEnabled:    opts.IsInstallerSupportEnabled,
+		IsSupportBundleUploadEnabled: opts.IsSupportBundleUploadEnabled,
+		IsDeveloperModeEnabled:       opts.IsDeveloperModeEnabled,
+		LicenseType:                  opts.CustomerType,
+		Email:                        opts.Email,
 	}
 
 	if cmd.Flags().Changed("helm-install") {
@@ -199,6 +197,12 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 	}
 	if cmd.Flags().Changed("kurl-install") {
 		createOpts.IsKurlInstallEnabled = &opts.IsKurlInstallEnabled
+	}
+	if cmd.Flags().Changed("embedded-cluster-download") {
+		createOpts.IsEmbeddedClusterDownloadEnabled = &opts.IsEmbeddedClusterDownloadEnabled
+	}
+	if cmd.Flags().Changed("embedded-cluster-multinode") {
+		createOpts.IsEmbeddedClusterMultinodeEnabled = &opts.IsEmbeddedClusterMultinodeEnabled
 	}
 
 	customer, err := r.api.CreateCustomer(r.appType, createOpts)
