@@ -521,7 +521,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 			continue
 		}
 
-		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), true)
+		dryRunRelease, err := installHelmChart(r, r.appSlug, chart.Name, chart.Version, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), true)
 		if err != nil {
 			return errors.Wrap(err, "dry run release")
 		}
@@ -533,7 +533,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 		}
 		log.FinishSpinner()
 
-		release, err := installHelmChart(r, r.appSlug, chart.Name, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), false)
+		release, err := installHelmChart(r, r.appSlug, chart.Name, chart.Version, release.Sequence, registryHostname, kubeconfigFile.Name(), credentialsFile.Name(), false)
 		if err != nil {
 			return errors.Wrap(err, "install release")
 		}
@@ -544,7 +544,7 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 	return nil
 }
 
-func installHelmChart(r *runners, appSlug string, chartName string, releaseSequence int64, registryHostname string, kubeconfigFile string, credentialsFile string, dryRun bool) (*release.Release, error) {
+func installHelmChart(r *runners, appSlug string, chartName string, chartVersion string, releaseSequence int64, registryHostname string, kubeconfigFile string, credentialsFile string, dryRun bool) (*release.Release, error) {
 	settings := cli.New()
 	settings.KubeConfig = kubeconfigFile
 
@@ -580,9 +580,11 @@ func installHelmChart(r *runners, appSlug string, chartName string, releaseSeque
 		client.ClientOnly = true
 	}
 
-	cp, err := client.ChartPathOptions.LocateChart(fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName), settings)
+	uri := fmt.Sprintf("oci://%s/%s/release__%d/%s", registryHostname, appSlug, releaseSequence, chartName)
+	client.ChartPathOptions.Version = chartVersion
+	cp, err := client.ChartPathOptions.LocateChart(uri, settings)
 	if err != nil {
-		return nil, errors.Wrap(err, "locate chart")
+		return nil, errors.Wrapf(err, "locate chart %s:%s", uri, chartVersion)
 	}
 
 	chartReq, err := loader.Load(cp)
