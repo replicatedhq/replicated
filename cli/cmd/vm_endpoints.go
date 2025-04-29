@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -55,25 +56,79 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 		endpointType = "scp"
 	}
 
-	return r.getVMEndpoint(args[0], endpointType)
+	return r.getVMEndpoint(args[0], endpointType, nil, "")
 }
 
 // getVMEndpoint retrieves and formats VM endpoint with the specified protocol
 // endpointType should be either "ssh" or "scp"
-func (r *runners) getVMEndpoint(vmID, endpointType string) error {
-	vm, err := r.kotsAPI.GetVM(vmID)
-	if err != nil {
-		return errors.Wrap(err, "get vm")
+func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githubUsername string) error {
+	var err error
+	var directSSHEndpoint string
+	var directSSHPort int
+	var id string
+
+	// Use vm if provided, otherwise fetch from API
+	if vm != nil {
+		// Extract VM fields from vm (map type)
+		if vmMap, ok := vm.(map[string]interface{}); ok {
+			directSSHEndpoint, _ = vmMap["DirectSSHEndpoint"].(string)
+			directSSHPort, _ = vmMap["DirectSSHPort"].(int)
+			id, _ = vmMap["ID"].(string)
+		} else {
+			return errors.New("unexpected VM type")
+		}
+	} else {
+		vm, err = r.kotsAPI.GetVM(vmID)
+		if err != nil {
+			return errors.Wrap(err, "get vm")
+		}
+
+		// Extract VM fields based on type
+		switch typedVM := vm.(type) {
+		case map[string]interface{}:
+			directSSHEndpoint, _ = typedVM["DirectSSHEndpoint"].(string)
+			directSSHPort, _ = typedVM["DirectSSHPort"].(int)
+			id, _ = typedVM["ID"].(string)
+		default:
+			// Use reflection to access fields for any struct type
+			vmValue := reflect.ValueOf(vm)
+			if vmValue.Kind() == reflect.Ptr {
+				vmValue = vmValue.Elem()
+			}
+
+			if vmValue.Kind() == reflect.Struct {
+				// Try to extract fields by name
+				idField := vmValue.FieldByName("ID")
+				if idField.IsValid() && idField.Kind() == reflect.String {
+					id = idField.String()
+				}
+
+				endpointField := vmValue.FieldByName("DirectSSHEndpoint")
+				if endpointField.IsValid() && endpointField.Kind() == reflect.String {
+					directSSHEndpoint = endpointField.String()
+				}
+
+				portField := vmValue.FieldByName("DirectSSHPort")
+				if portField.IsValid() && portField.Kind() == reflect.Int {
+					directSSHPort = int(portField.Int())
+				}
+			} else {
+				return errors.New("unable to extract VM fields from response")
+			}
+		}
 	}
 
-	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
-		return errors.Errorf("VM %s does not have SSH endpoint configured", vm.ID)
+	if directSSHEndpoint == "" || directSSHPort == 0 {
+		return errors.Errorf("VM %s does not have SSH endpoint configured", id)
 	}
 
-	// Get GitHub username from API
-	githubUsername, err := r.kotsAPI.GetGitHubUsername()
-	if err != nil {
-		return errors.Wrap(err, "get github username")
+	// if kotsAPI is not nil and githubUsername is not provided, fetch from API
+	if r.kotsAPI != nil && githubUsername == "" {
+		// Get GitHub username from API
+		githubUsername, err = r.kotsAPI.GetGitHubUsername()
+		if err != nil {
+			return errors.Wrap(err, "get github username")
+		}
 	}
 
 	// Format the endpoint with username if available
@@ -83,7 +138,7 @@ Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, directSSHEndpoint, directSSHPort)
 
 	return nil
 }
