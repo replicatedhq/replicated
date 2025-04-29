@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -26,30 +23,5 @@ replicated vm scp-endpoint <id>`,
 }
 
 func (r *runners) VMSCPEndpoint(cmd *cobra.Command, args []string) error {
-	vmID := args[0]
-
-	vm, err := r.kotsAPI.GetVM(vmID)
-	if err != nil {
-		return errors.Wrap(err, "get vm")
-	}
-
-	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
-		return errors.Errorf("VM %s does not have SSH endpoint configured", vm.ID)
-	}
-
-	// Get GitHub username from API
-	githubUsername, err := r.kotsAPI.GetGitHubUsername()
-	if err != nil {
-		return errors.Wrap(err, "get github username")
-	}
-
-	// Format the SCP endpoint with username if available
-	if githubUsername == "" {
-		return errors.New(`no github account associated with vendor portal user
-Visit https://vendor.replicated.com/account-settings to link your account`)
-	}
-
-	fmt.Printf("scp://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
-
-	return nil
+	return r.getVMEndpoint(args[0], "scp")
 }

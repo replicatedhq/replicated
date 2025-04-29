@@ -26,8 +26,12 @@ replicated vm ssh-endpoint <id>`,
 }
 
 func (r *runners) VMSSHEndpoint(cmd *cobra.Command, args []string) error {
-	vmID := args[0]
+	return r.getVMEndpoint(args[0], "ssh")
+}
 
+// getVMEndpoint retrieves and formats VM endpoint with the specified protocol
+// endpointType should be either "ssh" or "scp"
+func (r *runners) getVMEndpoint(vmID, endpointType string) error {
 	vm, err := r.kotsAPI.GetVM(vmID)
 	if err != nil {
 		return errors.Wrap(err, "get vm")
@@ -43,13 +47,13 @@ func (r *runners) VMSSHEndpoint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get github username")
 	}
 
-	// Format the SSH endpoint with username if available
+	// Format the endpoint with username if available
 	if githubUsername == "" {
 		return errors.New(`no github account associated with vendor portal user
 Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
-	fmt.Printf("ssh://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
 
 	return nil
 }
