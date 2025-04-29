@@ -22,7 +22,7 @@ func (r *runners) InitVMCreate(parent *cobra.Command) *cobra.Command {
 		Short: "Create one or more test VMs with specified distribution, version, and configuration options.",
 		Long: `Create one or more test VMs with a specified distribution, version, and a variety of customizable configuration options.
 
-This command allows you to provision VMs with different distributions (e.g., Ubuntu, RHEL), versions, instance types, and more. You can set the number of VMs to create, disk size, and specify the network to use. If no network is provided, a new network will be created automatically. You can also assign tags to your VMs and use a TTL (Time-To-Live) to define how long the VMs should live.
+This command allows you to provision VMs with different distributions (e.g., Ubuntu, RHEL), versions, instance types, and more. You can set the number of VMs to create, disk size, and specify the network to use. If no network is provided, a new network will be created automatically. You can also assign tags to your VMs and use a TTL (Time-To-Live) to define how long the VMs should live. If no TTL is specified, the default TTL is 1 hour.
 
 By default, the command provisions one VM, but you can customize the number of VMs to create by using the "--count" flag. Additionally, you can use the "--dry-run" flag to simulate the creation without actually provisioning the VMs.
 

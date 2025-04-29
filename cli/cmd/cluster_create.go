@@ -24,7 +24,7 @@ func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 		Short: "Create test clusters.",
 		Long: `The 'cluster create' command provisions a new test cluster with the specified Kubernetes distribution and configuration. You can customize the cluster's size, version, node groups, disk space, IP family, and other parameters.
 
-This command supports creating clusters on multiple Kubernetes distributions, including setting up node groups with different instance types and counts. You can also specify a TTL (Time-To-Live) to automatically terminate the cluster after a set duration.
+This command supports creating clusters on multiple Kubernetes distributions, including setting up node groups with different instance types and counts. You can also specify a TTL (Time-To-Live) to automatically terminate the cluster after a set duration. If no TTL is specified, the default TTL is 1 hour.
 
 Use the '--dry-run' flag to simulate the creation process and get an estimated cost without actually provisioning the cluster.`,
 		Example: `# Create a new cluster with basic configuration
