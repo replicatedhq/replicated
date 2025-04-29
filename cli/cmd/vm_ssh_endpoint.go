@@ -81,11 +81,21 @@ func (r *runners) getVMIDFromArg(arg string) (string, error) {
 		return "", errors.Wrap(err, "list vms")
 	}
 
+	var matchingVMs []string
 	for _, vm := range vms {
 		if vm.Name == arg {
-			return vm.ID, nil
+			matchingVMs = append(matchingVMs, vm.ID)
 		}
 	}
 
-	return "", errors.Errorf("VM with name or ID '%s' not found", arg)
+	switch len(matchingVMs) {
+	case 0:
+		return "", errors.Errorf("VM with name or ID '%s' not found", arg)
+	case 1:
+		return matchingVMs[0], nil
+	default:
+		return "", errors.Errorf("Multiple VMs found with name '%s'. Please use the VM ID instead. Matching VMs: %s", 
+			arg, 
+			fmt.Sprintf("%s (and %d more)", matchingVMs[0], len(matchingVMs)-1))
+	}
 }
