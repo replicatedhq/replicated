@@ -16,7 +16,9 @@ func (r *runners) InitVMSSHEndpoint(parent *cobra.Command) *cobra.Command {
 
 The output will be in the format: hostname:port
 
-You can identify the VM either by its unique ID or by its name.`,
+You can identify the VM either by its unique ID or by its name.
+
+Note: SSH endpoints can only be retrieved from VMs in the "running" state.`,
 		Example: `# Get SSH endpoint for a specific VM by ID
 replicated vm ssh-endpoint aaaaa11
 
