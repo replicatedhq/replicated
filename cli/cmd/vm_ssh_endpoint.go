@@ -70,7 +70,7 @@ Visit https://vendor.replicated.com/account-settings to link your account`)
 }
 
 func (r *runners) getVMIDFromArg(arg string) (string, error) {
-	vm, err := r.kotsAPI.GetVM(arg)
+	_, err := r.kotsAPI.GetVM(arg)
 	if err == nil {
 		return arg, nil
 	}
