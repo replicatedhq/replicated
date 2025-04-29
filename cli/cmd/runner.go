@@ -263,8 +263,4 @@ type runnerArgs struct {
 	demoteChannelSequence   int64
 	unDemoteReleaseSequence int64
 	unDemoteChannelSequence int64
-
-	sshVMID   string
-	sshVMName string
-	sshVMUser string
 }
