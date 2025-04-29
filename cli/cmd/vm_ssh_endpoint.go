@@ -42,6 +42,10 @@ func (r *runners) VMSSHEndpoint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "get vm")
 	}
 
+	if vm.Status != "running" {
+		return errors.Errorf("VM %s is not in running state (current state: %s). SSH is only available for running VMs", vm.ID, vm.Status)
+	}
+	
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
 		return errors.Errorf("VM %s does not have SSH endpoint configured", vm.ID)
 	}
