@@ -20,8 +20,8 @@ NOTE: Currently, this feature only supports VM-based cluster distributions.`,
 		Example: `# Expose port 8080 with HTTPS protocol and wildcard DNS
 replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --wildcard
 
-# Expose port 3000 with HTTP protocol
-replicated cluster port expose CLUSTER_ID --port 3000 --protocol http
+# Expose port 30000 with HTTP protocol
+replicated cluster port expose CLUSTER_ID --port 30000 --protocol http
 
 # Expose port 8080 with multiple protocols
 replicated cluster port expose CLUSTER_ID --port 8080 --protocol http,https
