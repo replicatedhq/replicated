@@ -25,9 +25,6 @@ func (r *runners) initVMEndpointCmd(parent *cobra.Command, endpointType string) 
 	cmdShort := fmt.Sprintf("Get the %s endpoint of a VM", protocol)
 
 	outputFormat := "hostname:port"
-	if endpointType == "scp" {
-		outputFormat = "format for use with scp command"
-	}
 
 	cmdLong := fmt.Sprintf(`Get the %s endpoint and port of a VM.
 
@@ -85,24 +82,8 @@ func (r *runners) getVMEndpoint(vmID, endpointType string) error {
 Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
-	// Map of endpoint formatters based on endpoint type
-	formatters := map[string]func(string, string, int64) string{
-		"ssh": func(username, host string, port int64) string {
-			return fmt.Sprintf("ssh://%s@%s:%d", username, host, port)
-		},
-		"scp": func(username, host string, port int64) string {
-			return fmt.Sprintf("-P %d %s@%s:", port, username, host)
-		},
-	}
-
-	// Get the formatter for the requested endpoint type
-	formatter, ok := formatters[endpointType]
-	if !ok {
-		return errors.Errorf("unsupported endpoint type: %s", endpointType)
-	}
-
-	// Format and print the endpoint
-	fmt.Println(formatter(githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort))
+	// Format the endpoint URL with the appropriate protocol
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
 
 	return nil
 }
