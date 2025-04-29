@@ -215,6 +215,7 @@ type runnerArgs struct {
 	createVMTags         []string
 	createVMNetwork      string
 	createVMDryRun       bool
+	createVMPublicKeys   []string
 
 	lsVMShowTerminated bool
 	lsVMStartTime      string
