@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/ssh"
 )
 
 func ReadAndValidatePublicKey(path string) (string, error) {
@@ -20,16 +21,9 @@ func ReadAndValidatePublicKey(path string) (string, error) {
 		return "", fmt.Errorf("public key file is empty: %s", path)
 	}
 
-	if !strings.HasPrefix(keyContent, "ssh-rsa") &&
-		!strings.HasPrefix(keyContent, "ssh-ed25519") &&
-		!strings.HasPrefix(keyContent, "ecdsa-sha2-nistp") &&
-		!strings.HasPrefix(keyContent, "ssh-dss") {
-		return "", fmt.Errorf("file does not appear to be a public key (must start with ssh-rsa, ssh-ed25519, ecdsa-sha2-nistp*, or ssh-dss): %s", path)
-	}
-
-	parts := strings.Fields(keyContent)
-	if len(parts) < 2 {
-		return "", fmt.Errorf("invalid public key format (should have at least type and key data): %s", path)
+	_, _, _, _, err = ssh.ParseAuthorizedKey([]byte(keyContent))
+	if err != nil {
+		return "", errors.Wrap(err, fmt.Sprintf("invalid SSH public key format in file: %s", path))
 	}
 
 	encodedKey := base64.StdEncoding.EncodeToString([]byte(keyContent))
