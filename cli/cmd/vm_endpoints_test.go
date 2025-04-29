@@ -26,7 +26,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockVM: map[string]interface{}{
 				"ID":                "vm-123",
 				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     22,
+				"DirectSSHPort":     int64(22),
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "ssh://testuser@test-vm.example.com:22\n",
@@ -39,7 +39,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockVM: map[string]interface{}{
 				"ID":                "vm-456",
 				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     22,
+				"DirectSSHPort":     int64(22),
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "scp://testuser@test-vm.example.com:22\n",
@@ -52,7 +52,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockVM: map[string]interface{}{
 				"ID":                "vm-789",
 				"DirectSSHEndpoint": "",
-				"DirectSSHPort":     0,
+				"DirectSSHPort":     int64(0),
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "",
@@ -65,7 +65,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockVM: map[string]interface{}{
 				"ID":                "vm-123",
 				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     22,
+				"DirectSSHPort":     int64(22),
 			},
 			mockGithubUsername: "",
 			expectedOutput:     "",

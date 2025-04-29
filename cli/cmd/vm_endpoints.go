@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -64,7 +63,7 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githubUsername string) error {
 	var err error
 	var directSSHEndpoint string
-	var directSSHPort int
+	var directSSHPort int64
 	var id string
 
 	// Use vm if provided, otherwise fetch from API
@@ -72,50 +71,21 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githu
 		// Extract VM fields from vm (map type)
 		if vmMap, ok := vm.(map[string]interface{}); ok {
 			directSSHEndpoint, _ = vmMap["DirectSSHEndpoint"].(string)
-			directSSHPort, _ = vmMap["DirectSSHPort"].(int)
+			directSSHPort, _ = vmMap["DirectSSHPort"].(int64)
 			id, _ = vmMap["ID"].(string)
 		} else {
 			return errors.New("unexpected VM type")
 		}
 	} else {
-		vm, err = r.kotsAPI.GetVM(vmID)
+		vmFromAPI, err := r.kotsAPI.GetVM(vmID)
+
 		if err != nil {
 			return errors.Wrap(err, "get vm")
 		}
 
-		// Extract VM fields based on type
-		switch typedVM := vm.(type) {
-		case map[string]interface{}:
-			directSSHEndpoint, _ = typedVM["DirectSSHEndpoint"].(string)
-			directSSHPort, _ = typedVM["DirectSSHPort"].(int)
-			id, _ = typedVM["ID"].(string)
-		default:
-			// Use reflection to access fields for any struct type
-			vmValue := reflect.ValueOf(vm)
-			if vmValue.Kind() == reflect.Ptr {
-				vmValue = vmValue.Elem()
-			}
-
-			if vmValue.Kind() == reflect.Struct {
-				// Try to extract fields by name
-				idField := vmValue.FieldByName("ID")
-				if idField.IsValid() && idField.Kind() == reflect.String {
-					id = idField.String()
-				}
-
-				endpointField := vmValue.FieldByName("DirectSSHEndpoint")
-				if endpointField.IsValid() && endpointField.Kind() == reflect.String {
-					directSSHEndpoint = endpointField.String()
-				}
-
-				portField := vmValue.FieldByName("DirectSSHPort")
-				if portField.IsValid() && portField.Kind() == reflect.Int {
-					directSSHPort = int(portField.Int())
-				}
-			} else {
-				return errors.New("unable to extract VM fields from response")
-			}
-		}
+		directSSHEndpoint = vmFromAPI.DirectSSHEndpoint
+		directSSHPort = vmFromAPI.DirectSSHPort
+		id = vmFromAPI.ID
 	}
 
 	if directSSHEndpoint == "" || directSSHPort == 0 {
