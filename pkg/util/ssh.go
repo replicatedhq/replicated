@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -31,5 +32,6 @@ func ReadAndValidatePublicKey(path string) (string, error) {
 		return "", fmt.Errorf("invalid public key format (should have at least type and key data): %s", path)
 	}
 
-	return keyContent, nil
+	encodedKey := base64.StdEncoding.EncodeToString([]byte(keyContent))
+	return encodedKey, nil
 }
