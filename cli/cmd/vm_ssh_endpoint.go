@@ -53,7 +53,11 @@ func (r *runners) getVMEndpoint(vmID, endpointType string) error {
 Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	if endpointType == "ssh" {
+		fmt.Printf("ssh://%s@%s:%d\n", githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	} else if endpointType == "scp" {
+		fmt.Printf("-P %d %s@%s:\n", vm.DirectSSHPort, githubUsername, vm.DirectSSHEndpoint)
+	}
 
 	return nil
 }
