@@ -62,16 +62,16 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 // endpointType should be either "ssh" or "scp"
 func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githubUsername string) error {
 	var err error
-	var directSSHEndpoint string
-	var directSSHPort int64
+	var directEndpoint string
+	var directPort int64
 	var id string
 
 	// Use vm if provided, otherwise fetch from API
 	if vm != nil {
 		// Extract VM fields from vm (map type)
 		if vmMap, ok := vm.(map[string]interface{}); ok {
-			directSSHEndpoint, _ = vmMap["DirectSSHEndpoint"].(string)
-			directSSHPort, _ = vmMap["DirectSSHPort"].(int64)
+			directEndpoint, _ = vmMap["DirectSSHEndpoint"].(string)
+			directPort, _ = vmMap["DirectSSHPort"].(int64)
 			id, _ = vmMap["ID"].(string)
 		} else {
 			return errors.New("unexpected VM type")
@@ -83,12 +83,12 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githu
 			return errors.Wrap(err, "get vm")
 		}
 
-		directSSHEndpoint = vmFromAPI.DirectSSHEndpoint
-		directSSHPort = vmFromAPI.DirectSSHPort
+		directEndpoint = vmFromAPI.DirectSSHEndpoint
+		directPort = vmFromAPI.DirectSSHPort
 		id = vmFromAPI.ID
 	}
 
-	if directSSHEndpoint == "" || directSSHPort == 0 {
+	if directEndpoint == "" || directPort == 0 {
 		return errors.Errorf("VM %s does not have %s endpoint configured", id, endpointType)
 	}
 
@@ -108,7 +108,7 @@ Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, directSSHEndpoint, directSSHPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, directEndpoint, directPort)
 
 	return nil
 }
