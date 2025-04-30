@@ -8,14 +8,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const githubAccountSettingsURL = "https://vendor.replicated.com/account-settings"
+
+const (
+	EndpointTypeSSH = "ssh"
+	EndpointTypeSCP = "scp"
+)
+
+type VM struct {
+	DirectEndpoint string
+	DirectPort     int64
+	ID             string
+}
+
 // InitVMSSHEndpoint initializes the command to get SSH endpoint
 func (r *runners) InitVMSSHEndpoint(parent *cobra.Command) *cobra.Command {
-	return r.initVMEndpointCmd(parent, "ssh")
+	return r.initVMEndpointCmd(parent, EndpointTypeSSH)
 }
 
 // InitVMSCPEndpoint initializes the command to get SCP endpoint
 func (r *runners) InitVMSCPEndpoint(parent *cobra.Command) *cobra.Command {
-	return r.initVMEndpointCmd(parent, "scp")
+	return r.initVMEndpointCmd(parent, EndpointTypeSCP)
 }
 
 // initVMEndpointCmd creates a command for either SSH or SCP endpoint retrieval
@@ -41,7 +54,9 @@ replicated vm %s-endpoint <id>`, protocol, endpointType)
 		RunE:              r.VMEndpoint,
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: r.completeVMIDs,
+		Annotations:       map[string]string{"endpointType": endpointType},
 	}
+
 	parent.AddCommand(cmd)
 
 	return cmd
@@ -49,10 +64,16 @@ replicated vm %s-endpoint <id>`, protocol, endpointType)
 
 // VMEndpoint handles both the ssh-endpoint and scp-endpoint commands
 func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
-	// Determine endpoint type based on command name
-	endpointType := "ssh"
-	if strings.Contains(cmd.Use, "scp-endpoint") {
-		endpointType = "scp"
+	// Get endpoint type from command annotation
+	endpointType := EndpointTypeSSH // Default fallback
+	if cmd.Annotations != nil {
+		if epType, ok := cmd.Annotations["endpointType"]; ok {
+			endpointType = epType
+		}
+	}
+
+	if endpointType != EndpointTypeSSH && endpointType != EndpointTypeSCP {
+		return errors.Errorf("invalid endpoint type: %s", endpointType)
 	}
 
 	return r.getVMEndpoint(args[0], endpointType, nil, "")
@@ -60,14 +81,14 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 
 // getVMEndpoint retrieves and formats VM endpoint with the specified protocol
 // endpointType should be either "ssh" or "scp"
-type VM struct {
-	DirectSSHEndpoint string
-	DirectSSHPort     int64
-	ID                string
-}
 
 func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsername string) error {
 	var err error
+
+	// Validate endpoint type
+	if endpointType != EndpointTypeSSH && endpointType != EndpointTypeSCP {
+		return errors.Errorf("invalid endpoint type: %s", endpointType)
+	}
 
 	// Use vm if provided, otherwise fetch from API
 	if vm == nil {
@@ -76,13 +97,13 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 			return errors.Wrap(err, "get vm")
 		}
 		vm = &VM{
-			DirectSSHEndpoint: vmFromAPI.DirectSSHEndpoint,
-			DirectSSHPort:     vmFromAPI.DirectSSHPort,
-			ID:                vmFromAPI.ID,
+			DirectEndpoint: vmFromAPI.DirectSSHEndpoint,
+			DirectPort:     vmFromAPI.DirectSSHPort,
+			ID:             vmFromAPI.ID,
 		}
 	}
 
-	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
+	if vm.DirectEndpoint == "" || vm.DirectPort == 0 {
 		return errors.Errorf("VM %s does not have %s endpoint configured", vm.ID, endpointType)
 	}
 
@@ -97,12 +118,12 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 
 	// Format the endpoint with username if available
 	if githubUsername == "" {
-		return errors.New(`no github account associated with vendor portal user
-Visit https://vendor.replicated.com/account-settings to link your account`)
+		return errors.Errorf(`no github account associated with vendor portal user
+Visit %s to link your account`, githubAccountSettingsURL)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectEndpoint, vm.DirectPort)
 
 	return nil
 }
