@@ -14,7 +14,7 @@ func TestGetVMEndpoint(t *testing.T) {
 		name               string
 		vmID               string
 		endpointType       string
-		mockVM             map[string]interface{}
+		mockVM             *VM
 		mockGithubUsername string
 		expectedOutput     string
 		expectedError      string
@@ -23,10 +23,10 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Valid SSH endpoint",
 			vmID:         "vm-123",
 			endpointType: "ssh",
-			mockVM: map[string]interface{}{
-				"ID":                "vm-123",
-				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     int64(22),
+			mockVM: &VM{
+				ID:                "vm-123",
+				DirectSSHEndpoint: "test-vm.example.com",
+				DirectSSHPort:     22,
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "ssh://testuser@test-vm.example.com:22\n",
@@ -36,10 +36,10 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Valid SCP endpoint",
 			vmID:         "vm-456",
 			endpointType: "scp",
-			mockVM: map[string]interface{}{
-				"ID":                "vm-456",
-				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     int64(22),
+			mockVM: &VM{
+				ID:                "vm-456",
+				DirectSSHEndpoint: "test-vm.example.com",
+				DirectSSHPort:     22,
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "scp://testuser@test-vm.example.com:22\n",
@@ -49,23 +49,23 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Missing SSH endpoint",
 			vmID:         "vm-789",
 			endpointType: "ssh",
-			mockVM: map[string]interface{}{
-				"ID":                "vm-789",
-				"DirectSSHEndpoint": "",
-				"DirectSSHPort":     int64(0),
+			mockVM: &VM{
+				ID:                "vm-789",
+				DirectSSHEndpoint: "",
+				DirectSSHPort:     0,
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "",
-			expectedError:      "VM vm-789 does not have SSH endpoint configured",
+			expectedError:      "VM vm-789 does not have ssh endpoint configured",
 		},
 		{
 			name:         "Missing GitHub username",
 			vmID:         "vm-123",
 			endpointType: "ssh",
-			mockVM: map[string]interface{}{
-				"ID":                "vm-123",
-				"DirectSSHEndpoint": "test-vm.example.com",
-				"DirectSSHPort":     int64(22),
+			mockVM: &VM{
+				ID:                "vm-123",
+				DirectSSHEndpoint: "test-vm.example.com",
+				DirectSSHPort:     22,
 			},
 			mockGithubUsername: "",
 			expectedOutput:     "",

@@ -86,10 +86,6 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 		return errors.Errorf("VM %s does not have %s endpoint configured", vm.ID, endpointType)
 	}
 
-	if directEndpoint == "" || directPort == 0 {
-		return errors.Errorf("VM %s does not have %s endpoint configured", id, endpointType)
-	}
-
 	// if kotsAPI is not nil and githubUsername is not provided, fetch from API
 	if r.kotsAPI != nil && githubUsername == "" {
 		// Get GitHub username from API
@@ -106,7 +102,7 @@ Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, directEndpoint, directPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectSSHEndpoint, vm.DirectSSHPort)
 
 	return nil
 }
