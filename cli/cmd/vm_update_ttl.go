@@ -10,23 +10,23 @@ import (
 
 func (r *runners) InitVMUpdateTTL(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "ttl [ID]",
+		Use:   "ttl [ID_OR_NAME]",
 		Short: "Update TTL for a test VM.",
 		Long: `The 'ttl' command allows you to update the Time to Live (TTL) for a test VM. This command modifies the lifespan of a running VM by updating its TTL, which is a duration starting from the moment the VM is provisioned.
 
 The TTL specifies how long the VM will run before it is automatically terminated. You can specify a duration up to a maximum of 48 hours. If no TTL is specified, the default TTL is 1 hour.
 
-The command accepts a VM ID as an argument and requires the '--ttl' flag to specify the new TTL value.
+The command accepts a VM ID or name as an argument and requires the '--ttl' flag to specify the new TTL value.
 
 You can also specify the output format (json, table, wide) using the '--output' flag.`,
 		Example: `# Update the TTL of a VM to 2 hours
 replicated vm update ttl aaaaa11 --ttl 2h
 
-# Update the TTL of a VM to 30 minutes
-replicated vm update ttl aaaaa11 --ttl 30m`,
+# Update the TTL of a VM to 30 minutes using VM name
+replicated vm update ttl my-test-vm --ttl 30m`,
 		RunE:              r.updateVMTTL,
 		SilenceUsage:      true,
-		ValidArgsFunction: r.completeVMIDs,
+		ValidArgsFunction: r.completeVMIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
@@ -39,7 +39,13 @@ replicated vm update ttl aaaaa11 --ttl 30m`,
 }
 
 func (r *runners) updateVMTTL(cmd *cobra.Command, args []string) error {
-	if err := r.ensureUpdateVMIDArg(args); err != nil {
+	if len(args) > 0 {
+		vmID, err := r.getVMIDFromArg(args[0])
+		if err != nil {
+			return errors.Wrap(err, "get vm id from arg")
+		}
+		r.args.updateVMID = vmID
+	} else if err := r.ensureUpdateVMIDArg(args); err != nil {
 		return errors.Wrap(err, "ensure vm id arg")
 	}
 
