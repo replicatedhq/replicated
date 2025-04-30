@@ -138,3 +138,26 @@ func (r *runners) completeVMInstanceTypes(cmd *cobra.Command, args []string, toC
 	}
 	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
 }
+
+func (r *runners) completeVMIDsAndNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var completions []string
+	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, vm := range vms {
+		if vm.Status == "running" {
+			completions = append(completions, vm.ID)
+			if vm.Name != "" {
+				completions = append(completions, vm.Name)
+			}
+		}
+	}
+	return completions, cobra.ShellCompDirectiveNoFileComp
+}

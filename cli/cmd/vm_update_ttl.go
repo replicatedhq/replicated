@@ -14,7 +14,7 @@ func (r *runners) InitVMUpdateTTL(parent *cobra.Command) *cobra.Command {
 		Short: "Update TTL for a test VM.",
 		Long: `The 'ttl' command allows you to update the Time to Live (TTL) for a test VM. This command modifies the lifespan of a running VM by updating its TTL, which is a duration starting from the moment the VM is provisioned.
 
-The TTL specifies how long the VM will run before it is automatically terminated. You can specify a duration up to a maximum of 48 hours.
+The TTL specifies how long the VM will run before it is automatically terminated. You can specify a duration up to a maximum of 48 hours. If no TTL is specified, the default TTL is 1 hour.
 
 The command accepts a VM ID as an argument and requires the '--ttl' flag to specify the new TTL value.
 
