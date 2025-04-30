@@ -35,7 +35,7 @@ replicated cluster rm --all`,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringArrayVar(&r.args.removeClusterNames, "name", []string{}, "Name of the cluster to remove (can be specified multiple times) (deprecated: use ID_OR_NAME arguments instead)")
+	cmd.Flags().StringArrayVar(&r.args.removeClusterNames, "name", []string{}, "Name of the cluster to remove (can be specified multiple times)")
 	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
 	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 	cmd.Flags().StringArrayVar(&r.args.removeClusterTags, "tag", []string{}, "Tag of the cluster to remove (key=value format, can be specified multiple times)")

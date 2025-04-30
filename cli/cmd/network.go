@@ -101,7 +101,7 @@ func (r *runners) getNetworkIDFromArg(arg string) (string, error) {
 	if err == nil {
 		return arg, nil
 	}
-	
+
 	cause := errors.Cause(err)
 	if cause != platformclient.ErrNotFound && cause != platformclient.ErrForbidden {
 		return "", errors.Wrap(err, "get network")
@@ -127,8 +127,8 @@ func (r *runners) getNetworkIDFromArg(arg string) (string, error) {
 	case 1:
 		return matchingNetworks[0], nil
 	default:
-		return "", errors.Errorf("Multiple networks found with name '%s'. Please use the network ID instead. Matching networks: %s. To view all network IDs run `replicated network ls`", 
-			arg, 
+		return "", errors.Errorf("Multiple networks found with name '%s'. Please use the network ID instead. Matching networks: %s. To view all network IDs run `replicated network ls`",
+			arg,
 			fmt.Sprintf("%s (and %d more)", matchingNetworks[0], len(matchingNetworks)-1))
 	}
 }

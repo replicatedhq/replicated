@@ -171,7 +171,7 @@ func (r *runners) getClusterIDFromArg(arg string) (string, error) {
 	if err == nil {
 		return arg, nil
 	}
-	
+
 	cause := errors.Cause(err)
 	if cause != platformclient.ErrNotFound && cause != platformclient.ErrForbidden {
 		return "", errors.Wrap(err, "get cluster")
@@ -197,8 +197,8 @@ func (r *runners) getClusterIDFromArg(arg string) (string, error) {
 	case 1:
 		return matchingClusters[0], nil
 	default:
-		return "", errors.Errorf("Multiple clusters found with name '%s'. Please use the cluster ID instead. Matching clusters: %s. To view all cluster IDs run `replicated cluster ls`", 
-			arg, 
+		return "", errors.Errorf("Multiple clusters found with name '%s'. Please use the cluster ID instead. Matching clusters: %s. To view all cluster IDs run `replicated cluster ls`",
+			arg,
 			fmt.Sprintf("%s (and %d more)", matchingClusters[0], len(matchingClusters)-1))
 	}
 }

@@ -39,7 +39,7 @@ replicated network rm --all --dry-run`,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringArrayVar(&r.args.removeNetworkNames, "name", []string{}, "Name of the network to remove (can be specified multiple times) (deprecated: use ID_OR_NAME arguments instead)")
+	cmd.Flags().StringArrayVar(&r.args.removeNetworkNames, "name", []string{}, "Name of the network to remove (can be specified multiple times)")
 	cmd.RegisterFlagCompletionFunc("name", r.completeNetworkNames)
 	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 

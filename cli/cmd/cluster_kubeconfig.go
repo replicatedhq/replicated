@@ -22,29 +22,29 @@ const (
 
 func (r *runners) InitClusterKubeconfig(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "kubeconfig [ID]",
+		Use:   "kubeconfig [ID_OR_NAME]",
 		Short: "Download credentials for a test cluster.",
 		Long: `The 'cluster kubeconfig' command downloads the credentials (kubeconfig) required to access a test cluster. You can either merge these credentials into your existing kubeconfig file or save them as a new file.
 
-This command ensures that the kubeconfig is correctly configured for use with your Kubernetes tools. You can specify the cluster by ID or by name. Additionally, the kubeconfig can be written to a specific file path or printed to stdout.
+This command ensures that the kubeconfig is correctly configured for use with your Kubernetes tools. You can specify the cluster by ID or name directly as an argument, or by using the '--id' or '--name' flags. Additionally, the kubeconfig can be written to a specific file path or printed to stdout.
 
 You can also use this command to automatically update your current Kubernetes context with the downloaded credentials.`,
 		Example: `# Download and merge kubeconfig into your existing configuration
-replicated cluster kubeconfig CLUSTER_ID
+replicated cluster kubeconfig CLUSTER_ID_OR_NAME
 
 # Save the kubeconfig to a specific file
-replicated cluster kubeconfig CLUSTER_ID --output-path ./kubeconfig
+replicated cluster kubeconfig CLUSTER_ID_OR_NAME --output-path ./kubeconfig
 
 # Print the kubeconfig to stdout
-replicated cluster kubeconfig CLUSTER_ID --stdout
+replicated cluster kubeconfig CLUSTER_ID_OR_NAME --stdout
 
-# Download kubeconfig for a cluster by name
+# Download kubeconfig for a cluster by name using a flag
 replicated cluster kubeconfig --name "My Cluster"
 
-# Download kubeconfig for a cluster by ID
+# Download kubeconfig for a cluster by ID using a flag
 replicated cluster kubeconfig --id CLUSTER_ID`,
 		RunE:              r.kubeconfigCluster,
-		ValidArgsFunction: r.completeClusterIDs,
+		ValidArgsFunction: r.completeClusterIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
@@ -61,12 +61,15 @@ replicated cluster kubeconfig --id CLUSTER_ID`,
 }
 
 func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
-	// by default, we look at args[0] as the id
-	// but if it's not provided, we look for a viper flag named "name" and use it
-	// as the name of the cluster, not the id
+	// by default, we look at args[0] as the id or name
+	// but if it's not provided, we look for a flag named "name" or "id"
 	clusterID := ""
 	if len(args) > 0 {
-		clusterID = args[0]
+		var err error
+		clusterID, err = r.getClusterIDFromArg(args[0])
+		if err != nil {
+			return errors.Wrap(err, "get cluster id from arg")
+		}
 	} else if r.args.kubeconfigClusterName != "" {
 		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {

@@ -39,7 +39,7 @@ replicated vm rm --all --dry-run`,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringArrayVar(&r.args.removeVMNames, "name", []string{}, "Name of the vm to remove (can be specified multiple times) (deprecated: use ID_OR_NAME arguments instead)")
+	cmd.Flags().StringArrayVar(&r.args.removeVMNames, "name", []string{}, "Name of the vm to remove (can be specified multiple times)")
 	cmd.RegisterFlagCompletionFunc("name", r.completeVMNames)
 	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 	cmd.Flags().StringArrayVar(&r.args.removeVMTags, "tag", []string{}, "Tag of the vm to remove (key=value format, can be specified multiple times)")
