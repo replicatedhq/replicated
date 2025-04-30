@@ -10,28 +10,32 @@ import (
 
 func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "rm ID [ID …]",
+		Use:     "rm ID_OR_NAME [ID_OR_NAME …]",
 		Aliases: []string{"delete"},
 		Short:   "Remove test clusters.",
 		Long: `The 'rm' command removes test clusters immediately.
 
-You can remove clusters by specifying a cluster ID, or by using other criteria such as cluster names or tags. Alternatively, you can remove all clusters in your account at once.
+You can remove clusters by specifying a cluster ID or name, or by using other criteria such as cluster tags. Alternatively, you can remove all clusters in your account at once.
 
 This command can also be used in a dry-run mode to simulate the removal without actually deleting anything.
 
-You cannot mix the use of cluster IDs with other options like removing by name, tag, or removing all clusters at once.`,
-		Example: `# Remove a specific cluster by ID
-replicated cluster rm CLUSTER_ID
+You cannot mix the use of cluster IDs or names with other options like removing by tag or removing all clusters at once.`,
+		Example: `# Remove a specific cluster by ID or name
+replicated cluster rm CLUSTER_ID_OR_NAME
+
+# Remove multiple clusters by ID or name
+replicated cluster rm CLUSTER_ID_1 CLUSTER_NAME_2
 
 # Remove all clusters
 replicated cluster rm --all`,
 		RunE:              r.removeClusters,
-		ValidArgsFunction: r.completeClusterIDs,
+		ValidArgsFunction: r.completeClusterIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringArrayVar(&r.args.removeClusterNames, "name", []string{}, "Name of the cluster to remove (can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&r.args.removeClusterNames, "name", []string{}, "Name of the cluster to remove (can be specified multiple times) (deprecated: use ID_OR_NAME arguments instead)")
 	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 	cmd.Flags().StringArrayVar(&r.args.removeClusterTags, "tag", []string{}, "Tag of the cluster to remove (key=value format, can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.removeClusterAll, "all", false, "remove all clusters")
