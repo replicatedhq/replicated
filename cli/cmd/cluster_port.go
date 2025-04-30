@@ -12,13 +12,13 @@ func (r *runners) InitClusterPort(parent *cobra.Command) *cobra.Command {
 
 This command provides flexibility for handling ports in various test clusters, ensuring efficient management of cluster networking settings.`,
 		Example: `# List all exposed ports in a cluster
-replicated cluster port ls [CLUSTER_ID]
+replicated cluster port ls [CLUSTER_ID_OR_NAME]
 
 # Remove an exposed port from a cluster
-replicated cluster port rm [CLUSTER_ID] [PORT]
+replicated cluster port rm [CLUSTER_ID_OR_NAME] [PORT]
 
 # Expose a new port in a cluster
-replicated cluster port expose [CLUSTER_ID] [PORT]`,
+replicated cluster port expose [CLUSTER_ID_OR_NAME] [PORT]`,
 		SilenceUsage: true,
 		Hidden:       false,
 	}

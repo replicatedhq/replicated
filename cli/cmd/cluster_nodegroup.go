@@ -12,7 +12,7 @@ func (r *runners) InitClusterNodeGroup(parent *cobra.Command) *cobra.Command {
 
 Node groups define a set of nodes with specific configurations, such as instance types, node counts, or scaling rules. You can use subcommands to perform various actions on node groups.`,
 		Example: `# List all node groups for a cluster
-replicated cluster nodegroup ls CLUSTER_ID`,
+replicated cluster nodegroup ls CLUSTER_ID_OR_NAME`,
 	}
 	parent.AddCommand(cmd)
 
