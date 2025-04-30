@@ -117,9 +117,33 @@ func (r *runners) removeVMs(_ *cobra.Command, args []string) error {
 	}
 
 	for _, arg := range args {
-		err := removeVM(r, arg)
+		_, err := r.kotsAPI.GetVM(arg)
+		if err == nil {
+			err := removeVM(r, arg)
+			if err != nil {
+				return errors.Wrap(err, "remove vm")
+			}
+			continue
+		}
+
+		vms, err := r.kotsAPI.ListVMs(false, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "remove vm")
+			return errors.Wrap(err, "list vms")
+		}
+
+		found := false
+		for _, vm := range vms {
+			if vm.Name == arg {
+				found = true
+				err := removeVM(r, vm.ID)
+				if err != nil {
+					return errors.Wrap(err, "remove vm")
+				}
+			}
+		}
+
+		if !found {
+			return errors.Errorf("VM with name or ID '%s' not found", arg)
 		}
 	}
 

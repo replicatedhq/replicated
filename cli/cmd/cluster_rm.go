@@ -113,9 +113,33 @@ func (r *runners) removeClusters(_ *cobra.Command, args []string) error {
 	}
 
 	for _, arg := range args {
-		err := removeCuster(r, arg)
+		_, err := r.kotsAPI.GetCluster(arg)
+		if err == nil {
+			err := removeCuster(r, arg)
+			if err != nil {
+				return errors.Wrap(err, "remove cluster")
+			}
+			continue
+		}
+
+		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "remove cluster")
+			return errors.Wrap(err, "list clusters")
+		}
+
+		found := false
+		for _, cluster := range clusters {
+			if cluster.Name == arg {
+				found = true
+				err := removeCuster(r, cluster.ID)
+				if err != nil {
+					return errors.Wrap(err, "remove cluster")
+				}
+			}
+		}
+
+		if !found {
+			return errors.Errorf("Cluster with name or ID '%s' not found", arg)
 		}
 	}
 

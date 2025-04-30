@@ -87,9 +87,33 @@ func (r *runners) removeNetworks(_ *cobra.Command, args []string) error {
 	}
 
 	for _, arg := range args {
-		err := removeNetwork(r, arg)
+		_, err := r.kotsAPI.GetNetwork(arg)
+		if err == nil {
+			err := removeNetwork(r, arg)
+			if err != nil {
+				return errors.Wrap(err, "remove network")
+			}
+			continue
+		}
+
+		networks, err := r.kotsAPI.ListNetworks(nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "remove network")
+			return errors.Wrap(err, "list networks")
+		}
+
+		found := false
+		for _, network := range networks {
+			if network.Name == arg {
+				found = true
+				err := removeNetwork(r, network.ID)
+				if err != nil {
+					return errors.Wrap(err, "remove network")
+				}
+			}
+		}
+
+		if !found {
+			return errors.Errorf("Network with name or ID '%s' not found", arg)
 		}
 	}
 
