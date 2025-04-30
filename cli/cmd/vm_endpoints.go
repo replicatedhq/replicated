@@ -89,7 +89,7 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githu
 	}
 
 	if directSSHEndpoint == "" || directSSHPort == 0 {
-		return errors.Errorf("VM %s does not have SSH endpoint configured", id)
+		return errors.Errorf("VM %s does not have %s endpoint configured", id, endpointType)
 	}
 
 	// if kotsAPI is not nil and githubUsername is not provided, fetch from API
