@@ -24,11 +24,11 @@ func (r *runners) initVMEndpointCmd(parent *cobra.Command, endpointType string) 
 	cmdUse := fmt.Sprintf("%s-endpoint VM_ID", endpointType)
 	cmdShort := fmt.Sprintf("Get the %s endpoint of a VM", protocol)
 
-	outputFormat := "hostname:port"
+	outputFormat := fmt.Sprintf("%s://username@hostname:port", endpointType)
 
 	cmdLong := fmt.Sprintf(`Get the %s endpoint and port of a VM.
 
-The output will be in the %s`, protocol, outputFormat)
+The output will be in the format: %s`, protocol, outputFormat)
 
 	cmdExample := fmt.Sprintf(`# Get %s endpoint for a specific VM by ID
 replicated vm %s-endpoint <id>`, protocol, endpointType)
