@@ -8,7 +8,7 @@ import (
 
 func (r *runners) InitClusterPortExpose(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "expose CLUSTER_ID --port PORT",
+		Use:   "expose CLUSTER_ID_OR_NAME --port PORT",
 		Short: "Expose a port on a cluster to the public internet.",
 		Long: `The 'cluster port expose' command is used to expose a specified port on a cluster to the public internet. When exposing a port, the command automatically creates a DNS entry and, if using the "https" protocol, provisions a TLS certificate for secure communication.
 
@@ -18,19 +18,19 @@ This command supports different protocols including "http", "https", "ws", and "
 
 NOTE: Currently, this feature only supports VM-based cluster distributions.`,
 		Example: `# Expose port 8080 with HTTPS protocol and wildcard DNS
-replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --wildcard
+replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol https --wildcard
 
 # Expose port 30000 with HTTP protocol
-replicated cluster port expose CLUSTER_ID --port 30000 --protocol http
+replicated cluster port expose CLUSTER_ID_OR_NAME --port 30000 --protocol http
 
 # Expose port 8080 with multiple protocols
-replicated cluster port expose CLUSTER_ID --port 8080 --protocol http,https
+replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol http,https
 
 # Expose port 8080 and display the result in JSON format
-replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --output json`,
+replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol https --output json`,
 		RunE:              r.clusterPortExpose,
 		Args:              cobra.ExactArgs(1),
-		ValidArgsFunction: r.completeClusterIDs,
+		ValidArgsFunction: r.completeClusterIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
@@ -47,7 +47,10 @@ replicated cluster port expose CLUSTER_ID --port 8080 --protocol https --output 
 }
 
 func (r *runners) clusterPortExpose(_ *cobra.Command, args []string) error {
-	clusterID := args[0]
+	clusterID, err := r.getClusterIDFromArg(args[0])
+	if err != nil {
+		return err
+	}
 
 	if len(r.args.clusterExposePortProtocols) == 0 {
 		return errors.New("at least one protocol must be specified")

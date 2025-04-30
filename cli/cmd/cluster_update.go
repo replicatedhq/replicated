@@ -31,11 +31,14 @@ replicated cluster update --name <cluster-name> [subcommand]`,
 }
 
 func (r *runners) ensureUpdateClusterIDArg(args []string) error {
-	// by default, we look at args[0] as the id
-	// but if it's not provided, we look for a viper flag named "name" and use it
-	// as the name of the cluster, not the id
+	// by default, we look at args[0] as the id or name
+	// but if it's not provided, we look for a flag named "name" or "id"
 	if len(args) > 0 {
-		r.args.updateClusterID = args[0]
+		clusterID, err := r.getClusterIDFromArg(args[0])
+		if err != nil {
+			return errors.Wrap(err, "get cluster id from arg")
+		}
+		r.args.updateClusterID = clusterID
 	} else if r.args.updateClusterName != "" {
 		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {

@@ -152,11 +152,9 @@ func (r *runners) completeVMIDsAndNames(cmd *cobra.Command, args []string, toCom
 	}
 
 	for _, vm := range vms {
-		if vm.Status == "running" {
-			completions = append(completions, vm.ID)
-			if vm.Name != "" {
-				completions = append(completions, vm.Name)
-			}
+		completions = append(completions, vm.ID)
+		if vm.Name != "" {
+			completions = append(completions, vm.Name)
 		}
 	}
 	return completions, cobra.ShellCompDirectiveNoFileComp

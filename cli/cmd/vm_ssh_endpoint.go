@@ -47,7 +47,7 @@ func (r *runners) VMSSHEndpoint(cmd *cobra.Command, args []string) error {
 	if vm.Status != "running" {
 		return errors.Errorf("VM %s is not in running state (current state: %s). SSH is only available for running VMs", vm.ID, vm.Status)
 	}
-	
+
 	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
 		return errors.Errorf("VM %s does not have SSH endpoint configured", vm.ID)
 	}
@@ -74,7 +74,7 @@ func (r *runners) getVMIDFromArg(arg string) (string, error) {
 	if err == nil {
 		return arg, nil
 	}
-	
+
 	cause := errors.Cause(err)
 	if cause != platformclient.ErrNotFound && cause != platformclient.ErrForbidden {
 		return "", errors.Wrap(err, "get vm")
@@ -96,12 +96,12 @@ func (r *runners) getVMIDFromArg(arg string) (string, error) {
 
 	switch len(matchingVMs) {
 	case 0:
-		return "", errors.Errorf("VM with name or ID '%s' not found", arg)
+		return "", errors.Errorf("VM with name or ID %q not found", arg)
 	case 1:
 		return matchingVMs[0], nil
 	default:
-		return "", errors.Errorf("Multiple VMs found with name '%s'. Please use the VM ID instead. Matching VMs: %s. To view all VM IDs run `replicated vm ls`", 
-			arg, 
+		return "", errors.Errorf("Multiple VMs found with name %q. Please use the VM ID instead. Matching VMs: %s. To view all VM IDs run `replicated vm ls`",
+			arg,
 			fmt.Sprintf("%s (and %d more)", matchingVMs[0], len(matchingVMs)-1))
 	}
 }

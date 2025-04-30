@@ -14,21 +14,21 @@ import (
 
 func (r *runners) InitClusterUpgrade(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "upgrade [ID]",
+		Use:   "upgrade [ID_OR_NAME]",
 		Short: "Upgrade a test cluster.",
-		Long:  `The 'upgrade' command upgrades a Kubernetes test cluster to a specified version. You must provide a cluster ID and the version to upgrade to. The upgrade can be simulated with a dry-run option, or you can choose to wait for the cluster to be fully upgraded.`,
+		Long:  `The 'upgrade' command upgrades a Kubernetes test cluster to a specified version. You must provide a cluster ID or name and the version to upgrade to. The upgrade can be simulated with a dry-run option, or you can choose to wait for the cluster to be fully upgraded.`,
 		Example: `# Upgrade a cluster to a new Kubernetes version
-replicated cluster upgrade [CLUSTER_ID] --version 1.31
+replicated cluster upgrade CLUSTER_ID_OR_NAME --version 1.31
 
 # Perform a dry run of a cluster upgrade without making any changes
-replicated cluster upgrade [CLUSTER_ID] --version 1.31 --dry-run
+replicated cluster upgrade CLUSTER_ID_OR_NAME --version 1.31 --dry-run
 
 # Upgrade a cluster and wait for it to be ready
-replicated cluster upgrade [CLUSTER_ID] --version 1.31 --wait 30m`,
+replicated cluster upgrade CLUSTER_ID_OR_NAME --version 1.31 --wait 30m`,
 		Args:              cobra.ExactArgs(1),
 		RunE:              r.upgradeCluster,
 		SilenceUsage:      true,
-		ValidArgsFunction: r.completeClusterIDs,
+		ValidArgsFunction: r.completeClusterIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
@@ -45,9 +45,13 @@ replicated cluster upgrade [CLUSTER_ID] --version 1.31 --wait 30m`,
 
 func (r *runners) upgradeCluster(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
-		return errors.New("cluster id is required")
+		return errors.New("cluster id or name is required")
 	}
-	clusterID := args[0]
+	
+	clusterID, err := r.getClusterIDFromArg(args[0])
+	if err != nil {
+		return errors.Wrap(err, "get cluster id from arg")
+	}
 
 	opts := kotsclient.UpgradeClusterOpts{
 		KubernetesVersion: r.args.upgradeClusterKubernetesVersion,

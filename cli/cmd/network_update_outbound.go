@@ -17,15 +17,15 @@ const (
 
 func (r *runners) InitNetworkUpdateOutbound(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "outbound [ID]",
+		Use:   "outbound [ID_OR_NAME]",
 		Short: "Update outbound setting for a test network.",
 		Long:  `The 'outbound' command allows you to update the outbound setting of a test network. The outbound setting can be either 'none' or 'any'.`,
 		Example: `# Update the outbound setting for a specific network
-replicated network update outbound NETWORK_ID --outbound any`,
+replicated network update outbound NETWORK_ID_OR_NAME --outbound any`,
 		RunE:              r.updateNetworkOutbound,
 		SilenceUsage:      true,
 		Hidden:            true,
-		ValidArgsFunction: r.completeNetworkIDs,
+		ValidArgsFunction: r.completeNetworkIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 

@@ -32,7 +32,11 @@ replicated network update --name <network-name> [subcommand]`,
 
 func (r *runners) ensureUpdateNetworkIDArg(args []string) error {
 	if len(args) > 0 {
-		r.args.updateNetworkID = args[0]
+		networkID, err := r.getNetworkIDFromArg(args[0])
+		if err != nil {
+			return err
+		}
+		r.args.updateNetworkID = networkID
 	} else if r.args.updateNetworkName != "" {
 		networks, err := r.kotsAPI.ListNetworks(nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {

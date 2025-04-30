@@ -19,28 +19,33 @@ import (
 
 func (r *runners) InitClusterShell(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "shell [ID]",
+		Use:   "shell [ID_OR_NAME]",
 		Short: "Open a new shell with kubeconfig configured.",
 		Long: `The 'shell' command opens a new shell session with the kubeconfig configured for the specified test cluster. This allows you to have immediate kubectl access to the cluster within the shell environment.
 
-You can either specify the cluster ID directly or provide the cluster name to resolve the corresponding cluster ID. The shell will inherit your existing environment and add the necessary kubeconfig context for interacting with the Kubernetes cluster.
+You can either specify the cluster ID or name directly as an argument, or provide the cluster name or ID using flags. The shell will inherit your existing environment and add the necessary kubeconfig context for interacting with the Kubernetes cluster.
 
 Once inside the shell, you can use 'kubectl' to interact with the cluster. To exit the shell, press Ctrl-D or type 'exit'. When the shell closes, the kubeconfig will be reset back to your default configuration.`,
-		Example: `# Open a shell for a cluster by ID
-replicated cluster shell CLUSTER_ID
+		Example: `# Open a shell for a cluster by ID or name
+replicated cluster shell CLUSTER_ID_OR_NAME
 
-# Open a shell for a cluster by name
-replicated cluster shell --name "My Cluster"`,
+# Open a shell for a cluster by name using a flag
+replicated cluster shell --name "My Cluster"
+
+# Open a shell for a cluster by ID using a flag
+replicated cluster shell --id CLUSTER_ID`,
 		RunE:              r.shellCluster,
-		ValidArgsFunction: r.completeClusterIDs,
+		ValidArgsFunction: r.completeClusterIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.shellClusterName, "name", "", "name of the cluster to have kubectl access to.")
 	cmd.RegisterFlagCompletionFunc("name", r.completeClusterNames)
+	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 
 	cmd.Flags().StringVar(&r.args.shellClusterID, "id", "", "id of the cluster to have kubectl access to (when name is not provided)")
 	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
+	cmd.Flag("id").Deprecated = "use ID_OR_NAME arguments instead"
 
 	return cmd
 }
@@ -51,12 +56,15 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 		return errors.New("SHELL environment is required for shell command")
 	}
 
-	// by default, we look at args[0] as the id
-	// but if it's not provided, we look for a viper flag named "name" and use it
-	// as the name of the cluster, not the id
+	// by default, we look at args[0] as the id or name
+	// but if it's not provided, we look for a flag named "name" or "id"
 	clusterID := ""
 	if len(args) > 0 {
-		clusterID = args[0]
+		var err error
+		clusterID, err = r.getClusterIDFromArg(args[0])
+		if err != nil {
+			return errors.Wrap(err, "get cluster id from arg")
+		}
 	} else if r.args.shellClusterName != "" {
 		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {
