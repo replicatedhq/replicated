@@ -11,6 +11,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +35,13 @@ replicated vm create --distribution ubuntu --version 20.04
 replicated vm create --distribution ubuntu --version 22.04 --count 3
 
 # Create 5 Ubuntu VMs with a custom instance type and disk size
-replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100`,
+replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100
+
+# Create a VM with an SSH public key
+replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.ssh/id_rsa.pub
+
+# Create a VM with multiple SSH public keys
+replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.ssh/id_rsa.pub --ssh-public-key ~/.ssh/id_ed25519.pub`,
 		SilenceUsage: true,
 		RunE:         r.createVM,
 		Args:         cobra.NoArgs,
@@ -55,6 +62,7 @@ replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-
 	cmd.Flags().StringVar(&r.args.createVMNetwork, "network", "", "The network to use for the VM(s). If not supplied, create a new network")
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
@@ -75,6 +83,15 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "parse tags")
 	}
 
+	var publicKeys []string
+	for _, keyPath := range r.args.createVMPublicKeys {
+		publicKey, err := util.ReadAndValidatePublicKey(keyPath)
+		if err != nil {
+			return errors.Wrap(err, "validate public key")
+		}
+		publicKeys = append(publicKeys, publicKey)
+	}
+
 	opts := kotsclient.CreateVMOpts{
 		Name:         r.args.createVMName,
 		Distribution: r.args.createVMDistribution,
@@ -85,6 +102,7 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 		TTL:          r.args.createVMTTL,
 		InstanceType: r.args.createVMInstanceType,
 		Tags:         tags,
+		PublicKeys:   publicKeys,
 		DryRun:       r.args.createVMDryRun,
 	}
 

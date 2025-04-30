@@ -21,6 +21,7 @@ type CreateVMRequest struct {
 	TTL          string      `json:"ttl"`
 	InstanceType string      `json:"instance_type"`
 	Tags         []types.Tag `json:"tags"`
+	PublicKeys   []string    `json:"public_keys,omitempty"`
 }
 
 type CreateVMResponse struct {
@@ -45,6 +46,7 @@ type CreateVMOpts struct {
 	TTL          string
 	InstanceType string
 	Tags         []types.Tag
+	PublicKeys   []string
 	DryRun       bool
 }
 
@@ -74,6 +76,7 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErro
 		TTL:          opts.TTL,
 		InstanceType: opts.InstanceType,
 		Tags:         opts.Tags,
+		PublicKeys:   opts.PublicKeys,
 	}
 
 	if opts.DryRun {
