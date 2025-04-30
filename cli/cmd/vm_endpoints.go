@@ -21,6 +21,14 @@ type VM struct {
 	ID             string
 }
 
+// validateEndpointType validates that the endpoint type is supported
+func validateEndpointType(endpointType string) error {
+	if endpointType != EndpointTypeSSH && endpointType != EndpointTypeSCP {
+		return errors.Errorf("invalid endpoint type: %s", endpointType)
+	}
+	return nil
+}
+
 // InitVMSSHEndpoint initializes the command to get SSH endpoint
 func (r *runners) InitVMSSHEndpoint(parent *cobra.Command) *cobra.Command {
 	return r.initVMEndpointCmd(parent, EndpointTypeSSH)
@@ -72,8 +80,8 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	if endpointType != EndpointTypeSSH && endpointType != EndpointTypeSCP {
-		return errors.Errorf("invalid endpoint type: %s", endpointType)
+	if err := validateEndpointType(endpointType); err != nil {
+		return err
 	}
 
 	return r.getVMEndpoint(args[0], endpointType, nil, "")
@@ -86,8 +94,8 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 	var err error
 
 	// Validate endpoint type
-	if endpointType != EndpointTypeSSH && endpointType != EndpointTypeSCP {
-		return errors.Errorf("invalid endpoint type: %s", endpointType)
+	if err := validateEndpointType(endpointType); err != nil {
+		return err
 	}
 
 	// Use vm if provided, otherwise fetch from API
