@@ -54,6 +54,7 @@ replicated cluster kubeconfig --id CLUSTER_ID`,
 
 	cmd.Flags().StringVar(&r.args.kubeconfigClusterID, "id", "", "id of the cluster to download credentials for (when name is not provided)")
 	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
+	cmd.Flag("id").Deprecated = "use ID_OR_NAME arguments instead"
 
 	cmd.Flags().StringVar(&r.args.kubeconfigPath, "output-path", "", "path to kubeconfig file to write to, if not provided, it will be merged into your existing kubeconfig")
 	cmd.Flags().BoolVar(&r.args.kubeconfigStdout, "stdout", false, "write kubeconfig to stdout")

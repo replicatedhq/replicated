@@ -45,6 +45,7 @@ replicated cluster shell --id CLUSTER_ID`,
 
 	cmd.Flags().StringVar(&r.args.shellClusterID, "id", "", "id of the cluster to have kubectl access to (when name is not provided)")
 	cmd.RegisterFlagCompletionFunc("id", r.completeClusterIDs)
+	cmd.Flag("id").Deprecated = "use ID_OR_NAME arguments instead"
 
 	return cmd
 }
