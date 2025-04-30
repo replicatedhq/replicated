@@ -17,6 +17,8 @@ func (r *runners) InitVMRemove(parent *cobra.Command) *cobra.Command {
 
 This command supports multiple filtering options, including removing VMs by their name or ID, by specific tags, or by specifying the '--all' flag to remove all VMs in your account.
 
+When specifying a name that matches multiple VMs, all VMs with that name will be removed.
+
 You can also use the '--dry-run' flag to simulate the removal without actually deleting the VMs.`,
 		Example: `# Remove a VM by ID or name
 replicated vm rm aaaaa11

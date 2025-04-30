@@ -17,6 +17,8 @@ func (r *runners) InitClusterRemove(parent *cobra.Command) *cobra.Command {
 
 You can remove clusters by specifying a cluster ID or name, or by using other criteria such as cluster tags. Alternatively, you can remove all clusters in your account at once.
 
+When specifying a name that matches multiple clusters, all clusters with that name will be removed.
+
 This command can also be used in a dry-run mode to simulate the removal without actually deleting anything.
 
 You cannot mix the use of cluster IDs or names with other options like removing by tag or removing all clusters at once.`,
