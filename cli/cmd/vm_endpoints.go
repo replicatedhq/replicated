@@ -60,32 +60,30 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 
 // getVMEndpoint retrieves and formats VM endpoint with the specified protocol
 // endpointType should be either "ssh" or "scp"
-func (r *runners) getVMEndpoint(vmID, endpointType string, vm interface{}, githubUsername string) error {
+type VM struct {
+	DirectSSHEndpoint string
+	DirectSSHPort     int64
+	ID                string
+}
+
+func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsername string) error {
 	var err error
-	var directEndpoint string
-	var directPort int64
-	var id string
 
 	// Use vm if provided, otherwise fetch from API
-	if vm != nil {
-		// Extract VM fields from vm (map type)
-		if vmMap, ok := vm.(map[string]interface{}); ok {
-			directEndpoint, _ = vmMap["DirectSSHEndpoint"].(string)
-			directPort, _ = vmMap["DirectSSHPort"].(int64)
-			id, _ = vmMap["ID"].(string)
-		} else {
-			return errors.New("unexpected VM type")
-		}
-	} else {
+	if vm == nil {
 		vmFromAPI, err := r.kotsAPI.GetVM(vmID)
-
 		if err != nil {
 			return errors.Wrap(err, "get vm")
 		}
+		vm = &VM{
+			DirectSSHEndpoint: vmFromAPI.DirectSSHEndpoint,
+			DirectSSHPort:     vmFromAPI.DirectSSHPort,
+			ID:                vmFromAPI.ID,
+		}
+	}
 
-		directEndpoint = vmFromAPI.DirectSSHEndpoint
-		directPort = vmFromAPI.DirectSSHPort
-		id = vmFromAPI.ID
+	if vm.DirectSSHEndpoint == "" || vm.DirectSSHPort == 0 {
+		return errors.Errorf("VM %s does not have %s endpoint configured", vm.ID, endpointType)
 	}
 
 	if directEndpoint == "" || directPort == 0 {
