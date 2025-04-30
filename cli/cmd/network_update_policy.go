@@ -10,14 +10,14 @@ import (
 
 func (r *runners) InitNetworkUpdatePolicy(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "policy [ID]",
+		Use:   "policy [ID_OR_NAME]",
 		Short: "Update network policy setting for a test network.",
 		Long:  `The 'policy' command allows you to update the network policy being used by the network.`,
 		Example: `# Update the policy setting for a specific network
-replicated network update policy NETWORK_ID --policy airgap`,
+replicated network update policy NETWORK_ID_OR_NAME --policy airgap`,
 		RunE:              r.updateNetworkPolicy,
 		SilenceUsage:      true,
-		ValidArgsFunction: r.completeNetworkIDs,
+		ValidArgsFunction: r.completeNetworkIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 

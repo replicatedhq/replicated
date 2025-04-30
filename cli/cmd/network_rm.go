@@ -10,7 +10,7 @@ import (
 
 func (r *runners) InitNetworkRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "rm ID [ID …]",
+		Use:     "rm ID_OR_NAME [ID_OR_NAME …]",
 		Aliases: []string{"delete"},
 		Short:   "Remove test network(s) immediately, with options to filter by name or remove all networks.",
 		Long: `The 'rm' command allows you to remove test networks from your account immediately. You can specify one or more network IDs directly, or use flags to filter which networks to remove based on their name or simply remove all networks at once.
@@ -18,10 +18,10 @@ func (r *runners) InitNetworkRemove(parent *cobra.Command) *cobra.Command {
 This command supports multiple filtering options, including removing networks by their name or by specifying the '--all' flag to remove all networks in your account.
 
 You can also use the '--dry-run' flag to simulate the removal without actually deleting the networks.`,
-		Example: `# Remove a network by ID
+		Example: `# Remove a network by ID or name
 replicated network rm aaaaa11
 
-# Remove multiple networks by ID
+# Remove multiple networks by ID or name
 replicated network rm aaaaa11 bbbbb22 ccccc33
 
 # Remove all networks with a specific name
@@ -33,7 +33,7 @@ replicated network rm --all
 # Perform a dry run of removing all networks
 replicated network rm --all --dry-run`,
 		RunE:              r.removeNetworks,
-		ValidArgsFunction: r.completeNetworkIDs,
+		ValidArgsFunction: r.completeNetworkIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
