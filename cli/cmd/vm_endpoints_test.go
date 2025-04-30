@@ -97,11 +97,11 @@ func TestGetVMEndpoint(t *testing.T) {
 				ID:             "vm-123",
 				DirectEndpoint: "test-vm.example.com",
 				DirectPort:     22,
-				Status:         "stopped",
+				Status:         "provisioning",
 			},
 			mockGithubUsername: "testuser",
 			expectedOutput:     "",
-			expectedError:      "VM vm-123 is not in running state (current state: stopped). SSH is only available for running VMs",
+			expectedError:      "VM vm-123 is not in running state (current state: provisioning). SSH is only available for running VMs",
 		},
 	}
 
