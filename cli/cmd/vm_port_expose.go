@@ -13,11 +13,11 @@ func (r *runners) InitVMPortExpose(parent *cobra.Command) *cobra.Command {
 		Long: `The 'vm port expose' command is used to expose a specified port on a vm to the public internet. When exposing a port, the command automatically creates a DNS entry and, if using the "https" protocol, provisions a TLS certificate for secure communication.
 
 This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.`,
-		Example: `# Expose port 8080 with HTTPS protocol
-replicated vm port expose VM_ID_OR_NAME --port 8080 --protocol https
-
-# Expose port 30000 with HTTP protocol
+		Example: `# Expose port for Embedded Cluster (Port: 30000) with HTTP Protocol
 replicated vm port expose VM_ID_OR_NAME --port 30000 --protocol http
+
+# Expose port 8080 with HTTPS protocol
+replicated vm port expose VM_ID_OR_NAME --port 8080 --protocol https
 
 # Expose port 8080 with multiple protocols
 replicated vm port expose VM_ID_OR_NAME --port 8080 --protocol http,https
