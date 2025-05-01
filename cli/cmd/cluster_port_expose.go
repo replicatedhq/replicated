@@ -17,11 +17,11 @@ You can also create a wildcard DNS entry and TLS certificate by specifying the "
 This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.
 
 NOTE: Currently, this feature only supports VM-based cluster distributions.`,
-		Example: `# Expose port 8080 with HTTPS protocol and wildcard DNS
-replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol https --wildcard
-
-# Expose port 30000 with HTTP protocol
+		Example: `# Expose port for Embedded Cluster (Port: 30000) with HTTP Protocol
 replicated cluster port expose CLUSTER_ID_OR_NAME --port 30000 --protocol http
+
+# Expose port 8080 with HTTPS protocol and wildcard DNS
+replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol https --wildcard
 
 # Expose port 8080 with multiple protocols
 replicated cluster port expose CLUSTER_ID_OR_NAME --port 8080 --protocol http,https
