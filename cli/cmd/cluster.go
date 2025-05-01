@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -142,4 +143,62 @@ func (r *runners) completeClusterInstanceTypes(cmd *cobra.Command, args []string
 		}
 	}
 	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeClusterIDsAndNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initClusterClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var completions []string
+	clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, cluster := range clusters {
+		completions = append(completions, cluster.ID)
+		if cluster.Name != "" {
+			completions = append(completions, cluster.Name)
+		}
+	}
+	return completions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) getClusterIDFromArg(arg string) (string, error) {
+	_, err := r.kotsAPI.GetCluster(arg)
+	if err == nil {
+		return arg, nil
+	}
+
+	cause := errors.Cause(err)
+	if cause != platformclient.ErrNotFound && cause != platformclient.ErrForbidden {
+		return "", errors.Wrap(err, "get cluster")
+	}
+
+	clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
+	if errors.Cause(err) == platformclient.ErrForbidden {
+		return "", ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
+		return "", errors.Wrap(err, "list clusters")
+	}
+
+	var matchingClusters []string
+	for _, cluster := range clusters {
+		if cluster.Name == arg {
+			matchingClusters = append(matchingClusters, cluster.ID)
+		}
+	}
+
+	switch len(matchingClusters) {
+	case 0:
+		return "", errors.Errorf("Cluster with name or ID '%s' not found", arg)
+	case 1:
+		return matchingClusters[0], nil
+	default:
+		return "", errors.Errorf("Multiple clusters found with name '%s'. Please use the cluster ID instead. Matching clusters: %s. To view all cluster IDs run `replicated cluster ls`",
+			arg,
+			fmt.Sprintf("%s (and %d more)", matchingClusters[0], len(matchingClusters)-1))
+	}
 }

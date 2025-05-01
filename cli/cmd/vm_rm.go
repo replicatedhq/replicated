@@ -10,22 +10,21 @@ import (
 
 func (r *runners) InitVMRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "rm ID [ID …]",
+		Use:     "rm ID_OR_NAME [ID_OR_NAME …]",
 		Aliases: []string{"delete"},
 		Short:   "Remove test VM(s) immediately, with options to filter by name, tag, or remove all VMs.",
-		Long: `The 'rm' command allows you to remove test VMs from your account immediately. You can specify one or more VM IDs directly, or use flags to filter which VMs to remove based on their name, tags, or simply remove all VMs at once.
+		Long: `The 'rm' command allows you to remove test VMs from your account immediately. You can specify one or more VM IDs or names directly, or use flags to filter which VMs to remove based on their tags, or simply remove all VMs at once.
 
-This command supports multiple filtering options, including removing VMs by their name, by specific tags, or by specifying the '--all' flag to remove all VMs in your account.
+This command supports multiple filtering options, including removing VMs by their name or ID, by specific tags, or by specifying the '--all' flag to remove all VMs in your account.
+
+When specifying a name that matches multiple VMs, all VMs with that name will be removed.
 
 You can also use the '--dry-run' flag to simulate the removal without actually deleting the VMs.`,
-		Example: `# Remove a VM by ID
+		Example: `# Remove a VM by ID or name
 replicated vm rm aaaaa11
 
-# Remove multiple VMs by ID
+# Remove multiple VMs by ID or name
 replicated vm rm aaaaa11 bbbbb22 ccccc33
-
-# Remove all VMs with a specific name
-replicated vm rm --name test-vm
 
 # Remove all VMs with a specific tag
 replicated vm rm --tag env=dev
@@ -36,12 +35,13 @@ replicated vm rm --all
 # Perform a dry run of removing all VMs
 replicated vm rm --all --dry-run`,
 		RunE:              r.removeVMs,
-		ValidArgsFunction: r.completeVMIDs,
+		ValidArgsFunction: r.completeVMIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringArrayVar(&r.args.removeVMNames, "name", []string{}, "Name of the vm to remove (can be specified multiple times)")
 	cmd.RegisterFlagCompletionFunc("name", r.completeVMNames)
+	cmd.Flag("name").Deprecated = "use ID_OR_NAME arguments instead"
 	cmd.Flags().StringArrayVar(&r.args.removeVMTags, "tag", []string{}, "Tag of the vm to remove (key=value format, can be specified multiple times)")
 
 	cmd.Flags().BoolVar(&r.args.removeVMAll, "all", false, "remove all vms")
@@ -119,9 +119,33 @@ func (r *runners) removeVMs(_ *cobra.Command, args []string) error {
 	}
 
 	for _, arg := range args {
-		err := removeVM(r, arg)
+		_, err := r.kotsAPI.GetVM(arg)
+		if err == nil {
+			err := removeVM(r, arg)
+			if err != nil {
+				return errors.Wrap(err, "remove vm")
+			}
+			continue
+		}
+
+		vms, err := r.kotsAPI.ListVMs(false, nil, nil)
 		if err != nil {
-			return errors.Wrap(err, "remove vm")
+			return errors.Wrap(err, "list vms")
+		}
+
+		found := false
+		for _, vm := range vms {
+			if vm.Name == arg {
+				found = true
+				err := removeVM(r, vm.ID)
+				if err != nil {
+					return errors.Wrap(err, "remove vm")
+				}
+			}
+		}
+
+		if !found {
+			return errors.Errorf("VM with name or ID '%s' not found", arg)
 		}
 	}
 
