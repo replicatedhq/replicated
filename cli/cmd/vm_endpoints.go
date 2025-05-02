@@ -90,11 +90,6 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Validate endpoint type
-	if err := validateEndpointType(endpointType); err != nil {
-		return err
-	}
-
 	vmID, err := r.getVMIDFromArg(args[0])
 	if err != nil {
 		return err
@@ -107,6 +102,11 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 // endpointType should be either "ssh" or "scp"
 func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsername string) error {
 	var err error
+
+	// Validate endpoint type
+	if err := validateEndpointType(endpointType); err != nil {
+		return err
+	}
 
 	// Use vm if provided, otherwise fetch from API
 	if vm == nil {
