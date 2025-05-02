@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const githubAccountSettingsURL = "https://vendor.replicated.com/account-settings"
-
 const (
 	EndpointTypeSSH = "ssh"
 	EndpointTypeSCP = "scp"
@@ -143,7 +141,7 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 	// Format the endpoint with username if available
 	if githubUsername == "" {
 		return errors.Errorf(`no github account associated with vendor portal user
-Visit %s to link your account`, githubAccountSettingsURL)
+Visit https://vendor.replicated.com/account-settings to link your account`)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
