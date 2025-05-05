@@ -141,7 +141,7 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 	// Format the endpoint with username if available
 	if githubUsername == "" {
 		return errors.Errorf(`no github account associated with vendor portal user
-Please visit the Account Settings web page of the vendor portal to link your account`)
+Visit the Account Settings page in Vendor Portal to link your account`)
 	}
 
 	// Format the endpoint URL with the appropriate protocol
