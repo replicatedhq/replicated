@@ -93,31 +93,30 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	return r.getVMEndpoint(vmID, endpointType, nil, "")
+	return r.getVMEndpoint(vmID, endpointType)
 }
 
 // getVMEndpoint retrieves and formats VM endpoint with the specified protocol
 // endpointType should be either "ssh" or "scp"
-func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsername string) error {
+func (r *runners) getVMEndpoint(vmID, endpointType string) error {
 	var err error
+	var vm *VM
+	var githubUsername string
 
 	// Validate endpoint type
 	if err := validateEndpointType(endpointType); err != nil {
 		return err
 	}
 
-	// Use vm if provided, otherwise fetch from API
-	if vm == nil {
-		vmFromAPI, err := r.kotsAPI.GetVM(vmID)
-		if err != nil {
-			return errors.Wrap(err, "get vm")
-		}
-		vm = &VM{
-			DirectEndpoint: vmFromAPI.DirectSSHEndpoint,
-			DirectPort:     vmFromAPI.DirectSSHPort,
-			ID:             vmFromAPI.ID,
-			Status:         string(vmFromAPI.Status),
-		}
+	vmFromAPI, err := r.kotsAPI.GetVM(vmID)
+	if err != nil {
+		return errors.Wrap(err, "get vm")
+	}
+	vm = &VM{
+		DirectEndpoint: vmFromAPI.DirectSSHEndpoint,
+		DirectPort:     vmFromAPI.DirectSSHPort,
+		ID:             vmFromAPI.ID,
+		Status:         string(vmFromAPI.Status),
 	}
 
 	if vm.Status != "running" {
@@ -129,13 +128,9 @@ func (r *runners) getVMEndpoint(vmID, endpointType string, vm *VM, githubUsernam
 		return errors.Errorf("VM %s does not have %s endpoint configured", vm.ID, endpointType)
 	}
 
-	// if kotsAPI is not nil and githubUsername is not provided, fetch from API
-	if r.kotsAPI != nil && githubUsername == "" {
-		// Get GitHub username from API
-		githubUsername, err = r.kotsAPI.GetGitHubUsername()
-		if err != nil {
-			return errors.Wrap(err, "get github username")
-		}
+	githubUsername, err = r.kotsAPI.GetGitHubUsername()
+	if err != nil {
+		return errors.Wrap(err, "get github username")
 	}
 
 	// Format the endpoint with username if available
