@@ -9,6 +9,7 @@ type VM struct {
 	InstanceType string `json:"instance_type"`
 	Version      string `json:"version"`
 	Network      string `json:"network_id"`
+	DiskGiB      int64  `json:"disk_gib"`
 
 	Status    VMStatus  `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
