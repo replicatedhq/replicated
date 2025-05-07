@@ -18,7 +18,7 @@ var portsTmplRowSrc = `{{- range . }}
 {{- $isWildcard := .IsWildcard }}
 {{- $state := .State }}
 {{- range .ExposedPorts }}
-{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ printf "%-12s" $state }}
+{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ $state }}
 {{- end }}
 {{- end }}`
 var portsTmplSrc = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc

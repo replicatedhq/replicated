@@ -17,7 +17,7 @@ var vmPortsTmplRowSrc = `{{- range . }}
 {{- $hostname := .Hostname }}
 {{- $state := .State }}
 {{- range .ExposedPorts }}
-{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
+{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $state }}
 {{- end }}
 {{- end }}`
 var vmPortsTmplSrc = fmt.Sprint(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
