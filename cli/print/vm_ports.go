@@ -11,15 +11,15 @@ import (
 )
 
 var vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
-var vmPortsTmplRowSrc = `{{- range . }}
-{{- $id := .AddonID }}
-{{- $upstreamPort := .UpstreamPort }}
-{{- $hostname := .Hostname }}
-{{- $state := .State }}
-{{- range .ExposedPorts }}
+var vmPortsTmplRowSrc = `{{- range . -}}
+{{- $id := .AddonID -}}
+{{- $upstreamPort := .UpstreamPort -}}
+{{- $hostname := .Hostname -}}
+{{- $state := .State -}}
+{{- range .ExposedPorts -}}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
-{{ end }}
-{{ end }}`
+{{- end -}}
+{{- end -}}`
 var vmPortsTmplSrc = fmt.Sprint(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
 var vmPortsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
 var vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))

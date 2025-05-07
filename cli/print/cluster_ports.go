@@ -11,16 +11,16 @@ import (
 )
 
 var portsTmplHeaderSrc = `ID	CLUSTER PORT	PROTOCOL	EXPOSED PORT	WILDCARD	STATUS`
-var portsTmplRowSrc = `{{- range . }}
-{{- $id := .AddonID }}
-{{- $upstreamPort := .UpstreamPort }}
-{{- $hostname := .Hostname }}
-{{- $isWildcard := .IsWildcard }}
-{{- $state := .State }}
-{{- range .ExposedPorts }}
+var portsTmplRowSrc = `{{- range . -}}
+{{- $id := .AddonID -}}
+{{- $upstreamPort := .UpstreamPort -}}
+{{- $hostname := .Hostname -}}
+{{- $isWildcard := .IsWildcard -}}
+{{- $state := .State -}}
+{{- range .ExposedPorts -}}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ printf "%-12s" $state }}
-{{ end }}
-{{ end }}`
+{{- end -}}
+{{- end -}}`
 var portsTmplSrc = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc
 var portsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplSrc))
 var portsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplRowSrc))
