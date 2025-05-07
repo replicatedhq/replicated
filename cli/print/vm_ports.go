@@ -20,7 +20,7 @@ var vmPortsTmplRowSrc = `{{- range . }}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
 {{ end }}
 {{ end }}`
-var vmPortsTmplSrc = fmt.Sprintln(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
+var vmPortsTmplSrc = fmt.Sprint(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
 var vmPortsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
 var vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))
 
@@ -31,7 +31,7 @@ const (
 	vmPortsPadChar  = ' '
 )
 
-func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, header bool) error {
+func VMPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.VMPort, header bool) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
@@ -60,7 +60,7 @@ func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, he
 	return portsWriter.Flush()
 }
 
-func VMPort(outputFormat string, w *tabwriter.Writer, port *types.VMPort) error {
+func VMPort(outputFormat string, _ *tabwriter.Writer, port *types.VMPort) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 

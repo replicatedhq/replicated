@@ -21,7 +21,7 @@ var portsTmplRowSrc = `{{- range . }}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ printf "%-12s" $state }}
 {{ end }}
 {{ end }}`
-var portsTmplSrc = fmt.Sprintln(portsTmplHeaderSrc) + portsTmplRowSrc
+var portsTmplSrc = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc
 var portsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplSrc))
 var portsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplRowSrc))
 
@@ -32,7 +32,7 @@ const (
 	clusterPortsPadChar  = ' '
 )
 
-func ClusterPorts(outputFormat string, w *tabwriter.Writer, ports []*types.ClusterPort, header bool) error {
+func ClusterPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.ClusterPort, header bool) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
@@ -61,7 +61,7 @@ func ClusterPorts(outputFormat string, w *tabwriter.Writer, ports []*types.Clust
 	return portsWriter.Flush()
 }
 
-func ClusterPort(outputFormat string, w *tabwriter.Writer, port *types.ClusterPort) error {
+func ClusterPort(outputFormat string, _ *tabwriter.Writer, port *types.ClusterPort) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
