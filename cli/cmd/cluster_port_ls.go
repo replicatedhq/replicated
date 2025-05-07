@@ -43,5 +43,5 @@ func (r *runners) clusterPortList(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.ClusterPorts(r.outputFormat, r.w, ports, true)
+	return print.ClusterPorts(r.outputFormat, ports, true)
 }

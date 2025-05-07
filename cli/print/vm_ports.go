@@ -10,19 +10,25 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
-var vmPortsTmplRowSrc = `{{- range . }}
+var (
+	vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
+	vmPortsTmplRowSrc    = `{{- range . }}
 {{- $id := .AddonID }}
 {{- $upstreamPort := .UpstreamPort }}
 {{- $hostname := .Hostname }}
 {{- $state := .State }}
 {{- range .ExposedPorts }}
-{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ printf "%-12s" $state }}
-{{ end }}
-{{ end }}`
-var vmPortsTmplSrc = fmt.Sprintln(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
-var vmPortsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
-var vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))
+{{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $state }}
+{{- end }}
+{{- end }}
+`
+)
+
+var (
+	vmPortsTmplSrc      = fmt.Sprint(vmPortsTmplHeaderSrc) + "\n" + vmPortsTmplRowSrc
+	vmPortsTmpl         = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
+	vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))
+)
 
 const (
 	vmPortsMinWidth = 16
@@ -31,7 +37,7 @@ const (
 	vmPortsPadChar  = ' '
 )
 
-func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, header bool) error {
+func VMPorts(outputFormat string, ports []*types.VMPort, header bool) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
@@ -57,10 +63,10 @@ func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, he
 	default:
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
-	return w.Flush()
+	return portsWriter.Flush()
 }
 
-func VMPort(outputFormat string, w *tabwriter.Writer, port *types.VMPort) error {
+func VMPort(outputFormat string, port *types.VMPort) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
@@ -80,5 +86,5 @@ func VMPort(outputFormat string, w *tabwriter.Writer, port *types.VMPort) error 
 	default:
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
-	return w.Flush()
+	return portsWriter.Flush()
 }

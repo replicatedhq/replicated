@@ -71,7 +71,7 @@ func (r *runners) clusterPortRemove(_ *cobra.Command, args []string) error {
 			return err
 		}
 
-		return print.ClusterPorts(r.outputFormat, r.w, ports, true)
+		return print.ClusterPorts(r.outputFormat, ports, true)
 	}
 
 	if len(r.args.clusterPortRemoveProtocols) == 0 {
@@ -83,5 +83,5 @@ func (r *runners) clusterPortRemove(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.ClusterPorts(r.outputFormat, r.w, ports, true)
+	return print.ClusterPorts(r.outputFormat, ports, true)
 }
