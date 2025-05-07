@@ -59,5 +59,5 @@ func (r *runners) vmPortExpose(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.VMPort(r.outputFormat, r.w, port)
+	return print.VMPort(r.outputFormat, port)
 }

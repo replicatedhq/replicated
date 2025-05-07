@@ -64,5 +64,5 @@ func (r *runners) clusterPortExpose(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	return print.ClusterPort(r.outputFormat, r.w, port)
+	return print.ClusterPort(r.outputFormat, port)
 }

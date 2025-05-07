@@ -10,8 +10,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
-var vmPortsTmplRowSrc = `{{- range . }}
+var (
+	vmPortsTmplHeaderSrc = `ID	VM PORT	PROTOCOL	EXPOSED PORT	STATUS`
+	vmPortsTmplRowSrc    = `{{- range . }}
 {{- $id := .AddonID }}
 {{- $upstreamPort := .UpstreamPort }}
 {{- $hostname := .Hostname }}
@@ -20,9 +21,13 @@ var vmPortsTmplRowSrc = `{{- range . }}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $state }}
 {{- end }}
 {{- end }}`
-var vmPortsTmplSrc = fmt.Sprint(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
-var vmPortsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
-var vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))
+)
+
+var (
+	vmPortsTmplSrc      = fmt.Sprint(vmPortsTmplHeaderSrc) + vmPortsTmplRowSrc
+	vmPortsTmpl         = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplSrc))
+	vmPortsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(vmPortsTmplRowSrc))
+)
 
 const (
 	vmPortsMinWidth = 16
@@ -31,7 +36,7 @@ const (
 	vmPortsPadChar  = ' '
 )
 
-func VMPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.VMPort, header bool) error {
+func VMPorts(outputFormat string, ports []*types.VMPort, header bool) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
@@ -60,7 +65,7 @@ func VMPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.VMPort, he
 	return portsWriter.Flush()
 }
 
-func VMPort(outputFormat string, _ *tabwriter.Writer, port *types.VMPort) error {
+func VMPort(outputFormat string, port *types.VMPort) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 

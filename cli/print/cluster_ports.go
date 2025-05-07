@@ -10,8 +10,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var portsTmplHeaderSrc = `ID	CLUSTER PORT	PROTOCOL	EXPOSED PORT	WILDCARD	STATUS`
-var portsTmplRowSrc = `{{- range . }}
+var (
+	portsTmplHeaderSrc = `ID	CLUSTER PORT	PROTOCOL	EXPOSED PORT	WILDCARD	STATUS`
+	portsTmplRowSrc    = `{{- range . }}
 {{- $id := .AddonID }}
 {{- $upstreamPort := .UpstreamPort }}
 {{- $hostname := .Hostname }}
@@ -21,9 +22,13 @@ var portsTmplRowSrc = `{{- range . }}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ $state }}
 {{- end }}
 {{- end }}`
-var portsTmplSrc = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc
-var portsTmpl = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplSrc))
-var portsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplRowSrc))
+)
+
+var (
+	portsTmplSrc      = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc
+	portsTmpl         = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplSrc))
+	portsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplRowSrc))
+)
 
 const (
 	clusterPortsMinWidth = 16
@@ -32,7 +37,7 @@ const (
 	clusterPortsPadChar  = ' '
 )
 
-func ClusterPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.ClusterPort, header bool) error {
+func ClusterPorts(outputFormat string, ports []*types.ClusterPort, header bool) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
@@ -61,7 +66,7 @@ func ClusterPorts(outputFormat string, _ *tabwriter.Writer, ports []*types.Clust
 	return portsWriter.Flush()
 }
 
-func ClusterPort(outputFormat string, _ *tabwriter.Writer, port *types.ClusterPort) error {
+func ClusterPort(outputFormat string, port *types.ClusterPort) error {
 	// we need a custom tab writer here because our column widths are large
 	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
