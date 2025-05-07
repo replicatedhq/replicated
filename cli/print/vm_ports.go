@@ -3,7 +3,6 @@ package print
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"text/tabwriter"
 	"text/template"
 
@@ -32,17 +31,17 @@ const (
 )
 
 func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, header bool) error {
-	// we need a custom tab writer here because our column widths are large
-	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
+	// we need to configure our writer with custom settings because our column widths are large
+	w.Init(w, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
 	switch outputFormat {
 	case "table", "wide":
 		if header {
-			if err := vmPortsTmpl.Execute(portsWriter, ports); err != nil {
+			if err := vmPortsTmpl.Execute(w, ports); err != nil {
 				return err
 			}
 		} else {
-			if err := vmPortsTmplNoHeader.Execute(portsWriter, ports); err != nil {
+			if err := vmPortsTmplNoHeader.Execute(w, ports); err != nil {
 				return err
 			}
 		}
@@ -51,7 +50,7 @@ func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, he
 		if err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintln(portsWriter, string(cAsByte)); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	default:
@@ -61,12 +60,12 @@ func VMPorts(outputFormat string, w *tabwriter.Writer, ports []*types.VMPort, he
 }
 
 func VMPort(outputFormat string, w *tabwriter.Writer, port *types.VMPort) error {
-	// we need a custom tab writer here because our column widths are large
-	portsWriter := tabwriter.NewWriter(os.Stdout, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
+	// we need to configure our writer with custom settings because our column widths are large
+	w.Init(w, vmPortsMinWidth, vmPortsTabWidth, vmPortsPadding, vmPortsPadChar, tabwriter.TabIndent)
 
 	switch outputFormat {
 	case "table":
-		if err := vmPortsTmpl.Execute(portsWriter, []*types.VMPort{port}); err != nil {
+		if err := vmPortsTmpl.Execute(w, []*types.VMPort{port}); err != nil {
 			return err
 		}
 	case "json":
@@ -74,7 +73,7 @@ func VMPort(outputFormat string, w *tabwriter.Writer, port *types.VMPort) error 
 		if err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintln(portsWriter, string(cAsByte)); err != nil {
+		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
 			return err
 		}
 	default:
