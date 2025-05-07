@@ -21,11 +21,12 @@ var (
 {{- range .ExposedPorts }}
 {{ $id }}	{{ $upstreamPort }}	{{ .Protocol }}	{{ formatURL .Protocol $hostname }}	{{ $isWildcard }}	{{ $state }}
 {{- end }}
-{{- end }}`
+{{- end }}
+`
 )
 
 var (
-	portsTmplSrc      = fmt.Sprint(portsTmplHeaderSrc) + portsTmplRowSrc
+	portsTmplSrc      = fmt.Sprint(portsTmplHeaderSrc) + "\n" + portsTmplRowSrc
 	portsTmpl         = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplSrc))
 	portsTmplNoHeader = template.Must(template.New("ports").Funcs(funcs).Parse(portsTmplRowSrc))
 )
