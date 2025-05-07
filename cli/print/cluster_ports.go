@@ -3,6 +3,7 @@ package print
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"text/tabwriter"
 	"text/template"
 
@@ -32,17 +33,17 @@ const (
 )
 
 func ClusterPorts(outputFormat string, w *tabwriter.Writer, ports []*types.ClusterPort, header bool) error {
-	// we need to configure our writer with custom settings because our column widths are large
-	w.Init(w, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
+	// we need a custom tab writer here because our column widths are large
+	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
 	switch outputFormat {
 	case "table", "wide":
 		if header {
-			if err := portsTmpl.Execute(w, ports); err != nil {
+			if err := portsTmpl.Execute(portsWriter, ports); err != nil {
 				return err
 			}
 		} else {
-			if err := portsTmplNoHeader.Execute(w, ports); err != nil {
+			if err := portsTmplNoHeader.Execute(portsWriter, ports); err != nil {
 				return err
 			}
 		}
@@ -51,22 +52,22 @@ func ClusterPorts(outputFormat string, w *tabwriter.Writer, ports []*types.Clust
 		if err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+		if _, err := fmt.Fprintln(portsWriter, string(cAsByte)); err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
-	return w.Flush()
+	return portsWriter.Flush()
 }
 
 func ClusterPort(outputFormat string, w *tabwriter.Writer, port *types.ClusterPort) error {
-	// we need to configure our writer with custom settings because our column widths are large
-	w.Init(w, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
+	// we need a custom tab writer here because our column widths are large
+	portsWriter := tabwriter.NewWriter(os.Stdout, clusterPortsMinWidth, clusterPortsTabWidth, clusterPortsPadding, clusterPortsPadChar, tabwriter.TabIndent)
 
 	switch outputFormat {
 	case "table":
-		if err := portsTmpl.Execute(w, []*types.ClusterPort{port}); err != nil {
+		if err := portsTmpl.Execute(portsWriter, []*types.ClusterPort{port}); err != nil {
 			return err
 		}
 	case "json":
@@ -74,11 +75,11 @@ func ClusterPort(outputFormat string, w *tabwriter.Writer, port *types.ClusterPo
 		if err != nil {
 			return err
 		}
-		if _, err := fmt.Fprintln(w, string(cAsByte)); err != nil {
+		if _, err := fmt.Fprintln(portsWriter, string(cAsByte)); err != nil {
 			return err
 		}
 	default:
 		return fmt.Errorf("unsupported output format: %s", outputFormat)
 	}
-	return w.Flush()
+	return portsWriter.Flush()
 }
