@@ -23,8 +23,10 @@ func TestGetVMEndpoint(t *testing.T) {
 		name               string    // Test case name
 		vmID               string    // Virtual machine ID to test
 		endpointType       string    // Endpoint type (ssh, scp, or invalid)
+		username           string    // Custom username (empty to use GitHub username)
 		mockVM             *types.VM // Mock VM response from API
 		mockGithubUsername string    // Mock GitHub username response
+		githubAPIError     bool      // Should GitHub username API return an error
 		expectedOutput     string    // Expected output to stdout
 		expectedError      string    // Expected error string (empty for no error)
 	}{
@@ -32,6 +34,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Success - Get SSH endpoint for running VM",
 			vmID:         "vm-123",
 			endpointType: "ssh",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-123",
 				DirectSSHEndpoint: "test-vm.example.com",
@@ -39,6 +42,7 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusRunning,
 			},
 			mockGithubUsername: "testuser",
+			githubAPIError:     false,
 			expectedOutput:     "ssh://testuser@test-vm.example.com:22\n",
 			expectedError:      "",
 		},
@@ -46,6 +50,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Success - Get SCP endpoint for running VM",
 			vmID:         "vm-456",
 			endpointType: "scp",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-456",
 				DirectSSHEndpoint: "test-vm.example.com",
@@ -53,13 +58,31 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusRunning,
 			},
 			mockGithubUsername: "testuser",
+			githubAPIError:     false,
 			expectedOutput:     "scp://testuser@test-vm.example.com:22\n",
+			expectedError:      "",
+		},
+		{
+			name:         "Success - Custom username provided",
+			vmID:         "vm-123",
+			endpointType: "ssh",
+			username:     "customuser",
+			mockVM: &types.VM{
+				ID:                "vm-123",
+				DirectSSHEndpoint: "test-vm.example.com",
+				DirectSSHPort:     22,
+				Status:            types.VMStatusRunning,
+			},
+			mockGithubUsername: "testuser", // Should be ignored
+			githubAPIError:     false,      // Should be ignored
+			expectedOutput:     "ssh://customuser@test-vm.example.com:22\n",
 			expectedError:      "",
 		},
 		{
 			name:         "Error - Missing SSH endpoint configuration",
 			vmID:         "vm-789",
 			endpointType: "ssh",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-789",
 				DirectSSHEndpoint: "",
@@ -67,6 +90,7 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusRunning,
 			},
 			mockGithubUsername: "testuser",
+			githubAPIError:     false,
 			expectedOutput:     "",
 			expectedError:      "VM vm-789 does not have ssh endpoint configured",
 		},
@@ -74,6 +98,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Error - Missing GitHub username",
 			vmID:         "vm-123",
 			endpointType: "ssh",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-123",
 				DirectSSHEndpoint: "test-vm.example.com",
@@ -81,13 +106,31 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusRunning,
 			},
 			mockGithubUsername: "",
+			githubAPIError:     false,
 			expectedOutput:     "",
-			expectedError:      "no github account associated with vendor portal user",
+			expectedError:      "no GitHub account associated with Vendor Portal user",
+		},
+		{
+			name:         "Error - GitHub username API error",
+			vmID:         "vm-123",
+			endpointType: "ssh",
+			username:     "",
+			mockVM: &types.VM{
+				ID:                "vm-123",
+				DirectSSHEndpoint: "test-vm.example.com",
+				DirectSSHPort:     22,
+				Status:            types.VMStatusRunning,
+			},
+			mockGithubUsername: "", // Won't be used due to API error
+			githubAPIError:     true,
+			expectedOutput:     "",
+			expectedError:      "--username flag to specify a custom username", // Check for new error message
 		},
 		{
 			name:         "Error - Invalid endpoint type",
 			vmID:         "vm-123",
 			endpointType: "invalid",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-123",
 				DirectSSHEndpoint: "test-vm.example.com",
@@ -95,6 +138,7 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusRunning,
 			},
 			mockGithubUsername: "testuser",
+			githubAPIError:     false,
 			expectedOutput:     "",
 			expectedError:      "invalid endpoint type: invalid",
 		},
@@ -102,6 +146,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			name:         "Error - VM not in running state",
 			vmID:         "vm-123",
 			endpointType: "ssh",
+			username:     "",
 			mockVM: &types.VM{
 				ID:                "vm-123",
 				DirectSSHEndpoint: "test-vm.example.com",
@@ -109,6 +154,7 @@ func TestGetVMEndpoint(t *testing.T) {
 				Status:            types.VMStatusProvisioning,
 			},
 			mockGithubUsername: "testuser",
+			githubAPIError:     false,
 			expectedOutput:     "",
 			expectedError:      "VM vm-123 is not in running state (current state: provisioning). SSH is only available for running VMs",
 		},
@@ -117,7 +163,7 @@ func TestGetVMEndpoint(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a mock server and client for API testing
-			server, apiClient := createMockServerAndClient(tc.vmID, tc.mockVM, tc.mockGithubUsername)
+			server, apiClient := createMockServerAndClient(tc.vmID, tc.mockVM, tc.mockGithubUsername, tc.githubAPIError)
 			defer server.Close()
 
 			// Capture stdout directly
@@ -131,7 +177,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			}
 
 			// Execute the function under test
-			err := runner.getVMEndpoint(tc.vmID, tc.endpointType)
+			err := runner.getVMEndpoint(tc.vmID, tc.endpointType, tc.username)
 
 			// Get captured output
 			w.Close()
@@ -153,7 +199,7 @@ func TestGetVMEndpoint(t *testing.T) {
 }
 
 // createMockServerAndClient sets up a mock HTTP server and returns both kotsAPI.GetVM and kotsAPI.GetGitHubUsername
-func createMockServerAndClient(vmID string, mockVM *types.VM, mockGithubUsername string) (*httptest.Server, *kotsclient.VendorV3Client) {
+func createMockServerAndClient(vmID string, mockVM *types.VM, mockGithubUsername string, githubAPIError bool) (*httptest.Server, *kotsclient.VendorV3Client) {
 	// Create a mock HTTP server to handle API requests
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -168,6 +214,11 @@ func createMockServerAndClient(vmID string, mockVM *types.VM, mockGithubUsername
 
 		// Handle GetGitHubUsername request
 		case r.URL.Path == "/v1/user" && r.Method == "GET":
+			if githubAPIError {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "GitHub API error"})
+				return
+			}
 			response := kotsclient.GetUserResponse{
 				GitHubUsername: mockGithubUsername,
 			}

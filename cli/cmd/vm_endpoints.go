@@ -60,7 +60,10 @@ Note: %s endpoints can only be retrieved from VMs in the "running" state.`, prot
 replicated vm %s-endpoint aaaaa11
 
 # Get %s endpoint for a specific VM by name
-replicated vm %s-endpoint my-test-vm`, protocol, endpointType, protocol, endpointType)
+replicated vm %s-endpoint my-test-vm
+
+# Get %s endpoint with a custom username
+replicated vm %s-endpoint my-test-vm --username custom-user`, protocol, endpointType, protocol, endpointType, protocol, endpointType)
 
 	cmd := &cobra.Command{
 		Use:               cmdUse,
@@ -72,6 +75,8 @@ replicated vm %s-endpoint my-test-vm`, protocol, endpointType, protocol, endpoin
 		ValidArgsFunction: r.completeVMIDsAndNames,
 		Annotations:       map[string]string{"endpointType": endpointType},
 	}
+
+	cmd.Flags().String("username", "", fmt.Sprintf("Custom username to use in %s endpoint instead of the GitHub username set in Vendor Portal", protocol))
 
 	parent.AddCommand(cmd)
 
@@ -88,20 +93,24 @@ func (r *runners) VMEndpoint(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	username, err := cmd.Flags().GetString("username")
+	if err != nil {
+		return errors.Wrap(err, "get username")
+	}
+
 	vmID, err := r.getVMIDFromArg(args[0])
 	if err != nil {
 		return err
 	}
 
-	return r.getVMEndpoint(vmID, endpointType)
+	return r.getVMEndpoint(vmID, endpointType, username)
 }
 
 // getVMEndpoint retrieves and formats VM endpoint with the specified protocol
 // endpointType should be either "ssh" or "scp"
-func (r *runners) getVMEndpoint(vmID, endpointType string) error {
+func (r *runners) getVMEndpoint(vmID, endpointType, username string) error {
 	var err error
 	var vm *VM
-	var githubUsername string
 
 	// Validate endpoint type
 	if err := validateEndpointType(endpointType); err != nil {
@@ -128,19 +137,25 @@ func (r *runners) getVMEndpoint(vmID, endpointType string) error {
 		return errors.Errorf("VM %s does not have %s endpoint configured", vm.ID, endpointType)
 	}
 
-	githubUsername, err = r.kotsAPI.GetGitHubUsername()
-	if err != nil {
-		return errors.Wrap(err, "get github username")
-	}
+	// Use provided username or fetch from GitHub
+	if username == "" {
+		githubUsername, err := r.kotsAPI.GetGitHubUsername()
+		if err != nil {
+			return errors.Wrap(errors.New(`failed to obtain GitHub username from Vendor Portal
+Alternatively, you can use the --username flag to specify a custom username for the endpoint`), "get github username")
+		}
 
-	// Format the endpoint with username if available
-	if githubUsername == "" {
-		return errors.Errorf(`no github account associated with vendor portal user
-Visit the Account Settings page in Vendor Portal to link your account`)
+		if githubUsername == "" {
+			return errors.Errorf(`no GitHub account associated with Vendor Portal user
+Visit the Account Settings page in Vendor Portal to link your account
+Alternatively, you can use the --username flag to specify a custom username for the endpoint`)
+		}
+
+		username = githubUsername
 	}
 
 	// Format the endpoint URL with the appropriate protocol
-	fmt.Printf("%s://%s@%s:%d\n", endpointType, githubUsername, vm.DirectEndpoint, vm.DirectPort)
+	fmt.Printf("%s://%s@%s:%d\n", endpointType, username, vm.DirectEndpoint, vm.DirectPort)
 
 	return nil
 }
