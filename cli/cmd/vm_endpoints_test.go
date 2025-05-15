@@ -108,7 +108,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockGithubUsername: "",
 			githubAPIError:     false,
 			expectedOutput:     "",
-			expectedError:      "no github account associated with vendor portal user",
+			expectedError:      "no GitHub account associated with Vendor Portal user",
 		},
 		{
 			name:         "Error - GitHub username API error",
