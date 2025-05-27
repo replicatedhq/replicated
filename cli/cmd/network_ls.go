@@ -16,8 +16,8 @@ func (r *runners) InitNetworkList(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "ls",
 		Aliases: []string{"list"},
-		Short:   "List test networks",
-		Long:    ``,
+		Short:   "List test networks.",
+		Long:    `List created test networks for VMs and clusters.`,
 		RunE:    r.listNetworks,
 	}
 	parent.AddCommand(cmd)
