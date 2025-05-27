@@ -100,7 +100,7 @@ func Network(outputFormat string, w *tabwriter.Writer, network *types.Network) e
 func NoNetworks(outputFormat string, w *tabwriter.Writer) error {
 	switch outputFormat {
 	case "table", "wide":
-		_, err := fmt.Fprintln(w, "No networks found. Use the `replicated network create` command to create a new network.")
+		_, err := fmt.Fprintln(w, "No networks found. Networks are created alongside VMs or clusters.")
 		if err != nil {
 			return err
 		}
