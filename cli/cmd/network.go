@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -11,10 +12,14 @@ import (
 
 func (r *runners) InitNetworkCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "network",
-		Short:  "Manage test networks for VMs and Clusters",
-		Long:   ``,
-		Hidden: true,
+		Use:   "network",
+		Short: "Manage test networks for VMs and clusters.",
+		Long: `Manage test networks for VMs and clusters.
+
+Networks are automatically created when you run 'replicated vm create' or
+'replicated cluster create'. To connect a VM or cluster to an existing network,
+use the '--network' flag during creation. Networks are automatically deleted
+when all associated VMs and clusters are removed.`,
 	}
 	parent.AddCommand(cmd)
 
