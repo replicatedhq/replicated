@@ -36,6 +36,7 @@ const (
 	VMStatusAssigned     VMStatus = "assigned"     // Assigned to a runner, but have not heard back from the runner
 	VMStatusPreparing    VMStatus = "preparing"    // The runner sets this when is receives the request
 	VMStatusProvisioning VMStatus = "provisioning" // The runner sets this when it starts provisioning
+	VMStatusVerifying    VMStatus = "verifying"    // The runner sets this when it is done provisioning and available
 	VMStatusRunning      VMStatus = "running"      // The runner sets this when it is done provisioning or upgrading and available
 	VMStatusTerminated   VMStatus = "terminated"   // This is set when the cluster expires or is deleted
 	VMStatusError        VMStatus = "error"        // Something unexpected
