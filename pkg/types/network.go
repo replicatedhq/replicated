@@ -6,9 +6,11 @@ type Network struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 
-	Status    NetworkStatus `json:"status"`
-	CreatedAt time.Time     `json:"created_at"`
-	ExpiresAt time.Time     `json:"expires_at"`
+	Status               NetworkStatus `json:"status"`
+	LastSchedulingStatus string        `json:"last_scheduling_status"`
+
+	CreatedAt time.Time `json:"created_at"`
+	ExpiresAt time.Time `json:"expires_at"`
 
 	TTL string `json:"ttl"`
 

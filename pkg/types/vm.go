@@ -11,7 +11,9 @@ type VM struct {
 	Network      string `json:"network_id"`
 	DiskGiB      int64  `json:"disk_gib"`
 
-	Status    VMStatus  `json:"status"`
+	Status               VMStatus `json:"status"`
+	LastSchedulingStatus string   `json:"last_scheduling_status"`
+
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 
