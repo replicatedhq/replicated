@@ -19,8 +19,11 @@ func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 		Example: `# Get report for a network by ID
 replicated network report --id abc123
 
-# Watch for new network events
-replicated network report --id abc123 --watch`,
+# Watch for new network events (table format)
+replicated network report --id abc123 --watch --output table
+
+# Watch for new network events (JSON Lines format)
+replicated network report --id abc123 --watch --output json`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
 		Hidden:            true,
@@ -32,7 +35,7 @@ replicated network report --id abc123 --watch`,
 	cmd.RegisterFlagCompletionFunc("id", r.completeNetworkIDs)
 
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "json", "The output format to use. One of: json|table")
-	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "watch for new network events")
+	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events")
 
 	return cmd
 }
@@ -60,14 +63,13 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 
 	// Handle watch mode
 	if r.args.networkReportWatch {
-		// Check output format for watch
-		if r.outputFormat != "table" {
-			return errors.New("watch is only supported for table output")
-		}
-
 		// Print initial events
 		if len(report.Events) > 0 {
-			printEventsTable(report.Events, true)
+			if r.outputFormat == "json" {
+				printEventsJSONL(report.Events)
+			} else {
+				printEventsTable(report.Events, true)
+			}
 		}
 
 		// Track the last seen event time
@@ -91,7 +93,11 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 
 			// Print new events
 			if len(newReport.Events) > 0 {
-				printEventsTable(newReport.Events, false)
+				if r.outputFormat == "json" {
+					printEventsJSONL(newReport.Events)
+				} else {
+					printEventsTable(newReport.Events, false)
+				}
 				// Update last seen time
 				lastEventTime = &newReport.Events[len(newReport.Events)-1].CreatedAt
 			}
@@ -170,4 +176,14 @@ func getFloatValue(data map[string]interface{}, key string) float64 {
 		}
 	}
 	return 0
+}
+
+func printEventsJSONL(events []*types.NetworkEvent) {
+	for _, event := range events {
+		output, err := json.Marshal(event)
+		if err != nil {
+			continue // Skip events that can't be marshaled
+		}
+		fmt.Println(string(output))
+	}
 }
