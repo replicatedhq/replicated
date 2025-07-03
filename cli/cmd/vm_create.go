@@ -166,6 +166,7 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM,
 func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, duration time.Duration) ([]*types.VM, error) {
 	start := time.Now()
 	runningVMs := map[string]*types.VM{}
+	allVMs := map[string]*types.VM{}
 	for {
 		for _, vm := range vms {
 			v, err := kotsRestClient.GetVM(vm.ID)
@@ -173,6 +174,7 @@ func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, dura
 				return nil, errors.Wrap(err, "get vm")
 			}
 
+			allVMs[v.ID] = v
 			if v.Status == types.VMStatus(types.VMStatusRunning) {
 				runningVMs[v.ID] = v
 				if len(runningVMs) == len(vms) {
@@ -182,8 +184,8 @@ func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, dura
 				return nil, errors.New("vm failed to provision")
 			} else {
 				if time.Now().After(start.Add(duration)) {
-					// In case of timeout, return the vm and a WaitDurationExceeded error
-					return mapToSlice(runningVMs), ErrWaitDurationExceeded
+					// In case of timeout, return all the vms regardless of their status, and a VMWaitDurationExceeded error
+					return mapToSlice(allVMs), ErrVMWaitDurationExceeded
 				}
 			}
 		}
