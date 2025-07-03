@@ -125,8 +125,8 @@ func outputReport(report *types.NetworkReport, outputFormat string) error {
 
 func printEventsTable(events []*types.NetworkEvent, includeHeader bool) {
 	if includeHeader {
-		fmt.Printf("%-20s %-15s %-15s %-8s %-8s %-8s %-12s %-8s %s\n",
-			"CREATED AT", "SRC IP", "DST IP", "SRC PORT", "DST PORT", "PROTOCOL", "COMMAND", "PID", "SERVICE")
+		fmt.Printf("%-20s %-15s %-15s %-8s %-8s %-8s %-12s %-8s %-15s %s\n",
+			"CREATED AT", "SRC IP", "DST IP", "SRC PORT", "DST PORT", "PROTOCOL", "COMMAND", "PID", "DNS QUERY", "SERVICE")
 		fmt.Println("---")
 	}
 
@@ -134,7 +134,7 @@ func printEventsTable(events []*types.NetworkEvent, includeHeader bool) {
 		// Parse the event data if it's JSON
 		var eventData map[string]interface{}
 		if err := json.Unmarshal([]byte(event.EventData), &eventData); err == nil {
-			fmt.Printf("%-20s %-15s %-15s %-8.0f %-8.0f %-8s %-12s %-8.0f %s\n",
+			fmt.Printf("%-20s %-15s %-15s %-8.0f %-8.0f %-8s %-12s %-8.0f %-15s %s\n",
 				event.CreatedAt.Format("2006-01-02 15:04:05"),
 				getStringValue(eventData, "srcIp"),
 				getStringValue(eventData, "dstIp"),
@@ -143,6 +143,7 @@ func printEventsTable(events []*types.NetworkEvent, includeHeader bool) {
 				getStringValue(eventData, "proto"),
 				getStringValue(eventData, "comm"),
 				getFloatValue(eventData, "pid"),
+				getStringValue(eventData, "dnsQueryName"),
 				getStringValue(eventData, "likelyService"))
 		} else {
 			// Fallback if event data is not valid JSON

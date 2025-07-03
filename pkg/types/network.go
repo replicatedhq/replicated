@@ -55,4 +55,5 @@ type NetworkEventData struct {
 	Command       string `json:"comm"`
 	PID           int    `json:"pid"`
 	LikelyService string `json:"likelyService"`
+	DNSQueryName  string `json:"dnsQueryName"`
 }
