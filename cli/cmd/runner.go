@@ -245,6 +245,8 @@ type runnerArgs struct {
 	lsNetworkEndTime   string
 	lsNetworkWatch     bool
 
+	networkReportID string
+
 	updateNetworkOutbound string
 	updateNetworkPolicy   string
 	updateNetworkName     string
