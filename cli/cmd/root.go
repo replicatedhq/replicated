@@ -271,7 +271,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitVMRemove(vmCmd)
 	runCmds.InitVMSSHEndpoint(vmCmd)
 	runCmds.InitVMSCPEndpoint(vmCmd)
-	
+
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
 
@@ -285,6 +285,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitNetworkList(networkCmd)
 	runCmds.InitNetworkRemove(networkCmd)
 	runCmds.InitNetworkJoin(networkCmd)
+	runCmds.InitNetworkReport(networkCmd)
 
 	networkUpdateCmd := runCmds.InitNetworkUpdateCommand(networkCmd)
 	runCmds.InitNetworkUpdateOutbound(networkUpdateCmd)

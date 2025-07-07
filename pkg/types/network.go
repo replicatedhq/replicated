@@ -35,3 +35,25 @@ const (
 	NetworkStatusTerminated   NetworkStatus = "terminated"   // This is set when the vm is moved to the history table
 	NetworkStatusError        NetworkStatus = "error"        // Something unexpected
 )
+
+type NetworkReport struct {
+	Events []*NetworkEvent `json:"events"`
+}
+
+type NetworkEvent struct {
+	CreatedAt time.Time `json:"created_at"`
+	EventData string    `json:"event_data"`
+}
+
+type NetworkEventData struct {
+	Timestamp     string `json:"timestamp"`
+	SrcIP         string `json:"srcIp"`
+	DstIP         string `json:"dstIp"`
+	SrcPort       int    `json:"srcPort"`
+	DstPort       int    `json:"dstPort"`
+	Protocol      string `json:"proto"`
+	Command       string `json:"comm"`
+	PID           int    `json:"pid"`
+	LikelyService string `json:"likelyService"`
+	DNSQueryName  string `json:"dnsQueryName"`
+}
