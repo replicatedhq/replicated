@@ -50,7 +50,7 @@ func writeReleaseFiles(dstDir string, specs []releaseTypes.KotsSingleSpec, log *
 }
 
 func writeReleaseDirectory(dstDir string, spec releaseTypes.KotsSingleSpec, log *logger.Logger) error {
-	log.ChildActionWithoutSpinner(spec.Path)
+	log.ChildActionWithoutSpinner("%s", spec.Path)
 
 	if err := os.Mkdir(filepath.Join(dstDir, spec.Path), 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "create directory")
@@ -65,7 +65,7 @@ func writeReleaseDirectory(dstDir string, spec releaseTypes.KotsSingleSpec, log 
 }
 
 func writeReleaseFile(dstDir string, spec releaseTypes.KotsSingleSpec, log *logger.Logger) error {
-	log.ChildActionWithoutSpinner(spec.Path)
+	log.ChildActionWithoutSpinner("%s", spec.Path)
 
 	var content []byte
 
