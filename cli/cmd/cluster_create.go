@@ -18,6 +18,15 @@ import (
 
 var ErrWaitDurationExceeded = errors.New("wait duration exceeded")
 
+type ClusterTimeoutError struct {
+	Cluster  *types.Cluster
+	Duration time.Duration
+}
+
+func (e ClusterTimeoutError) Error() string {
+	return "wait duration exceeded"
+}
+
 func (r *runners) InitClusterCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -158,7 +167,8 @@ func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 	}
 	cl, err := r.createAndWaitForCluster(opts)
 	if err != nil {
-		if errors.Cause(err) == ErrWaitDurationExceeded {
+		if _, ok := errors.Cause(err).(ClusterTimeoutError); ok {
+			printIfError(cmd, err)
 			defer os.Exit(124)
 		} else {
 			return err
@@ -253,8 +263,8 @@ func waitForCluster(kotsRestClient *kotsclient.VendorV3Client, id string, durati
 			return nil, errors.New("cluster failed to provision")
 		}
 		if time.Now().After(start.Add(duration)) {
-			// In case of timeout, return the cluster and a WaitDurationExceeded error
-			return cluster, ErrWaitDurationExceeded
+			// In case of timeout, return the cluster and a ClusterTimeoutError
+			return cluster, ClusterTimeoutError{Cluster: cluster, Duration: duration}
 		}
 
 		time.Sleep(time.Second * 5)

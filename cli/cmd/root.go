@@ -431,8 +431,27 @@ func printIfError(cmd *cobra.Command, err error) {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("METHOD: %s", err.Method))
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("ENDPOINT: %s", err.Endpoint))
 		fmt.Fprintln(os.Stderr, err.Message) // note that this can have multiple lines
+	case ClusterTimeoutError:
+		fmt.Fprintf(os.Stderr, "Error: Wait timeout exceeded for cluster %s\n", err.Cluster.ID)
+		fmt.Fprintf(os.Stderr, "  Current Status: %s\n", err.Cluster.Status)
+		if err.Cluster.LastSchedulingStatus != "" {
+			fmt.Fprintf(os.Stderr, "  Last Scheduling Status: %s\n", err.Cluster.LastSchedulingStatus)
+		}
+		fmt.Fprintf(os.Stderr, "  Wait Duration: %s\n", err.Duration)
+	case VMTimeoutError:
+		fmt.Fprintf(os.Stderr, "Error: Wait timeout exceeded for %d VM(s)\n", len(err.VMs))
+		for _, vm := range err.VMs {
+			if vm.Status != types.VMStatusRunning {
+				fmt.Fprintf(os.Stderr, "  VM %s:\n", vm.ID)
+				fmt.Fprintf(os.Stderr, "    Current Status: %s\n", vm.Status)
+				if vm.LastSchedulingStatus != "" {
+					fmt.Fprintf(os.Stderr, "    Last Scheduling Status: %s\n", vm.LastSchedulingStatus)
+				}
+			}
+		}
+		fmt.Fprintf(os.Stderr, "  Wait Duration: %s\n", err.Duration)
 	default:
-		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err.Error())
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 	}
 }
 
