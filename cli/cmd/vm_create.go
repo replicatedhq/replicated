@@ -17,6 +17,15 @@ import (
 
 var ErrVMWaitDurationExceeded = errors.New("wait duration exceeded")
 
+type VMTimeoutError struct {
+	VMs      []*types.VM
+	Duration time.Duration
+}
+
+func (e VMTimeoutError) Error() string {
+	return "wait duration exceeded"
+}
+
 func (r *runners) InitVMCreate(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -73,7 +82,7 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 	return cmd
 }
 
-func (r *runners) createVM(_ *cobra.Command, args []string) error {
+func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 	if r.args.createVMName == "" {
 		r.args.createVMName = namesgenerator.GetRandomName(0)
 	}
@@ -108,7 +117,8 @@ func (r *runners) createVM(_ *cobra.Command, args []string) error {
 
 	vms, err := r.createAndWaitForVM(opts)
 	if err != nil {
-		if errors.Cause(err) == ErrVMWaitDurationExceeded {
+		if _, ok := errors.Cause(err).(VMTimeoutError); ok {
+			printIfError(cmd, err)
 			defer os.Exit(124)
 		} else {
 			return err
@@ -184,8 +194,8 @@ func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, dura
 				return nil, errors.New("vm failed to provision")
 			} else {
 				if time.Now().After(start.Add(duration)) {
-					// In case of timeout, return all the vms regardless of their status, and a VMWaitDurationExceeded error
-					return mapToSlice(allVMs), ErrVMWaitDurationExceeded
+					// In case of timeout, return all the vms regardless of their status, and a VMTimeoutError
+					return mapToSlice(allVMs), VMTimeoutError{VMs: mapToSlice(allVMs), Duration: duration}
 				}
 			}
 		}
