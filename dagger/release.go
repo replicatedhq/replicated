@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var goreleaserVersion = "v2.3.2"
+var goreleaserVersion = "v2.10.2"
 
 func (r *Replicated) Release(
 	ctx context.Context,
