@@ -678,7 +678,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 	}
 
 	log.Verbose()
-	log.Debug(cmd.String())
+	log.Debug("%s", cmd.String())
 	cmd.Stdout = r.w
 	cmd.Stderr = r.w
 	if err := cmd.Run(); err != nil {
