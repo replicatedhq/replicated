@@ -71,7 +71,7 @@ func (r *runners) updateNetwork(cmd *cobra.Command, args []string) error {
 	}
 
 	if cmd.Flags().Changed("collect-report") {
-		opts.CollectReport = r.args.updateNetworkCollectReport
+		opts.CollectReport = &r.args.updateNetworkCollectReport
 	}
 
 	// Update the network

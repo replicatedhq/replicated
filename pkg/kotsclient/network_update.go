@@ -13,7 +13,7 @@ import (
 
 type UpdateNetworkRequest struct {
 	Policy        string `json:"policy"`
-	CollectReport bool   `json:"collect_report"`
+	CollectReport *bool  `json:"collect_report,omitempty"`
 }
 
 type UpdateNetworkResponse struct {
@@ -23,7 +23,7 @@ type UpdateNetworkResponse struct {
 
 type UpdateNetworkOpts struct {
 	Policy        string `json:"policy"`
-	CollectReport bool   `json:"collect_report"`
+	CollectReport *bool  `json:"collect_report,omitempty"`
 }
 
 type UpdateNetworkErrorResponse struct {
@@ -34,7 +34,10 @@ type UpdateNetworkErrorResponse struct {
 
 // UpdateNetworkPolicy updates a network's policy setting
 func (c *VendorV3Client) UpdateNetwork(networkID string, opts UpdateNetworkOpts) (*types.Network, error) {
-	req := UpdateNetworkRequest(opts)
+	req := UpdateNetworkRequest{
+		Policy:        opts.Policy,
+		CollectReport: opts.CollectReport,
+	}
 	return c.doUpdateNetworkRequest(networkID, req)
 }
 
