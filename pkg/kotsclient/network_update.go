@@ -11,42 +11,41 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-type UpdateNetworkPolicyRequest struct {
-	Policy string `json:"policy"`
+type UpdateNetworkRequest struct {
+	Policy        string `json:"policy"`
+	CollectReport bool   `json:"collect_report"`
 }
 
-type UpdateNetworkPolicyResponse struct {
+type UpdateNetworkResponse struct {
 	Network *types.Network `json:"network"`
 	Errors  []string       `json:"errors"`
 }
 
-type UpdateNetworkPolicyOpts struct {
-	Policy string `json:"policy"`
+type UpdateNetworkOpts struct {
+	Policy        string `json:"policy"`
+	CollectReport bool   `json:"collect_report"`
 }
 
-type UpdateNetworkPolicyErrorResponse struct {
+type UpdateNetworkErrorResponse struct {
 	Error struct {
 		Message string `json:"message"`
 	}
 }
 
 // UpdateNetworkPolicy updates a network's policy setting
-func (c *VendorV3Client) UpdateNetworkPolicy(networkID string, opts UpdateNetworkPolicyOpts) (*types.Network, error) {
-	req := UpdateNetworkPolicyRequest{
-		Policy: opts.Policy,
-	}
-
-	return c.doUpdateNetworkPolicyRequest(networkID, req)
+func (c *VendorV3Client) UpdateNetwork(networkID string, opts UpdateNetworkOpts) (*types.Network, error) {
+	req := UpdateNetworkRequest(opts)
+	return c.doUpdateNetworkRequest(networkID, req)
 }
 
-func (c *VendorV3Client) doUpdateNetworkPolicyRequest(networkID string, req UpdateNetworkPolicyRequest) (*types.Network, error) {
-	resp := UpdateNetworkPolicyResponse{}
-	endpoint := fmt.Sprintf("/v3/network/%s/policy", networkID)
+func (c *VendorV3Client) doUpdateNetworkRequest(networkID string, req UpdateNetworkRequest) (*types.Network, error) {
+	resp := UpdateNetworkResponse{}
+	endpoint := fmt.Sprintf("/v3/network/%s/update", networkID)
 	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusOK, req, &resp)
 	if err != nil {
 		if apiErr, ok := errors.Cause(err).(platformclient.APIError); ok {
 			if apiErr.StatusCode == http.StatusBadRequest {
-				errResp := &UpdateNetworkPolicyErrorResponse{}
+				errResp := &UpdateNetworkErrorResponse{}
 				if jsonErr := json.Unmarshal(apiErr.Body, errResp); jsonErr != nil {
 					return nil, fmt.Errorf("unmarshal error response: %w", err)
 				}

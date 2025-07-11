@@ -248,10 +248,10 @@ type runnerArgs struct {
 	networkReportID    string
 	networkReportWatch bool
 
-	updateNetworkOutbound string
-	updateNetworkPolicy   string
-	updateNetworkName     string
-	updateNetworkID       string
+	updateNetworkPolicy        string
+	updateNetworkCollectReport bool
+	updateNetworkName          string
+	updateNetworkID            string
 
 	removeNetworkAll    bool
 	removeNetworkNames  []string
