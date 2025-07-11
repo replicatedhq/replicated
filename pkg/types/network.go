@@ -17,8 +17,8 @@ type Network struct {
 	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
 	OverlayToken    string `json:"overlay_token,omitempty"`
 
-	Outbound string `json:"outbound,omitempty"`
-	Policy   string `json:"policy,omitempty"`
+	Policy        string `json:"policy,omitempty"`
+	CollectReport bool   `json:"collect_report,omitempty"`
 }
 
 type NetworkStatus string

@@ -10,22 +10,32 @@ import (
 )
 
 // Table formatting
-var networksTmplTableHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	POLICY`
-var networksTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Policy ""}}{{ padding "open" 30 }}{{else}}{{ padding (printf "%s" (.Policy)) 30 }}{{end}}
+var (
+	networksTmplTableHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	POLICY	REPORTING`
+	networksTmplTableRowSrc    = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Policy ""}}{{ padding "open" 30 }}{{else}}{{ padding (printf "%s" (.Policy)) 30 }}{{end}}	{{if .CollectReport}}{{ padding "on" 30 }}{{else}}{{ padding "off" 30 }}{{end}}
 {{ end }}`
-var networksTmplTableSrc = fmt.Sprintln(networksTmplTableHeaderSrc) + networksTmplTableRowSrc
-var networksTmplTable = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableSrc))
-var networksTmplTableNoHeader = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableRowSrc))
+)
+
+var (
+	networksTmplTableSrc      = fmt.Sprintln(networksTmplTableHeaderSrc) + networksTmplTableRowSrc
+	networksTmplTable         = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableSrc))
+	networksTmplTableNoHeader = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplTableRowSrc))
+)
 
 // Wide table formatting
-var networksTmplWideHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	POLICY`
-var networksTmplWideRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Policy ""}}{{ padding "open" 30 }}{{else}}{{ padding (printf "%s" (.Policy)) 30 }}{{end}}
+var (
+	networksTmplWideHeaderSrc = `ID	NAME	STATUS	CREATED	EXPIRES	POLICY	REPORTING`
+	networksTmplWideRowSrc    = `{{ range . -}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Policy ""}}{{ padding "open" 30 }}{{else}}{{ padding (printf "%s" (.Policy)) 30 }}{{end}}	{{if .CollectReport}}{{ padding "on" 30 }}{{else}}{{ padding "off" 30 }}{{end}}
 {{ end }}`
-var networksTmplWideSrc = fmt.Sprintln(networksTmplWideHeaderSrc) + networksTmplWideRowSrc
-var networksTmplWide = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplWideSrc))
-var networksTmplWideNoHeader = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplWideRowSrc))
+)
+
+var (
+	networksTmplWideSrc      = fmt.Sprintln(networksTmplWideHeaderSrc) + networksTmplWideRowSrc
+	networksTmplWide         = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplWideSrc))
+	networksTmplWideNoHeader = template.Must(template.New("networks").Funcs(funcs).Parse(networksTmplWideRowSrc))
+)
 
 func Networks(outputFormat string, w *tabwriter.Writer, networks []*types.Network, header bool) error {
 	switch outputFormat {
