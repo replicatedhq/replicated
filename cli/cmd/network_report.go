@@ -26,7 +26,6 @@ replicated network report --id abc123 --watch --output table
 replicated network report --id abc123 --watch --output json`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
-		Hidden:            true,
 	}
 	parent.AddCommand(cmd)
 
