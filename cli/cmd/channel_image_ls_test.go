@@ -11,30 +11,52 @@ import (
 
 func TestCleanImageName(t *testing.T) {
 	tests := []struct {
-		input    string
-		expected string
+		name                string
+		input               string
+		proxyRegistryDomain string
+		expected            string
 	}{
 		{
-			input:    "images.shortrib.io/anonymous/index.docker.io/library/nginx:1.25.3",
-			expected: "docker.io/library/nginx:1.25.3",
+			name:                "proxy registry with app name",
+			input:               "images.shortrib.io/proxy/testapp/ghcr.io/example/app:v1.0.0",
+			proxyRegistryDomain: "images.shortrib.io",
+			expected:            "ghcr.io/example/app:v1.0.0",
 		},
 		{
-			input:    "images.shortrib.io/proxy/testapp/ghcr.io/example/app:v1.0.0",
-			expected: "ghcr.io/example/app:v1.0.0",
+			name:                "docker hub registry prefix",
+			input:               "docker.io/library/postgres:14",
+			proxyRegistryDomain: "",
+			expected:            "postgres:14",
 		},
 		{
-			input:    "docker.io/library/postgres:14",
-			expected: "docker.io/library/postgres:14",
+			name:                "index.docker.io prefix",
+			input:               "index.docker.io/replicated/replicated-sdk:1.0.0-beta.32",
+			proxyRegistryDomain: "",
+			expected:            "replicated/replicated-sdk:1.0.0-beta.32",
 		},
 		{
-			input:    "index.docker.io/replicated/replicated-sdk:1.0.0-beta.32",
-			expected: "docker.io/replicated/replicated-sdk:1.0.0-beta.32",
+			name:                "no proxy registry domain provided",
+			input:               "images.shortrib.io/proxy/testapp/ghcr.io/example/app:v1.0.0",
+			proxyRegistryDomain: "",
+			expected:            "images.shortrib.io/proxy/testapp/ghcr.io/example/app:v1.0.0",
+		},
+		{
+			name:                "proxy registry with library prefix",
+			input:               "myproxy.com/library/nginx:latest",
+			proxyRegistryDomain: "myproxy.com",
+			expected:            "nginx:latest",
+		},
+		{
+			name:                "no matching prefixes",
+			input:               "ghcr.io/myorg/myapp:v1.0.0",
+			proxyRegistryDomain: "",
+			expected:            "ghcr.io/myorg/myapp:v1.0.0",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := cleanImageName(tt.input)
+		t.Run(tt.name, func(t *testing.T) {
+			result := cleanImageName(tt.input, tt.proxyRegistryDomain)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -144,4 +166,80 @@ func TestFindReleaseLogic(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestProxyRegistryDomainUsage(t *testing.T) {
+	// Test that proxyRegistryDomain from channel release is passed to cleanImageName
+	release := &types.ChannelRelease{
+		ChannelSequence:     1,
+		ProxyRegistryDomain: "my.proxy.com",
+		AirgapBundleImages: []string{
+			"my.proxy.com/proxy/myapp/nginx:latest",
+			"my.proxy.com/library/postgres:14",
+			"docker.io/redis:alpine",
+		},
+	}
+
+	expectedCleanedImages := []string{
+		"nginx:latest",   // proxy pattern stripped using domain
+		"postgres:14",    // library prefix stripped using domain  
+		"redis:alpine",   // docker.io prefix stripped by default rules
+	}
+
+	var actualImages []string
+	for _, image := range release.AirgapBundleImages {
+		cleanImage := cleanImageName(image, release.ProxyRegistryDomain)
+		if cleanImage != "" {
+			actualImages = append(actualImages, cleanImage)
+		}
+	}
+
+	assert.Equal(t, expectedCleanedImages, actualImages)
+}
+
+func TestKeepProxyFlag(t *testing.T) {
+	// Test that --keep-proxy flag preserves proxy registry domains
+	release := &types.ChannelRelease{
+		ChannelSequence:     1,
+		ProxyRegistryDomain: "my.proxy.com",
+		AirgapBundleImages: []string{
+			"my.proxy.com/proxy/myapp/nginx:latest",
+			"my.proxy.com/library/postgres:14",
+			"docker.io/redis:alpine",
+		},
+	}
+
+	// Test with keep-proxy disabled (default behavior)
+	expectedWithoutProxy := []string{
+		"nginx:latest",   // proxy pattern stripped
+		"postgres:14",    // library prefix stripped
+		"redis:alpine",   // docker.io prefix stripped
+	}
+
+	var actualWithoutProxy []string
+	for _, image := range release.AirgapBundleImages {
+		cleanImage := cleanImageName(image, release.ProxyRegistryDomain) // Pass proxy domain (strip it)
+		if cleanImage != "" {
+			actualWithoutProxy = append(actualWithoutProxy, cleanImage)
+		}
+	}
+
+	assert.Equal(t, expectedWithoutProxy, actualWithoutProxy)
+
+	// Test with keep-proxy enabled
+	expectedWithProxy := []string{
+		"my.proxy.com/proxy/myapp/nginx:latest", // proxy pattern kept
+		"my.proxy.com/library/postgres:14",     // library prefix kept  
+		"redis:alpine",                         // docker.io prefix still stripped (not proxy)
+	}
+
+	var actualWithProxy []string
+	for _, image := range release.AirgapBundleImages {
+		cleanImage := cleanImageName(image, "") // Don't pass proxy domain (keep it)
+		if cleanImage != "" {
+			actualWithProxy = append(actualWithProxy, cleanImage)
+		}
+	}
+
+	assert.Equal(t, expectedWithProxy, actualWithProxy)
 }

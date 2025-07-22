@@ -71,6 +71,7 @@ type ChannelRelease struct {
 	ChannelName          string    `json:"channelName,omitempty"`
 	ChannelSequence      int32     `json:"channelSequence,omitempty"`
 	Created              time.Time `json:"created,omitempty"`
+	ProxyRegistryDomain  string    `json:"proxyRegistryDomain,omitempty"`
 	RegistrySecret       string    `json:"registrySecret,omitempty"`
 	ReleaseNotes         string    `json:"releaseNotes,omitempty"`
 	ReleasedAt           time.Time `json:"releasedAt,omitempty"`

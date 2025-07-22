@@ -196,3 +196,16 @@ func (c *Client) ListChannelReleases(appID string, appType string, channelID str
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
+
+func (c *Client) GetCustomHostnames(appID string, appType string, channelID string) (*types.CustomHostNameOverrides, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID)
+		if err != nil {
+			return nil, err
+		}
+		return &kotsChannel.CustomHostNameOverrides, nil
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
