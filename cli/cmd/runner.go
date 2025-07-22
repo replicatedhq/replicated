@@ -39,6 +39,8 @@ func (r *runners) hasApp() bool {
 type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string
+	channelImageLSChannel    string
+	channelImageLSVersion    string
 
 	createCollectorName     string
 	createCollectorYaml     string

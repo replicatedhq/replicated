@@ -187,3 +187,12 @@ func (c *Client) ChannelReleaseUnDemote(appID string, appType string, channelID 
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
+
+func (c *Client) ListChannelReleases(appID string, appType string, channelID string) ([]*types.ChannelRelease, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.ListChannelReleases(appID, channelID)
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
