@@ -59,19 +59,20 @@ func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get channel: %w", err)
 	}
 
-	// Get all releases for this channel
-	channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID)
-	if err != nil {
-		return fmt.Errorf("failed to list channel releases: %w", err)
-	}
-
-	if len(channelReleases) == 0 {
-		return errors.New("no releases found in channel")
-	}
-
-	// Find the target release
 	var targetRelease *types.ChannelRelease
+	var proxyDomain string
+
 	if r.args.channelImageLSVersion != "" {
+		// For specific versions, we need to get all releases
+		channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID)
+		if err != nil {
+			return fmt.Errorf("failed to list channel releases: %w", err)
+		}
+
+		if len(channelReleases) == 0 {
+			return errors.New("no releases found in channel")
+		}
+
 		// Find release by semver
 		for _, release := range channelReleases {
 			if release.Semver == r.args.channelImageLSVersion {
@@ -82,34 +83,27 @@ func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
 		if targetRelease == nil {
 			return fmt.Errorf("no release found with version %q in channel", r.args.channelImageLSVersion)
 		}
-	} else {
-		// Find the current release (highest channel sequence)
-		for _, release := range channelReleases {
-			if targetRelease == nil || release.ChannelSequence > targetRelease.ChannelSequence {
-				targetRelease = release
+
+		// Get proxy domain for version-specific releases
+		if targetRelease.ProxyRegistryDomain == "" && r.appType == "kots" {
+			customHostnames, err := r.api.GetCustomHostnames(r.appID, r.appType, channel.ID)
+			if err == nil && customHostnames.Proxy.Hostname != "" {
+				proxyDomain = customHostnames.Proxy.Hostname
 			}
+		} else {
+			proxyDomain = targetRelease.ProxyRegistryDomain
 		}
-		if targetRelease == nil {
-			return errors.New("no current release found")
+	} else {
+		// For current release, use optimized method that tries to avoid extra API call
+		var err error
+		targetRelease, proxyDomain, err = r.api.GetCurrentChannelRelease(r.appID, r.appType, channel.ID)
+		if err != nil {
+			return fmt.Errorf("failed to get current channel release: %w", err)
 		}
 	}
 
 	// Extract and clean up image names
 	images := make([]string, 0)
-	
-	// Get proxy domain from multiple sources in order of preference:
-	// 1. Channel release ProxyRegistryDomain field
-	// 2. Channel customHostnameOverrides.proxy.hostname
-	proxyDomain := targetRelease.ProxyRegistryDomain
-	if proxyDomain == "" {
-		// Try to get from channel custom hostname overrides
-		if r.appType == "kots" {
-			customHostnames, err := r.api.GetCustomHostnames(r.appID, r.appType, channel.ID)
-			if err == nil && customHostnames.Proxy.Hostname != "" {
-				proxyDomain = customHostnames.Proxy.Hostname
-			}
-		}
-	}
 	
 	for _, image := range targetRelease.AirgapBundleImages {
 		// Remove registry prefixes and clean up image names
