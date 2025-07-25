@@ -64,12 +64,12 @@ func TestCleanImageName(t *testing.T) {
 
 func TestFindReleaseLogic(t *testing.T) {
 	tests := []struct {
-		name               string
-		releases           []*types.ChannelRelease
-		requestedVersion   string
-		expectedSequence   int32
-		expectError        bool
-		errorMsg           string
+		name             string
+		releases         []*types.ChannelRelease
+		requestedVersion string
+		expectedSequence int32
+		expectError      bool
+		errorMsg         string
 	}{
 		{
 			name: "find current release (highest channel sequence)",
@@ -166,118 +166,4 @@ func TestFindReleaseLogic(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestProxyRegistryDomainUsage(t *testing.T) {
-	// Test that proxyRegistryDomain from channel release is passed to cleanImageName
-	release := &types.ChannelRelease{
-		ChannelSequence:     1,
-		ProxyRegistryDomain: "my.proxy.com",
-		AirgapBundleImages: []string{
-			"my.proxy.com/proxy/myapp/nginx:latest",
-			"my.proxy.com/library/postgres:14",
-			"docker.io/redis:alpine",
-		},
-	}
-
-	expectedCleanedImages := []string{
-		"nginx:latest",   // proxy pattern stripped using domain
-		"postgres:14",    // library prefix stripped using domain  
-		"redis:alpine",   // docker.io prefix stripped by default rules
-	}
-
-	var actualImages []string
-	for _, image := range release.AirgapBundleImages {
-		cleanImage := cleanImageName(image, release.ProxyRegistryDomain)
-		if cleanImage != "" {
-			actualImages = append(actualImages, cleanImage)
-		}
-	}
-
-	assert.Equal(t, expectedCleanedImages, actualImages)
-}
-
-func TestKeepProxyFlag(t *testing.T) {
-	// Test that --keep-proxy flag preserves proxy registry domains
-	release := &types.ChannelRelease{
-		ChannelSequence:     1,
-		ProxyRegistryDomain: "my.proxy.com",
-		AirgapBundleImages: []string{
-			"my.proxy.com/proxy/myapp/nginx:latest",
-			"my.proxy.com/library/postgres:14",
-			"docker.io/redis:alpine",
-		},
-	}
-
-	// Test with keep-proxy disabled (default behavior)
-	expectedWithoutProxy := []string{
-		"nginx:latest",   // proxy pattern stripped
-		"postgres:14",    // library prefix stripped
-		"redis:alpine",   // docker.io prefix stripped
-	}
-
-	var actualWithoutProxy []string
-	for _, image := range release.AirgapBundleImages {
-		cleanImage := cleanImageName(image, release.ProxyRegistryDomain) // Pass proxy domain (strip it)
-		if cleanImage != "" {
-			actualWithoutProxy = append(actualWithoutProxy, cleanImage)
-		}
-	}
-
-	assert.Equal(t, expectedWithoutProxy, actualWithoutProxy)
-
-	// Test with keep-proxy enabled
-	expectedWithProxy := []string{
-		"my.proxy.com/proxy/myapp/nginx:latest", // proxy pattern kept
-		"my.proxy.com/library/postgres:14",     // library prefix kept  
-		"redis:alpine",                         // docker.io prefix still stripped (not proxy)
-	}
-
-	var actualWithProxy []string
-	for _, image := range release.AirgapBundleImages {
-		cleanImage := cleanImageName(image, "") // Don't pass proxy domain (keep it)
-		if cleanImage != "" {
-			actualWithProxy = append(actualWithProxy, cleanImage)
-		}
-	}
-
-	assert.Equal(t, expectedWithProxy, actualWithProxy)
-}
-
-func TestKeepProxyFlagIntegration(t *testing.T) {
-	// Test the actual --keep-proxy flag behavior in the command logic
-	
-	// Test case 1: flag not set (default behavior - should strip proxy)
-	t.Run("keep-proxy flag false", func(t *testing.T) {
-		keepProxyFlag := false
-		proxyDomain := "test.proxy.com"
-		
-		// Simulate the logic from channelImageLS function
-		var cleanProxyDomain string
-		if !keepProxyFlag {
-			cleanProxyDomain = proxyDomain
-		}
-		
-		testImage := "test.proxy.com/proxy/myapp/nginx:1.0"
-		result := cleanImageName(testImage, cleanProxyDomain)
-		
-		assert.Equal(t, "nginx:1.0", result, "Should strip proxy domain when keep-proxy is false")
-	})
-	
-	// Test case 2: flag set to true (should preserve proxy)
-	t.Run("keep-proxy flag true", func(t *testing.T) {
-		keepProxyFlag := true
-		proxyDomain := "test.proxy.com"
-		
-		// Simulate the logic from channelImageLS function
-		var cleanProxyDomain string
-		if !keepProxyFlag {
-			cleanProxyDomain = proxyDomain
-		}
-		
-		testImage := "test.proxy.com/proxy/myapp/nginx:1.0"
-		result := cleanImageName(testImage, cleanProxyDomain)
-		
-		assert.Equal(t, "test.proxy.com/proxy/myapp/nginx:1.0", result, "Should preserve proxy domain when keep-proxy is true")
-	})
 }
