@@ -151,6 +151,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitChannelDisableSemanticVersioning(channelCmd)
 	runCmds.InitChannelReleaseDemote(channelCmd)
 	runCmds.InitChannelReleaseUnDemote(channelCmd)
+	runCmds.InitChannelImageLS(channelCmd)
 
 	runCmds.rootCmd.AddCommand(releaseCmd)
 	err := runCmds.InitReleaseCreate(releaseCmd)
