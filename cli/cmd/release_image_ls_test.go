@@ -52,6 +52,12 @@ func TestCleanImageName(t *testing.T) {
 			proxyRegistryDomain: "",
 			expected:            "ghcr.io/myorg/myapp:v1.0.0",
 		},
+		{
+			name:                "proxy registry with anonymous prefix",
+			input:               "myproxy.com/anonymous/redis:7.0",
+			proxyRegistryDomain: "myproxy.com",
+			expected:            "redis:7.0",
+		},
 	}
 
 	for _, tt := range tests {
@@ -112,7 +118,7 @@ func TestFindReleaseLogic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Simulate the logic from channelImageLS function
+			// Simulate the logic from releaseImageLS function
 			if len(tt.releases) == 0 {
 				err := errors.New("no releases found in channel")
 				if tt.expectError {

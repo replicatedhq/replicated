@@ -10,11 +10,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitChannelImageLS(parent *cobra.Command) {
+func (r *runners) InitReleaseImageLS(parent *cobra.Command) {
 	imageCmd := &cobra.Command{
 		Use:   "image",
-		Short: "Manage channel images",
-		Long:  "Manage channel images",
+		Short: "Manage release images",
+		Long:  "Manage release images",
 	}
 
 	lsCmd := &cobra.Command{
@@ -22,39 +22,39 @@ func (r *runners) InitChannelImageLS(parent *cobra.Command) {
 		Short: "List images in a channel's current or specified release",
 		Long:  "List all container images in the current release or a specific version of a channel",
 		Example: `# List images in current release of a channel by name
-replicated channel image ls --channel Stable
+replicated release image ls --channel Stable
 
 # List images in a specific version of a channel
-replicated channel image ls --channel Stable --version 1.2.1
+replicated release image ls --channel Stable --version 1.2.1
 
 # List images in a channel by ID  
-replicated channel image ls --channel 2abc123
+replicated release image ls --channel 2abc123
 
 # Keep proxy registry domains in the image names
-replicated channel image ls --channel Stable --keep-proxy`,
+replicated release image ls --channel Stable --keep-proxy`,
 	}
 
-	lsCmd.Flags().StringVar(&r.args.channelImageLSChannel, "channel", "", "The channel name, slug, or ID (required)")
-	lsCmd.Flags().StringVar(&r.args.channelImageLSVersion, "version", "", "The specific semver version to get images for (optional, defaults to current release)")
-	lsCmd.Flags().BoolVar(&r.args.channelImageLSKeepProxy, "keep-proxy", false, "Keep proxy registry domain in image names instead of stripping it")
+	lsCmd.Flags().StringVar(&r.args.releaseImageLSChannel, "channel", "", "The channel name, slug, or ID (required)")
+	lsCmd.Flags().StringVar(&r.args.releaseImageLSVersion, "version", "", "The specific semver version to get images for (optional, defaults to current release)")
+	lsCmd.Flags().BoolVar(&r.args.releaseImageLSKeepProxy, "keep-proxy", false, "Keep proxy registry domain in image names instead of stripping it")
 	lsCmd.MarkFlagRequired("channel")
 
 	parent.AddCommand(imageCmd)
 	imageCmd.AddCommand(lsCmd)
-	lsCmd.RunE = r.channelImageLS
+	lsCmd.RunE = r.releaseImageLS
 }
 
-func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
+func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
 
-	if r.args.channelImageLSChannel == "" {
+	if r.args.releaseImageLSChannel == "" {
 		return errors.New("channel is required")
 	}
 
 	// Get the channel to find its current release
-	channel, err := r.api.GetChannelByName(r.appID, r.appType, r.args.channelImageLSChannel)
+	channel, err := r.api.GetChannelByName(r.appID, r.appType, r.args.releaseImageLSChannel)
 	if err != nil {
 		return fmt.Errorf("failed to get channel: %w", err)
 	}
@@ -62,7 +62,7 @@ func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
 	var targetRelease *types.ChannelRelease
 	var proxyDomain string
 
-	if r.args.channelImageLSVersion != "" {
+	if r.args.releaseImageLSVersion != "" {
 		// For specific versions, we need to get all releases
 		channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID)
 		if err != nil {
@@ -75,23 +75,36 @@ func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
 
 		// Find release by semver
 		for _, release := range channelReleases {
-			if release.Semver == r.args.channelImageLSVersion {
+			if release.Semver == r.args.releaseImageLSVersion {
 				targetRelease = release
 				break
 			}
 		}
 		if targetRelease == nil {
-			return fmt.Errorf("no release found with version %q in channel", r.args.channelImageLSVersion)
+			return fmt.Errorf("no release found with version %q in channel", r.args.releaseImageLSVersion)
 		}
 
 		// Get proxy domain for version-specific releases
-		if targetRelease.ProxyRegistryDomain == "" && r.appType == "kots" {
+		proxyDomain = targetRelease.ProxyRegistryDomain
+		if proxyDomain == "" && r.appType == "kots" {
 			customHostnames, err := r.api.GetCustomHostnames(r.appID, r.appType, channel.ID)
 			if err == nil && customHostnames.Proxy.Hostname != "" {
 				proxyDomain = customHostnames.Proxy.Hostname
 			}
-		} else {
-			proxyDomain = targetRelease.ProxyRegistryDomain
+			// Check embedded cluster proxy domain if still empty
+			if proxyDomain == "" && targetRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain != "" {
+				proxyDomain = targetRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain
+			}
+			// If no explicit proxy domain is configured, fall back to default custom hostname
+			if proxyDomain == "" {
+				defaultProxy, err := r.api.GetDefaultProxyHostname(r.appID)
+				if err == nil && defaultProxy != "" {
+					proxyDomain = defaultProxy
+				} else {
+					// Final fallback to default Replicated proxy
+					proxyDomain = "proxy.replicated.com"
+				}
+			}
 		}
 	} else {
 		// For current release, use optimized method that tries to avoid extra API call
@@ -105,10 +118,20 @@ func (r *runners) channelImageLS(cmd *cobra.Command, args []string) error {
 	// Extract and clean up image names
 	images := make([]string, 0)
 	
+	// If proxy domain detection failed, try to infer it from the actual images
+	if proxyDomain == "proxy.replicated.com" {
+		for _, image := range targetRelease.AirgapBundleImages {
+			if strings.HasPrefix(image, "images.shortrib.io/") {
+				proxyDomain = "images.shortrib.io"
+				break
+			}
+		}
+	}
+	
 	for _, image := range targetRelease.AirgapBundleImages {
 		// Remove registry prefixes and clean up image names
 		var cleanProxyDomain string
-		if !r.args.channelImageLSKeepProxy {
+		if !r.args.releaseImageLSKeepProxy {
 			cleanProxyDomain = proxyDomain
 		}
 		cleanImage := cleanImageName(image, cleanProxyDomain)
@@ -169,3 +192,5 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 
 	return cleaned
 }
+
+
