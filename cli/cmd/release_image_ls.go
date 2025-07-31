@@ -111,7 +111,11 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	for _, image := range targetRelease.AirgapBundleImages {
 		// Remove registry prefixes and clean up image names
 		var cleanProxyDomain string
-		if !r.args.releaseImageLSKeepProxy {
+		if r.args.releaseImageLSKeepProxy {
+			// Keep proxy domain - don't strip it
+			cleanProxyDomain = ""
+		} else {
+			// Strip proxy domain
 			cleanProxyDomain = proxyDomain
 		}
 		cleanImage := cleanImageName(image, cleanProxyDomain)
@@ -142,11 +146,6 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 		// Also handle anonymous proxy registry domain prefixes
 		if strings.HasPrefix(cleaned, proxyRegistryDomain+"/anonymous/") {
 			cleaned = strings.TrimPrefix(cleaned, proxyRegistryDomain+"/anonymous/")
-		}
-
-		// And library proxy domain prefixes
-		if strings.HasPrefix(cleaned, proxyRegistryDomain+"/library/") {
-			cleaned = strings.TrimPrefix(cleaned, proxyRegistryDomain+"/library/")
 		}
 	}
 
