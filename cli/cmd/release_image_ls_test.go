@@ -58,6 +58,18 @@ func TestCleanImageName(t *testing.T) {
 			proxyRegistryDomain: "myproxy.com",
 			expected:            "redis:7.0",
 		},
+		{
+			name:                "proxy.replicated.com with library prefix (common SDK pattern)",
+			input:               "proxy.replicated.com/library/replicated-sdk-image:1.7.1",
+			proxyRegistryDomain: "proxy.replicated.com",
+			expected:            "replicated-sdk-image:1.7.1",
+		},
+		{
+			name:                "proxy.replicated.com with proxy prefix and app name",
+			input:               "proxy.replicated.com/proxy/myapp/ghcr.io/example/app:v1.0",
+			proxyRegistryDomain: "proxy.replicated.com",
+			expected:            "ghcr.io/example/app:v1.0",
+		},
 	}
 
 	for _, tt := range tests {
