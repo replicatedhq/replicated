@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -80,7 +78,7 @@ func TestCleanImageName(t *testing.T) {
 	}
 }
 
-func TestFindReleaseLogic(t *testing.T) {
+func TestFindTargetRelease(t *testing.T) {
 	tests := []struct {
 		name             string
 		releases         []*types.ChannelRelease
@@ -130,56 +128,15 @@ func TestFindReleaseLogic(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Simulate the logic from releaseImageLS function
-			if len(tt.releases) == 0 {
-				err := errors.New("no releases found in channel")
-				if tt.expectError {
-					assert.Contains(t, err.Error(), tt.errorMsg)
-				} else {
-					t.Errorf("Unexpected error: %v", err)
-				}
-				return
-			}
-
-			var targetRelease *types.ChannelRelease
-			if tt.requestedVersion != "" {
-				// Find release by semver
-				for _, release := range tt.releases {
-					if release.Semver == tt.requestedVersion {
-						targetRelease = release
-						break
-					}
-				}
-				if targetRelease == nil {
-					err := fmt.Errorf("no release found with version %q in channel", tt.requestedVersion)
-					if tt.expectError {
-						assert.Contains(t, err.Error(), tt.errorMsg)
-					} else {
-						t.Errorf("Unexpected error: %v", err)
-					}
-					return
-				}
-			} else {
-				// Find the current release (highest channel sequence)
-				for _, release := range tt.releases {
-					if targetRelease == nil || release.ChannelSequence > targetRelease.ChannelSequence {
-						targetRelease = release
-					}
-				}
-				if targetRelease == nil {
-					err := errors.New("no current release found")
-					if tt.expectError {
-						assert.Contains(t, err.Error(), tt.errorMsg)
-					} else {
-						t.Errorf("Unexpected error: %v", err)
-					}
-					return
-				}
-			}
+			targetRelease, err := findTargetRelease(tt.releases, tt.requestedVersion)
 
 			if tt.expectError {
-				t.Errorf("Expected error but got none")
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+				assert.Nil(t, targetRelease)
 			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, targetRelease)
 				assert.Equal(t, tt.expectedSequence, targetRelease.ChannelSequence)
 			}
 		})

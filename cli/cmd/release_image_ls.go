@@ -69,19 +69,9 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to list channel releases: %w", err)
 		}
 
-		if len(channelReleases) == 0 {
-			return errors.New("no releases found in channel")
-		}
-
-		// Find release by semver
-		for _, release := range channelReleases {
-			if release.Semver == r.args.releaseImageLSVersion {
-				targetRelease = release
-				break
-			}
-		}
-		if targetRelease == nil {
-			return fmt.Errorf("no release found with version %q in channel", r.args.releaseImageLSVersion)
+		targetRelease, err = findTargetRelease(channelReleases, r.args.releaseImageLSVersion)
+		if err != nil {
+			return err
 		}
 
 		// Get proxy domain for version-specific releases
@@ -181,6 +171,42 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 	}
 
 	return cleaned
+}
+
+// findTargetRelease finds the target release from a list of releases
+// If requestedVersion is empty, returns the current release (highest channel sequence)
+// If requestedVersion is specified, returns the release with matching semver
+func findTargetRelease(releases []*types.ChannelRelease, requestedVersion string) (*types.ChannelRelease, error) {
+	if len(releases) == 0 {
+		return nil, errors.New("no releases found in channel")
+	}
+
+	var targetRelease *types.ChannelRelease
+
+	if requestedVersion != "" {
+		// Find release by semver
+		for _, release := range releases {
+			if release.Semver == requestedVersion {
+				targetRelease = release
+				break
+			}
+		}
+		if targetRelease == nil {
+			return nil, fmt.Errorf("no release found with version %q in channel", requestedVersion)
+		}
+	} else {
+		// Find the current release (highest channel sequence)
+		for _, release := range releases {
+			if targetRelease == nil || release.ChannelSequence > targetRelease.ChannelSequence {
+				targetRelease = release
+			}
+		}
+		if targetRelease == nil {
+			return nil, errors.New("no current release found")
+		}
+	}
+
+	return targetRelease, nil
 }
 
 
