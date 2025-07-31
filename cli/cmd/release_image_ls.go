@@ -118,16 +118,6 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	// Extract and clean up image names
 	images := make([]string, 0)
 	
-	// If proxy domain detection failed, try to infer it from the actual images
-	if proxyDomain == "proxy.replicated.com" {
-		for _, image := range targetRelease.AirgapBundleImages {
-			if strings.HasPrefix(image, "images.shortrib.io/") {
-				proxyDomain = "images.shortrib.io"
-				break
-			}
-		}
-	}
-	
 	for _, image := range targetRelease.AirgapBundleImages {
 		// Remove registry prefixes and clean up image names
 		var cleanProxyDomain string
