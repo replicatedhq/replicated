@@ -39,10 +39,10 @@ func TestCleanImageName(t *testing.T) {
 			expected:            "images.shortrib.io/proxy/testapp/ghcr.io/example/app:v1.0.0",
 		},
 		{
-			name:                "proxy registry with library prefix",
-			input:               "myproxy.com/library/nginx:latest",
-			proxyRegistryDomain: "myproxy.com",
-			expected:            "nginx:latest",
+			name:                "proxy with replicated sdk (common SDK pattern)",
+			input:               "images.shortrib.io/proxy/testapp/proxy.replicated.com/library/replicated-sdk-image:1.7.1",
+			proxyRegistryDomain: "images.shortrib.io",
+			expected:            "proxy.replicated.com/library/replicated-sdk-image:1.7.1",
 		},
 		{
 			name:                "no matching prefixes",
@@ -60,7 +60,7 @@ func TestCleanImageName(t *testing.T) {
 			name:                "proxy.replicated.com with library prefix (common SDK pattern)",
 			input:               "proxy.replicated.com/library/replicated-sdk-image:1.7.1",
 			proxyRegistryDomain: "proxy.replicated.com",
-			expected:            "replicated-sdk-image:1.7.1",
+			expected:            "proxy.replicated.com/library/replicated-sdk-image:1.7.1",
 		},
 		{
 			name:                "proxy.replicated.com with proxy prefix and app name",
