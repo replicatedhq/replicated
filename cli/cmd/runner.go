@@ -40,6 +40,10 @@ type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string
 
+	releaseImageLSChannel    string
+	releaseImageLSVersion    string
+	releaseImageLSKeepProxy  bool
+
 	createCollectorName     string
 	createCollectorYaml     string
 	createCollectorYamlFile string

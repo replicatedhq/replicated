@@ -63,19 +63,22 @@ type CustomerAdoption struct {
 }
 
 type ChannelRelease struct {
-	AirgapBuildError  string    `json:"airgapBuildError,omitempty"`
-	AirgapBuildStatus string    `json:"airgapBuildStatus,omitempty"`
-	ChannelIcon       string    `json:"channelIcon,omitempty"`
-	ChannelId         string    `json:"channelId,omitempty"`
-	ChannelName       string    `json:"channelName,omitempty"`
-	ChannelSequence   int32     `json:"channelSequence,omitempty"`
-	Created           time.Time `json:"created,omitempty"`
-	RegistrySecret    string    `json:"registrySecret,omitempty"`
-	ReleaseNotes      string    `json:"releaseNotes,omitempty"`
-	ReleasedAt        time.Time `json:"releasedAt,omitempty"`
-	Semver            string    `json:"semver,omitempty"`
-	Sequence          int32     `json:"sequence,omitempty"`
-	Updated           time.Time `json:"updated,omitempty"`
+	AirgapBuildError     string             `json:"airgapBuildError,omitempty"`
+	AirgapBuildStatus    string             `json:"airgapBuildStatus,omitempty"`
+	AirgapBundleImages   []string           `json:"airgapBundleImages,omitempty"`
+	ChannelIcon          string             `json:"channelIcon,omitempty"`
+	ChannelId            string             `json:"channelId,omitempty"`
+	ChannelName          string             `json:"channelName,omitempty"`
+	ChannelSequence      int32              `json:"channelSequence,omitempty"`
+	Created              time.Time          `json:"created,omitempty"`
+	ProxyRegistryDomain  string             `json:"proxyRegistryDomain,omitempty"`
+	RegistrySecret       string             `json:"registrySecret,omitempty"`
+	ReleaseNotes         string             `json:"releaseNotes,omitempty"`
+	ReleasedAt           time.Time          `json:"releasedAt,omitempty"`
+	Semver               string             `json:"semver,omitempty"`
+	Sequence             int32              `json:"sequence,omitempty"`
+	Updated              time.Time          `json:"updated,omitempty"`
+	InstallationTypes    InstallationTypes  `json:"installationTypes,omitempty"`
 }
 
 type CreateChannelRequest struct {
@@ -119,4 +122,14 @@ type CustomHostNameOverrides struct {
 	ReplicatedApp struct {
 		Hostname string `json:"hostname"`
 	} `json:"replicatedApp"`
+}
+
+type InstallationTypes struct {
+	EmbeddedCluster EmbeddedCluster `json:"embeddedCluster,omitempty"`
+}
+
+type EmbeddedCluster struct {
+	Version               string `json:"version,omitempty"`
+	ReplicatedAppDomain   string `json:"replicatedAppDomain,omitempty"`
+	ProxyRegistryDomain   string `json:"proxyRegistryDomain,omitempty"`
 }

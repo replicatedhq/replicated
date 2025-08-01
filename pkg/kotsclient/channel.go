@@ -149,3 +149,18 @@ func (c *VendorV3Client) UnDemoteChannelRelease(appID string, channelID string, 
 
 	return &response.Release, nil
 }
+
+func (c *VendorV3Client) ListChannelReleases(appID string, channelID string) ([]*types.ChannelRelease, error) {
+	type listChannelReleasesResponse struct {
+		Releases []*types.ChannelRelease `json:"releases"`
+	}
+
+	response := listChannelReleasesResponse{}
+	url := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))
+	err := c.DoJSON(context.TODO(), "GET", url, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channel releases")
+	}
+
+	return response.Releases, nil
+}

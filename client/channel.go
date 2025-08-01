@@ -187,3 +187,122 @@ func (c *Client) ChannelReleaseUnDemote(appID string, appType string, channelID 
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
+
+func (c *Client) ListChannelReleases(appID string, appType string, channelID string) ([]*types.ChannelRelease, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.ListChannelReleases(appID, channelID)
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
+func (c *Client) GetCustomHostnames(appID string, appType string, channelID string) (*types.CustomHostNameOverrides, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID)
+		if err != nil {
+			return nil, err
+		}
+		return &kotsChannel.CustomHostNameOverrides, nil
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
+func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelID string) (*types.ChannelRelease, string, error) {
+	if appType == "platform" {
+		return nil, "", errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID)
+		if err != nil {
+			return nil, "", err
+		}
+		
+		// If the channel has releases data, find the current one
+		if len(kotsChannel.Releases) > 0 {
+			var currentRelease *types.ChannelRelease
+			for _, release := range kotsChannel.Releases {
+				if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
+					currentRelease = &release
+				}
+			}
+			if currentRelease != nil {
+				proxyDomain := currentRelease.ProxyRegistryDomain
+				if proxyDomain == "" && kotsChannel.CustomHostNameOverrides.Proxy.Hostname != "" {
+					proxyDomain = kotsChannel.CustomHostNameOverrides.Proxy.Hostname
+				}
+				// Check embedded cluster proxy domain if still empty
+				if proxyDomain == "" && currentRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain != "" {
+					proxyDomain = currentRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain
+				}
+				// If no explicit proxy domain is configured, fall back to default custom hostname
+				if proxyDomain == "" && appType == "kots" {
+					defaultProxy, err := c.GetDefaultProxyHostname(appID)
+					if err == nil && defaultProxy != "" {
+						proxyDomain = defaultProxy
+					} else {
+						// Final fallback to default Replicated proxy
+						proxyDomain = "proxy.replicated.com"
+					}
+				}
+				return currentRelease, proxyDomain, nil
+			}
+		}
+		
+		// Fallback to the existing approach if releases aren't included
+		releases, err := c.KotsClient.ListChannelReleases(appID, channelID)
+		if err != nil {
+			return nil, "", err
+		}
+		
+		if len(releases) == 0 {
+			return nil, "", errors.New("no releases found in channel")
+		}
+		
+		var currentRelease *types.ChannelRelease
+		for _, release := range releases {
+			if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
+				currentRelease = release
+			}
+		}
+		
+		proxyDomain := currentRelease.ProxyRegistryDomain
+		if proxyDomain == "" && kotsChannel.CustomHostNameOverrides.Proxy.Hostname != "" {
+			proxyDomain = kotsChannel.CustomHostNameOverrides.Proxy.Hostname
+		}
+		// Check embedded cluster proxy domain if still empty
+		if proxyDomain == "" && currentRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain != "" {
+			proxyDomain = currentRelease.InstallationTypes.EmbeddedCluster.ProxyRegistryDomain
+		}
+		// If no explicit proxy domain is configured, fall back to default custom hostname
+		if proxyDomain == "" && appType == "kots" {
+			defaultProxy, err := c.GetDefaultProxyHostname(appID)
+			if err == nil && defaultProxy != "" {
+				proxyDomain = defaultProxy
+			} else {
+				// Final fallback to default Replicated proxy
+				proxyDomain = "proxy.replicated.com"
+			}
+		}
+		
+		return currentRelease, proxyDomain, nil
+	}
+	return nil, "", errors.Errorf("unknown app type %q", appType)
+}
+
+// GetDefaultProxyHostname gets the default proxy hostname from the app's custom hostnames
+func (c *Client) GetDefaultProxyHostname(appID string) (string, error) {
+	customHostnames, err := c.KotsClient.ListCustomHostnames(appID)
+	if err != nil {
+		return "", err
+	}
+
+	for _, hostname := range customHostnames.Proxy {
+		if hostname.IsDefault {
+			return hostname.Hostname, nil
+		}
+	}
+
+	return "", nil
+}
