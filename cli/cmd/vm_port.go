@@ -12,13 +12,13 @@ func (r *runners) InitVMPort(parent *cobra.Command) *cobra.Command {
 
 This command provides flexibility for handling ports in various test vms, ensuring efficient management of vm networking settings.`,
 		Example: `# List all exposed ports in a vm
-replicated vm port ls [VM_ID]
+replicated vm port ls VM_ID_OR_NAME
 
 # Remove an exposed port from a vm
-replicated vm port rm [VM_ID] [PORT]
+replicated vm port rm VM_ID_OR_NAME --id PORT_ID
 
 # Expose a new port in a vm
-replicated vm port expose [VM_ID] [PORT]`,
+replicated vm port expose VM_ID_OR_NAME --port PORT`,
 		SilenceUsage: true,
 		Hidden:       false,
 	}
