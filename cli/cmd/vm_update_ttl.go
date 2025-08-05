@@ -18,7 +18,9 @@ The TTL specifies how long the VM will run before it is automatically terminated
 
 The command accepts a VM ID or name as an argument and requires the '--ttl' flag to specify the new TTL value.
 
-You can also specify the output format (json, table, wide) using the '--output' flag.`,
+You can also specify the output format (json, table, wide) using the '--output' flag.
+
+VMs are currently a beta feature.`,
 		Example: `# Update the TTL of a VM to 2 hours
 replicated vm update ttl aaaaa11 --ttl 2h
 
