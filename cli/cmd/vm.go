@@ -11,7 +11,10 @@ func (r *runners) InitVMCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vm",
 		Short: "Manage test virtual machines.",
-		Long:  `The 'vm' command allows you to manage and interact with virtual machines (VMs) used for testing purposes. With this command, you can create, list, remove, update, and manage VMs, as well as retrieve information about available VM versions.`,
+		Long: `The 'vm' command allows you to manage and interact with virtual machines (VMs) used for testing purposes.
+With this command, you can create, list, remove, update, and manage VMs, as well as retrieve information about available VM versions.
+
+VMs are currently a beta feature.`,
 		Example: `# Create a single Ubuntu VM
 replicated vm create --distribution ubuntu --version 20.04
 

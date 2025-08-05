@@ -11,7 +11,9 @@ func (r *runners) InitVMPortLs(parent *cobra.Command) *cobra.Command {
 		Short: "List vm ports for a vm.",
 		Long: `The 'vm port ls' command lists all the ports configured for a specific vm. You must provide the vm ID or name to retrieve and display the ports.
 
-This command is useful for viewing the current port configurations, protocols, and other related settings of your test vm. The output format can be customized to suit your needs, and the available formats include table, JSON, and wide views.`,
+This command is useful for viewing the current port configurations, protocols, and other related settings of your test vm. The output format can be customized to suit your needs, and the available formats include table, JSON, and wide views.
+
+VMs are currently a beta feature.`,
 		Example: `# List ports for a vm in the default table format
 replicated vm port ls VM_ID_OR_NAME
 

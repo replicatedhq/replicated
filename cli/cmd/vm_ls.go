@@ -23,7 +23,9 @@ By default, the command will return a table of all VMs, but you can switch to JS
 
 You can use the '--watch' flag to monitor VMs continuously. This will refresh the list of VMs every 2 seconds, displaying any updates in real-time, such as new VMs being created or existing VMs being terminated.
 
-The command also allows you to customize the output format, supporting 'json', 'table', and 'wide' views for flexibility based on your needs.`,
+The command also allows you to customize the output format, supporting 'json', 'table', and 'wide' views for flexibility based on your needs.
+
+VMs are currently a beta feature.`,
 		Example: `# List all active VMs
 replicated vm ls
 

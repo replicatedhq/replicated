@@ -54,7 +54,9 @@ The output will be in the format: %s
 
 You can identify the VM either by its unique ID or by its name.
 
-Note: %s endpoints can only be retrieved from VMs in the "running" state.`, protocol, outputFormat, protocol)
+Note: %s endpoints can only be retrieved from VMs in the "running" state.
+	
+VMs are currently a beta feature.`, protocol, outputFormat, protocol)
 
 	cmdExample := fmt.Sprintf(`# Get %s endpoint for a specific VM by ID
 replicated vm %s-endpoint aaaaa11
