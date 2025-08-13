@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"encoding/json"
-	"fmt"
+	"os"
+	"text/tabwriter"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -62,12 +63,12 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 
 	// Handle watch mode
 	if r.args.networkReportWatch {
+		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+
 		// Print initial events
 		if len(report.Events) > 0 {
-			if r.outputFormat == "json" {
-				printEventsJSONL(report.Events)
-			} else {
-				printEventsTable(report.Events, true)
+			if err := print.NetworkEvents(r.outputFormat, w, report.Events, true); err != nil {
+				return errors.Wrap(err, "print initial network events")
 			}
 		}
 
@@ -92,10 +93,8 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 
 			// Print new events
 			if len(newReport.Events) > 0 {
-				if r.outputFormat == "json" {
-					printEventsJSONL(newReport.Events)
-				} else {
-					printEventsTable(newReport.Events, false)
+				if err := print.NetworkEvents(r.outputFormat, w, newReport.Events, false); err != nil {
+					return errors.Wrap(err, "print new network events")
 				}
 				// Update last seen time
 				lastEventTime = &newReport.Events[len(newReport.Events)-1].CreatedAt
@@ -105,84 +104,6 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 	}
 
 	// Output the report (non-watch mode)
-	return outputReport(report, r.outputFormat)
-}
-
-func outputReport(report *types.NetworkReport, outputFormat string) error {
-	switch outputFormat {
-	case "json":
-		output, err := json.MarshalIndent(report, "", "  ")
-		if err != nil {
-			return errors.Wrap(err, "marshal report to json")
-		}
-		fmt.Println(string(output))
-	case "table":
-		if len(report.Events) == 0 {
-			fmt.Println("No network events found.")
-			return nil
-		}
-		printEventsTable(report.Events, true)
-	default:
-		return errors.Errorf("unsupported output format: %s", outputFormat)
-	}
-	return nil
-}
-
-func printEventsTable(events []*types.NetworkEvent, includeHeader bool) {
-	if includeHeader {
-		fmt.Printf("%-20s %-15s %-15s %-8s %-8s %-8s %-12s %-8s %-15s %s\n",
-			"CREATED AT", "SRC IP", "DST IP", "SRC PORT", "DST PORT", "PROTOCOL", "COMMAND", "PID", "DNS QUERY", "SERVICE")
-		fmt.Println("---")
-	}
-
-	for _, event := range events {
-		// Parse the event data if it's JSON
-		var eventData map[string]interface{}
-		if err := json.Unmarshal([]byte(event.EventData), &eventData); err == nil {
-			fmt.Printf("%-20s %-15s %-15s %-8.0f %-8.0f %-8s %-12s %-8.0f %-15s %s\n",
-				event.CreatedAt.Format("2006-01-02 15:04:05"),
-				getStringValue(eventData, "srcIp"),
-				getStringValue(eventData, "dstIp"),
-				getFloatValue(eventData, "srcPort"),
-				getFloatValue(eventData, "dstPort"),
-				getStringValue(eventData, "proto"),
-				getStringValue(eventData, "comm"),
-				getFloatValue(eventData, "pid"),
-				getStringValue(eventData, "dnsQueryName"),
-				getStringValue(eventData, "likelyService"))
-		} else {
-			// Fallback if event data is not valid JSON
-			fmt.Printf("%-20s %s\n",
-				event.CreatedAt.Format("2006-01-02 15:04:05"),
-				event.EventData)
-		}
-	}
-}
-
-func getStringValue(data map[string]interface{}, key string) string {
-	if val, ok := data[key]; ok {
-		if str, ok := val.(string); ok {
-			return str
-		}
-	}
-	return ""
-}
-
-func getFloatValue(data map[string]interface{}, key string) float64 {
-	if val, ok := data[key]; ok {
-		if f, ok := val.(float64); ok {
-			return f
-		}
-	}
-	return 0
-}
-
-func printEventsJSONL(events []*types.NetworkEvent) {
-	for _, event := range events {
-		output, err := json.Marshal(event)
-		if err != nil {
-			continue // Skip events that can't be marshaled
-		}
-		fmt.Println(string(output))
-	}
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	return print.NetworkReport(r.outputFormat, w, report)
 }
