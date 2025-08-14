@@ -7,329 +7,6 @@
   },
   "interactions": [
     {
-      "description": "A request to add a kots app",
-      "providerState": "Add a kots app",
-      "request": {
-        "method": "POST",
-        "path": "/v3/app",
-        "headers": {
-          "Authorization": "replicated-cli-app-create-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "name": "app-create-1"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "app": {
-            "channels": [
-              {
-              },
-              {
-              },
-              {
-              }
-            ],
-            "created": "2000-02-01T12:30:00Z",
-            "description": "",
-            "id": "2HKT3v84IjvCPSH03F3Hlg0Kpj6",
-            "isArchived": false,
-            "isKotsApp": true,
-            "name": "app-create-1",
-            "renamedAt": null,
-            "slug": "app-create-1",
-            "teamId": "replicated-cli-app-create"
-          }
-        },
-        "matchingRules": {
-          "$.body.app.channels": {
-            "min": 3
-          },
-          "$.body.app.channels[*].*": {
-            "match": "type"
-          },
-          "$.body.app.created": {
-            "match": "regex",
-            "regex": "^([\\+-]?\\d{4}(?!\\d{2}\\b))((-?)((0[1-9]|1[0-2])(\\3([12]\\d|0[1-9]|3[01]))?|W([0-4]\\d|5[0-2])(-?[1-7])?|(00[1-9]|0[1-9]\\d|[12]\\d{2}|3([0-5]\\d|6[1-6])))([T\\s]((([01]\\d|2[0-3])((:?)[0-5]\\d)?|24\\:?00)([\\.,]\\d+(?!:))?)?(\\17[0-5]\\d([\\.,]\\d+)?)?([zZ]|([\\+-])([01]\\d|2[0-3]):?([0-5]\\d)?)?)?)?$"
-          },
-          "$.body.app.id": {
-            "match": "regex",
-            "regex": "^[a-zA-Z0-9]{27}$"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list kots apps",
-      "providerState": "List KOTS apps",
-      "request": {
-        "method": "GET",
-        "path": "/v3/apps",
-        "headers": {
-          "Authorization": "replicated-cli-list-apps-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "apps": [
-            {
-              "channels": [
-                {
-                }
-              ],
-              "id": "replicated-cli-list-apps-app",
-              "name": "Replicated CLI List Apps App",
-              "slug": "replicated-cli-list-apps-app"
-            }
-          ]
-        },
-        "matchingRules": {
-          "$.body.apps[0].channels": {
-            "min": 1
-          },
-          "$.body.apps[0].channels[*].*": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to delete a kots app",
-      "providerState": "Delete KOTS app",
-      "request": {
-        "method": "DELETE",
-        "path": "/v3/app/replicated-cli-rm-app-app",
-        "headers": {
-          "Authorization": "replicated-cli-rm-app-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        }
-      }
-    },
-    {
-      "description": "A request to list kots apps after deleting",
-      "providerState": "List KOTS apps after deleting",
-      "request": {
-        "method": "GET",
-        "path": "/v3/apps",
-        "headers": {
-          "Authorization": "replicated-cli-rm-app-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-        }
-      }
-    },
-    {
-      "description": "A request to create a kots app channel",
-      "providerState": "Create KOTS app channel",
-      "request": {
-        "method": "POST",
-        "path": "/v3/app/replicated-cli-create-channel-app/channel",
-        "headers": {
-          "Authorization": "replicated-cli-create-channel-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "description": "Description",
-          "name": "New Channel"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "channel": {
-            "channelSlug": "new-channel",
-            "description": "Description",
-            "id": "2HKXWE5CM7bqkR5T2sKfVniMJfD",
-            "name": "New Channel"
-          }
-        },
-        "matchingRules": {
-          "$.body.channel.id": {
-            "match": "regex",
-            "regex": "^[a-zA-Z0-9]{27}$"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list kots app channels",
-      "providerState": "List KOTS app channels",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-list-channels-app/channels",
-        "query": "excludeDetail=true",
-        "headers": {
-          "Authorization": "replicated-cli-list-channels-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "channels": [
-            {
-              "id": "replicated-cli-list-channels-unstable",
-              "name": "Unstable"
-            }
-          ]
-        },
-        "matchingRules": {
-          "$.body.channels[0].id": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get kots app channel",
-      "providerState": "Get KOTS app channel",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-get-channel-app/channel/replicated-cli-get-channel-unstable",
-        "headers": {
-          "Authorization": "replicated-cli-get-channel-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "channel": {
-            "id": "replicated-cli-get-channel-unstable",
-            "name": "Unstable",
-            "releases": [
-
-            ]
-          }
-        },
-        "matchingRules": {
-          "$.body.channel.id": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to remove kots app channel",
-      "providerState": "Remove KOTS app channel",
-      "request": {
-        "method": "DELETE",
-        "path": "/v3/app/replicated-cli-rm-channel-app/channel/replicated-cli-rm-channel-beta",
-        "headers": {
-          "Authorization": "replicated-cli-rm-channel-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        }
-      }
-    },
-    {
-      "description": "A request to list kots app channels after removing one",
-      "providerState": "List KOTS app channels",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-rm-channel-app/channels",
-        "query": "excludeDetail=true",
-        "headers": {
-          "Authorization": "replicated-cli-rm-channel-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "channels": [
-            {
-              "id": "replicated-cli-rm-channel-unstable",
-              "name": "Unstable"
-            }
-          ]
-        },
-        "matchingRules": {
-          "$.body.channels[0].id": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to add semver to kots app channel",
-      "providerState": "Add Semver to a KOTS app channel",
-      "request": {
-        "method": "PATCH",
-        "path": "/v3/app/replicated-cli-semver-channel-app/channel/replicated-cli-semver-channel-unstable",
-        "headers": {
-          "Authorization": "replicated-cli-semver-channel-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "semverRequired": true
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-        }
-      }
-    },
-    {
-      "description": "A request to create a kots installer",
-      "providerState": "Create KOTS installer",
-      "request": {
-        "method": "POST",
-        "path": "/v3/app/repl-cli-create-installer-app/installer",
-        "headers": {
-          "Authorization": "repl-cli-create-installer-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "yaml": "apiVersion: kurl.sh/v1beta1\nkind: Installer\nmetadata:\n  name: 'myapp'\nhelp_text: |\n  Please check this file exists in root directory: config.yaml\nspec:\n  kubernetes:\n    version: latest\n  docker:\n    version: latest\n  weave:\n    version: latest\n  rook:\n    version: latest\n  contour:\n    version: latest\n  registry:\n    version: latest\n  prometheus:\n    version: latest\n  kotsadm:\n    version: latest\n"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "installer": {
-            "appId": "repl-cli-create-installer-app"
-          }
-        }
-      }
-    },
-    {
       "description": "A request to add a dockerhub external registry using authtype password",
       "providerState": "Add a dockerhub external registry using a password",
       "request": {
@@ -345,6 +22,7 @@
           "password": "test",
           "provider": "dockerhub",
           "skipValidation": true,
+          "slug": "",
           "username": "test"
         }
       },
@@ -356,7 +34,8 @@
           "external_registry": {
             "authType": "password",
             "endpoint": "index.docker.io",
-            "provider": "dockerhub"
+            "provider": "dockerhub",
+            "slug": "index.docker.io"
           }
         }
       }
@@ -377,6 +56,7 @@
           "password": "test",
           "provider": "dockerhub",
           "skipValidation": true,
+          "slug": "token-test",
           "username": "test"
         }
       },
@@ -388,7 +68,8 @@
           "external_registry": {
             "authType": "token",
             "endpoint": "index.docker.io",
-            "provider": "dockerhub"
+            "provider": "dockerhub",
+            "slug": "token-test"
           }
         }
       }
@@ -409,6 +90,7 @@
           "password": "test",
           "provider": "ecr",
           "skipValidation": true,
+          "slug": "ecr-test-registry",
           "username": "test"
         }
       },
@@ -420,7 +102,8 @@
           "external_registry": {
             "authType": "accesskey",
             "endpoint": "0000000000.dkr.ecr.us-east-2.amazonaws.com",
-            "provider": "ecr"
+            "provider": "ecr",
+            "slug": "ecr-test-registry"
           }
         }
       }
@@ -441,6 +124,7 @@
           "password": "test",
           "provider": "gcr",
           "skipValidation": true,
+          "slug": "gcr-test-registry",
           "username": "_json_key"
         }
       },
@@ -452,7 +136,8 @@
           "external_registry": {
             "authType": "serviceaccount",
             "endpoint": "gcr.io",
-            "provider": "gcr"
+            "provider": "gcr",
+            "slug": "gcr-test-registry"
           }
         }
       }
@@ -473,6 +158,7 @@
           "password": "test",
           "provider": "gar",
           "skipValidation": true,
+          "slug": "gar-serviceaccount-test",
           "username": "_json_key"
         }
       },
@@ -484,7 +170,8 @@
           "external_registry": {
             "authType": "serviceaccount",
             "endpoint": "pkg.dev",
-            "provider": "gar"
+            "provider": "gar",
+            "slug": "gar-serviceaccount-test"
           }
         }
       }
@@ -505,6 +192,7 @@
           "password": "test",
           "provider": "gar",
           "skipValidation": true,
+          "slug": "gar-accesstoken-test",
           "username": "oauth2accesstoken"
         }
       },
@@ -516,7 +204,8 @@
           "external_registry": {
             "authType": "token",
             "endpoint": "pkg.dev",
-            "provider": "gar"
+            "provider": "gar",
+            "slug": "gar-accesstoken-test"
           }
         }
       }
@@ -526,7 +215,7 @@
       "providerState": "Remove a dockerhub external registry using a password",
       "request": {
         "method": "DELETE",
-        "path": "/v3/external_registry/index.docker.io",
+        "path": "/v3/external_registry/dockerhub-fixture",
         "headers": {
           "Authorization": "replicated-cli-rm-registry-token",
           "Content-Type": "application/json"
@@ -555,208 +244,6 @@
         },
         "body": {
           "external_registries": null
-        }
-      }
-    },
-    {
-      "description": "A request to create a kots release",
-      "providerState": "Create KOTS release",
-      "request": {
-        "method": "POST",
-        "path": "/v3/app/replicated-cli-kots-release-app/release",
-        "headers": {
-          "Authorization": "replicated-cli-kots-release-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "release": {
-            "appId": "replicated-cli-kots-release-app",
-            "sequence": 1
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get a kots release",
-      "providerState": "Get KOTS release",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-kots-release-app/release/1",
-        "headers": {
-          "Authorization": "replicated-cli-kots-release-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "release": {
-            "appId": "replicated-cli-kots-release-app",
-            "sequence": 1,
-            "spec": "[{\"name\":\"example-deployment.yaml\",\"path\":\"example-deployment.yaml\",\"content\":\"---\\napiVersion: apps/v1\\nkind: Deployment\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\nspec:\\n  selector:\\n    matchLabels:\\n      app: nginx\\n  template:\\n    metadata:\\n      labels:\\n        app: nginx\\n      annotations:\\n        backup.velero.io/backup-volumes: nginx-content\\n    spec:\\n      containers:\\n      - name: nginx\\n        image: nginx\\n        volumeMounts:\\n        - name: nginx-content\\n          mountPath: /usr/share/nginx/html/\\n        resources:\\n          limits:\\n            memory: '256Mi'\\n            cpu: '500m'\\n          requests:\\n            memory: '32Mi'\\n            cpu: '100m'\\n      volumes:\\n      - name: nginx-content\\n        configMap:\\n          name: nginx-content\\n\",\"children\":[]},{\"name\":\"example-service.yaml\",\"path\":\"example-service.yaml\",\"content\":\"apiVersion: v1\\nkind: Service\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\n  annotations:\\n    kots.io/when: '{{repl not IsKurl }}'\\nspec:\\n  type: ClusterIP\\n  ports:\\n    - port: 80\\n  selector:\\n    app: nginx\\n---\\napiVersion: v1\\nkind: Service\\nmetadata:\\n  name: nginx\\n  labels:\\n    app: nginx\\n  annotations:\\n    kots.io/when: '{{repl IsKurl }}'\\nspec:\\n  type: NodePort\\n  ports:\\n    - port: 80\\n      nodePort: 8888\\n  selector:\\n    app: nginx\",\"children\":[]},{\"name\":\"kots-app.yaml\",\"path\":\"kots-app.yaml\",\"content\":\"---\\napiVersion: kots.io/v1beta1\\nkind: Application\\nmetadata:\\n  name: nginx\\nspec:\\n  title: App Name\\n  icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/kubernetes/icon/color/kubernetes-icon-color.png\\n  statusInformers:\\n    - deployment/nginx\\n  ports:\\n    - serviceName: \\\"nginx\\\"\\n      servicePort: 80\\n      localPort: 8888\\n      applicationUrl: \\\"http://nginx\\\"\\n\",\"children\":[]},{\"name\":\"kots-config.yaml\",\"path\":\"kots-config.yaml\",\"content\":\"---\\napiVersion: kots.io/v1beta1\\nkind: Config\\nmetadata:\\n  name: config\\nspec:\\n  groups: []\",\"children\":[]},{\"name\":\"kots-preflight.yaml\",\"path\":\"kots-preflight.yaml\",\"content\":\"apiVersion: troubleshoot.sh/v1beta2\\nkind: Preflight\\nmetadata:\\n  name: preflight-checks\\nspec:\\n  analyzers: []\",\"children\":[]},{\"name\":\"kots-support-bundle.yaml\",\"path\":\"kots-support-bundle.yaml\",\"content\":\"apiVersion: troubleshoot.sh/v1beta2\\nkind: SupportBundle\\nmetadata:\\n  name: support-bundle\\nspec:\\n  collectors:\\n    - clusterInfo: {}\\n    - clusterResources: {}\\n    - logs:\\n        selector:\\n          - app=nginx\\n        namespace: '{{repl Namespace }}'\\n\",\"children\":[]}]"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list kots releases",
-      "providerState": "List KOTS releases",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-list-releases-app/releases",
-        "query": "currentPage=0&pageSize=20",
-        "headers": {
-          "Authorization": "replicated-cli-list-releases-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "releases": [
-            {
-              "appId": "replicated-cli-list-releases-app",
-              "sequence": 2,
-              "spec": ""
-            },
-            {
-              "appId": "replicated-cli-list-releases-app",
-              "sequence": 1,
-              "spec": ""
-            }
-          ]
-        }
-      }
-    },
-    {
-      "description": "A request to list kots releases",
-      "providerState": "List KOTS releases, page 2",
-      "request": {
-        "method": "GET",
-        "path": "/v3/app/replicated-cli-list-releases-app/releases",
-        "query": "currentPage=1&pageSize=20",
-        "headers": {
-          "Authorization": "replicated-cli-list-releases-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "releases": [
-
-          ]
-        }
-      }
-    },
-    {
-      "description": "A request to update a kots release",
-      "providerState": "Update KOTS release",
-      "request": {
-        "method": "PUT",
-        "path": "/v3/app/replicated-cli-update-release-app/release/1",
-        "headers": {
-          "Authorization": "replicated-cli-update-release-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "spec_gzip": "H4sIAAAAAAAA/7xWS2/jNhD+K4QuvqzMJMUWBoEe2u0laBMYXbSXOAeaHkus+So5dNYN8t8L6i1ZdtAcljfN4+PMNw/q6TUzXEPGMvjGtVOQ78Ape9JgcHniWmWfMsexvGogrEEwmLEsz/ON4U7+BT5IaxjhzgV6vN2YgzQ7Rn7tfDdGA/IdR842hpAUBCOmkOZb+lR8CypUGpIwOlVwICpxAAUCrW9sNEdR/j70GvsRgqCd4gitw/D2dNTYeepeSYyxyFFaM7TbcnGIbnkEBd4upaW1ID9aFTWEBiNvSKr9ujTSSRouDfgeNZ8SUh+peXEurS96sNHgMK4Rxvj6+ujkseZYMkJj8DSU3AOtzGmJWtHe2EOw0QsY4hOipJY4FiVitfUnRhZ3n398kIuxUrjIyOLzzY0eKTz8EyFchvrh7gLS7RCpJXyWxHMChDV7WTxwN7p11iX1eCnVzoPJ2NPz26ezqQngj1LAhZGZaPt5GY5KPyVfa/MPjshcnx4shtSaLyUYRhavrx6cIsYiuQ+/Ra/I29tiMFx4csDIFxUDgr9fJ5GzvqtPXn0xsrqZmcRhKGfr4PvneCW/R7uDtfV4Pb2qKRpLRlar1epq0pdbJcWXc+cmPTIVX1mmbYbH2y0g76j82TklRcXFNTr77CUqqNzII9eQRFIk/BLRBUap5y/LQmIZtzGAbwJaCqupMGJPuccX6w9U89Qe1Hn7NwgM9BC34A0gBJrwqLDK+oE0T9K8ki6dKSoakWMM92Zvve73X076N4Z2FR+XqBmpxyrDTVZbZW3BGu16UkdlBVfjQjbVawn806sEl5hglHao71S1XiVzhR1r/n9tv1T+s2UVjaqra+FtdIGRp+d3wnUe9koW5fSFn1fObyv0Nm4VhNJaXIayifuujXvdosyG3t2RixLEIQyS4Iar07+pF97PI0SXmiLfRrNT0917xeJDGX2toX6pkGazGl82yElYVW+Lvn1Fs1vN3jLy+jYR/9E9twOdssXwgZxsoPbJ4879NPk/SNEFxwX0W/GxFdWLccrz838BAAD//22E3lIXCgAA"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        }
-      }
-    },
-    {
-      "description": "A request to promote a kots release",
-      "providerState": "Promote KOTS release",
-      "request": {
-        "method": "POST",
-        "path": "/v3/app/replicated-cli-promote-release-app/release/1/promote",
-        "headers": {
-          "Authorization": "replicated-cli-promote-release-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "channelIds": [
-            "replicated-cli-promote-release-unstable"
-          ],
-          "ignoreWarnings": false,
-          "isRequired": false,
-          "omitDetailsInResponse": true,
-          "releaseNotes": "releasenotes",
-          "versionLabel": "v0.0.1"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        }
-      }
-    },
-    {
-      "description": "A request to list clusters",
-      "providerState": "List clusters using service account",
-      "request": {
-        "method": "GET",
-        "path": "/v3/clusters",
-        "headers": {
-          "Authorization": "replicated-cli-tokens-sa-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "totalClusters": 0
-        },
-        "matchingRules": {
-          "$.body.totalClusters": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list clusters",
-      "providerState": "List clusters using personal token",
-      "request": {
-        "method": "GET",
-        "path": "/v3/clusters",
-        "headers": {
-          "Authorization": "replicated-cli-tokens-personal-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "totalClusters": 0
-        },
-        "matchingRules": {
-          "$.body.totalClusters": {
-            "match": "type"
-          }
         }
       }
     }

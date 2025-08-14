@@ -5,6 +5,7 @@ import "time"
 type Registry struct {
 	Provider   string     `json:"provider"`
 	Endpoint   string     `json:"endpoint"`
+	Slug       string     `json:"slug"`
 	AuthType   string     `json:"authType"`
 	Username   string     `json:"username"`
 	LastUsedAt *time.Time `json:"lastUsedAt"`
