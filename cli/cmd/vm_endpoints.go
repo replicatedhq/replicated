@@ -45,8 +45,22 @@ func (r *runners) initVMEndpointCmd(parent *cobra.Command, endpointType string) 
 	protocol := strings.ToUpper(endpointType)
 	cmdUse := fmt.Sprintf("%s-endpoint VM_ID_OR_NAME", endpointType)
 	cmdShort := fmt.Sprintf("Get the %s endpoint of a VM", protocol)
-
 	outputFormat := fmt.Sprintf("%s://username@hostname:port", endpointType)
+
+	var scriptExample string
+	switch endpointType {
+	case EndpointTypeSSH:
+		scriptExample = `# Use the endpoint to SSH to a VM by name
+ssh $(replicated vm ssh-endpoint my-test-vm)`
+	case EndpointTypeSCP:
+		scriptExample = `# Use the endpoint to SCP a file to a VM by name
+scp /tmp/my-file $(replicated vm scp-endpoint my-test-vm)//dst/path/my-file
+
+# Use the endpoint to SCP a file from a VM by name
+scp $(replicated vm scp-endpoint my-test-vm)//src/path/my-file /tmp/my-file`
+	default:
+		scriptExample = ""
+	}
 
 	cmdLong := fmt.Sprintf(`Get the %s endpoint and port of a VM.
 
@@ -55,7 +69,7 @@ The output will be in the format: %s
 You can identify the VM either by its unique ID or by its name.
 
 Note: %s endpoints can only be retrieved from VMs in the "running" state.
-	
+
 VMs are currently a beta feature.`, protocol, outputFormat, protocol)
 
 	cmdExample := fmt.Sprintf(`# Get %s endpoint for a specific VM by ID
@@ -65,7 +79,9 @@ replicated vm %s-endpoint aaaaa11
 replicated vm %s-endpoint my-test-vm
 
 # Get %s endpoint with a custom username
-replicated vm %s-endpoint my-test-vm --username custom-user`, protocol, endpointType, protocol, endpointType, protocol, endpointType)
+replicated vm %s-endpoint my-test-vm --username custom-user
+
+%s`, protocol, endpointType, protocol, endpointType, protocol, endpointType, scriptExample)
 
 	cmd := &cobra.Command{
 		Use:               cmdUse,
