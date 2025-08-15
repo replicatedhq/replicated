@@ -400,7 +400,7 @@ func Test_RemoveRegistryDockerHubPassword(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-rm-registry-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		err = client.RemoveKOTSRegistry("dockerhub-fixture")
+		err = client.RemoveKOTSRegistry("index.docker.io")
 		assert.Nil(t, err)
 
 		registries, err := client.ListRegistries()
@@ -416,7 +416,7 @@ func Test_RemoveRegistryDockerHubPassword(t *testing.T) {
 		UponReceiving("A request to remove a dockerhub external registry using authtype password").
 		WithRequest(dsl.Request{
 			Method: "DELETE",
-			Path:   dsl.String("/v3/external_registry/dockerhub-fixture"),
+			Path:   dsl.String("/v3/external_registry/index.docker.io"),
 			Headers: dsl.MapMatcher{
 				"Authorization": dsl.String("replicated-cli-rm-registry-token"),
 				"Content-Type":  dsl.String("application/json"),
