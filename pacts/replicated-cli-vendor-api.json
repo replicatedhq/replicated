@@ -28,11 +28,11 @@
           "app": {
             "channels": [
               {
-              },
+        },
               {
-              },
+        },
               {
-              }
+        }
             ],
             "created": "2000-02-01T12:30:00Z",
             "description": "",
@@ -83,7 +83,7 @@
             {
               "channels": [
                 {
-                }
+        }
               ],
               "id": "replicated-cli-list-apps-app",
               "name": "Replicated CLI List Apps App",
@@ -223,8 +223,7 @@
             "id": "replicated-cli-get-channel-unstable",
             "name": "Unstable",
             "releases": [
-
-            ]
+        ]
           }
         },
         "matchingRules": {
@@ -345,6 +344,7 @@
           "password": "test",
           "provider": "dockerhub",
           "skipValidation": true,
+          "slug": "",
           "username": "test"
         }
       },
@@ -356,7 +356,8 @@
           "external_registry": {
             "authType": "password",
             "endpoint": "index.docker.io",
-            "provider": "dockerhub"
+            "provider": "dockerhub",
+            "slug": "index.docker.io"
           }
         }
       }
@@ -377,6 +378,7 @@
           "password": "test",
           "provider": "dockerhub",
           "skipValidation": true,
+          "slug": "token-test",
           "username": "test"
         }
       },
@@ -388,7 +390,8 @@
           "external_registry": {
             "authType": "token",
             "endpoint": "index.docker.io",
-            "provider": "dockerhub"
+            "provider": "dockerhub",
+            "slug": "token-test"
           }
         }
       }
@@ -409,6 +412,7 @@
           "password": "test",
           "provider": "ecr",
           "skipValidation": true,
+          "slug": "ecr-test-registry",
           "username": "test"
         }
       },
@@ -420,7 +424,8 @@
           "external_registry": {
             "authType": "accesskey",
             "endpoint": "0000000000.dkr.ecr.us-east-2.amazonaws.com",
-            "provider": "ecr"
+            "provider": "ecr",
+            "slug": "ecr-test-registry"
           }
         }
       }
@@ -441,6 +446,7 @@
           "password": "test",
           "provider": "gcr",
           "skipValidation": true,
+          "slug": "gcr-test-registry",
           "username": "_json_key"
         }
       },
@@ -452,7 +458,8 @@
           "external_registry": {
             "authType": "serviceaccount",
             "endpoint": "gcr.io",
-            "provider": "gcr"
+            "provider": "gcr",
+            "slug": "gcr-test-registry"
           }
         }
       }
@@ -473,6 +480,7 @@
           "password": "test",
           "provider": "gar",
           "skipValidation": true,
+          "slug": "gar-serviceaccount-test",
           "username": "_json_key"
         }
       },
@@ -484,7 +492,8 @@
           "external_registry": {
             "authType": "serviceaccount",
             "endpoint": "pkg.dev",
-            "provider": "gar"
+            "provider": "gar",
+            "slug": "gar-serviceaccount-test"
           }
         }
       }
@@ -505,6 +514,7 @@
           "password": "test",
           "provider": "gar",
           "skipValidation": true,
+          "slug": "gar-accesstoken-test",
           "username": "oauth2accesstoken"
         }
       },
@@ -516,7 +526,8 @@
           "external_registry": {
             "authType": "token",
             "endpoint": "pkg.dev",
-            "provider": "gar"
+            "provider": "gar",
+            "slug": "gar-accesstoken-test"
           }
         }
       }
@@ -658,8 +669,7 @@
         },
         "body": {
           "releases": [
-
-          ]
+        ]
         }
       }
     },

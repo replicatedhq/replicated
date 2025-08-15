@@ -19,7 +19,7 @@ func Test_CreateRegistryDockerHubPassword(t *testing.T) {
 
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "dockerhub",
-			Endpoint:       "index.docker.io",
+			Endpoint:       "index.docker.io", // explicitly did not set slug to assert api fall back to using the endpoint as the slug
 			AuthType:       "password",
 			Username:       "test",
 			Password:       "test",
@@ -31,6 +31,7 @@ func Test_CreateRegistryDockerHubPassword(t *testing.T) {
 		assert.Equal(t, "index.docker.io", response.Endpoint)
 		assert.Equal(t, "dockerhub", response.Provider)
 		assert.Equal(t, "password", response.AuthType)
+		assert.Equal(t, "index.docker.io", response.Slug)
 
 		return nil
 	}
@@ -48,6 +49,7 @@ func Test_CreateRegistryDockerHubPassword(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("dockerhub"),
 				"endpoint":       dsl.String("index.docker.io"),
+				"slug":           dsl.String(""),
 				"authType":       dsl.String("password"),
 				"username":       dsl.String("test"),
 				"password":       dsl.String("test"),
@@ -60,6 +62,7 @@ func Test_CreateRegistryDockerHubPassword(t *testing.T) {
 				"external_registry": map[string]interface{}{
 					"provider": dsl.String("dockerhub"),
 					"endpoint": dsl.String("index.docker.io"),
+					"slug":     dsl.String("index.docker.io"),
 					"authType": dsl.String("password"),
 				},
 			},
@@ -80,6 +83,7 @@ func Test_CreateRegistryDockerHubAccessToken(t *testing.T) {
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "dockerhub",
 			Endpoint:       "index.docker.io",
+			Slug:           "token-test",
 			AuthType:       "token",
 			Username:       "test",
 			Password:       "test",
@@ -91,6 +95,7 @@ func Test_CreateRegistryDockerHubAccessToken(t *testing.T) {
 		assert.Equal(t, "index.docker.io", response.Endpoint)
 		assert.Equal(t, "dockerhub", response.Provider)
 		assert.Equal(t, "token", response.AuthType)
+		assert.Equal(t, "token-test", response.Slug)
 
 		return nil
 	}
@@ -108,6 +113,7 @@ func Test_CreateRegistryDockerHubAccessToken(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("dockerhub"),
 				"endpoint":       dsl.String("index.docker.io"),
+				"slug":           dsl.String("token-test"),
 				"authType":       dsl.String("token"),
 				"username":       dsl.String("test"),
 				"password":       dsl.String("test"),
@@ -121,6 +127,7 @@ func Test_CreateRegistryDockerHubAccessToken(t *testing.T) {
 					"provider": dsl.String("dockerhub"),
 					"endpoint": dsl.String("index.docker.io"),
 					"authType": dsl.String("token"),
+					"slug":     dsl.String("token-test"),
 				},
 			},
 		})
@@ -140,6 +147,7 @@ func Test_CreateRegistryECR(t *testing.T) {
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "ecr",
 			Endpoint:       "0000000000.dkr.ecr.us-east-2.amazonaws.com",
+			Slug:           "ecr-test-registry",
 			AuthType:       "accesskey",
 			Username:       "test",
 			Password:       "test",
@@ -151,6 +159,7 @@ func Test_CreateRegistryECR(t *testing.T) {
 		assert.Equal(t, "0000000000.dkr.ecr.us-east-2.amazonaws.com", response.Endpoint)
 		assert.Equal(t, "ecr", response.Provider)
 		assert.Equal(t, "accesskey", response.AuthType)
+		assert.Equal(t, "ecr-test-registry", response.Slug)
 
 		return nil
 	}
@@ -168,6 +177,7 @@ func Test_CreateRegistryECR(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("ecr"),
 				"endpoint":       dsl.String("0000000000.dkr.ecr.us-east-2.amazonaws.com"),
+				"slug":           dsl.String("ecr-test-registry"),
 				"authType":       dsl.String("accesskey"),
 				"username":       dsl.String("test"),
 				"password":       dsl.String("test"),
@@ -180,6 +190,7 @@ func Test_CreateRegistryECR(t *testing.T) {
 				"external_registry": map[string]interface{}{
 					"provider": dsl.String("ecr"),
 					"endpoint": dsl.String("0000000000.dkr.ecr.us-east-2.amazonaws.com"),
+					"slug":     dsl.String("ecr-test-registry"),
 					"authType": dsl.String("accesskey"),
 				},
 			},
@@ -200,6 +211,7 @@ func Test_CreateRegistryGCR(t *testing.T) {
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gcr",
 			Endpoint:       "gcr.io",
+			Slug:           "gcr-test-registry",
 			AuthType:       "serviceaccount",
 			Username:       "_json_key",
 			Password:       "test",
@@ -211,6 +223,7 @@ func Test_CreateRegistryGCR(t *testing.T) {
 		assert.Equal(t, "gcr.io", response.Endpoint)
 		assert.Equal(t, "gcr", response.Provider)
 		assert.Equal(t, "serviceaccount", response.AuthType)
+		assert.Equal(t, "gcr-test-registry", response.Slug)
 
 		return nil
 	}
@@ -228,6 +241,7 @@ func Test_CreateRegistryGCR(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("gcr"),
 				"endpoint":       dsl.String("gcr.io"),
+				"slug":           dsl.String("gcr-test-registry"),
 				"authType":       dsl.String("serviceaccount"),
 				"username":       dsl.String("_json_key"),
 				"password":       dsl.String("test"),
@@ -240,6 +254,7 @@ func Test_CreateRegistryGCR(t *testing.T) {
 				"external_registry": map[string]interface{}{
 					"provider": dsl.String("gcr"),
 					"endpoint": dsl.String("gcr.io"),
+					"slug":     dsl.String("gcr-test-registry"),
 					"authType": dsl.String("serviceaccount"),
 				},
 			},
@@ -260,6 +275,7 @@ func Test_CreateRegistryGARServiceAccount(t *testing.T) {
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gar",
 			Endpoint:       "pkg.dev",
+			Slug:           "gar-serviceaccount-test",
 			AuthType:       "serviceaccount",
 			Username:       "_json_key",
 			Password:       "test",
@@ -271,6 +287,7 @@ func Test_CreateRegistryGARServiceAccount(t *testing.T) {
 		assert.Equal(t, "pkg.dev", response.Endpoint)
 		assert.Equal(t, "gar", response.Provider)
 		assert.Equal(t, "serviceaccount", response.AuthType)
+		assert.Equal(t, "gar-serviceaccount-test", response.Slug)
 
 		return nil
 	}
@@ -288,6 +305,7 @@ func Test_CreateRegistryGARServiceAccount(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("gar"),
 				"endpoint":       dsl.String("pkg.dev"),
+				"slug":           dsl.String("gar-serviceaccount-test"),
 				"authType":       dsl.String("serviceaccount"),
 				"username":       dsl.String("_json_key"),
 				"password":       dsl.String("test"),
@@ -300,6 +318,7 @@ func Test_CreateRegistryGARServiceAccount(t *testing.T) {
 				"external_registry": map[string]interface{}{
 					"provider": dsl.String("gar"),
 					"endpoint": dsl.String("pkg.dev"),
+					"slug":     dsl.String("gar-serviceaccount-test"),
 					"authType": dsl.String("serviceaccount"),
 				},
 			},
@@ -320,6 +339,7 @@ func Test_CreateRegistryGARAccessToken(t *testing.T) {
 		req := realkotsclient.AddKOTSRegistryRequest{
 			Provider:       "gar",
 			Endpoint:       "pkg.dev",
+			Slug:           "gar-accesstoken-test",
 			AuthType:       "token",
 			Username:       "oauth2accesstoken",
 			Password:       "test",
@@ -331,6 +351,7 @@ func Test_CreateRegistryGARAccessToken(t *testing.T) {
 		assert.Equal(t, "pkg.dev", response.Endpoint)
 		assert.Equal(t, "gar", response.Provider)
 		assert.Equal(t, "token", response.AuthType)
+		assert.Equal(t, "gar-accesstoken-test", response.Slug)
 
 		return nil
 	}
@@ -348,6 +369,7 @@ func Test_CreateRegistryGARAccessToken(t *testing.T) {
 			Body: map[string]interface{}{
 				"provider":       dsl.String("gar"),
 				"endpoint":       dsl.String("pkg.dev"),
+				"slug":           dsl.String("gar-accesstoken-test"),
 				"authType":       dsl.String("token"),
 				"username":       dsl.String("oauth2accesstoken"),
 				"password":       dsl.String("test"),
@@ -360,6 +382,7 @@ func Test_CreateRegistryGARAccessToken(t *testing.T) {
 				"external_registry": map[string]interface{}{
 					"provider": dsl.String("gar"),
 					"endpoint": dsl.String("pkg.dev"),
+					"slug":     dsl.String("gar-accesstoken-test"),
 					"authType": dsl.String("token"),
 				},
 			},
