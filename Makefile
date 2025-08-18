@@ -34,22 +34,6 @@ can-i-deploy:
 		--to-environment production \
 		--verbose
 
-.PHONY: record-release
-record-release:
-	pact-broker record-release \
-		--pacticipant replicated-cli \
-		--version ${PACT_VERSION} \
-		--environment production \
-		--verbose
-
-.PHONY: record-support-ended
-record-support-ended:
-	pact-broker record-support-ended \
-		--pacticipant replicated-cli \
-		--version ${PACT_VERSION} \
-		--environment production \
-		--verbose
-
 .PHONY: unpublish-past-versions
 unpublish-past-versions:
 	./scripts/cleanup-old-versions.sh
