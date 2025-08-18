@@ -36,7 +36,7 @@ can-i-deploy:
 
 .PHONY: unpublish-past-versions
 unpublish-past-versions:
-	./scripts/cleanup-old-versions.sh
+	./scripts/unpublish-past-versions.sh
 
 # fetch the swagger specs from the production Vendor API
 .PHONY: get-spec-prod
