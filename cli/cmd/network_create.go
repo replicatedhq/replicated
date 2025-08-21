@@ -21,6 +21,7 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 		Long:         ``,
 		SilenceUsage: true,
 		RunE:         r.createNetwork,
+		Hidden:       true,
 	}
 	parent.AddCommand(cmd)
 
