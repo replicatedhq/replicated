@@ -36,6 +36,7 @@ replicated network update <network-id> --policy airgap --collect-report`,
 		RunE:              r.updateNetwork,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeNetworkIDsAndNames,
+		Hidden:            true,
 	}
 	parent.AddCommand(cmd)
 

@@ -285,7 +285,6 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitNetworkCreate(networkCmd)
 	runCmds.InitNetworkList(networkCmd)
 	runCmds.InitNetworkRemove(networkCmd)
-	runCmds.InitNetworkJoin(networkCmd)
 	runCmds.InitNetworkReport(networkCmd)
 
 	runCmds.InitNetworkUpdateCommand(networkCmd)

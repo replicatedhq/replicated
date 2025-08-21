@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -11,10 +12,13 @@ import (
 
 func (r *runners) InitNetworkCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:    "network",
-		Short:  "Manage test networks for VMs and Clusters",
-		Long:   ``,
-		Hidden: true,
+		Use:   "network",
+		Short: "Manage test networks for VMs and Clusters",
+		Long: `The 'network' command allows you to manage and interact with networks used for testing purposes.
+With this command you can list the networks in use by VMs and clusters.`,
+		Example: `# List all networks
+replicated network ls`,
+		Hidden: false,
 	}
 	parent.AddCommand(cmd)
 

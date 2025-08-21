@@ -36,6 +36,7 @@ replicated network rm --all
 replicated network rm --all --dry-run`,
 		RunE:              r.removeNetworks,
 		ValidArgsFunction: r.completeNetworkIDsAndNames,
+		Hidden:            true,
 	}
 	parent.AddCommand(cmd)
 
