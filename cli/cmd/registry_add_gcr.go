@@ -22,6 +22,8 @@ func (r *runners) InitRegistryAddGCR(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.addRegistryEndpoint, "endpoint", "", "The GCR endpoint")
 	cmd.Flags().StringVar(&r.args.addRegistryServiceAccountKey, "serviceaccountkey", "", "The service account key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryServiceAccountKeyFromStdIn, "serviceaccountkey-stdin", false, "Take the service account key from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
+	cmd.Flags().StringVar(&r.args.addRegistryAppIds, "app-ids", "", "Comma-separated list of app IDs to scope this registry to")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddGCR
@@ -69,6 +71,22 @@ func (r *runners) validateRegistryAddGCR() (kotsclient.AddKOTSRegistryRequest, [
 		Provider: "gcr",
 		AuthType: "serviceaccount",
 		Username: "_json_key",
+	}
+
+	// Handle name/slug
+	if r.args.addRegistryName != "" {
+		req.Slug = r.args.addRegistryName
+	} else {
+		req.Slug = r.args.addRegistryEndpoint
+	}
+
+	// Parse app IDs
+	if r.args.addRegistryAppIds != "" {
+		appIds := strings.Split(r.args.addRegistryAppIds, ",")
+		for i, id := range appIds {
+			appIds[i] = strings.TrimSpace(id)
+		}
+		req.AppIds = appIds
 	}
 	errs := []error{}
 

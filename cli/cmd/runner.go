@@ -107,6 +107,8 @@ type runnerArgs struct {
 	addRegistryServiceAccountKeyFromStdIn bool
 	addRegistryToken                      string
 	addRegistryTokenFromStdIn             bool
+	addRegistryName                       string
+	addRegistryAppIds                     string
 
 	testRegistryImage string
 

@@ -21,6 +21,8 @@ func (r *runners) InitRegistryAddGHCR(parent *cobra.Command) {
 
 	cmd.Flags().StringVar(&r.args.addRegistryToken, "token", "", "The token to use to auth to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
+	cmd.Flags().StringVar(&r.args.addRegistryAppIds, "app-ids", "", "Comma-separated list of app IDs to scope this registry to")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddGHCR
@@ -67,6 +69,22 @@ func (r *runners) validateRegistryAddGHCR() (kotsclient.AddKOTSRegistryRequest, 
 		Provider: "ghcr",
 		AuthType: "token",
 		Endpoint: "ghcr.io",
+	}
+
+	// Handle name/slug
+	if r.args.addRegistryName != "" {
+		req.Slug = r.args.addRegistryName
+	} else {
+		req.Slug = req.Endpoint
+	}
+
+	// Parse app IDs
+	if r.args.addRegistryAppIds != "" {
+		appIds := strings.Split(r.args.addRegistryAppIds, ",")
+		for i, id := range appIds {
+			appIds[i] = strings.TrimSpace(id)
+		}
+		req.AppIds = appIds
 	}
 	errs := []error{}
 

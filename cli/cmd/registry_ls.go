@@ -37,7 +37,8 @@ func (r *runners) listRegistries(_ *cobra.Command, args []string) error {
 	registrySearch := args[0]
 	var resultRegistries []types.Registry
 	for _, registry := range kotsRegistries {
-		if strings.Contains(registry.Endpoint, registrySearch) {
+		if strings.Contains(registry.Endpoint, registrySearch) ||
+			strings.Contains(registry.Slug, registrySearch) {
 			resultRegistries = append(resultRegistries, registry)
 		}
 	}

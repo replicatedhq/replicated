@@ -8,6 +8,7 @@ type Registry struct {
 	Slug       string     `json:"slug"`
 	AuthType   string     `json:"authType"`
 	Username   string     `json:"username"`
+	AppIds     []string   `json:"appIds,omitempty"`
 	LastUsedAt *time.Time `json:"lastUsedAt"`
 }
 

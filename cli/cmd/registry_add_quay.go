@@ -22,6 +22,8 @@ func (r *runners) InitRegistryAddQuay(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.addRegistryUsername, "username", "", "The userame to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistryPassword, "password", "", "The password to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryPasswordFromStdIn, "password-stdin", false, "Take the password from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
+	cmd.Flags().StringVar(&r.args.addRegistryAppIds, "app-ids", "", "Comma-separated list of app IDs to scope this registry to")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddQuay
@@ -70,6 +72,22 @@ func (r *runners) validateRegistryAddQuay() (kotsclient.AddKOTSRegistryRequest, 
 		Provider: "quay",
 		Endpoint: "quay.io",
 		AuthType: "password",
+	}
+
+	// Handle name/slug
+	if r.args.addRegistryName != "" {
+		req.Slug = r.args.addRegistryName
+	} else {
+		req.Slug = req.Endpoint
+	}
+
+	// Parse app IDs
+	if r.args.addRegistryAppIds != "" {
+		appIds := strings.Split(r.args.addRegistryAppIds, ",")
+		for i, id := range appIds {
+			appIds[i] = strings.TrimSpace(id)
+		}
+		req.AppIds = appIds
 	}
 	errs := []error{}
 
