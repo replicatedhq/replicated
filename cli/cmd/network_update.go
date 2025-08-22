@@ -14,7 +14,9 @@ func (r *runners) InitNetworkUpdateCommand(parent *cobra.Command) *cobra.Command
 		Short: "Update network settings.",
 		Long: `The 'update' command allows you to update various settings of a test network.
 
-You can either specify the network ID directly or provide the network name, and the command will resolve the corresponding network ID.`,
+You can either specify the network ID directly or provide the network name, and the command will resolve the corresponding network ID.
+
+Network Policies are currently a beta feature, and network reporting is currently an alpha feature.`,
 		Example: `# Update a network using its ID
 replicated network update <network-id> --policy airgap
 
@@ -36,7 +38,6 @@ replicated network update <network-id> --policy airgap --collect-report`,
 		RunE:              r.updateNetwork,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeNetworkIDsAndNames,
-		Hidden:            true,
 	}
 	parent.AddCommand(cmd)
 
@@ -48,6 +49,7 @@ replicated network update <network-id> --policy airgap --collect-report`,
 
 	cmd.Flags().StringVar(&r.args.updateNetworkPolicy, "policy", "", "Update network policy setting")
 	cmd.Flags().BoolVar(&r.args.updateNetworkCollectReport, "collect-report", false, "Enable report collection on this network (use --collect-report=false to disable)")
+	cmd.Flags().MarkHidden("collect-report")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
