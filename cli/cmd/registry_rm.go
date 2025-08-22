@@ -9,10 +9,10 @@ import (
 
 func (r *runners) InitRegistryRemove(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "rm [ENDPOINT]",
+		Use:          "rm [NAME]",
 		Aliases:      []string{"delete"},
 		Short:        "remove registry",
-		Long:         `remove registry by endpoint`,
+		Long:         `remove registry by name`,
 		RunE:         r.removeRegistry,
 		SilenceUsage: true,
 	}
@@ -23,7 +23,7 @@ func (r *runners) InitRegistryRemove(parent *cobra.Command) *cobra.Command {
 
 func (r *runners) removeRegistry(_ *cobra.Command, args []string) error {
 	if len(args) == 0 {
-		return errors.New("missing registry endpoint")
+		return errors.New("missing registry name")
 	}
 
 	if err := r.kotsAPI.RemoveRegistry(args[0]); err != nil {
