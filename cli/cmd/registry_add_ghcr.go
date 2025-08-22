@@ -19,7 +19,6 @@ func (r *runners) InitRegistryAddGHCR(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.addRegistryUsername, "username", "", "The username to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistryToken, "token", "", "The token to use to auth to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
 	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
