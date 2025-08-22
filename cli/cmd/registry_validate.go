@@ -11,7 +11,7 @@ import (
 
 func (r *runners) InitRegistryTest(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:          "test HOSTNAME",
+		Use:          "test NAME",
 		Short:        "test registry",
 		Long:         `test registry`,
 		SilenceUsage: true,
@@ -26,13 +26,13 @@ func (r *runners) InitRegistryTest(parent *cobra.Command) {
 
 func (r *runners) registryTest(cmd *cobra.Command, args []string) error {
 	if len(args) != 1 {
-		return errors.New("missing endpoint")
+		return errors.New("missing registry name")
 	}
-	hostname := args[0]
+	name := args[0]
 
 	kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
 
-	status, err := kotsRestClient.TestKOTSRegistry(hostname, r.args.testRegistryImage)
+	status, err := kotsRestClient.TestKOTSRegistry(name, r.args.testRegistryImage)
 	if err != nil {
 		return errors.Wrap(err, "test registry")
 	}
