@@ -2,6 +2,7 @@ package print
 
 import (
 	"fmt"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -29,6 +30,7 @@ var funcs = template.FuncMap{
 		}
 		return t.Local().Format("2006-01-02 15:04 MST")
 	},
+	"join": strings.Join,
 }
 
 func CreditsToDollarsDisplay(credits int64) string {

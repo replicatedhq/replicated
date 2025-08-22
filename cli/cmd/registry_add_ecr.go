@@ -23,6 +23,8 @@ func (r *runners) InitRegistryAddECR(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.addRegistryAccessKeyID, "accesskeyid", "", "The access key id to authenticate to the registry with")
 	cmd.Flags().StringVar(&r.args.addRegistrySecretAccessKey, "secretaccesskey", "", "The secret access key to authenticate to the registry with")
 	cmd.Flags().BoolVar(&r.args.addRegistrySecretAccessKeyFromStdIn, "secretaccesskey-stdin", false, "Take the secret access key from stdin")
+	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
+	cmd.Flags().StringVar(&r.args.addRegistryAppIds, "app-ids", "", "Comma-separated list of app IDs to scope this registry to")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddECR
@@ -68,6 +70,22 @@ func (r *runners) validateRegistryAddECR() (kotsclient.AddKOTSRegistryRequest, [
 	req := kotsclient.AddKOTSRegistryRequest{
 		Provider: "ecr",
 		AuthType: "accesskey",
+	}
+
+	// Handle name/slug
+	if r.args.addRegistryName != "" {
+		req.Slug = r.args.addRegistryName
+	} else {
+		req.Slug = r.args.addRegistryEndpoint
+	}
+
+	// Parse app IDs
+	if r.args.addRegistryAppIds != "" {
+		appIds := strings.Split(r.args.addRegistryAppIds, ",")
+		for i, id := range appIds {
+			appIds[i] = strings.TrimSpace(id)
+		}
+		req.AppIds = appIds
 	}
 	errs := []error{}
 

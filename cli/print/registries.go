@@ -9,9 +9,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var registriesTmplSrc = `PROVIDER	ENDPOINT	AUTHTYPE
+var registriesTmplSrc = `NAME	PROVIDER	ENDPOINT	APP_IDS	AUTHTYPE
 {{ range . -}}
-{{ .Provider }}	{{ .Endpoint }}	{{ .AuthType }}
+{{ .Slug }}	{{ .Provider }}	{{ .Endpoint }}	{{ if .AppIds }}{{ join .AppIds "," }}{{ else }}-{{ end }}	{{ .AuthType }}
 {{ end }}`
 
 var registriesTmpl = template.Must(template.New("registries").Funcs(funcs).Parse(registriesTmplSrc))

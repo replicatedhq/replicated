@@ -8,13 +8,14 @@ import (
 )
 
 type AddKOTSRegistryRequest struct {
-	Provider       string `json:"provider"`
-	Endpoint       string `json:"endpoint"`
-	Slug           string `json:"slug"`
-	AuthType       string `json:"authType"`
-	Username       string `json:"username"`
-	Password       string `json:"password"`
-	SkipValidation bool   `json:"skipValidation"`
+	Provider       string   `json:"provider"`
+	Endpoint       string   `json:"endpoint"`
+	Slug           string   `json:"slug"`
+	AuthType       string   `json:"authType"`
+	Username       string   `json:"username"`
+	Password       string   `json:"password"`
+	AppIds         []string `json:"appIds,omitempty"`
+	SkipValidation bool     `json:"skipValidation"`
 }
 
 type AddKOTSRegistryResponse struct {
