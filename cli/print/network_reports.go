@@ -11,14 +11,18 @@ import (
 )
 
 // Table formatting for network reports
-var networkReportTmplTableHeaderSrc = `CREATED AT	SRC IP	DST IP	SRC PORT	DST PORT	PROTOCOL	COMMAND	PID	DNS QUERY	SERVICE`
-var networkReportTmplTableRowSrc = `{{ range . -}}
-{{ padding (printf "%s" (.CreatedAt | localeTime)) 20 }}	{{ padding .EventData.SrcIP 15 }}	{{ padding .EventData.DstIP 15 }}	{{ if .EventData.SrcPort }}{{ padding (printf "%d" .EventData.SrcPort) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ if .EventData.DstPort }}{{ padding (printf "%d" .EventData.DstPort) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ padding .EventData.Protocol 8 }}	{{ padding .EventData.Command 15 }}	{{ if .EventData.PID }}{{ padding (printf "%d" .EventData.PID) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ padding .EventData.DNSQueryName 20 }}	{{ padding .EventData.LikelyService 15 }}
+var (
+	networkReportTmplTableHeaderSrc = `CREATED AT	SRC IP	DST IP	SRC PORT	DST PORT	PROTOCOL	COMMAND	PID	DNS QUERY	SERVICE`
+	networkReportTmplTableRowSrc    = `{{ range . -}}
+{{ padding (printf "%s" (.CreatedAt | localeTime)) 20 }}	{{ if .EventData.SrcIP }}{{ padding .EventData.SrcIP 15 }}{{ else }}{{ padding "-" 15 }}{{ end }}	{{ if .EventData.DstIP }}{{ padding .EventData.DstIP 15 }}{{ else }}{{ padding "-" 15 }}{{ end }}	{{ if .EventData.SrcPort }}{{ padding (printf "%d" .EventData.SrcPort) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ if .EventData.DstPort }}{{ padding (printf "%d" .EventData.DstPort) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ if .EventData.Protocol }}{{ padding .EventData.Protocol 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ if .EventData.Command }}{{ padding .EventData.Command 15 }}{{ else }}{{ padding "-" 15 }}{{ end }}	{{ if .EventData.PID }}{{ padding (printf "%d" .EventData.PID) 8 }}{{ else }}{{ padding "-" 8 }}{{ end }}	{{ if .EventData.DNSQueryName }}{{ padding .EventData.DNSQueryName 20 }}{{ else }}{{ padding "-" 20 }}{{ end }}	{{ if .EventData.LikelyService }}{{ padding .EventData.LikelyService 15 }}{{ else }}{{ padding "-" 15 }}{{ end }}
 {{ end }}`
+)
 
-var networkReportTmplTableSrc = fmt.Sprintln(networkReportTmplTableHeaderSrc) + networkReportTmplTableRowSrc
-var networkReportTmplTable = template.Must(template.New("networkReport").Funcs(funcs).Parse(networkReportTmplTableSrc))
-var networkReportTmplTableNoHeader = template.Must(template.New("networkReport").Funcs(funcs).Parse(networkReportTmplTableRowSrc))
+var (
+	networkReportTmplTableSrc      = fmt.Sprintln(networkReportTmplTableHeaderSrc) + networkReportTmplTableRowSrc
+	networkReportTmplTable         = template.Must(template.New("networkReport").Funcs(funcs).Parse(networkReportTmplTableSrc))
+	networkReportTmplTableNoHeader = template.Must(template.New("networkReport").Funcs(funcs).Parse(networkReportTmplTableRowSrc))
+)
 
 // NetworkEventsWithData represents network events with parsed event data
 type NetworkEventsWithData struct {
