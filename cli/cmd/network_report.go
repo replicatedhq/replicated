@@ -14,25 +14,27 @@ import (
 
 func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "report",
+		Use:   "report [network-id]",
 		Short: "Get network report",
 		Long:  "Get a network report showing traffic analysis for a specified network",
-		Example: `# Get report for a network by ID
+		Example: `# Get report for a network by ID (using positional argument)
+replicated network report abc123
+
+# Get report for a network by ID (using flag)
 replicated network report --id abc123
 
 # Watch for new network events (table format)
-replicated network report --id abc123 --watch --output table
+replicated network report abc123 --watch --output table
 
 # Watch for new network events (JSON Lines format)
-replicated network report --id abc123 --watch --output json`,
+replicated network report abc123 --watch --output json`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
 		Hidden:            true,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.networkReportID, "id", "", "Network ID to get report for (required)")
-	cmd.MarkFlagRequired("id")
+	cmd.Flags().StringVar(&r.args.networkReportID, "id", "", "Network ID to get report for")
 	cmd.RegisterFlagCompletionFunc("id", r.completeNetworkIDs)
 
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "json", "The output format to use. One of: json|table")
@@ -42,8 +44,12 @@ replicated network report --id abc123 --watch --output json`,
 }
 
 func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
+	// Use positional argument if --id flag wasn't provided
 	if r.args.networkReportID == "" {
-		return errors.New("network ID is required")
+		if len(args) == 0 {
+			return errors.New("network ID is required (provide as first argument or use --id flag)")
+		}
+		r.args.networkReportID = args[0]
 	}
 
 	// Initialize the client
