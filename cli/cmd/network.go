@@ -17,7 +17,11 @@ func (r *runners) InitNetworkCommand(parent *cobra.Command) *cobra.Command {
 		Long: `The 'network' command allows you to manage and interact with networks used for testing purposes.
 With this command you can list the networks in use by VMs and clusters.`,
 		Example: `# List all networks
-replicated network ls`,
+replicated network ls
+
+# Update a network with an airgap policy
+replicated network update <network-id> --policy airgap
+`,
 		Hidden: false,
 	}
 	parent.AddCommand(cmd)

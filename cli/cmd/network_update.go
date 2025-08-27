@@ -11,12 +11,12 @@ import (
 func (r *runners) InitNetworkUpdateCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "update [ID_OR_NAME]",
-		Short: "Update network settings.",
+		Short: "Update network settings",
 		Long: `The 'update' command allows you to update various settings of a test network.
 
 You can either specify the network ID directly or provide the network name, and the command will resolve the corresponding network ID.
 
-Network Policies are currently a beta feature, and network reporting is currently an alpha feature.`,
+Network Policies are currently a beta feature.`,
 		Example: `# Update a network using its ID
 replicated network update <network-id> --policy airgap
 
@@ -26,29 +26,23 @@ replicated network update <network-name> --policy airgap
 # Update using --id or --name flags
 replicated network update --id <network-id> --policy airgap
 replicated network update --name <network-name> --policy airgap
-
-# Enable report collection on a network
-replicated network update <network-id> --collect-report
-
-# Disable report collection on a network
-replicated network update <network-id> --collect-report=false
-
-# Update both policy and report collection on a network
-replicated network update <network-id> --policy airgap --collect-report`,
+`,
 		RunE:              r.updateNetwork,
 		SilenceUsage:      true,
 		ValidArgsFunction: r.completeNetworkIDsAndNames,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.PersistentFlags().StringVar(&r.args.updateNetworkName, "name", "", "Name of the network to update.")
+	cmd.PersistentFlags().StringVar(&r.args.updateNetworkName, "name", "", "Name of the network to update")
 	cmd.RegisterFlagCompletionFunc("name", r.completeNetworkNames)
 
 	cmd.PersistentFlags().StringVar(&r.args.updateNetworkID, "id", "", "id of the network to update (when name is not provided)")
 	cmd.RegisterFlagCompletionFunc("id", r.completeNetworkIDs)
 
-	cmd.Flags().StringVar(&r.args.updateNetworkPolicy, "policy", "", "Update network policy setting")
-	cmd.Flags().BoolVar(&r.args.updateNetworkCollectReport, "collect-report", false, "Enable report collection on this network (use --collect-report=false to disable)")
+	cmd.Flags().StringVarP(&r.args.updateNetworkPolicy, "policy", "p", "", "Update network policy setting")
+	cmd.Flags().BoolVarP(&r.args.updateNetworkCollectReport, "collect-report", "r", false, "Enable report collection on this network (use --collect-report=false to disable)")
+	// TODO: Remove this once report collection is Beta, ensure we add
+	// examples in the above help text as well.
 	cmd.Flags().MarkHidden("collect-report")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide")
 
