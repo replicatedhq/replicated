@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 )
 
 // Table formatting for network reports
@@ -100,9 +101,9 @@ func parseNetworkEventsData(events []*types.NetworkEventData) ([]*NetworkEventsW
 	var eventsWithData []*NetworkEventsWithData
 
 	for _, event := range events {
-		// Extract timestamp
+		// Extract timestamp using the robust ParseTime utility
 		var timestamp time.Time
-		if parsedTime, err := time.Parse(time.RFC3339Nano, event.Timestamp); err == nil {
+		if parsedTime, err := util.ParseTime(event.Timestamp); err == nil {
 			timestamp = parsedTime
 		}
 

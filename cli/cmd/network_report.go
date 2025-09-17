@@ -9,6 +9,7 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/util"
 	"github.com/spf13/cobra"
 )
 
@@ -83,7 +84,7 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 		var lastEventTime *time.Time
 		if len(report.Events) > 0 {
 			// Extract timestamp from the last event
-			if parsedTime, err := time.Parse(time.RFC3339Nano, report.Events[len(report.Events)-1].Timestamp); err == nil {
+			if parsedTime, err := util.ParseTime(report.Events[len(report.Events)-1].Timestamp); err == nil {
 				lastEventTime = &parsedTime
 			}
 		}
@@ -107,7 +108,7 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 					return errors.Wrap(err, "print new network events")
 				}
 				// Update last seen time
-				if parsedTime, err := time.Parse(time.RFC3339Nano, newReport.Events[len(newReport.Events)-1].Timestamp); err == nil {
+				if parsedTime, err := util.ParseTime(newReport.Events[len(newReport.Events)-1].Timestamp); err == nil {
 					lastEventTime = &parsedTime
 				}
 			}
