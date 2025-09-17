@@ -82,7 +82,10 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 		// Track the last seen event time
 		var lastEventTime *time.Time
 		if len(report.Events) > 0 {
-			lastEventTime = &report.Events[len(report.Events)-1].CreatedAt
+			// Extract timestamp from the last event
+			if parsedTime, err := time.Parse(time.RFC3339Nano, report.Events[len(report.Events)-1].Timestamp); err == nil {
+				lastEventTime = &parsedTime
+			}
 		}
 
 		// Poll for new events
@@ -104,7 +107,9 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 					return errors.Wrap(err, "print new network events")
 				}
 				// Update last seen time
-				lastEventTime = &newReport.Events[len(newReport.Events)-1].CreatedAt
+				if parsedTime, err := time.Parse(time.RFC3339Nano, newReport.Events[len(newReport.Events)-1].Timestamp); err == nil {
+					lastEventTime = &parsedTime
+				}
 			}
 		}
 		return nil

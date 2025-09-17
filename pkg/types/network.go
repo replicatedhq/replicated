@@ -37,12 +37,7 @@ const (
 )
 
 type NetworkReport struct {
-	Events []*NetworkEvent `json:"events"`
-}
-
-type NetworkEvent struct {
-	CreatedAt time.Time `json:"created_at"`
-	EventData string    `json:"event_data"`
+	Events []*NetworkEventData `json:"events"`
 }
 
 type NetworkEventData struct {

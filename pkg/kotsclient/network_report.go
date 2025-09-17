@@ -2,6 +2,7 @@ package kotsclient
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,8 +16,6 @@ func (c *VendorV3Client) GetNetworkReport(id string) (*types.NetworkReport, erro
 }
 
 func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time) (*types.NetworkReport, error) {
-	report := &types.NetworkReport{}
-
 	urlPath := fmt.Sprintf("/v3/network/%s/report", id)
 	if after != nil {
 		v := url.Values{}
@@ -24,10 +23,36 @@ func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time) (*ty
 		urlPath = fmt.Sprintf("%s?%s", urlPath, v.Encode())
 	}
 
-	err := c.DoJSON(context.TODO(), "GET", urlPath, http.StatusOK, nil, report)
+	// Get raw response as map
+	var rawResponse map[string]interface{}
+	err := c.DoJSON(context.TODO(), "GET", urlPath, http.StatusOK, nil, &rawResponse)
 	if err != nil {
 		return nil, err
 	}
 
-	return report, nil
+	// Extract events array
+	eventsRaw, ok := rawResponse["events"].([]interface{})
+	if !ok {
+		return &types.NetworkReport{Events: []*types.NetworkEventData{}}, nil
+	}
+
+	// Parse each event using json.Unmarshal
+	var events []*types.NetworkEventData
+	for _, eventRaw := range eventsRaw {
+		// Convert to JSON bytes
+		eventBytes, err := json.Marshal(eventRaw)
+		if err != nil {
+			continue // Skip malformed events
+		}
+
+		// Unmarshal into NetworkEventData
+		var eventData types.NetworkEventData
+		if err := json.Unmarshal(eventBytes, &eventData); err != nil {
+			continue // Skip malformed events
+		}
+
+		events = append(events, &eventData)
+	}
+
+	return &types.NetworkReport{Events: events}, nil
 }
