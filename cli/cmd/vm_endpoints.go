@@ -146,8 +146,8 @@ func (r *runners) getVMEndpoint(vmID, endpointType, username string) error {
 		Status:         string(vmFromAPI.Status),
 	}
 
-	if vm.Status != "running" {
-		return errors.Errorf("VM %s is not in running state (current state: %s). %s is only available for running VMs",
+	if vm.Status != "running" && vm.Status != "updating" {
+		return errors.Errorf("VM %s is not in running or updating state (current state: %s). %s is only available for running or updating VMs",
 			vm.ID, vm.Status, strings.ToUpper(endpointType))
 	}
 

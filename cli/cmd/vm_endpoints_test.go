@@ -156,7 +156,7 @@ func TestGetVMEndpoint(t *testing.T) {
 			mockGithubUsername: "testuser",
 			githubAPIError:     false,
 			expectedOutput:     "",
-			expectedError:      "VM vm-123 is not in running state (current state: provisioning). SSH is only available for running VMs",
+			expectedError:      "VM vm-123 is not in running or updating state (current state: provisioning). SSH is only available for running or updating VMs",
 		},
 	}
 
