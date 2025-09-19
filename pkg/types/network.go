@@ -41,14 +41,16 @@ type NetworkReport struct {
 }
 
 type NetworkEventData struct {
-	Timestamp     string `json:"timestamp"`
-	SrcIP         string `json:"srcIp"`
-	DstIP         string `json:"dstIp"`
-	SrcPort       int    `json:"srcPort"`
-	DstPort       int    `json:"dstPort"`
-	Protocol      string `json:"proto"`
-	Command       string `json:"comm"`
-	PID           int    `json:"pid"`
-	LikelyService string `json:"likelyService"`
-	DNSQueryName  string `json:"dnsQueryName"`
+	Timestamp      string `json:"timestamp,omitempty"`
+	SrcIP          string `json:"srcIp,omitempty"`
+	DstIP          string `json:"dstIp,omitempty"`
+	SrcPort        int    `json:"srcPort,omitempty"`
+	DstPort        int    `json:"dstPort,omitempty"`
+	SourcePod      string `json:"sourcePod,omitempty"`
+	DestinationPod string `json:"dstPod,omitempty"`
+	Protocol       string `json:"proto,omitempty"`
+	Command        string `json:"comm,omitempty"`
+	PID            int    `json:"pid,omitempty"`
+	LikelyService  string `json:"likelyService,omitempty"`
+	DNSQueryName   string `json:"dnsQueryName,omitempty"`
 }
