@@ -51,7 +51,7 @@ func (r *runners) completeNetworkNames(cmd *cobra.Command, args []string, toComp
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	networks, err := r.kotsAPI.ListNetworks(nil, nil)
+	networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -71,7 +71,7 @@ func (r *runners) completeNetworkIDs(cmd *cobra.Command, args []string, toComple
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	networks, err := r.kotsAPI.ListNetworks(nil, nil)
+	networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -89,7 +89,7 @@ func (r *runners) completeNetworkIDsAndNames(cmd *cobra.Command, args []string, 
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
 
-	networks, err := r.kotsAPI.ListNetworks(nil, nil)
+	networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
@@ -115,7 +115,7 @@ func (r *runners) getNetworkIDFromArg(arg string) (string, error) {
 		return "", errors.Wrap(err, "get network")
 	}
 
-	networks, err := r.kotsAPI.ListNetworks(nil, nil)
+	networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return "", ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
