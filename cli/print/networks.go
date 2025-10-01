@@ -29,6 +29,7 @@ var (
 	networksTmplWideRowSrc    = `{{ range . -}}
 {{ printf "%.8s" .ID }}	{{ padding .Name 27	}}	{{ padding (printf "%s" .Status) 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{if eq .Policy ""}}{{ padding "open" 10 }}{{else}}{{ padding (printf "%s" (.Policy)) 10 }}{{end}}	{{if .HasReport}}{{ padding "yes" 10 }}{{else}}{{ padding "no" 10 }}{{end}}	{{if .CollectReport}}{{ padding "on" 10 }}{{else}}{{ padding "off" 10 }}{{end}}	{{if eq (len .Resources) 0}}-{{else}}{{ range $index, $resource := .Resources }}{{if $index}}
                                                                                                                                                                          {{end}}{{ $resource.Distribution }}: {{ $resource.Name }} ({{ $resource.ID }}){{ end }}{{end}}
+
 {{ end }}`
 )
 
