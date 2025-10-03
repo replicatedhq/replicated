@@ -92,7 +92,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if cluster.Status != types.ClusterStatusRunning {
-		return errors.Errorf("cluster %s is not running, please check the cluster status", clusterID)
+		return errors.Errorf("cluster %s is not running, current status is %s", clusterID, cluster.Status)
 	}
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
@@ -113,7 +113,7 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	if _, err := tmpFile.Write(kubeconfig); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
-	if err := tmpFile.Chmod(0600); err != nil {
+	if err := tmpFile.Chmod(0o600); err != nil {
 		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 

@@ -99,7 +99,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if cluster.Status != types.ClusterStatusRunning {
-		return errors.Errorf("cluster %s is not running, please check the cluster status", clusterID)
+		return errors.Errorf("cluster %s is not running, current status is %s", clusterID, cluster.Status)
 	}
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
@@ -121,11 +121,11 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if r.args.kubeconfigPath != "" {
 		dir := filepath.Dir(r.args.kubeconfigPath)
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
 				return errors.Wrap(err, "create kubeconfig dir")
 			}
 		}
-		if err := os.WriteFile(r.args.kubeconfigPath, kubeconfig, 0644); err != nil {
+		if err := os.WriteFile(r.args.kubeconfigPath, kubeconfig, 0o644); err != nil {
 			return errors.Wrap(err, "write kubeconfig")
 		}
 
@@ -144,7 +144,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	if _, err := tmpFile.Write(kubeconfig); err != nil {
 		return errors.Wrap(err, "write kubeconfig file")
 	}
-	if err := tmpFile.Chmod(0600); err != nil {
+	if err := tmpFile.Chmod(0o600); err != nil {
 		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
