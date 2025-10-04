@@ -60,7 +60,7 @@ func (r *runners) removeNetworks(_ *cobra.Command, args []string) error {
 	}
 
 	if len(r.args.removeNetworkNames) > 0 {
-		networks, err := r.kotsAPI.ListNetworks(nil, nil)
+		networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list networks")
 		}
@@ -77,7 +77,7 @@ func (r *runners) removeNetworks(_ *cobra.Command, args []string) error {
 	}
 
 	if r.args.removeNetworkAll {
-		networks, err := r.kotsAPI.ListNetworks(nil, nil)
+		networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list networks")
 		}
@@ -99,7 +99,7 @@ func (r *runners) removeNetworks(_ *cobra.Command, args []string) error {
 			continue
 		}
 
-		networks, err := r.kotsAPI.ListNetworks(nil, nil)
+		networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 		if err != nil {
 			return errors.Wrap(err, "list networks")
 		}

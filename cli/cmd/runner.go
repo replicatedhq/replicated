@@ -247,9 +247,11 @@ type runnerArgs struct {
 	createNetworkWaitDuration time.Duration
 	createNetworkDryRun       bool
 
-	lsNetworkStartTime string
-	lsNetworkEndTime   string
-	lsNetworkWatch     bool
+	lsNetworkShowTerminated bool
+	lsNetworkShowReports    bool
+	lsNetworkStartTime      string
+	lsNetworkEndTime        string
+	lsNetworkWatch          bool
 
 	networkReportID    string
 	networkReportWatch bool
