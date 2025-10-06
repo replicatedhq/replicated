@@ -127,7 +127,9 @@ func TestAPI(t *testing.T) {
 			out, err := cmd.CombinedOutput()
 
 			if tt.wantError != "" {
+				assert.Regexp(t, `^Error:`, string(out))
 				assert.Contains(t, string(out), tt.wantError)
+				return
 			} else {
 				assert.NoError(t, err)
 			}
