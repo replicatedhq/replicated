@@ -4,12 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/go-git/go-git/v5"
@@ -166,9 +164,8 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 
 	log := logger.NewLogger(r.w)
 	if r.outputFormat == "json" {
-		// suppress spinner/log lines for machine-readable output
+		// suppress log lines for machine-readable output
 		log.Silence()
-		r.w = tabwriter.NewWriter(io.Discard, 0, 0, 0, ' ', 0)
 	}
 
 	if !r.hasApp() {
@@ -300,7 +297,7 @@ Prepared to create release with defaults:
 			Charts   []types.Chart `json:"charts,omitempty"`
 		}
 		out := createReleaseOutput{Sequence: release.Sequence, AppID: release.AppID, Charts: release.Charts}
-		enc := json.NewEncoder(os.Stdout)
+		enc := json.NewEncoder(r.w)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(out); err != nil {
 			return errors.Wrap(err, "encode json output")
