@@ -40,9 +40,9 @@ type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string
 
-	releaseImageLSChannel    string
-	releaseImageLSVersion    string
-	releaseImageLSKeepProxy  bool
+	releaseImageLSChannel   string
+	releaseImageLSVersion   string
+	releaseImageLSKeepProxy bool
 
 	createCollectorName     string
 	createCollectorYaml     string
@@ -251,8 +251,9 @@ type runnerArgs struct {
 	lsNetworkEndTime   string
 	lsNetworkWatch     bool
 
-	networkReportID    string
-	networkReportWatch bool
+	networkReportID      string
+	networkReportWatch   bool
+	networkReportSummary bool
 
 	updateNetworkPolicy        string
 	updateNetworkCollectReport bool

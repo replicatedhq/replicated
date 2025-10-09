@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -36,11 +38,12 @@ replicated network report abc123 --watch`,
 	cmd.RegisterFlagCompletionFunc("id", r.completeNetworkIDs)
 
 	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events")
+	cmd.Flags().BoolVar(&r.args.networkReportSummary, "summary", false, "Get the report summary ")
 
 	return cmd
 }
 
-func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
+func (r *runners) getNetworkReport(cmd *cobra.Command, args []string) error {
 	// Use positional argument if --id flag wasn't provided
 	if r.args.networkReportID == "" {
 		if len(args) == 0 {
@@ -57,7 +60,15 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 
 	// Don't call getNetworkIDFromArg here. Reporting API supports short IDs and will also work for networks that have been deleted.
 
-	// Get the initial network report
+	// Get the initial network report or summary depending on args provided
+	if r.args.networkReportSummary {
+		return r.getNetworkReportSummary(cmd.Context())
+	} else {
+		return r.getNetworkReportEvents()
+	}
+}
+
+func (r *runners) getNetworkReportEvents() error {
 	report, err := r.kotsAPI.GetNetworkReport(r.args.networkReportID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
@@ -115,4 +126,20 @@ func (r *runners) getNetworkReport(_ *cobra.Command, args []string) error {
 	// Output the report (non-watch mode)
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	return print.NetworkReport(w, report)
+}
+
+func (r *runners) getNetworkReportSummary(ctx context.Context) error {
+	if r.args.networkReportWatch {
+		return fmt.Errorf("cannot use watch and summary flags together")
+	}
+
+	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID)
+	if errors.Cause(err) == platformclient.ErrForbidden {
+		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if err != nil {
+		return errors.Wrap(err, "get network report summary")
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+	return print.NetworkReportSummary(w, summary)
 }
