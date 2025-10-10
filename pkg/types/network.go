@@ -62,3 +62,37 @@ type NetworkEventData struct {
 	LikelyService  string `json:"likelyService,omitempty"`
 	DNSQueryName   string `json:"dnsQueryName,omitempty"`
 }
+
+type NetworkReportSummary struct {
+	ID             string                            `json:"id"`
+	NetworkID      string                            `json:"network_id"`
+	TotalEvents    int                               `json:"total_events"`
+	TimeRangeStart time.Time                         `json:"time_range_start"`
+	TimeRangeEnd   time.Time                         `json:"time_range_end"`
+	CreatedAt      time.Time                         `json:"created_at"`
+	Domains        []NetworkReportSummaryDomain      `json:"domains,omitempty"`
+	Destinations   []NetworkReportSummaryDestination `json:"destinations,omitempty"`
+}
+
+type NetworkReportSummaryDomain struct {
+	ID     string `json:"id"`
+	Domain string `json:"domain"`
+	Count  int    `json:"count"`
+}
+
+type NetworkReportSummaryDestination struct {
+	ID       string                       `json:"id"`
+	IP       string                       `json:"ip,omitempty"`
+	Protocol string                       `json:"protocol,omitempty"`
+	Port     int                          `json:"port,omitempty"`
+	Count    int                          `json:"count,omitempty"`
+	Sources  []NetworkReportSummarySource `json:"sources,omitempty"`
+}
+
+type NetworkReportSummarySource struct {
+	ID      string `json:"id"`
+	IP      string `json:"ip,omitempty"`
+	Service string `json:"service,omitempty"`
+	Command string `json:"command,omitempty"`
+	Pod     string `json:"pod,omitempty"`
+}

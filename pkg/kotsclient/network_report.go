@@ -56,3 +56,21 @@ func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time) (*ty
 
 	return &types.NetworkReport{Events: events}, nil
 }
+
+func (c *VendorV3Client) GetNetworkReportSummary(ctx context.Context, id string) (*types.NetworkReportSummary, error) {
+	urlPath := fmt.Sprintf("/v3/network/%s/report/summary", id)
+	type summaryResp struct {
+		*types.NetworkReportSummary
+		Error string `json:"error,omitempty"`
+	}
+	resp := &summaryResp{}
+	if err := c.DoJSON(ctx, "GET", urlPath, http.StatusOK, nil, resp); err != nil {
+		return nil, err
+	}
+
+	if resp.Error != "" {
+		return nil, fmt.Errorf("error from api: %v", resp.Error)
+	}
+
+	return resp.NetworkReportSummary, nil
+}
