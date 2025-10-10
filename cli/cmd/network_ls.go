@@ -22,6 +22,8 @@ func (r *runners) InitNetworkList(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
+	cmd.Flags().BoolVar(&r.args.lsNetworkShowTerminated, "show-terminated", false, "when set, only show terminated networks")
+	cmd.Flags().BoolVar(&r.args.lsNetworkShowReports, "show-reports", false, "when set, only show networks that have reports")
 	cmd.Flags().StringVar(&r.args.lsNetworkStartTime, "start-time", "", "start time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVar(&r.args.lsNetworkEndTime, "end-time", "", "end time for the query (Format: 2006-01-02T15:04:05Z)")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
@@ -48,11 +50,22 @@ func (r *runners) listNetworks(_ *cobra.Command, args []string) error {
 		endTime = &et
 	}
 
-	networks, err := r.kotsAPI.ListNetworks(startTime, endTime)
+	networks, err := r.kotsAPI.ListNetworks(r.args.lsNetworkShowTerminated, startTime, endTime)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "list networks")
+	}
+
+	// Filter networks if --show-reports is set
+	if r.args.lsNetworkShowReports {
+		filteredNetworks := make([]*types.Network, 0)
+		for _, network := range networks {
+			if network.HasReport {
+				filteredNetworks = append(filteredNetworks, network)
+			}
+		}
+		networks = filteredNetworks
 	}
 
 	header := true
@@ -74,13 +87,24 @@ func (r *runners) listNetworks(_ *cobra.Command, args []string) error {
 
 		// Runs until ctrl C is recognized
 		for range time.Tick(2 * time.Second) {
-			newNetworks, err := r.kotsAPI.ListNetworks(startTime, endTime)
+			newNetworks, err := r.kotsAPI.ListNetworks(r.args.lsNetworkShowTerminated, startTime, endTime)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					return errors.New("interrupted")
 				}
 
 				return errors.Wrap(err, "watch networks")
+			}
+
+			// Filter networks if --show-reports is set
+			if r.args.lsNetworkShowReports {
+				filteredNetworks := make([]*types.Network, 0)
+				for _, network := range newNetworks {
+					if network.HasReport {
+						filteredNetworks = append(filteredNetworks, network)
+					}
+				}
+				newNetworks = filteredNetworks
 			}
 
 			// Create a map from the IDs of the new networks

@@ -91,7 +91,7 @@ func (r *runners) ensureUpdateNetworkIDArg(args []string) error {
 		}
 		r.args.updateNetworkID = networkID
 	} else if r.args.updateNetworkName != "" {
-		networks, err := r.kotsAPI.ListNetworks(nil, nil)
+		networks, err := r.kotsAPI.ListNetworks(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {
 			return ErrCompatibilityMatrixTermsNotAccepted
 		} else if err != nil {
