@@ -10,12 +10,16 @@ import (
 
 // NetworkReport prints network report in JSON format
 func NetworkReport(w *tabwriter.Writer, report *types.NetworkReport) error {
-	reportBytes, err := json.MarshalIndent(report, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal report to json: %v", err)
-	}
-	if _, err := fmt.Fprintln(w, string(reportBytes)); err != nil {
-		return err
+	if report != nil && len(report.Events) == 0 {
+		fmt.Fprintln(w, "You don't have any events, ensure you've enabled reporting with 'replicated network update <id> --collect-report'")
+	} else {
+		reportBytes, err := json.MarshalIndent(report, "", "  ")
+		if err != nil {
+			return fmt.Errorf("failed to marshal report to json: %v", err)
+		}
+		if _, err := fmt.Fprintln(w, string(reportBytes)); err != nil {
+			return err
+		}
 	}
 	return w.Flush()
 }

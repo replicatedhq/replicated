@@ -85,6 +85,9 @@ func (r *runners) getNetworkReportEvents() error {
 			if err := print.NetworkEvents(w, report.Events); err != nil {
 				return errors.Wrap(err, "print initial network events")
 			}
+		} else {
+			// Print empty report
+			print.NetworkReport(w, report)
 		}
 
 		// Track the last seen event time
