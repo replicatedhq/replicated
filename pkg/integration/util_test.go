@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func getCommand(cliArgs []string, server *httptest.Server) *exec.Cmd {
@@ -46,6 +48,9 @@ func AssertCLIOutput(t *testing.T, got string, wantFormat format, wantLines int)
 			t.Errorf("got %d lines, want %d:\n%s", len(gotLines), wantLines, got)
 		}
 	}
+
+	// require that the output does not start with "Error:"
+	assert.NotRegexp(t, `^Error:`, got)
 }
 
 func AssertAPIRequests(t *testing.T, wantAPIRequests []string, apiCallLogFilename string) {
