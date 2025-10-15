@@ -2,20 +2,26 @@
 This defines only the minimal structure for the new linter. YAML and JSON are both supported; YAML shown here.
 ## Format
 ```yaml
-lint:
-    version: 1                      # lint config schema version
+repl-lint:
+    version: 1                       # lint config schema version
     enabled: true                    # turn linting on/off
-  stages:
+  linters:
     helm:
-        lint:
-            enabled: true           # run helm lint
-            strict: false           # if true, treat warnings as errors
+        enabled: true                # run helm lint
+        strict: false                # if true, treat warnings as errors
     preflight:
-        lint:
-            enabled: true
-            strict: true
-      tools:                            # tool resolution (optional)
-        toolchainDir: ""              # set for air gap, e.g. /tools
+        enabled: true
+        strict: true
+    support-bundle:
+        enabled: true
+        strict: false
+    embedded-cluster:                # embedded cluster and kots linters do not exist as of yet
+        enabled: false
+        strict: false
+    kots:
+        enabled: false
+        strict: false
+      tools:                         # tool resolution (optional)
 ```
 Notes:
 - Only keys listed above are recognized in this minimal spec. Unknown keys are rejected.
@@ -24,33 +30,28 @@ Notes:
 ## Examples
 1) Pin Helm version (strict mode):
 ```yaml
-lint:
+repl-lint:
     version: 1
     enabled: true
-    stages:
+    linters:
         helm:
-        lint:
+            enabled: true                
+            strict: false                
+        preflight:
             enabled: true
             strict: true
-            - "deprecated-api.*"
-    tools:
-        versions:
-        helm: "3.14.4"
-```
-2) Air gap with pinned Helm and Postgres client (psql) versions:
-```yaml
-lint:
-    version: 1
-    enabled: true
-    stages:
-        helm:
-        lint:
+        support-bundle:
             enabled: true
+            strict: false
+        embedded-cluster:                
+            enabled: false
+            strict: false
+        kots:
+            enabled: false
+            strict: false
     tools:
-        toolchainDir: "/tools"   # use pre-fetched bundle only
-        versions:
         helm: "3.14.4"
-        psql: "15.6"            # example: pin postgres client if used by checks
+        psql: "15.6"
 ```
 
 Inline directive examples:
