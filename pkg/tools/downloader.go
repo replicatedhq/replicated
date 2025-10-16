@@ -13,14 +13,32 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
+)
+
+const (
+	// Download timeout per attempt
+	downloadTimeout = 5 * time.Minute
+
+	// Max retries for failed downloads
+	maxRetries = 3
+
+	// Initial backoff duration
+	initialBackoff = 1 * time.Second
 )
 
 // Downloader handles downloading tool binaries
-type Downloader struct{}
+type Downloader struct {
+	httpClient *http.Client
+}
 
-// NewDownloader creates a new downloader
+// NewDownloader creates a new downloader with timeout
 func NewDownloader() *Downloader {
-	return &Downloader{}
+	return &Downloader{
+		httpClient: &http.Client{
+			Timeout: downloadTimeout,
+		},
+	}
 }
 
 // Download downloads a tool to the cache directory with checksum verification
@@ -77,7 +95,12 @@ func (d *Downloader) Download(ctx context.Context, name, version string) error {
 			binaryData, err = extractFromTarGz(archiveData, runtime.GOOS+"-"+runtime.GOARCH+"/helm")
 		}
 	case ToolPreflight, ToolSupportBundle:
-		binaryData, err = extractFromTarGz(archiveData, binaryName)
+		// Windows troubleshoot uses .zip, others use .tar.gz
+		if runtime.GOOS == "windows" {
+			binaryData, err = extractFromZip(archiveData, binaryName)
+		} else {
+			binaryData, err = extractFromTarGz(archiveData, binaryName)
+		}
 	}
 
 	if err != nil {
@@ -98,6 +121,48 @@ func (d *Downloader) Download(ctx context.Context, name, version string) error {
 	return nil
 }
 
+// downloadWithRetry downloads a URL with retry logic and exponential backoff
+func (d *Downloader) downloadWithRetry(url string) ([]byte, error) {
+	var lastErr error
+	backoff := initialBackoff
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			fmt.Printf("  Retry %d/%d after %v...\n", attempt, maxRetries-1, backoff)
+			time.Sleep(backoff)
+			backoff *= 2 // Exponential backoff
+		}
+
+		// Attempt download
+		resp, err := d.httpClient.Get(url)
+		if err != nil {
+			lastErr = fmt.Errorf("downloading: %w", err)
+			continue // Retry
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != 200 {
+			// Don't retry 404s (version doesn't exist)
+			if resp.StatusCode == 404 {
+				return nil, fmt.Errorf("HTTP 404: file not found")
+			}
+			lastErr = fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+			continue // Retry other status codes
+		}
+
+		// Success - read data
+		data, err := io.ReadAll(resp.Body)
+		if err != nil {
+			lastErr = fmt.Errorf("reading response: %w", err)
+			continue // Retry
+		}
+
+		return data, nil
+	}
+
+	return nil, fmt.Errorf("failed after %d attempts: %w", maxRetries, lastErr)
+}
+
 // downloadHelmArchive downloads the helm archive and returns archive data + checksum URL
 func (d *Downloader) downloadHelmArchive(version string) ([]byte, string, error) {
 	platformOS := runtime.GOOS
@@ -110,23 +175,13 @@ func (d *Downloader) downloadHelmArchive(version string) ([]byte, string, error)
 		url = fmt.Sprintf("https://get.helm.sh/helm-v%s-%s-%s.tar.gz", version, platformOS, platformArch)
 	}
 
-	// Download archive
-	resp, err := http.Get(url)
+	// Download archive with retry
+	data, err := d.downloadWithRetry(url)
 	if err != nil {
-		return nil, "", fmt.Errorf("downloading: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+		return nil, "", err
 	}
 
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, "", fmt.Errorf("reading response: %w", err)
-	}
-
-	// Checksum URL is the archive URL + .sha256sum (pass URL not checksumURL for verification)
+	// Checksum URL is the archive URL + .sha256sum
 	return data, url, nil
 }
 
@@ -136,29 +191,22 @@ func (d *Downloader) downloadPreflightArchive(version string) ([]byte, string, s
 	platformArch := runtime.GOARCH
 
 	// Troubleshoot uses different naming
+	// Windows uses .zip, others use .tar.gz
 	var filename string
 	if platformOS == "darwin" {
 		filename = "preflight_darwin_all.tar.gz"
+	} else if platformOS == "windows" {
+		filename = fmt.Sprintf("preflight_%s_%s.zip", platformOS, platformArch)
 	} else {
 		filename = fmt.Sprintf("preflight_%s_%s.tar.gz", platformOS, platformArch)
 	}
 
 	url := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/%s", version, filename)
 
-	// Download archive
-	resp, err := http.Get(url)
+	// Download archive with retry
+	data, err := d.downloadWithRetry(url)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("downloading: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, "", "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("reading response: %w", err)
+		return nil, "", "", err
 	}
 
 	// For troubleshoot, we need the checksums.txt URL and the filename to look up
@@ -173,29 +221,22 @@ func (d *Downloader) downloadSupportBundleArchive(version string) ([]byte, strin
 	platformArch := runtime.GOARCH
 
 	// Troubleshoot uses different naming
+	// Windows uses .zip, others use .tar.gz
 	var filename string
 	if platformOS == "darwin" {
 		filename = "support-bundle_darwin_all.tar.gz"
+	} else if platformOS == "windows" {
+		filename = fmt.Sprintf("support-bundle_%s_%s.zip", platformOS, platformArch)
 	} else {
 		filename = fmt.Sprintf("support-bundle_%s_%s.tar.gz", platformOS, platformArch)
 	}
 
 	url := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/%s", version, filename)
 
-	// Download archive
-	resp, err := http.Get(url)
+	// Download archive with retry
+	data, err := d.downloadWithRetry(url)
 	if err != nil {
-		return nil, "", "", fmt.Errorf("downloading: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return nil, "", "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, "", "", fmt.Errorf("reading response: %w", err)
+		return nil, "", "", err
 	}
 
 	// For troubleshoot, we need the checksums.txt URL and the filename to look up

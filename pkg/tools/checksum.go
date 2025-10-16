@@ -7,15 +7,21 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
+
+// httpClient for checksum downloads with timeout
+var checksumHTTPClient = &http.Client{
+	Timeout: 30 * time.Second,
+}
 
 // VerifyHelmChecksum verifies a Helm binary against its .sha256sum file
 func VerifyHelmChecksum(data []byte, archiveURL string) error {
 	// Helm provides per-file checksums: <url>.sha256sum
 	checksumURL := archiveURL + ".sha256sum"
 
-	// Download checksum file
-	resp, err := http.Get(checksumURL)
+	// Download checksum file with timeout
+	resp, err := checksumHTTPClient.Get(checksumURL)
 	if err != nil {
 		return fmt.Errorf("downloading checksum file: %w", err)
 	}
@@ -54,8 +60,8 @@ func VerifyTroubleshootChecksum(data []byte, version, filename string) error {
 	// Troubleshoot provides a single checksums file for all binaries
 	checksumURL := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/troubleshoot_%s_checksums.txt", version, version)
 
-	// Download checksums file
-	resp, err := http.Get(checksumURL)
+	// Download checksums file with timeout
+	resp, err := checksumHTTPClient.Get(checksumURL)
 	if err != nil {
 		return fmt.Errorf("downloading checksums file: %w", err)
 	}
