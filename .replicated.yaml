@@ -41,6 +41,6 @@ repl-lint:
       disabled: true
       strict: false
   tools:
-    helm: "3.14.4"
+    helm: "3.19.0"
     preflight: "0.123.9"
     support-bundle: "0.123.9"
