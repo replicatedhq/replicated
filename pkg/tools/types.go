@@ -3,7 +3,15 @@ package tools
 // Config represents the parsed .replicated configuration file
 // We only care about the repl-lint section for tool resolution
 type Config struct {
+	Charts   []ChartConfig   `json:"charts,omitempty" yaml:"charts,omitempty"`
 	ReplLint *ReplLintConfig `json:"repl-lint,omitempty" yaml:"repl-lint,omitempty"`
+}
+
+// ChartConfig represents a chart entry in the config
+type ChartConfig struct {
+	Path         string `yaml:"path" json:"path"`
+	ChartVersion string `yaml:"chartVersion,omitempty" json:"chartVersion,omitempty"`
+	AppVersion   string `yaml:"appVersion,omitempty" json:"appVersion,omitempty"`
 }
 
 // ReplLintConfig is the lint configuration section

@@ -6,6 +6,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/lint2"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -23,34 +24,29 @@ func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 }
 
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
-	// Load .replicated config
-	config, err := lint2.LoadReplicatedConfig()
+	// Load .replicated config using tools parser (supports monorepos)
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
 	if err != nil {
 		return errors.Wrap(err, "failed to load .replicated config")
 	}
 
 	// Check if helm linting is enabled
-	helmConfig, exists := config.ReplLint.Linters["helm"]
-	if exists && !helmConfig.IsEnabled() {
+	if !config.ReplLint.Linters.Helm.IsEnabled() {
 		fmt.Fprintf(r.w, "Helm linting is disabled in .replicated config\n")
 		return nil
 	}
 
 	// Get helm version from config
-	helmVersion := "3.14.4" // Default
+	helmVersion := tools.DefaultHelmVersion
 	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools["helm"]; ok {
+		if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
 			helmVersion = v
 		}
 	}
 
 	// Check if there are any charts configured
-	if len(config.Charts) == 0 {
-		return errors.New("no charts found in .replicated config")
-	}
-
-	// Expand chart paths (handle globs)
-	chartPaths, err := lint2.ExpandChartPaths(config.Charts)
+	chartPaths, err := lint2.GetChartPathsFromConfig(config)
 	if err != nil {
 		return errors.Wrap(err, "failed to expand chart paths")
 	}
@@ -92,6 +88,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+type chartSummary struct {
+	errorCount   int
+	warningCount int
+	infoCount    int
+}
+
 func displayAllLintResults(w io.Writer, chartPaths []string, results []*lint2.LintResult) error {
 	totalErrors := 0
 	totalWarnings := 0
@@ -101,69 +103,90 @@ func displayAllLintResults(w io.Writer, chartPaths []string, results []*lint2.Li
 	// Display results for each chart
 	for i, result := range results {
 		chartPath := chartPaths[i]
+		summary := displaySingleChartResult(w, chartPath, result)
 
-		// Print header for this chart
-		fmt.Fprintf(w, "==> Linting %s\n\n", chartPath)
+		totalErrors += summary.errorCount
+		totalWarnings += summary.warningCount
+		totalInfo += summary.infoCount
 
-		// Print messages
-		if len(result.Messages) == 0 {
-			fmt.Fprintf(w, "No issues found\n")
-		} else {
-			for _, msg := range result.Messages {
-				if msg.Path != "" {
-					fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-				} else {
-					fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
-				}
-			}
-		}
-
-		// Count messages by severity for this chart
-		errorCount := 0
-		warningCount := 0
-		infoCount := 0
-		for _, msg := range result.Messages {
-			switch msg.Severity {
-			case "ERROR":
-				errorCount++
-				totalErrors++
-			case "WARNING":
-				warningCount++
-				totalWarnings++
-			case "INFO":
-				infoCount++
-				totalInfo++
-			}
-		}
-
-		// Print per-chart summary
-		fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n", chartPath, errorCount, warningCount, infoCount)
-
-		// Print per-chart status
-		if result.Success {
-			fmt.Fprintf(w, "Status: Passed\n\n")
-		} else {
-			fmt.Fprintf(w, "Status: Failed\n\n")
+		if !result.Success {
 			totalChartsFailed++
 		}
 	}
 
 	// Print overall summary if multiple charts
 	if len(results) > 1 {
-		fmt.Fprintf(w, "==> Overall Summary\n")
-		fmt.Fprintf(w, "Charts linted: %d\n", len(results))
-		fmt.Fprintf(w, "Charts passed: %d\n", len(results)-totalChartsFailed)
-		fmt.Fprintf(w, "Charts failed: %d\n", totalChartsFailed)
-		fmt.Fprintf(w, "Total errors: %d\n", totalErrors)
-		fmt.Fprintf(w, "Total warnings: %d\n", totalWarnings)
-		fmt.Fprintf(w, "Total info: %d\n", totalInfo)
-
-		if totalChartsFailed > 0 {
-			fmt.Fprintf(w, "\nOverall Status: Failed\n")
-		} else {
-			fmt.Fprintf(w, "\nOverall Status: Passed\n")
-		}
+		displayOverallSummary(w, len(results), totalChartsFailed, totalErrors, totalWarnings, totalInfo)
 	}
 
 	return nil
+}
+
+func displaySingleChartResult(w io.Writer, chartPath string, result *lint2.LintResult) chartSummary {
+	// Print header for this chart
+	fmt.Fprintf(w, "==> Linting %s\n\n", chartPath)
+
+	// Print messages
+	if len(result.Messages) == 0 {
+		fmt.Fprintf(w, "No issues found\n")
+	} else {
+		for _, msg := range result.Messages {
+			displayLintMessage(w, msg)
+		}
+	}
+
+	// Count messages by severity
+	summary := countMessagesBySeverity(result.Messages)
+
+	// Print per-chart summary
+	fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
+		chartPath, summary.errorCount, summary.warningCount, summary.infoCount)
+
+	// Print per-chart status
+	if result.Success {
+		fmt.Fprintf(w, "Status: Passed\n\n")
+	} else {
+		fmt.Fprintf(w, "Status: Failed\n\n")
+	}
+
+	return summary
+}
+
+func displayLintMessage(w io.Writer, msg lint2.LintMessage) {
+	if msg.Path != "" {
+		fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
+	} else {
+		fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
+	}
+}
+
+func countMessagesBySeverity(messages []lint2.LintMessage) chartSummary {
+	summary := chartSummary{}
+	for _, msg := range messages {
+		switch msg.Severity {
+		case "ERROR":
+			summary.errorCount++
+		case "WARNING":
+			summary.warningCount++
+		case "INFO":
+			summary.infoCount++
+		}
+	}
+	return summary
+}
+
+func displayOverallSummary(w io.Writer, totalCharts, failedCharts, totalErrors, totalWarnings, totalInfo int) {
+	fmt.Fprintf(w, "==> Overall Summary\n")
+	fmt.Fprintf(w, "Charts linted: %d\n", totalCharts)
+	fmt.Fprintf(w, "Charts passed: %d\n", totalCharts-failedCharts)
+	fmt.Fprintf(w, "Charts failed: %d\n", failedCharts)
+	fmt.Fprintf(w, "Total errors: %d\n", totalErrors)
+	fmt.Fprintf(w, "Total warnings: %d\n", totalWarnings)
+	fmt.Fprintf(w, "Total info: %d\n", totalInfo)
+
+	if failedCharts > 0 {
+		fmt.Fprintf(w, "\nOverall Status: Failed\n")
+	} else {
+		fmt.Fprintf(w, "\nOverall Status: Passed\n")
+	}
 }

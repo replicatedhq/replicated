@@ -1,124 +1,24 @@
 package lint2
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v3"
+	"github.com/replicatedhq/replicated/pkg/tools"
 )
 
-// ReplicatedConfig represents the .replicated configuration file
-type ReplicatedConfig struct {
-	AppID    string         `yaml:"appId" json:"appId"`
-	AppSlug  string         `yaml:"appSlug" json:"appSlug"`
-	Charts   []ChartConfig  `yaml:"charts" json:"charts"`
-	ReplLint ReplLintConfig `yaml:"repl-lint" json:"repl-lint"`
+// GetChartPathsFromConfig extracts and expands chart paths from config
+func GetChartPathsFromConfig(config *tools.Config) ([]string, error) {
+	if len(config.Charts) == 0 {
+		return nil, fmt.Errorf("no charts found in .replicated config")
+	}
+
+	return expandChartPaths(config.Charts)
 }
 
-// ChartConfig represents a chart entry in the config
-type ChartConfig struct {
-	Path         string `yaml:"path" json:"path"`
-	ChartVersion string `yaml:"chartVersion" json:"chartVersion"`
-	AppVersion   string `yaml:"appVersion" json:"appVersion"`
-}
-
-// ReplLintConfig represents the repl-lint section
-type ReplLintConfig struct {
-	Version int                     `yaml:"version" json:"version"`
-	Enabled bool                    `yaml:"enabled" json:"enabled"`
-	Linters map[string]LinterConfig `yaml:"linters" json:"linters"`
-	Tools   map[string]string       `yaml:"tools" json:"tools"`
-}
-
-// LinterConfig represents configuration for a specific linter
-type LinterConfig struct {
-	Disabled bool `yaml:"disabled" json:"disabled"`
-	Strict   bool `yaml:"strict" json:"strict"`
-}
-
-// IsEnabled returns true if the linter is not disabled
-func (c LinterConfig) IsEnabled() bool {
-	return !c.Disabled
-}
-
-// LoadReplicatedConfig loads and parses the .replicated config file from the current directory
-func LoadReplicatedConfig() (*ReplicatedConfig, error) {
-	// Try .replicated.yaml first, then .replicated.yml, then .replicated (JSON)
-	candidates := []string{".replicated.yaml", ".replicated.yml", ".replicated"}
-
-	var configPath string
-	var found bool
-
-	for _, candidate := range candidates {
-		if _, err := os.Stat(candidate); err == nil {
-			configPath = candidate
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		return nil, fmt.Errorf(".replicated config file not found (tried: %v)", candidates)
-	}
-
-	data, err := os.ReadFile(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file %s: %w", configPath, err)
-	}
-
-	var config ReplicatedConfig
-
-	// Try YAML first (more common), fall back to JSON
-	ext := filepath.Ext(configPath)
-	if ext == ".yaml" || ext == ".yml" {
-		if err := yaml.Unmarshal(data, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse YAML config: %w", err)
-		}
-	} else {
-		// Try JSON
-		if err := json.Unmarshal(data, &config); err != nil {
-			// If JSON fails, try YAML as fallback
-			if err := yaml.Unmarshal(data, &config); err != nil {
-				return nil, fmt.Errorf("failed to parse config as JSON or YAML: %w", err)
-			}
-		}
-	}
-
-	// Set defaults
-	if config.ReplLint.Version == 0 {
-		config.ReplLint.Version = 1
-	}
-
-	// Default enabled to true if not specified
-	if config.ReplLint.Linters == nil {
-		config.ReplLint.Linters = make(map[string]LinterConfig)
-	}
-
-	// If helm linter config doesn't exist, default to enabled
-	if _, exists := config.ReplLint.Linters["helm"]; !exists {
-		config.ReplLint.Linters["helm"] = LinterConfig{
-			Disabled: false,
-			Strict:   false,
-		}
-	}
-
-	// Default tools map
-	if config.ReplLint.Tools == nil {
-		config.ReplLint.Tools = make(map[string]string)
-	}
-
-	// Apply default tool versions if not specified
-	if _, exists := config.ReplLint.Tools["helm"]; !exists {
-		config.ReplLint.Tools["helm"] = "3.14.4"
-	}
-
-	return &config, nil
-}
-
-// ExpandChartPaths expands glob patterns in chart paths and returns a list of concrete paths
-func ExpandChartPaths(chartConfigs []ChartConfig) ([]string, error) {
+// expandChartPaths expands glob patterns in chart paths and returns a list of concrete paths
+func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	var paths []string
 
 	for _, chartConfig := range chartConfigs {
@@ -131,8 +31,18 @@ func ExpandChartPaths(chartConfigs []ChartConfig) ([]string, error) {
 			if len(matches) == 0 {
 				return nil, fmt.Errorf("no charts found matching pattern: %s", chartConfig.Path)
 			}
+			// Validate each matched path
+			for _, match := range matches {
+				if err := validateChartPath(match); err != nil {
+					return nil, fmt.Errorf("invalid chart path %s: %w", match, err)
+				}
+			}
 			paths = append(paths, matches...)
 		} else {
+			// Validate single path
+			if err := validateChartPath(chartConfig.Path); err != nil {
+				return nil, fmt.Errorf("invalid chart path %s: %w", chartConfig.Path, err)
+			}
 			paths = append(paths, chartConfig.Path)
 		}
 	}
@@ -155,4 +65,32 @@ func containsAny(s string, chars []rune) bool {
 		}
 	}
 	return false
+}
+
+// validateChartPath checks if a path is a valid Helm chart directory
+func validateChartPath(path string) error {
+	// Check if path exists and is a directory
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("path does not exist")
+		}
+		return fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("path is not a directory")
+	}
+
+	// Check if Chart.yaml exists in the directory
+	chartYaml := filepath.Join(path, "Chart.yaml")
+	if _, err := os.Stat(chartYaml); err != nil {
+		// Try Chart.yml as fallback
+		chartYml := filepath.Join(path, "Chart.yml")
+		if _, err := os.Stat(chartYml); err != nil {
+			return fmt.Errorf("Chart.yaml or Chart.yml not found (not a valid Helm chart)")
+		}
+	}
+
+	return nil
 }
