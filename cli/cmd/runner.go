@@ -65,8 +65,6 @@ type runnerArgs struct {
 	lintReleaseYamlDir    string
 	lintReleaseChart      string
 	lintReleaseFailOn     string
-	// Top-level lint command
-	lintChart             string
 	releaseOptional       bool
 	releaseRequired       bool
 	releaseNotes          string
