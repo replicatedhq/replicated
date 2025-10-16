@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +43,15 @@ func NewDownloader() *Downloader {
 }
 
 // Download downloads a tool to the cache directory with checksum verification
+// If the requested version fails, it will automatically fallback to latest stable
 func (d *Downloader) Download(ctx context.Context, name, version string) error {
+	// Try with fallback
+	_, err := d.DownloadWithFallback(ctx, name, version)
+	return err
+}
+
+// downloadExact downloads a specific version without fallback (internal use)
+func (d *Downloader) downloadExact(ctx context.Context, name, version string) error {
 	// Get cache path
 	cachePath, err := GetToolPath(name, version)
 	if err != nil {
@@ -119,6 +128,75 @@ func (d *Downloader) Download(ctx context.Context, name, version string) error {
 	}
 
 	return nil
+}
+
+// githubRelease represents a GitHub release
+type githubRelease struct {
+	TagName    string `json:"tag_name"`
+	Prerelease bool   `json:"prerelease"`
+}
+
+// getLatestStableVersion fetches the latest non-prerelease version from GitHub
+func getLatestStableVersion(repo string) (string, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("fetching latest release: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("GitHub API returned HTTP %d", resp.StatusCode)
+	}
+
+	var release githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return "", fmt.Errorf("parsing release JSON: %w", err)
+	}
+
+	// Remove 'v' prefix if present
+	version := strings.TrimPrefix(release.TagName, "v")
+
+	return version, nil
+}
+
+// DownloadWithFallback attempts to download the specified version, falling back to latest stable if it fails
+func (d *Downloader) DownloadWithFallback(ctx context.Context, name, version string) (string, error) {
+	// Try requested version first
+	err := d.downloadExact(ctx, name, version)
+	if err == nil {
+		return version, nil
+	}
+
+	// If requested version failed, try latest stable
+	fmt.Printf("⚠️  Version %s failed: %v\n", version, err)
+	fmt.Printf("Attempting to download latest stable version...\n")
+
+	var repo string
+	switch name {
+	case ToolHelm:
+		repo = "helm/helm"
+	case ToolPreflight, ToolSupportBundle:
+		repo = "replicatedhq/troubleshoot"
+	default:
+		return "", fmt.Errorf("unknown tool: %s", name)
+	}
+
+	latestVersion, err := getLatestStableVersion(repo)
+	if err != nil {
+		return "", fmt.Errorf("could not get latest version: %w", err)
+	}
+
+	fmt.Printf("Latest stable version: %s\n", latestVersion)
+
+	// Try downloading latest
+	if err := d.downloadExact(ctx, name, latestVersion); err != nil {
+		return "", fmt.Errorf("latest version also failed: %w", err)
+	}
+
+	return latestVersion, nil
 }
 
 // downloadWithRetry downloads a URL with retry logic and exponential backoff
