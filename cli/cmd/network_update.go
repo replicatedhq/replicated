@@ -12,20 +12,27 @@ func (r *runners) InitNetworkUpdateCommand(parent *cobra.Command) *cobra.Command
 	cmd := &cobra.Command{
 		Use:   "update [ID_OR_NAME]",
 		Short: "Update network settings",
-		Long: `The 'update' command allows you to update various settings of a test network.
+		Long: `The 'update' command allows you to update various settings of a test network, including network policy and report collection.
 
-You can either specify the network ID directly or provide the network name, and the command will resolve the corresponding network ID.
+You can either specify the network ID or name directly as a positional argument, or provide it using the '--id' or '--name' flags.
 
-Network Policies are currently a beta feature.`,
-		Example: `# Update a network using its ID
+Network policies control network traffic behavior:
+  - open: No restrictions on network traffic (default)
+  - airgap: Blocks all network egress to simulate air-gapped environments`,
+		Example: `# Set network policy to airgap
 replicated network update <network-id> --policy airgap
 
-# Update a network using its name
-replicated network update <network-name> --policy airgap
+# Set network policy to open
+replicated network update <network-id> --policy open
 
-# Update using --id or --name flags
-replicated network update --id <network-id> --policy airgap
-replicated network update --name <network-name> --policy airgap
+# Enable network traffic reporting
+replicated network update <network-id> --collect-report
+
+# Disable network reporting
+replicated network update <network-id> --collect-report=false
+
+# Update multiple settings at once
+replicated network update <network-id> --policy airgap --collect-report
 `,
 		RunE:              r.updateNetwork,
 		SilenceUsage:      true,
@@ -41,9 +48,6 @@ replicated network update --name <network-name> --policy airgap
 
 	cmd.Flags().StringVarP(&r.args.updateNetworkPolicy, "policy", "p", "", "Update network policy setting")
 	cmd.Flags().BoolVarP(&r.args.updateNetworkCollectReport, "collect-report", "r", false, "Enable report collection on this network (use --collect-report=false to disable)")
-	// TODO: Remove this once report collection is Beta, ensure we add
-	// examples in the above help text as well.
-	cmd.Flags().MarkHidden("collect-report")
 	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
