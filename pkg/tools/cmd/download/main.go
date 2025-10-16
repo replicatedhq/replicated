@@ -63,11 +63,13 @@ func main() {
 		}
 
 		fmt.Printf("Downloading %s %s...\n", toolName, version)
-		if err := downloader.Download(ctx, toolName, version); err != nil {
+		actualVersion, err := downloader.Download(ctx, toolName, version)
+		if err != nil {
 			fmt.Printf("⚠️  Version %s not found or failed to download: %v\n", version, err)
 			results = append(results, downloadResult{toolName, version, false, err})
 		} else {
-			results = append(results, downloadResult{toolName, version, true, nil})
+			// Use the actual version that was downloaded (might differ due to fallback)
+			results = append(results, downloadResult{toolName, actualVersion, true, nil})
 		}
 	}
 

@@ -44,10 +44,11 @@ func NewDownloader() *Downloader {
 
 // Download downloads a tool to the cache directory with checksum verification
 // If the requested version fails, it will automatically fallback to latest stable
-func (d *Downloader) Download(ctx context.Context, name, version string) error {
+// Returns the actual version that was downloaded (may differ from requested version due to fallback)
+func (d *Downloader) Download(ctx context.Context, name, version string) (string, error) {
 	// Try with fallback
-	_, err := d.DownloadWithFallback(ctx, name, version)
-	return err
+	actualVersion, err := d.DownloadWithFallback(ctx, name, version)
+	return actualVersion, err
 }
 
 // downloadExact downloads a specific version without fallback (internal use)

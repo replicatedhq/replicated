@@ -39,8 +39,17 @@ func (r *Resolver) Resolve(ctx context.Context, name, version string) (string, e
 
 	// Not cached - download it
 	fmt.Printf("Downloading %s %s...\n", name, version)
-	if err := r.downloader.Download(ctx, name, version); err != nil {
+	actualVersion, err := r.downloader.Download(ctx, name, version)
+	if err != nil {
 		return "", fmt.Errorf("downloading %s %s: %w", name, version, err)
+	}
+
+	// If a different version was downloaded (due to fallback), get the correct path
+	if actualVersion != version {
+		toolPath, err = GetToolPath(name, actualVersion)
+		if err != nil {
+			return "", fmt.Errorf("getting cache path for actual version %s: %w", actualVersion, err)
+		}
 	}
 
 	// Verify it now exists
