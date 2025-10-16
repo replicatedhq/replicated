@@ -29,12 +29,18 @@ type ReplLintConfig struct {
 	Version int                       `yaml:"version" json:"version"`
 	Enabled bool                      `yaml:"enabled" json:"enabled"`
 	Linters map[string]LinterConfig   `yaml:"linters" json:"linters"`
+	Tools   map[string]string         `yaml:"tools" json:"tools"`
 }
 
 // LinterConfig represents configuration for a specific linter
 type LinterConfig struct {
-	Enabled bool `yaml:"enabled" json:"enabled"`
-	Strict  bool `yaml:"strict" json:"strict"`
+	Disabled bool `yaml:"disabled" json:"disabled"`
+	Strict   bool `yaml:"strict" json:"strict"`
+}
+
+// IsEnabled returns true if the linter is not disabled
+func (c LinterConfig) IsEnabled() bool {
+	return !c.Disabled
 }
 
 // LoadReplicatedConfig loads and parses the .replicated config file from the current directory
@@ -93,9 +99,19 @@ func LoadReplicatedConfig() (*ReplicatedConfig, error) {
 	// If helm linter config doesn't exist, default to enabled
 	if _, exists := config.ReplLint.Linters["helm"]; !exists {
 		config.ReplLint.Linters["helm"] = LinterConfig{
-			Enabled: true,
-			Strict:  false,
+			Disabled: false,
+			Strict:   false,
 		}
+	}
+
+	// Default tools map
+	if config.ReplLint.Tools == nil {
+		config.ReplLint.Tools = make(map[string]string)
+	}
+
+	// Apply default tool versions if not specified
+	if _, exists := config.ReplLint.Tools["helm"]; !exists {
+		config.ReplLint.Tools["helm"] = "3.14.4"
 	}
 
 	return &config, nil

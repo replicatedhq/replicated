@@ -7,23 +7,17 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/replicatedhq/replicated/pkg/tools"
 )
 
-// FindHelm locates the helm binary in PATH
-func FindHelm() (string, error) {
-	path, err := exec.LookPath("helm")
-	if err != nil {
-		return "", fmt.Errorf("helm not found in PATH\n\nInstall helm: https://helm.sh/docs/intro/install/")
-	}
-	return path, nil
-}
-
 // LintChart executes helm lint on the given chart path and returns structured results
-func LintChart(ctx context.Context, chartPath string) (*LintResult, error) {
-	// Find helm binary
-	helmPath, err := FindHelm()
+func LintChart(ctx context.Context, chartPath string, helmVersion string) (*LintResult, error) {
+	// Use resolver to get helm binary
+	resolver := tools.NewResolver()
+	helmPath, err := resolver.Resolve(ctx, tools.ToolHelm, helmVersion)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("resolving helm: %w", err)
 	}
 
 	// Validate chart path exists

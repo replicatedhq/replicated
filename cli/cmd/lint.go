@@ -31,9 +31,17 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Check if helm linting is enabled
 	helmConfig, exists := config.ReplLint.Linters["helm"]
-	if exists && !helmConfig.Enabled {
+	if exists && !helmConfig.IsEnabled() {
 		fmt.Fprintf(r.w, "Helm linting is disabled in .replicated config\n")
 		return nil
+	}
+
+	// Get helm version from config
+	helmVersion := "3.14.4" // Default
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools["helm"]; ok {
+			helmVersion = v
+		}
 	}
 
 	// Check if there are any charts configured
@@ -53,7 +61,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	hasFailure := false
 
 	for _, chartPath := range chartPaths {
-		result, err := lint2.LintChart(cmd.Context(), chartPath)
+		result, err := lint2.LintChart(cmd.Context(), chartPath, helmVersion)
 		if err != nil {
 			return errors.Wrapf(err, "failed to lint chart: %s", chartPath)
 		}
