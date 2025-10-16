@@ -30,28 +30,52 @@ Notes:
 ## Examples
 1) Pin Helm version (strict mode):
 ```yaml
-repl-lint:
-    version: 1
-    enabled: true
-    linters:
-        helm:
-            enabled: true                
-            strict: false                
-        preflight:
-            enabled: true
-            strict: true
-        support-bundle:
-            enabled: true
-            strict: false
-        embedded-cluster:                
-            enabled: false
-            strict: false
-        kots:
-            enabled: false
-            strict: false
-    tools:
-        helm: "3.14.4"
-        psql: "15.6"
+  appId: ""
+  appSlug: "" 
+  promoteToChannelIds: []
+  promoteToChannelNames: []
+  charts: [
+    {
+      path: "./chart/something",
+      chartVersion: "",
+      appVersion: "",
+    },
+    {
+        path: "./chart/new-chart/*",
+        chartVersion:,
+        appVersion: "",
+    }
+  ]
+  preflights: [
+    {
+        path: "./preflights/stuff",
+        valuesPath: "./chart/something", # directory to corresponding helm chart
+    }
+  ]
+  releaseLabel: ""  ## some sort of semver pattern?
+  manifests: ["replicated/**/*.yaml"]
+    repl-lint:
+        version: 1
+        linters:
+            helm:
+                disbabled: false                
+                strict: false                
+            preflight:
+                disabled: false
+                strict: true
+            support-bundle:
+                disabled: false
+                strict: false
+            embedded-cluster:                
+                disabled: true
+                strict: false
+            kots:
+                disabled: true
+                strict: false
+        tools:
+            helm: "3.14.4"
+            preflight: "0.123.9"
+            support-bundle: "0.123.9"
 ```
 
 Inline directive examples:
