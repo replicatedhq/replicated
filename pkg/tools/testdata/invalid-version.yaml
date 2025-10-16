@@ -1,0 +1,6 @@
+appId: "test-app"
+repl-lint:
+  enabled: true
+  tools:
+    helm: "not-a-semver"
+    preflight: "0.123.9"
