@@ -43,12 +43,23 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		return p.ParseConfigFile(absPath)
 	}
 
-	// Walk up directory tree looking for .replicated
+	// Walk up directory tree looking for .replicated, .replicated.yaml, or .replicated.json
 	currentDir := absPath
 	for {
-		configPath := filepath.Join(currentDir, ".replicated")
-		if _, err := os.Stat(configPath); err == nil {
-			return p.ParseConfigFile(configPath)
+		// Try .replicated first, then .replicated.yaml, then .replicated.json
+		candidates := []string{
+			filepath.Join(currentDir, ".replicated"),
+			filepath.Join(currentDir, ".replicated.yaml"),
+			filepath.Join(currentDir, ".replicated.json"),
+		}
+
+		for _, configPath := range candidates {
+			if stat, err := os.Stat(configPath); err == nil {
+				// Found config - make sure it's a file, not a directory
+				if !stat.IsDir() {
+					return p.ParseConfigFile(configPath)
+				}
+			}
 		}
 
 		// Move up one directory
@@ -60,8 +71,8 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		currentDir = parentDir
 	}
 
-	// No config found - return default config
-	return p.DefaultConfig(), nil
+	// No config found - return error
+	return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml, .replicated.json)")
 }
 
 // ParseConfigFile parses a .replicated config file (supports both YAML and JSON)

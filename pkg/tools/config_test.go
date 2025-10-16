@@ -3,6 +3,7 @@ package tools
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -173,16 +174,15 @@ func TestConfigParser_FindAndParseConfig(t *testing.T) {
 		}
 	})
 
-	// Test when no config found (should return defaults)
-	t.Run("no config found returns defaults", func(t *testing.T) {
+	// Test when no config found (should return error)
+	t.Run("no config found returns error", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		config, err := parser.FindAndParseConfig(tmpDir)
-		if err != nil {
-			t.Fatalf("FindAndParseConfig() error = %v", err)
+		_, err := parser.FindAndParseConfig(tmpDir)
+		if err == nil {
+			t.Error("FindAndParseConfig() expected error when no config found, got nil")
 		}
-		// Should return default config
-		if config.ReplLint.Tools[ToolHelm] != DefaultHelmVersion {
-			t.Errorf("helm version = %q, want default %q", config.ReplLint.Tools[ToolHelm], DefaultHelmVersion)
+		if !strings.Contains(err.Error(), "no .replicated config file found") {
+			t.Errorf("Expected 'no .replicated config file found' error, got: %v", err)
 		}
 	})
 }

@@ -12,17 +12,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-)
 
-// Tool versions (should match defaults in pkg/tools/types.go)
-const (
-	HelmVersion          = "3.14.4"
-	PreflightVersion     = "0.123.9"
-	SupportBundleVersion = "0.123.9"
+	"github.com/replicatedhq/replicated/pkg/tools"
 )
 
 type downloadResult struct {
 	tool    string
+	version string
 	success bool
 	err     error
 }
@@ -44,6 +40,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Parse .replicated config to get versions
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "⚠️  No .replicated config file found in current directory or parent directories\n")
+		fmt.Fprintf(os.Stderr, "Cannot determine tool versions without config. Skipping download.\n")
+		os.Exit(1)
+	}
+
+	toolVersions := tools.GetToolVersions(config)
+
 	fmt.Printf("Detected platform: %s-%s\n", platformOS, platformArch)
 	fmt.Printf("Downloading tools: %v\n", requestedTools)
 	fmt.Println()
@@ -53,28 +60,37 @@ func main() {
 	// Track results
 	var results []downloadResult
 
-	// Download requested tools (or all if none specified)
+	// Download requested tools with versions from config
 	if shouldDownload("helm", requestedTools) {
-		if err := downloadHelm(HelmVersion, platformOS, platformArch, toolsDir); err != nil {
-			results = append(results, downloadResult{"helm", false, err})
+		version := toolVersions[tools.ToolHelm]
+		fmt.Printf("Using helm version from config: %s\n", version)
+		if err := downloadHelm(version, platformOS, platformArch, toolsDir); err != nil {
+			fmt.Printf("⚠️  Version %s not found or failed to download\n", version)
+			results = append(results, downloadResult{"helm", version, false, err})
 		} else {
-			results = append(results, downloadResult{"helm", true, nil})
+			results = append(results, downloadResult{"helm", version, true, nil})
 		}
 	}
 
 	if shouldDownload("preflight", requestedTools) {
-		if err := downloadPreflight(PreflightVersion, platformOS, platformArch, toolsDir); err != nil {
-			results = append(results, downloadResult{"preflight", false, err})
+		version := toolVersions[tools.ToolPreflight]
+		fmt.Printf("Using preflight version from config: %s\n", version)
+		if err := downloadPreflight(version, platformOS, platformArch, toolsDir); err != nil {
+			fmt.Printf("⚠️  Version %s not found or failed to download\n", version)
+			results = append(results, downloadResult{"preflight", version, false, err})
 		} else {
-			results = append(results, downloadResult{"preflight", true, nil})
+			results = append(results, downloadResult{"preflight", version, true, nil})
 		}
 	}
 
 	if shouldDownload("support-bundle", requestedTools) {
-		if err := downloadSupportBundle(SupportBundleVersion, platformOS, platformArch, toolsDir); err != nil {
-			results = append(results, downloadResult{"support-bundle", false, err})
+		version := toolVersions[tools.ToolSupportBundle]
+		fmt.Printf("Using support-bundle version from config: %s\n", version)
+		if err := downloadSupportBundle(version, platformOS, platformArch, toolsDir); err != nil {
+			fmt.Printf("⚠️  Version %s not found or failed to download\n", version)
+			results = append(results, downloadResult{"support-bundle", version, false, err})
 		} else {
-			results = append(results, downloadResult{"support-bundle", true, nil})
+			results = append(results, downloadResult{"support-bundle", version, true, nil})
 		}
 	}
 
@@ -84,10 +100,10 @@ func main() {
 	successCount := 0
 	for _, r := range results {
 		if r.success {
-			fmt.Printf("  ✓ %s - success\n", r.tool)
+			fmt.Printf("  ✓ %s %s - success\n", r.tool, r.version)
 			successCount++
 		} else {
-			fmt.Printf("  ✗ %s - failed: %v\n", r.tool, r.err)
+			fmt.Printf("  ✗ %s %s - failed: %v\n", r.tool, r.version, r.err)
 		}
 	}
 
@@ -109,6 +125,10 @@ func main() {
 func showDownloadedFiles(toolsDir string) {
 	filepath.Walk(toolsDir, func(path string, info os.FileInfo, err error) error {
 		if err == nil && !info.IsDir() {
+			// Skip .DS_Store and other system files
+			if info.Name() == ".DS_Store" {
+				return nil
+			}
 			sizeMB := float64(info.Size()) / 1024 / 1024
 			fmt.Printf("  %s (%.0fM)\n", path, sizeMB)
 		}
@@ -149,21 +169,18 @@ func shouldDownload(tool string, requestedTools []string) bool {
 }
 
 func downloadHelm(version, platformOS, platformArch, toolsDir string) error {
-	dest := filepath.Join(toolsDir, "helm", version, platformOS+"-"+platformArch)
-	if err := os.MkdirAll(dest, 0755); err != nil {
-		return fmt.Errorf("creating directory: %w", err)
-	}
-
 	fmt.Printf("  → Downloading helm %s for %s-%s...\n", version, platformOS, platformArch)
 
-	// Windows uses .zip, others use .tar.gz
+	// Download to memory first, only create directory if successful
+	var data []byte
 	var err error
+
 	if platformOS == "windows" {
 		url := fmt.Sprintf("https://get.helm.sh/helm-v%s-windows-%s.zip", version, platformArch)
-		err = downloadAndExtractZip(url, dest, "windows-"+platformArch+"/helm.exe", "helm.exe")
+		data, err = downloadAndExtractToMemory(url, "windows-"+platformArch+"/helm.exe", true)
 	} else {
 		url := fmt.Sprintf("https://get.helm.sh/helm-v%s-%s-%s.tar.gz", version, platformOS, platformArch)
-		err = downloadAndExtractTarGz(url, dest, platformOS+"-"+platformArch+"/helm", "helm")
+		data, err = downloadAndExtractToMemory(url, platformOS+"-"+platformArch+"/helm", false)
 	}
 
 	if err != nil {
@@ -171,14 +188,20 @@ func downloadHelm(version, platformOS, platformArch, toolsDir string) error {
 		return err
 	}
 
-	// Make executable (on Unix)
+	// Download successful - now create directory and write file
+	dest := filepath.Join(toolsDir, "helm", version, platformOS+"-"+platformArch)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("creating directory: %w", err)
+	}
+
 	binaryName := "helm"
 	if platformOS == "windows" {
 		binaryName = "helm.exe"
 	}
 	helmPath := filepath.Join(dest, binaryName)
-	if err := os.Chmod(helmPath, 0755); err != nil {
-		return fmt.Errorf("chmod: %w", err)
+
+	if err := os.WriteFile(helmPath, data, 0755); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 
 	fmt.Printf("    ✓ Saved to %s\n", helmPath)
@@ -186,11 +209,6 @@ func downloadHelm(version, platformOS, platformArch, toolsDir string) error {
 }
 
 func downloadPreflight(version, platformOS, platformArch, toolsDir string) error {
-	dest := filepath.Join(toolsDir, "preflight", version, platformOS+"-"+platformArch)
-	if err := os.MkdirAll(dest, 0755); err != nil {
-		return fmt.Errorf("creating directory: %w", err)
-	}
-
 	fmt.Printf("  → Downloading preflight %s for %s-%s...\n", version, platformOS, platformArch)
 
 	// Troubleshoot uses different naming: darwin_all (universal), {os}_{arch}
@@ -203,22 +221,27 @@ func downloadPreflight(version, platformOS, platformArch, toolsDir string) error
 
 	url := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/%s", version, assetName)
 
-	// Determine binary name (Windows uses .exe)
 	binaryName := "preflight"
 	if platformOS == "windows" {
 		binaryName = "preflight.exe"
 	}
 
-	// Download and extract
-	if err := downloadAndExtractTarGz(url, dest, binaryName, binaryName); err != nil {
+	// Download to memory first
+	data, err := downloadAndExtractToMemory(url, binaryName, false)
+	if err != nil {
 		fmt.Printf("    ✗ Failed to download preflight from %s\n", assetName)
 		return err
 	}
 
-	// Make executable
+	// Download successful - now create directory and write file
+	dest := filepath.Join(toolsDir, "preflight", version, platformOS+"-"+platformArch)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("creating directory: %w", err)
+	}
+
 	preflightPath := filepath.Join(dest, binaryName)
-	if err := os.Chmod(preflightPath, 0755); err != nil {
-		return fmt.Errorf("chmod: %w", err)
+	if err := os.WriteFile(preflightPath, data, 0755); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 
 	fmt.Printf("    ✓ Saved to %s\n", preflightPath)
@@ -226,11 +249,6 @@ func downloadPreflight(version, platformOS, platformArch, toolsDir string) error
 }
 
 func downloadSupportBundle(version, platformOS, platformArch, toolsDir string) error {
-	dest := filepath.Join(toolsDir, "support-bundle", version, platformOS+"-"+platformArch)
-	if err := os.MkdirAll(dest, 0755); err != nil {
-		return fmt.Errorf("creating directory: %w", err)
-	}
-
 	fmt.Printf("  → Downloading support-bundle %s for %s-%s...\n", version, platformOS, platformArch)
 
 	// Troubleshoot uses different naming: darwin_all (universal), {os}_{arch}
@@ -243,129 +261,114 @@ func downloadSupportBundle(version, platformOS, platformArch, toolsDir string) e
 
 	url := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/%s", version, assetName)
 
-	// Determine binary name (Windows uses .exe)
 	binaryName := "support-bundle"
 	if platformOS == "windows" {
 		binaryName = "support-bundle.exe"
 	}
 
-	// Download and extract
-	if err := downloadAndExtractTarGz(url, dest, binaryName, binaryName); err != nil {
+	// Download to memory first
+	data, err := downloadAndExtractToMemory(url, binaryName, false)
+	if err != nil {
 		fmt.Printf("    ✗ Failed to download support-bundle from %s\n", assetName)
 		return err
 	}
 
-	// Make executable
+	// Download successful - now create directory and write file
+	dest := filepath.Join(toolsDir, "support-bundle", version, platformOS+"-"+platformArch)
+	if err := os.MkdirAll(dest, 0755); err != nil {
+		return fmt.Errorf("creating directory: %w", err)
+	}
+
 	sbPath := filepath.Join(dest, binaryName)
-	if err := os.Chmod(sbPath, 0755); err != nil {
-		return fmt.Errorf("chmod: %w", err)
+	if err := os.WriteFile(sbPath, data, 0755); err != nil {
+		return fmt.Errorf("writing file: %w", err)
 	}
 
 	fmt.Printf("    ✓ Saved to %s\n", sbPath)
 	return nil
 }
 
-// downloadAndExtractZip downloads a .zip file and extracts a specific file from it
-func downloadAndExtractZip(url, destDir, fileInArchive, outputName string) error {
+// downloadAndExtractToMemory downloads an archive and extracts a specific file to memory
+// Returns the file contents as bytes. Only creates directories if download succeeds.
+func downloadAndExtractToMemory(url, fileInArchive string, isZip bool) ([]byte, error) {
 	// Download
 	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("downloading: %w", err)
+		return nil, fmt.Errorf("downloading: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 
-	// Read entire response into memory (needed for zip reader)
-	data, err := io.ReadAll(resp.Body)
+	// Read entire response into memory
+	archiveData, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("reading response: %w", err)
+		return nil, fmt.Errorf("reading response: %w", err)
 	}
 
-	// Create zip reader
-	zipReader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if isZip {
+		return extractFromZip(archiveData, fileInArchive)
+	}
+	return extractFromTarGz(archiveData, fileInArchive)
+}
+
+// extractFromZip extracts a specific file from zip archive in memory
+func extractFromZip(archiveData []byte, fileInArchive string) ([]byte, error) {
+	zipReader, err := zip.NewReader(bytes.NewReader(archiveData), int64(len(archiveData)))
 	if err != nil {
-		return fmt.Errorf("reading zip: %w", err)
+		return nil, fmt.Errorf("reading zip: %w", err)
 	}
 
-	// Find and extract the target file
 	for _, file := range zipReader.File {
 		if strings.HasSuffix(file.Name, fileInArchive) {
 			rc, err := file.Open()
 			if err != nil {
-				return fmt.Errorf("opening file in zip: %w", err)
+				return nil, fmt.Errorf("opening file in zip: %w", err)
 			}
 			defer rc.Close()
 
-			outPath := filepath.Join(destDir, outputName)
-			outFile, err := os.Create(outPath)
+			data, err := io.ReadAll(rc)
 			if err != nil {
-				return fmt.Errorf("creating output file: %w", err)
-			}
-			defer outFile.Close()
-
-			if _, err := io.Copy(outFile, rc); err != nil {
-				return fmt.Errorf("extracting file: %w", err)
+				return nil, fmt.Errorf("reading file: %w", err)
 			}
 
-			return nil
+			return data, nil
 		}
 	}
 
-	return fmt.Errorf("file %q not found in archive", fileInArchive)
+	return nil, fmt.Errorf("file %q not found in archive", fileInArchive)
 }
 
-// downloadAndExtractTarGz downloads a tar.gz file and extracts a specific file from it
-func downloadAndExtractTarGz(url, destDir, fileInArchive, outputName string) error {
-	// Download
-	resp, err := http.Get(url)
+// extractFromTarGz extracts a specific file from tar.gz archive in memory
+func extractFromTarGz(archiveData []byte, fileInArchive string) ([]byte, error) {
+	gzReader, err := gzip.NewReader(bytes.NewReader(archiveData))
 	if err != nil {
-		return fmt.Errorf("downloading: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
-	}
-
-	// Decompress gzip
-	gzReader, err := gzip.NewReader(resp.Body)
-	if err != nil {
-		return fmt.Errorf("decompressing gzip: %w", err)
+		return nil, fmt.Errorf("decompressing gzip: %w", err)
 	}
 	defer gzReader.Close()
 
-	// Read tar
 	tarReader := tar.NewReader(gzReader)
 
-	// Find and extract the target file
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("reading tar: %w", err)
+			return nil, fmt.Errorf("reading tar: %w", err)
 		}
 
-		// Check if this is the file we want
 		if strings.HasSuffix(header.Name, fileInArchive) {
-			outPath := filepath.Join(destDir, outputName)
-			outFile, err := os.Create(outPath)
+			data, err := io.ReadAll(tarReader)
 			if err != nil {
-				return fmt.Errorf("creating output file: %w", err)
-			}
-			defer outFile.Close()
-
-			if _, err := io.Copy(outFile, tarReader); err != nil {
-				return fmt.Errorf("extracting file: %w", err)
+				return nil, fmt.Errorf("reading file: %w", err)
 			}
 
-			return nil
+			return data, nil
 		}
 	}
 
-	return fmt.Errorf("file %q not found in archive", fileInArchive)
+	return nil, fmt.Errorf("file %q not found in archive", fileInArchive)
 }
