@@ -3,25 +3,25 @@ This defines only the minimal structure for the new linter. YAML and JSON are bo
 ## Format
 ```yaml
 repl-lint:
-    version: 1                       # lint config schema version
-    enabled: true                    # turn linting on/off
-  linters:
-    helm:
-        enabled: true                # run helm lint
-        strict: false                # if true, treat warnings as errors
-    preflight:
-        enabled: true
-        strict: true
-    support-bundle:
-        enabled: true
-        strict: false
-    embedded-cluster:                # embedded cluster and kots linters do not exist as of yet
-        enabled: false
-        strict: false
-    kots:
-        enabled: false
-        strict: false
-      tools:                         # tool resolution (optional)
+    version: 1                           # lint config schema version
+    enabled: true                        # turn linting on/off
+    linters:
+        helm:
+            enabled: true                # run helm lint
+            strict: false                # if true, treat warnings as errors
+        preflight:
+            enabled: true
+            strict: true
+        support-bundle:
+            enabled: true
+            strict: false
+        embedded-cluster:                # embedded cluster and kots linters do not exist as of yet
+            enabled: false
+            strict: false
+        kots:
+            enabled: false
+            strict: false
+    tools:                               # tool resolution (optional)
 ```
 Notes:
 - Only keys listed above are recognized in this minimal spec. Unknown keys are rejected.

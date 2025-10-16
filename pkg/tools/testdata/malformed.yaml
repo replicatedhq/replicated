@@ -1,0 +1,6 @@
+appId: "test-app"
+repl-lint:
+  enabled: true
+    indentation: bad
+  tools:
+    helm: "3.14.4"

@@ -1,0 +1,25 @@
+appId: "test-app"
+appSlug: "test-slug"
+repl-lint:
+  version: 1
+  enabled: true
+  linters:
+    helm:
+      disabled: false
+      strict: false
+    preflight:
+      disabled: false
+      strict: true
+    support-bundle:
+      disabled: false
+      strict: false
+    embedded-cluster:
+      disabled: true
+      strict: false
+    kots:
+      disabled: true
+      strict: false
+  tools:
+    helm: "3.14.4"
+    preflight: "0.123.9"
+    support-bundle: "0.123.9"
