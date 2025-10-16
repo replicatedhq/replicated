@@ -19,15 +19,23 @@ func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "report [network-id]",
 		Short: "Get network report",
-		Long:  "Get a network report showing traffic analysis for a specified network",
-		Example: `# Get report for a network by ID (using positional argument)
-replicated network report abc123
+		Long: `Get a network report showing detailed network activity for a specified network.
 
-# Get report for a network by ID (using flag)
-replicated network report --id abc123
+The report shows individual network events including source/destination IPs, ports, protocols, 
+pods, processes, and DNS queries. Reports must be enabled with 'replicated network update <network-id> --collect-report'.
 
-# Watch for new network events (JSON Lines format)
-replicated network report abc123 --watch`,
+Output formats:
+  - Default: Full event details in JSON format
+  - --summary: Aggregated statistics with top domains and destinations
+  - --watch: Continuous stream of new events in JSON Lines format`,
+		Example: `# Get full network traffic report
+replicated network report <network-id>
+
+# Get aggregated summary with statistics
+replicated network report <network-id> --summary
+
+# Watch for new network events in real-time
+replicated network report <network-id> --watch`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
 		Hidden:            true,
@@ -37,8 +45,8 @@ replicated network report abc123 --watch`,
 	cmd.Flags().StringVar(&r.args.networkReportID, "id", "", "Network ID to get report for")
 	cmd.RegisterFlagCompletionFunc("id", r.completeNetworkIDs)
 
-	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events")
-	cmd.Flags().BoolVar(&r.args.networkReportSummary, "summary", false, "Get the report summary ")
+	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events in real-time (polls every 2 seconds)")
+	cmd.Flags().BoolVar(&r.args.networkReportSummary, "summary", false, "Get aggregated report summary with statistics instead of individual events")
 
 	return cmd
 }
