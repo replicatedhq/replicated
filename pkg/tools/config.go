@@ -203,7 +203,7 @@ func (p *ConfigParser) DefaultConfig() *Config {
 				Helm:            LinterConfig{Disabled: false, Strict: false}, // disabled: false = enabled
 				Preflight:       LinterConfig{Disabled: false, Strict: false},
 				SupportBundle:   LinterConfig{Disabled: false, Strict: false},
-				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false},  // disabled: true = disabled
+				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false}, // disabled: true = disabled
 				Kots:            LinterConfig{Disabled: true, Strict: false},
 			},
 			Tools: make(map[string]string),

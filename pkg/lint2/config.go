@@ -11,10 +11,10 @@ import (
 
 // ReplicatedConfig represents the .replicated configuration file
 type ReplicatedConfig struct {
-	AppID    string               `yaml:"appId" json:"appId"`
-	AppSlug  string               `yaml:"appSlug" json:"appSlug"`
-	Charts   []ChartConfig        `yaml:"charts" json:"charts"`
-	ReplLint ReplLintConfig       `yaml:"repl-lint" json:"repl-lint"`
+	AppID    string         `yaml:"appId" json:"appId"`
+	AppSlug  string         `yaml:"appSlug" json:"appSlug"`
+	Charts   []ChartConfig  `yaml:"charts" json:"charts"`
+	ReplLint ReplLintConfig `yaml:"repl-lint" json:"repl-lint"`
 }
 
 // ChartConfig represents a chart entry in the config
@@ -26,10 +26,10 @@ type ChartConfig struct {
 
 // ReplLintConfig represents the repl-lint section
 type ReplLintConfig struct {
-	Version int                       `yaml:"version" json:"version"`
-	Enabled bool                      `yaml:"enabled" json:"enabled"`
-	Linters map[string]LinterConfig   `yaml:"linters" json:"linters"`
-	Tools   map[string]string         `yaml:"tools" json:"tools"`
+	Version int                     `yaml:"version" json:"version"`
+	Enabled bool                    `yaml:"enabled" json:"enabled"`
+	Linters map[string]LinterConfig `yaml:"linters" json:"linters"`
+	Tools   map[string]string       `yaml:"tools" json:"tools"`
 }
 
 // LinterConfig represents configuration for a specific linter
@@ -143,7 +143,7 @@ func ExpandChartPaths(chartConfigs []ChartConfig) ([]string, error) {
 // containsGlob checks if a path contains glob wildcards
 func containsGlob(path string) bool {
 	return filepath.Base(path) != path &&
-		   (containsAny(path, []rune{'*', '?', '['}))
+		(containsAny(path, []rune{'*', '?', '['}))
 }
 
 func containsAny(s string, chars []rune) bool {
