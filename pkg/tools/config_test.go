@@ -90,10 +90,11 @@ func TestConfigParser_ParseConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			path := filepath.Join("testdata", tt.fixture)
-			config, err := parser.ParseConfigFile(path)
+			// Use FindAndParseConfig with file path to get defaults applied
+			config, err := parser.FindAndParseConfig(path)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseConfigFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("FindAndParseConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 

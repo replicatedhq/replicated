@@ -40,11 +40,19 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	// If startPath is a file, parse it directly
 	info, err := os.Stat(absPath)
 	if err == nil && !info.IsDir() {
-		return p.ParseConfigFile(absPath)
+		config, err := p.ParseConfigFile(absPath)
+		if err != nil {
+			return nil, err
+		}
+		// Apply defaults for single-file case
+		p.applyDefaults(config)
+		return config, nil
 	}
 
-	// Walk up directory tree looking for .replicated, .replicated.yaml, or .replicated.json
+	// Collect all config files from current dir to root
+	var configPaths []string
 	currentDir := absPath
+
 	for {
 		// Try .replicated first, then .replicated.yaml, then .replicated.json
 		candidates := []string{
@@ -57,7 +65,8 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 			if stat, err := os.Stat(configPath); err == nil {
 				// Found config - make sure it's a file, not a directory
 				if !stat.IsDir() {
-					return p.ParseConfigFile(configPath)
+					configPaths = append(configPaths, configPath)
+					break // Only take first match per directory
 				}
 			}
 		}
@@ -65,14 +74,92 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		// Move up one directory
 		parentDir := filepath.Dir(currentDir)
 		if parentDir == currentDir {
-			// Reached root without finding config
+			// Reached root
 			break
 		}
 		currentDir = parentDir
 	}
 
-	// No config found - return error
-	return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml, .replicated.json)")
+	// No config files found
+	if len(configPaths) == 0 {
+		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml, .replicated.json)")
+	}
+
+	// If only one config, just parse and return it
+	if len(configPaths) == 1 {
+		return p.ParseConfigFile(configPaths[0])
+	}
+
+	// Multiple configs found - parse and merge them
+	// configPaths is ordered [child...parent], reverse to [parent...child]
+	var configs []*Config
+	for i := len(configPaths) - 1; i >= 0; i-- {
+		config, err := p.ParseConfigFile(configPaths[i])
+		if err != nil {
+			return nil, fmt.Errorf("parsing %s: %w", configPaths[i], err)
+		}
+		configs = append(configs, config)
+	}
+
+	// Merge all configs (later configs override earlier)
+	merged := p.mergeConfigs(configs)
+
+	// Apply defaults to merged config
+	p.applyDefaults(merged)
+
+	return merged, nil
+}
+
+// mergeConfigs merges multiple configs with later configs taking precedence
+// Configs are ordered [parent, child, grandchild] - child overrides parent
+func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
+	if len(configs) == 0 {
+		return p.DefaultConfig()
+	}
+
+	if len(configs) == 1 {
+		return configs[0]
+	}
+
+	// Start with first config (most parent)
+	merged := configs[0]
+
+	// Merge in each subsequent config (moving toward child)
+	for i := 1; i < len(configs); i++ {
+		child := configs[i]
+
+		// Merge ReplLint section
+		if child.ReplLint != nil {
+			if merged.ReplLint == nil {
+				merged.ReplLint = child.ReplLint
+			} else {
+				// Merge version and enabled
+				if child.ReplLint.Version != 0 {
+					merged.ReplLint.Version = child.ReplLint.Version
+				}
+				merged.ReplLint.Enabled = child.ReplLint.Enabled
+
+				// Merge linters (child completely overrides parent for each linter)
+				merged.ReplLint.Linters.Helm = child.ReplLint.Linters.Helm
+				merged.ReplLint.Linters.Preflight = child.ReplLint.Linters.Preflight
+				merged.ReplLint.Linters.SupportBundle = child.ReplLint.Linters.SupportBundle
+				merged.ReplLint.Linters.EmbeddedCluster = child.ReplLint.Linters.EmbeddedCluster
+				merged.ReplLint.Linters.Kots = child.ReplLint.Linters.Kots
+
+				// Merge tools map (child versions override parent)
+				if child.ReplLint.Tools != nil {
+					if merged.ReplLint.Tools == nil {
+						merged.ReplLint.Tools = make(map[string]string)
+					}
+					for toolName, version := range child.ReplLint.Tools {
+						merged.ReplLint.Tools[toolName] = version
+					}
+				}
+			}
+		}
+	}
+
+	return merged
 }
 
 // ParseConfigFile parses a .replicated config file (supports both YAML and JSON)
@@ -86,6 +173,7 @@ func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 }
 
 // ParseConfig parses config data (auto-detects YAML or JSON)
+// Does NOT apply defaults - caller should do that after merging
 func (p *ConfigParser) ParseConfig(data []byte) (*Config, error) {
 	var config Config
 
@@ -97,10 +185,7 @@ func (p *ConfigParser) ParseConfig(data []byte) (*Config, error) {
 		}
 	}
 
-	// Apply defaults
-	p.applyDefaults(&config)
-
-	// Validate
+	// Validate but don't apply defaults
 	if err := p.validateConfig(&config); err != nil {
 		return nil, fmt.Errorf("validating config: %w", err)
 	}
@@ -176,9 +261,9 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		return nil
 	}
 
-	// Validate version
-	if config.ReplLint.Version < 1 {
-		return fmt.Errorf("invalid version %d: must be >= 1", config.ReplLint.Version)
+	// Validate version (0 is allowed, will be defaulted to 1)
+	if config.ReplLint.Version < 0 {
+		return fmt.Errorf("invalid version %d: must be >= 0", config.ReplLint.Version)
 	}
 
 	// Validate tool versions (semantic versioning)
