@@ -6,4 +6,22 @@ type Credentials struct {
 
 	IsEnv        bool `json:"-"`
 	IsConfigFile bool `json:"-"`
+	IsProfile    bool `json:"-"`
+}
+
+// Profile represents a named authentication profile
+type Profile struct {
+	APIToken       string `json:"apiToken"`
+	APIOrigin      string `json:"apiOrigin,omitempty"`
+	RegistryOrigin string `json:"registryOrigin,omitempty"`
+}
+
+// ConfigFile represents the structure of ~/.replicated/config.yaml
+type ConfigFile struct {
+	// Legacy single token (for backward compatibility)
+	Token string `json:"token,omitempty"`
+
+	// New profile-based configuration
+	Profiles       map[string]Profile `json:"profiles,omitempty"`
+	DefaultProfile string             `json:"defaultProfile,omitempty"`
 }
