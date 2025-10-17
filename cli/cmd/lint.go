@@ -12,9 +12,10 @@ import (
 
 func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "lint",
-		Short: "Lint Helm charts and Preflight specs",
-		Long:  `Lint Helm charts and Preflight specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource.`,
+		Use:          "lint",
+		Short:        "Lint Helm charts and Preflight specs",
+		Long:         `Lint Helm charts and Preflight specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource.`,
+		SilenceUsage: true,
 	}
 
 	cmd.RunE = r.runLint
