@@ -105,6 +105,9 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	// Apply defaults to merged config
 	p.applyDefaults(merged)
 
+	// Deduplicate resources (charts, preflights, manifests)
+	p.deduplicateResources(merged)
+
 	return merged, nil
 }
 
@@ -288,6 +291,27 @@ func (p *ConfigParser) applyDefaults(config *Config) {
 
 // validateConfig validates the config structure
 func (p *ConfigParser) validateConfig(config *Config) error {
+	// Validate chart paths
+	for i, chart := range config.Charts {
+		if chart.Path == "" {
+			return fmt.Errorf("chart[%d]: path is required", i)
+		}
+	}
+
+	// Validate preflight paths
+	for i, preflight := range config.Preflights {
+		if preflight.Path == "" {
+			return fmt.Errorf("preflight[%d]: path is required", i)
+		}
+	}
+
+	// Validate manifest paths
+	for i, manifest := range config.Manifests {
+		if manifest == "" {
+			return fmt.Errorf("manifest[%d]: path is required", i)
+		}
+	}
+
 	// Skip validation if no lint config
 	if config.ReplLint == nil {
 		return nil
@@ -393,4 +417,51 @@ func isValidSemver(version string) bool {
 
 	matched, _ := regexp.MatchString(semverPattern, version)
 	return matched
+}
+
+// deduplicateResources removes duplicate entries from resource arrays
+// Deduplication is based on absolute paths (which have already been resolved)
+func (p *ConfigParser) deduplicateResources(config *Config) {
+	if config == nil {
+		return
+	}
+
+	// Deduplicate charts by path
+	if len(config.Charts) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]ChartConfig, 0, len(config.Charts))
+		for _, chart := range config.Charts {
+			if !seen[chart.Path] {
+				seen[chart.Path] = true
+				unique = append(unique, chart)
+			}
+		}
+		config.Charts = unique
+	}
+
+	// Deduplicate preflights by path
+	if len(config.Preflights) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]PreflightConfig, 0, len(config.Preflights))
+		for _, preflight := range config.Preflights {
+			if !seen[preflight.Path] {
+				seen[preflight.Path] = true
+				unique = append(unique, preflight)
+			}
+		}
+		config.Preflights = unique
+	}
+
+	// Deduplicate manifests (they are just strings)
+	if len(config.Manifests) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]string, 0, len(config.Manifests))
+		for _, manifest := range config.Manifests {
+			if !seen[manifest] {
+				seen[manifest] = true
+				unique = append(unique, manifest)
+			}
+		}
+		config.Manifests = unique
+	}
 }
