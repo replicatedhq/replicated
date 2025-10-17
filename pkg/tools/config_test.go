@@ -42,19 +42,6 @@ func TestConfigParser_ParseConfig(t *testing.T) {
 			},
 		},
 		{
-			name:    "valid JSON with all fields",
-			fixture: "valid-full.json",
-			wantErr: false,
-			checkConfig: func(t *testing.T, cfg *Config) {
-				if cfg.ReplLint.Version != 1 {
-					t.Errorf("version = %d, want 1", cfg.ReplLint.Version)
-				}
-				if cfg.ReplLint.Tools[ToolHelm] != "3.14.4" {
-					t.Errorf("helm version = %q, want 3.14.4", cfg.ReplLint.Tools[ToolHelm])
-				}
-			},
-		},
-		{
 			name:    "minimal config with defaults",
 			fixture: "minimal.yaml",
 			wantErr: false,

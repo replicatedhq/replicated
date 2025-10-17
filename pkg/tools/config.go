@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -54,11 +53,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	currentDir := absPath
 
 	for {
-		// Try .replicated first, then .replicated.yaml, then .replicated.json
+		// Try .replicated first, then .replicated.yaml
 		candidates := []string{
 			filepath.Join(currentDir, ".replicated"),
 			filepath.Join(currentDir, ".replicated.yaml"),
-			filepath.Join(currentDir, ".replicated.json"),
 		}
 
 		for _, configPath := range candidates {
@@ -82,7 +80,7 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 
 	// No config files found
 	if len(configPaths) == 0 {
-		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml, .replicated.json)")
+		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml)")
 	}
 
 	// If only one config, just parse and return it
@@ -194,7 +192,7 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	return merged
 }
 
-// ParseConfigFile parses a .replicated config file (supports both YAML and JSON)
+// ParseConfigFile parses a .replicated config file (supports YAML)
 func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -213,17 +211,13 @@ func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 	return config, nil
 }
 
-// ParseConfig parses config data (auto-detects YAML or JSON)
+// ParseConfig parses config data from YAML
 // Does NOT apply defaults - caller should do that after merging
 func (p *ConfigParser) ParseConfig(data []byte) (*Config, error) {
 	var config Config
 
-	// Try YAML first (JSON is valid YAML)
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		// If YAML fails, try JSON explicitly
-		if jsonErr := json.Unmarshal(data, &config); jsonErr != nil {
-			return nil, fmt.Errorf("parsing config (tried YAML and JSON): %w", err)
-		}
+		return nil, fmt.Errorf("parsing config as YAML: %w", err)
 	}
 
 	// Validate but don't apply defaults
