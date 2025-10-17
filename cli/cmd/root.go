@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -292,6 +293,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
+	profileCmd := runCmds.InitProfileCommand(runCmds.rootCmd)
+	runCmds.InitProfileAddCommand(profileCmd)
+	runCmds.InitProfileLsCommand(profileCmd)
+	runCmds.InitProfileRmCommand(profileCmd)
+	runCmds.InitProfileSetDefaultCommand(profileCmd)
+
 	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
 	runCmds.InitAPIGet(apiCmd)
 	runCmds.InitAPIPost(apiCmd)
@@ -306,15 +313,41 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
-			creds, err := credentials.GetCurrentCredentials()
+			// Try to load profile from .replicated.yaml
+			var profileName string
+			configParser := tools.NewConfigParser()
+			config, err := configParser.FindAndParseConfig("")
+			if err == nil && config.Profile != "" {
+				profileName = config.Profile
+			}
+
+			// Get credentials with profile support
+			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {
-				if err == credentials.ErrCredentialsNotFound {
+				if err == credentials.ErrCredentialsNotFound || err == credentials.ErrProfileNotFound {
+					if profileName != "" {
+						return errors.Errorf("Profile '%s' not found. Please run `replicated profile add %s --token=<your-token>` or `replicated login`", profileName, profileName)
+					}
 					return errors.New("Please provide your API token or log in with `replicated login`")
 				}
 				return errors.Wrap(err, "get current credentials")
 			}
 
 			apiToken = creds.APIToken
+
+			// If using a profile, check if it has custom origins
+			if creds.IsProfile && profileName != "" {
+				apiOrigin, registryOrigin, err := credentials.GetProfileOrigins(profileName)
+				if err == nil {
+					if apiOrigin != "" {
+						platformOrigin = apiOrigin
+					}
+					if registryOrigin != "" {
+						// Store registry origin for later use (if needed by commands)
+						os.Setenv("REPLICATED_REGISTRY_ORIGIN", registryOrigin)
+					}
+				}
+			}
 		}
 
 		// allow override
