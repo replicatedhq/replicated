@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -54,11 +53,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	currentDir := absPath
 
 	for {
-		// Try .replicated first, then .replicated.yaml, then .replicated.json
+		// Try .replicated first, then .replicated.yaml
 		candidates := []string{
 			filepath.Join(currentDir, ".replicated"),
 			filepath.Join(currentDir, ".replicated.yaml"),
-			filepath.Join(currentDir, ".replicated.json"),
 		}
 
 		for _, configPath := range candidates {
@@ -82,7 +80,7 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 
 	// No config files found
 	if len(configPaths) == 0 {
-		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml, .replicated.json)")
+		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml)")
 	}
 
 	// If only one config, just parse and return it
@@ -107,11 +105,20 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	// Apply defaults to merged config
 	p.applyDefaults(merged)
 
+	// Deduplicate resources (charts, preflights, manifests)
+	p.deduplicateResources(merged)
+
 	return merged, nil
 }
 
 // mergeConfigs merges multiple configs with later configs taking precedence
 // Configs are ordered [parent, child, grandchild] - child overrides parent
+//
+// Merge strategy:
+// - Scalar fields (override): appId, appSlug, releaseLabel - child wins
+// - Channel arrays (override): promoteToChannelIds, promoteToChannelNames - child replaces if non-empty
+// - Resource arrays (append): charts, preflights, manifests - accumulate from all configs
+// - ReplLint section (override): child settings override parent
 func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	if len(configs) == 0 {
 		return p.DefaultConfig()
@@ -128,23 +135,48 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	for i := 1; i < len(configs); i++ {
 		child := configs[i]
 
+		// Scalar fields: child overrides parent (if non-empty)
+		if child.AppId != "" {
+			merged.AppId = child.AppId
+		}
+		if child.AppSlug != "" {
+			merged.AppSlug = child.AppSlug
+		}
+		if child.ReleaseLabel != "" {
+			merged.ReleaseLabel = child.ReleaseLabel
+		}
+
+		// Channel arrays: child completely replaces parent (if non-empty)
+		// This is an override, not an append, because promotion targets are a decision
+		if len(child.PromoteToChannelIds) > 0 {
+			merged.PromoteToChannelIds = child.PromoteToChannelIds
+		}
+		if len(child.PromoteToChannelNames) > 0 {
+			merged.PromoteToChannelNames = child.PromoteToChannelNames
+		}
+
+		// Resource arrays: append child to parent
+		// This allows monorepo configs to accumulate resources from all levels
+		merged.Charts = append(merged.Charts, child.Charts...)
+		merged.Preflights = append(merged.Preflights, child.Preflights...)
+		merged.Manifests = append(merged.Manifests, child.Manifests...)
+
 		// Merge ReplLint section
 		if child.ReplLint != nil {
 			if merged.ReplLint == nil {
 				merged.ReplLint = child.ReplLint
 			} else {
-				// Merge version and enabled
+				// Merge version (override if non-zero)
 				if child.ReplLint.Version != 0 {
 					merged.ReplLint.Version = child.ReplLint.Version
 				}
-				merged.ReplLint.Enabled = child.ReplLint.Enabled
 
-				// Merge linters (child completely overrides parent for each linter)
-				merged.ReplLint.Linters.Helm = child.ReplLint.Linters.Helm
-				merged.ReplLint.Linters.Preflight = child.ReplLint.Linters.Preflight
-				merged.ReplLint.Linters.SupportBundle = child.ReplLint.Linters.SupportBundle
-				merged.ReplLint.Linters.EmbeddedCluster = child.ReplLint.Linters.EmbeddedCluster
-				merged.ReplLint.Linters.Kots = child.ReplLint.Linters.Kots
+				// Merge linters (only override fields explicitly set in child)
+				merged.ReplLint.Linters.Helm = mergeLinterConfig(merged.ReplLint.Linters.Helm, child.ReplLint.Linters.Helm)
+				merged.ReplLint.Linters.Preflight = mergeLinterConfig(merged.ReplLint.Linters.Preflight, child.ReplLint.Linters.Preflight)
+				merged.ReplLint.Linters.SupportBundle = mergeLinterConfig(merged.ReplLint.Linters.SupportBundle, child.ReplLint.Linters.SupportBundle)
+				merged.ReplLint.Linters.EmbeddedCluster = mergeLinterConfig(merged.ReplLint.Linters.EmbeddedCluster, child.ReplLint.Linters.EmbeddedCluster)
+				merged.ReplLint.Linters.Kots = mergeLinterConfig(merged.ReplLint.Linters.Kots, child.ReplLint.Linters.Kots)
 
 				// Merge tools map (child versions override parent)
 				if child.ReplLint.Tools != nil {
@@ -162,27 +194,32 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	return merged
 }
 
-// ParseConfigFile parses a .replicated config file (supports both YAML and JSON)
+// ParseConfigFile parses a .replicated config file (supports YAML)
 func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
-	return p.ParseConfig(data)
+	config, err := p.ParseConfig(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Resolve all relative paths to absolute paths relative to the config file
+	// This ensures paths work correctly regardless of where the command is invoked
+	p.resolvePaths(config, path)
+
+	return config, nil
 }
 
-// ParseConfig parses config data (auto-detects YAML or JSON)
+// ParseConfig parses config data from YAML
 // Does NOT apply defaults - caller should do that after merging
 func (p *ConfigParser) ParseConfig(data []byte) (*Config, error) {
 	var config Config
 
-	// Try YAML first (JSON is valid YAML)
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		// If YAML fails, try JSON explicitly
-		if jsonErr := json.Unmarshal(data, &config); jsonErr != nil {
-			return nil, fmt.Errorf("parsing config (tried YAML and JSON): %w", err)
-		}
+		return nil, fmt.Errorf("parsing config as YAML: %w", err)
 	}
 
 	// Validate but don't apply defaults
@@ -198,13 +235,12 @@ func (p *ConfigParser) DefaultConfig() *Config {
 	config := &Config{
 		ReplLint: &ReplLintConfig{
 			Version: 1,
-			Enabled: true,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: false, Strict: false}, // disabled: false = enabled
-				Preflight:       LinterConfig{Disabled: false, Strict: false},
-				SupportBundle:   LinterConfig{Disabled: false, Strict: false},
-				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false},  // disabled: true = disabled
-				Kots:            LinterConfig{Disabled: true, Strict: false},
+				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		},
@@ -220,13 +256,12 @@ func (p *ConfigParser) applyDefaults(config *Config) {
 	if config.ReplLint == nil {
 		config.ReplLint = &ReplLintConfig{
 			Version: 1,
-			Enabled: true,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: false, Strict: false},
-				Preflight:       LinterConfig{Disabled: false, Strict: false},
-				SupportBundle:   LinterConfig{Disabled: false, Strict: false},
-				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false},
-				Kots:            LinterConfig{Disabled: true, Strict: false},
+				Helm:            LinterConfig{Disabled: boolPtr(false)},
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)},
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		}
@@ -256,6 +291,27 @@ func (p *ConfigParser) applyDefaults(config *Config) {
 
 // validateConfig validates the config structure
 func (p *ConfigParser) validateConfig(config *Config) error {
+	// Validate chart paths
+	for i, chart := range config.Charts {
+		if chart.Path == "" {
+			return fmt.Errorf("chart[%d]: path is required", i)
+		}
+	}
+
+	// Validate preflight paths
+	for i, preflight := range config.Preflights {
+		if preflight.Path == "" {
+			return fmt.Errorf("preflight[%d]: path is required", i)
+		}
+	}
+
+	// Validate manifest paths
+	for i, manifest := range config.Manifests {
+		if manifest == "" {
+			return fmt.Errorf("manifest[%d]: path is required", i)
+		}
+	}
+
 	// Skip validation if no lint config
 	if config.ReplLint == nil {
 		return nil
@@ -290,6 +346,65 @@ func GetToolVersions(config *Config) map[string]string {
 	return versions
 }
 
+// resolvePaths resolves all relative paths in the config to absolute paths
+// relative to the config file's directory. This ensures paths work correctly
+// regardless of where the command is invoked.
+func (p *ConfigParser) resolvePaths(config *Config, configFilePath string) {
+	if config == nil {
+		return
+	}
+
+	// Get the directory containing the config file
+	configDir := filepath.Dir(configFilePath)
+
+	// Resolve chart paths
+	for i := range config.Charts {
+		// Only resolve relative paths - leave absolute paths as-is
+		if !filepath.IsAbs(config.Charts[i].Path) {
+			config.Charts[i].Path = filepath.Join(configDir, config.Charts[i].Path)
+		}
+	}
+
+	// Resolve preflight paths
+	for i := range config.Preflights {
+		// Resolve preflight path
+		if config.Preflights[i].Path != "" && !filepath.IsAbs(config.Preflights[i].Path) {
+			config.Preflights[i].Path = filepath.Join(configDir, config.Preflights[i].Path)
+		}
+		// Resolve valuesPath
+		if config.Preflights[i].ValuesPath != "" && !filepath.IsAbs(config.Preflights[i].ValuesPath) {
+			config.Preflights[i].ValuesPath = filepath.Join(configDir, config.Preflights[i].ValuesPath)
+		}
+	}
+
+	// Resolve manifest paths (glob patterns)
+	for i := range config.Manifests {
+		// Manifests are glob patterns - resolve base directory but preserve pattern
+		if !filepath.IsAbs(config.Manifests[i]) {
+			config.Manifests[i] = filepath.Join(configDir, config.Manifests[i])
+		}
+	}
+}
+
+// mergeLinterConfig merges two linter configs
+// Only overrides parent fields if child explicitly sets them (non-nil)
+func mergeLinterConfig(parent, child LinterConfig) LinterConfig {
+	result := parent
+
+	// Override disabled if child explicitly sets it
+	if child.Disabled != nil {
+		result.Disabled = child.Disabled
+	}
+
+	return result
+}
+
+// boolPtr returns a pointer to a boolean value
+// Helper for creating pointer booleans in config defaults
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 // isValidSemver checks if a version string is valid semantic versioning
 // Accepts formats like: 1.2.3, v1.2.3, 1.2.3-beta, 1.2.3+build
 func isValidSemver(version string) bool {
@@ -302,4 +417,51 @@ func isValidSemver(version string) bool {
 
 	matched, _ := regexp.MatchString(semverPattern, version)
 	return matched
+}
+
+// deduplicateResources removes duplicate entries from resource arrays
+// Deduplication is based on absolute paths (which have already been resolved)
+func (p *ConfigParser) deduplicateResources(config *Config) {
+	if config == nil {
+		return
+	}
+
+	// Deduplicate charts by path
+	if len(config.Charts) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]ChartConfig, 0, len(config.Charts))
+		for _, chart := range config.Charts {
+			if !seen[chart.Path] {
+				seen[chart.Path] = true
+				unique = append(unique, chart)
+			}
+		}
+		config.Charts = unique
+	}
+
+	// Deduplicate preflights by path
+	if len(config.Preflights) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]PreflightConfig, 0, len(config.Preflights))
+		for _, preflight := range config.Preflights {
+			if !seen[preflight.Path] {
+				seen[preflight.Path] = true
+				unique = append(unique, preflight)
+			}
+		}
+		config.Preflights = unique
+	}
+
+	// Deduplicate manifests (they are just strings)
+	if len(config.Manifests) > 0 {
+		seen := make(map[string]bool)
+		unique := make([]string, 0, len(config.Manifests))
+		for _, manifest := range config.Manifests {
+			if !seen[manifest] {
+				seen[manifest] = true
+				unique = append(unique, manifest)
+			}
+		}
+		config.Manifests = unique
+	}
 }
