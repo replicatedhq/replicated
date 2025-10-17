@@ -1,0 +1,16 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: valid-preflight-spec
+spec:
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.19.0"
+              message: Kubernetes version 1.19.0 or later is required
+          - pass:
+              message: Kubernetes version is supported
