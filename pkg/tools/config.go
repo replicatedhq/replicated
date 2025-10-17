@@ -112,6 +112,12 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 
 // mergeConfigs merges multiple configs with later configs taking precedence
 // Configs are ordered [parent, child, grandchild] - child overrides parent
+//
+// Merge strategy:
+// - Scalar fields (override): appId, appSlug, releaseLabel - child wins
+// - Channel arrays (override): promoteToChannelIds, promoteToChannelNames - child replaces if non-empty
+// - Resource arrays (append): charts, preflights, manifests - accumulate from all configs
+// - ReplLint section (override): child settings override parent
 func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	if len(configs) == 0 {
 		return p.DefaultConfig()
@@ -127,6 +133,32 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 	// Merge in each subsequent config (moving toward child)
 	for i := 1; i < len(configs); i++ {
 		child := configs[i]
+
+		// Scalar fields: child overrides parent (if non-empty)
+		if child.AppId != "" {
+			merged.AppId = child.AppId
+		}
+		if child.AppSlug != "" {
+			merged.AppSlug = child.AppSlug
+		}
+		if child.ReleaseLabel != "" {
+			merged.ReleaseLabel = child.ReleaseLabel
+		}
+
+		// Channel arrays: child completely replaces parent (if non-empty)
+		// This is an override, not an append, because promotion targets are a decision
+		if len(child.PromoteToChannelIds) > 0 {
+			merged.PromoteToChannelIds = child.PromoteToChannelIds
+		}
+		if len(child.PromoteToChannelNames) > 0 {
+			merged.PromoteToChannelNames = child.PromoteToChannelNames
+		}
+
+		// Resource arrays: append child to parent
+		// This allows monorepo configs to accumulate resources from all levels
+		merged.Charts = append(merged.Charts, child.Charts...)
+		merged.Preflights = append(merged.Preflights, child.Preflights...)
+		merged.Manifests = append(merged.Manifests, child.Manifests...)
 
 		// Merge ReplLint section
 		if child.ReplLint != nil {
@@ -174,9 +206,9 @@ func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 		return nil, err
 	}
 
-	// Resolve all relative chart paths to absolute paths relative to the config file
-	// This ensures chart paths work correctly regardless of where the command is invoked
-	p.resolveChartPaths(config, path)
+	// Resolve all relative paths to absolute paths relative to the config file
+	// This ensures paths work correctly regardless of where the command is invoked
+	p.resolvePaths(config, path)
 
 	return config, nil
 }
@@ -299,22 +331,42 @@ func GetToolVersions(config *Config) map[string]string {
 	return versions
 }
 
-// resolveChartPaths resolves all relative chart paths to absolute paths
-// relative to the config file's directory. This ensures chart paths work
-// correctly regardless of where the command is invoked.
-func (p *ConfigParser) resolveChartPaths(config *Config, configFilePath string) {
-	if config == nil || len(config.Charts) == 0 {
+// resolvePaths resolves all relative paths in the config to absolute paths
+// relative to the config file's directory. This ensures paths work correctly
+// regardless of where the command is invoked.
+func (p *ConfigParser) resolvePaths(config *Config, configFilePath string) {
+	if config == nil {
 		return
 	}
 
 	// Get the directory containing the config file
 	configDir := filepath.Dir(configFilePath)
 
-	// Resolve each chart path
+	// Resolve chart paths
 	for i := range config.Charts {
 		// Only resolve relative paths - leave absolute paths as-is
 		if !filepath.IsAbs(config.Charts[i].Path) {
 			config.Charts[i].Path = filepath.Join(configDir, config.Charts[i].Path)
+		}
+	}
+
+	// Resolve preflight paths
+	for i := range config.Preflights {
+		// Resolve preflight path
+		if config.Preflights[i].Path != "" && !filepath.IsAbs(config.Preflights[i].Path) {
+			config.Preflights[i].Path = filepath.Join(configDir, config.Preflights[i].Path)
+		}
+		// Resolve valuesPath
+		if config.Preflights[i].ValuesPath != "" && !filepath.IsAbs(config.Preflights[i].ValuesPath) {
+			config.Preflights[i].ValuesPath = filepath.Join(configDir, config.Preflights[i].ValuesPath)
+		}
+	}
+
+	// Resolve manifest paths (glob patterns)
+	for i := range config.Manifests {
+		// Manifests are glob patterns - resolve base directory but preserve pattern
+		if !filepath.IsAbs(config.Manifests[i]) {
+			config.Manifests[i] = filepath.Join(configDir, config.Manifests[i])
 		}
 	}
 }
