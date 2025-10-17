@@ -163,18 +163,17 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 			if merged.ReplLint == nil {
 				merged.ReplLint = child.ReplLint
 			} else {
-				// Merge version and enabled
+				// Merge version (override if non-zero)
 				if child.ReplLint.Version != 0 {
 					merged.ReplLint.Version = child.ReplLint.Version
 				}
-				merged.ReplLint.Enabled = child.ReplLint.Enabled
 
-				// Merge linters (child completely overrides parent for each linter)
-				merged.ReplLint.Linters.Helm = child.ReplLint.Linters.Helm
-				merged.ReplLint.Linters.Preflight = child.ReplLint.Linters.Preflight
-				merged.ReplLint.Linters.SupportBundle = child.ReplLint.Linters.SupportBundle
-				merged.ReplLint.Linters.EmbeddedCluster = child.ReplLint.Linters.EmbeddedCluster
-				merged.ReplLint.Linters.Kots = child.ReplLint.Linters.Kots
+				// Merge linters (only override fields explicitly set in child)
+				merged.ReplLint.Linters.Helm = mergeLinterConfig(merged.ReplLint.Linters.Helm, child.ReplLint.Linters.Helm)
+				merged.ReplLint.Linters.Preflight = mergeLinterConfig(merged.ReplLint.Linters.Preflight, child.ReplLint.Linters.Preflight)
+				merged.ReplLint.Linters.SupportBundle = mergeLinterConfig(merged.ReplLint.Linters.SupportBundle, child.ReplLint.Linters.SupportBundle)
+				merged.ReplLint.Linters.EmbeddedCluster = mergeLinterConfig(merged.ReplLint.Linters.EmbeddedCluster, child.ReplLint.Linters.EmbeddedCluster)
+				merged.ReplLint.Linters.Kots = mergeLinterConfig(merged.ReplLint.Linters.Kots, child.ReplLint.Linters.Kots)
 
 				// Merge tools map (child versions override parent)
 				if child.ReplLint.Tools != nil {
@@ -233,13 +232,12 @@ func (p *ConfigParser) DefaultConfig() *Config {
 	config := &Config{
 		ReplLint: &ReplLintConfig{
 			Version: 1,
-			Enabled: true,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: false, Strict: false}, // disabled: false = enabled
-				Preflight:       LinterConfig{Disabled: false, Strict: false},
-				SupportBundle:   LinterConfig{Disabled: false, Strict: false},
-				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false}, // disabled: true = disabled
-				Kots:            LinterConfig{Disabled: true, Strict: false},
+				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		},
@@ -255,13 +253,12 @@ func (p *ConfigParser) applyDefaults(config *Config) {
 	if config.ReplLint == nil {
 		config.ReplLint = &ReplLintConfig{
 			Version: 1,
-			Enabled: true,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: false, Strict: false},
-				Preflight:       LinterConfig{Disabled: false, Strict: false},
-				SupportBundle:   LinterConfig{Disabled: false, Strict: false},
-				EmbeddedCluster: LinterConfig{Disabled: true, Strict: false},
-				Kots:            LinterConfig{Disabled: true, Strict: false},
+				Helm:            LinterConfig{Disabled: boolPtr(false)},
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)},
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		}
@@ -363,6 +360,25 @@ func (p *ConfigParser) resolvePaths(config *Config, configFilePath string) {
 			config.Manifests[i] = filepath.Join(configDir, config.Manifests[i])
 		}
 	}
+}
+
+// mergeLinterConfig merges two linter configs
+// Only overrides parent fields if child explicitly sets them (non-nil)
+func mergeLinterConfig(parent, child LinterConfig) LinterConfig {
+	result := parent
+
+	// Override disabled if child explicitly sets it
+	if child.Disabled != nil {
+		result.Disabled = child.Disabled
+	}
+
+	return result
+}
+
+// boolPtr returns a pointer to a boolean value
+// Helper for creating pointer booleans in config defaults
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 // isValidSemver checks if a version string is valid semantic versioning

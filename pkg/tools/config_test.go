@@ -24,17 +24,11 @@ func TestConfigParser_ParseConfig(t *testing.T) {
 				if cfg.ReplLint.Version != 1 {
 					t.Errorf("version = %d, want 1", cfg.ReplLint.Version)
 				}
-				if !cfg.ReplLint.Enabled {
-					t.Error("enabled = false, want true")
-				}
 				if !cfg.ReplLint.Linters.Helm.IsEnabled() {
 					t.Error("helm is disabled, want enabled")
 				}
-				if cfg.ReplLint.Linters.Helm.Disabled {
+				if cfg.ReplLint.Linters.Helm.Disabled != nil && *cfg.ReplLint.Linters.Helm.Disabled {
 					t.Error("helm.disabled = true, want false")
-				}
-				if !cfg.ReplLint.Linters.Preflight.Strict {
-					t.Error("preflight.strict = false, want true")
 				}
 				if cfg.ReplLint.Tools[ToolHelm] != "3.14.4" {
 					t.Errorf("helm version = %q, want 3.14.4", cfg.ReplLint.Tools[ToolHelm])
@@ -100,10 +94,6 @@ func TestConfigParser_DefaultConfig(t *testing.T) {
 		t.Errorf("version = %d, want 1", config.ReplLint.Version)
 	}
 
-	if !config.ReplLint.Enabled {
-		t.Error("enabled should default to true")
-	}
-
 	// Check default tool versions
 	if config.ReplLint.Tools[ToolHelm] != DefaultHelmVersion {
 		t.Errorf("helm version = %q, want %q", config.ReplLint.Tools[ToolHelm], DefaultHelmVersion)
@@ -144,7 +134,6 @@ func TestConfigParser_FindAndParseConfig(t *testing.T) {
 
 		// Write a config file at the root
 		configData := []byte(`repl-lint:
-  enabled: true
   tools:
     helm: "3.14.4"
 `)
@@ -439,12 +428,14 @@ func TestConfigParser_MergeConfigs(t *testing.T) {
 	})
 
 	t.Run("repl-lint merge preserved", func(t *testing.T) {
+		// Helper to create bool pointers
+		boolPtr := func(b bool) *bool { return &b }
+
 		parent := &Config{
 			ReplLint: &ReplLintConfig{
 				Version: 1,
-				Enabled: true,
 				Linters: LintersConfig{
-					Helm: LinterConfig{Disabled: false, Strict: false},
+					Helm: LinterConfig{Disabled: boolPtr(false)},
 				},
 				Tools: map[string]string{
 					"helm": "3.14.4",
@@ -454,7 +445,7 @@ func TestConfigParser_MergeConfigs(t *testing.T) {
 		child := &Config{
 			ReplLint: &ReplLintConfig{
 				Linters: LintersConfig{
-					Helm: LinterConfig{Disabled: false, Strict: true},
+					Helm: LinterConfig{Disabled: boolPtr(true)},
 				},
 				Tools: map[string]string{
 					"helm": "3.19.0",
@@ -467,8 +458,9 @@ func TestConfigParser_MergeConfigs(t *testing.T) {
 		if merged.ReplLint == nil {
 			t.Fatal("ReplLint is nil")
 		}
-		if merged.ReplLint.Linters.Helm.Strict != true {
-			t.Errorf("Helm.Strict = %v, want true", merged.ReplLint.Linters.Helm.Strict)
+		// Verify child's disabled setting overrides parent
+		if merged.ReplLint.Linters.Helm.Disabled == nil || !*merged.ReplLint.Linters.Helm.Disabled {
+			t.Errorf("Helm.Disabled = %v, want true (child overrides parent)", merged.ReplLint.Linters.Helm.Disabled)
 		}
 		if merged.ReplLint.Tools["helm"] != "3.19.0" {
 			t.Errorf("Tools[helm] = %q, want %q", merged.ReplLint.Tools["helm"], "3.19.0")
@@ -501,11 +493,9 @@ manifests:
   - "replicated/**/*.yaml"
   - "manifests/**/*.yaml"
 repl-lint:
-  enabled: true
   linters:
     helm:
       disabled: false
-      strict: true
   tools:
     helm: "3.14.4"
 `)
@@ -555,7 +545,7 @@ repl-lint:
 
 		// Minimal config with only repl-lint
 		configData := []byte(`repl-lint:
-  enabled: true
+  version: 1
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -593,7 +583,6 @@ func TestConfigParser_ResolvePaths(t *testing.T) {
   - path: ./charts/chart2
   - path: charts/chart3
 repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -636,7 +625,6 @@ repl-lint:
   - path: preflights/check2
     valuesPath: ../parent-charts/chart2
 repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -681,7 +669,6 @@ repl-lint:
   - "./manifests/**/*.yaml"
   - "other/*.yaml"
 repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -720,7 +707,6 @@ repl-lint:
 		configData := []byte(`charts:
   - path: ` + absolutePath + `
 repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -757,7 +743,6 @@ repl-lint:
   - path: ` + absolutePath + `
   - path: ../parent-chart
 repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -796,7 +781,6 @@ repl-lint:
 		configPath := filepath.Join(tmpDir, ".replicated")
 
 		configData := []byte(`repl-lint:
-  enabled: true
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
 			t.Fatalf("writing test config: %v", err)
@@ -812,4 +796,119 @@ repl-lint:
 			t.Errorf("expected 0 charts, got %d", len(config.Charts))
 		}
 	})
+}
+
+func TestConfigParser_MonorepoEndToEnd(t *testing.T) {
+	// End-to-end integration test for monorepo support
+	// Tests the complete flow: discovery -> parsing -> path resolution -> merging
+	parser := NewConfigParser()
+
+	// Create monorepo directory structure
+	tmpDir := t.TempDir()
+	rootDir := tmpDir
+	appDir := filepath.Join(rootDir, "apps", "app1")
+
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		t.Fatalf("creating directories: %v", err)
+	}
+
+	// Root config: defines common chart and org-wide settings
+	rootConfigPath := filepath.Join(rootDir, ".replicated")
+	rootConfigData := []byte(`charts:
+  - path: ./common/lib-chart
+repl-lint:
+  linters:
+    helm:
+      disabled: false
+  tools:
+    helm: "3.14.4"
+`)
+	if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+		t.Fatalf("writing root config: %v", err)
+	}
+
+	// App config: defines app-specific resources and metadata
+	appConfigPath := filepath.Join(appDir, ".replicated")
+	appConfigData := []byte(`appId: "app-123"
+appSlug: "my-app"
+charts:
+  - path: ./chart
+manifests:
+  - "manifests/**/*.yaml"
+repl-lint:
+  tools:
+    helm: "3.19.0"
+`)
+	if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+		t.Fatalf("writing app config: %v", err)
+	}
+
+	// Parse config from app directory (should discover and merge both configs)
+	config, err := parser.FindAndParseConfig(appDir)
+	if err != nil {
+		t.Fatalf("FindAndParseConfig() error = %v", err)
+	}
+
+	// Verify: Charts from both configs are present (accumulated)
+	if len(config.Charts) != 2 {
+		t.Errorf("len(Charts) = %d, want 2 (root + app charts should accumulate)", len(config.Charts))
+	}
+
+	// Verify: Both chart paths are absolute and resolved relative to their config files
+	expectedRootChart := filepath.Join(rootDir, "common/lib-chart")
+	expectedAppChart := filepath.Join(appDir, "chart")
+
+	chartPaths := make(map[string]bool)
+	for _, chart := range config.Charts {
+		if !filepath.IsAbs(chart.Path) {
+			t.Errorf("Chart path %q is not absolute", chart.Path)
+		}
+		chartPaths[chart.Path] = true
+	}
+
+	if !chartPaths[expectedRootChart] {
+		t.Errorf("Expected root chart %q not found in merged config", expectedRootChart)
+	}
+	if !chartPaths[expectedAppChart] {
+		t.Errorf("Expected app chart %q not found in merged config", expectedAppChart)
+	}
+
+	// Verify: Manifests from app config are present and absolute
+	if len(config.Manifests) != 1 {
+		t.Errorf("len(Manifests) = %d, want 1", len(config.Manifests))
+	} else {
+		expectedManifest := filepath.Join(appDir, "manifests/**/*.yaml")
+		if config.Manifests[0] != expectedManifest {
+			t.Errorf("Manifests[0] = %q, want %q", config.Manifests[0], expectedManifest)
+		}
+		if !filepath.IsAbs(config.Manifests[0]) {
+			t.Errorf("Manifest path %q is not absolute", config.Manifests[0])
+		}
+	}
+
+	// Verify: AppId from child config (override)
+	if config.AppId != "app-123" {
+		t.Errorf("AppId = %q, want %q (from app config)", config.AppId, "app-123")
+	}
+
+	// Verify: AppSlug from child config (override)
+	if config.AppSlug != "my-app" {
+		t.Errorf("AppSlug = %q, want %q (from app config)", config.AppSlug, "my-app")
+	}
+
+	// Verify: ReplLint config present and valid
+	if config.ReplLint == nil {
+		t.Fatal("ReplLint is nil")
+	}
+
+	// Verify: Helm disabled setting inherited from root config
+	// Child config doesn't specify disabled, so should inherit parent's value
+	if config.ReplLint.Linters.Helm.Disabled == nil || *config.ReplLint.Linters.Helm.Disabled {
+		t.Error("Helm.Disabled should be false (inherited from root config)")
+	}
+
+	// Verify: Tool version from app config (override)
+	if config.ReplLint.Tools[ToolHelm] != "3.19.0" {
+		t.Errorf("Tools[helm] = %q, want %q (from app config)", config.ReplLint.Tools[ToolHelm], "3.19.0")
+	}
 }

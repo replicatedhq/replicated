@@ -29,7 +29,6 @@ type PreflightConfig struct {
 // ReplLintConfig is the lint configuration section
 type ReplLintConfig struct {
 	Version int               `yaml:"version"`
-	Enabled bool              `yaml:"enabled"`
 	Linters LintersConfig     `yaml:"linters"`
 	Tools   map[string]string `yaml:"tools,omitempty"`
 }
@@ -45,13 +44,13 @@ type LintersConfig struct {
 
 // LinterConfig represents the configuration for a single linter
 type LinterConfig struct {
-	Disabled bool `yaml:"disabled"`
-	Strict   bool `yaml:"strict"`
+	Disabled *bool `yaml:"disabled,omitempty"` // pointer allows nil = not set
 }
 
 // IsEnabled returns true if the linter is not disabled
+// nil Disabled means not set, defaults to enabled (false = not disabled)
 func (c LinterConfig) IsEnabled() bool {
-	return !c.Disabled
+	return c.Disabled == nil || !*c.Disabled
 }
 
 // Default tool versions
