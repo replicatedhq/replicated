@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: latest-example
+spec:
+  template:
+    spec:
+      containers:
+      - name: app1
+        image: nginx:latest
+      - name: app2
+        image: redis:latest
+

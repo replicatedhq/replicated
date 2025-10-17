@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-registry
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: http://insecure-registry.local:5000/myapp:v1
+

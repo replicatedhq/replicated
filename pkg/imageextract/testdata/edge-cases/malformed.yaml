@@ -1,0 +1,13 @@
+# Intentionally malformed YAML for error handling tests
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  template
+    # Missing colon
+    spec:
+      containers:
+      - name: app
+        image: nginx:1.19
+

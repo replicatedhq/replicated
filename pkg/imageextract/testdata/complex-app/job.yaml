@@ -1,0 +1,12 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration
+spec:
+  template:
+    spec:
+      containers:
+      - name: migrate
+        image: migrate-tool:v3.0
+      restartPolicy: Never
+

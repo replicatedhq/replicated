@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: database
+spec:
+  serviceName: db
+  template:
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14.5
+

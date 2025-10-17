@@ -44,6 +44,14 @@ type runnerArgs struct {
 	releaseImageLSVersion   string
 	releaseImageLSKeepProxy bool
 
+	extractImagesYamlDir        string
+	extractImagesChart          string
+	extractImagesValues         []string
+	extractImagesSet            []string
+	extractImagesShowDuplicates bool
+	extractImagesNoWarnings     bool
+	extractImagesNamespace      string
+
 	createCollectorName     string
 	createCollectorYaml     string
 	createCollectorYamlFile string

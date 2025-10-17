@@ -1,0 +1,10 @@
+image:
+  repository: nginx
+  tag: "1.21"
+  pullPolicy: IfNotPresent
+
+redis:
+  image: redis:6.2
+
+replicaCount: 2
+

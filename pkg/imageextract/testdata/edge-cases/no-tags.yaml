@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-tag-example
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        image: myapp
+      - name: tool
+        image: ubuntu
+

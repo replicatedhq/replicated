@@ -166,6 +166,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitReleaseTest(releaseCmd)
 	runCmds.InitReleaseCompatibility(releaseCmd)
 	runCmds.InitReleaseImageLS(releaseCmd)
+	runCmds.InitReleaseExtractImages(releaseCmd)
 
 	collectorsCmd := runCmds.InitCollectorsCommand(runCmds.rootCmd)
 	runCmds.InitCollectorList(collectorsCmd)
