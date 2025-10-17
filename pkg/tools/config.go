@@ -169,7 +169,16 @@ func (p *ConfigParser) ParseConfigFile(path string) (*Config, error) {
 		return nil, fmt.Errorf("reading config file: %w", err)
 	}
 
-	return p.ParseConfig(data)
+	config, err := p.ParseConfig(data)
+	if err != nil {
+		return nil, err
+	}
+
+	// Resolve all relative chart paths to absolute paths relative to the config file
+	// This ensures chart paths work correctly regardless of where the command is invoked
+	p.resolveChartPaths(config, path)
+
+	return config, nil
 }
 
 // ParseConfig parses config data (auto-detects YAML or JSON)
@@ -288,6 +297,26 @@ func GetToolVersions(config *Config) map[string]string {
 		versions[k] = v
 	}
 	return versions
+}
+
+// resolveChartPaths resolves all relative chart paths to absolute paths
+// relative to the config file's directory. This ensures chart paths work
+// correctly regardless of where the command is invoked.
+func (p *ConfigParser) resolveChartPaths(config *Config, configFilePath string) {
+	if config == nil || len(config.Charts) == 0 {
+		return
+	}
+
+	// Get the directory containing the config file
+	configDir := filepath.Dir(configFilePath)
+
+	// Resolve each chart path
+	for i := range config.Charts {
+		// Only resolve relative paths - leave absolute paths as-is
+		if !filepath.IsAbs(config.Charts[i].Path) {
+			config.Charts[i].Path = filepath.Join(configDir, config.Charts[i].Path)
+		}
+	}
 }
 
 // isValidSemver checks if a version string is valid semantic versioning

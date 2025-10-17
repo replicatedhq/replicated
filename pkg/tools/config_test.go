@@ -263,3 +263,151 @@ func TestIsValidSemver(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigParser_ResolveChartPaths(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("relative paths resolved to absolute", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		// Write a config file with relative chart paths
+		configData := []byte(`charts:
+  - path: ./charts/chart1
+  - path: ./charts/chart2
+  - path: charts/chart3
+repl-lint:
+  enabled: true
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify all chart paths are absolute and relative to config file directory
+		if len(config.Charts) != 3 {
+			t.Fatalf("expected 3 charts, got %d", len(config.Charts))
+		}
+
+		expectedPaths := []string{
+			filepath.Join(tmpDir, "charts/chart1"),
+			filepath.Join(tmpDir, "charts/chart2"),
+			filepath.Join(tmpDir, "charts/chart3"),
+		}
+
+		for i, chart := range config.Charts {
+			if !filepath.IsAbs(chart.Path) {
+				t.Errorf("chart[%d].Path = %q, expected absolute path", i, chart.Path)
+			}
+			if chart.Path != expectedPaths[i] {
+				t.Errorf("chart[%d].Path = %q, want %q", i, chart.Path, expectedPaths[i])
+			}
+		}
+	})
+
+	t.Run("absolute paths preserved", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		absolutePath := "/absolute/path/to/chart"
+		configData := []byte(`charts:
+  - path: ` + absolutePath + `
+repl-lint:
+  enabled: true
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify absolute path is preserved
+		if len(config.Charts) != 1 {
+			t.Fatalf("expected 1 chart, got %d", len(config.Charts))
+		}
+
+		if config.Charts[0].Path != absolutePath {
+			t.Errorf("chart.Path = %q, want %q (absolute path should be preserved)", config.Charts[0].Path, absolutePath)
+		}
+	})
+
+	t.Run("mixed relative and absolute paths", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "subdir", ".replicated")
+
+		// Create subdirectory
+		if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+			t.Fatalf("creating test dirs: %v", err)
+		}
+
+		absolutePath := "/absolute/path/to/chart"
+		configData := []byte(`charts:
+  - path: ./charts/relative-chart
+  - path: ` + absolutePath + `
+  - path: ../parent-chart
+repl-lint:
+  enabled: true
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify paths
+		if len(config.Charts) != 3 {
+			t.Fatalf("expected 3 charts, got %d", len(config.Charts))
+		}
+
+		configDir := filepath.Dir(configPath)
+		expectedPaths := []string{
+			filepath.Join(configDir, "charts/relative-chart"),
+			absolutePath, // preserved
+			filepath.Join(configDir, "../parent-chart"),
+		}
+
+		for i, chart := range config.Charts {
+			if !filepath.IsAbs(chart.Path) {
+				t.Errorf("chart[%d].Path = %q, expected absolute path", i, chart.Path)
+			}
+			if chart.Path != expectedPaths[i] {
+				t.Errorf("chart[%d].Path = %q, want %q", i, chart.Path, expectedPaths[i])
+			}
+		}
+	})
+
+	t.Run("no charts in config", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`repl-lint:
+  enabled: true
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config - should not error even with no charts
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		if len(config.Charts) != 0 {
+			t.Errorf("expected 0 charts, got %d", len(config.Charts))
+		}
+	})
+}
