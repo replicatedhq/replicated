@@ -325,10 +325,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {
 				if err == credentials.ErrCredentialsNotFound || err == credentials.ErrProfileNotFound {
+					msg := "Please provide your API token or log in with `replicated login`"
 					if profileName != "" {
-						return errors.Errorf("Profile '%s' not found. Please run `replicated profile add %s --token=<your-token>` or `replicated login`", profileName, profileName)
+						msg = fmt.Sprintf("%s (profile '%s' not found; run `replicated profile add %s --token=<your-token>`)", msg, profileName, profileName)
 					}
-					return errors.New("Please provide your API token or log in with `replicated login`")
+					return errors.New(msg)
 				}
 				return errors.Wrap(err, "get current credentials")
 			}
@@ -461,9 +462,9 @@ func printIfError(cmd *cobra.Command, err error) {
 
 	switch err := errors.Cause(err).(type) {
 	case platformclient.APIError:
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ERROR: %d", err.StatusCode))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("METHOD: %s", err.Method))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ENDPOINT: %s", err.Endpoint))
+		fmt.Fprintf(os.Stderr, "ERROR: %d\n", err.StatusCode)
+		fmt.Fprintf(os.Stderr, "METHOD: %s\n", err.Method)
+		fmt.Fprintf(os.Stderr, "ENDPOINT: %s\n", err.Endpoint)
 		fmt.Fprintln(os.Stderr, err.Message) // note that this can have multiple lines
 	case ClusterTimeoutError:
 		fmt.Fprintf(os.Stderr, "Error: Wait timeout exceeded for cluster %s\n", err.Cluster.ID)
