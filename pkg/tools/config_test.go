@@ -24,30 +24,11 @@ func TestConfigParser_ParseConfig(t *testing.T) {
 				if cfg.ReplLint.Version != 1 {
 					t.Errorf("version = %d, want 1", cfg.ReplLint.Version)
 				}
-				if !cfg.ReplLint.Enabled {
-					t.Error("enabled = false, want true")
-				}
 				if !cfg.ReplLint.Linters.Helm.IsEnabled() {
 					t.Error("helm is disabled, want enabled")
 				}
-				if cfg.ReplLint.Linters.Helm.Disabled {
+				if cfg.ReplLint.Linters.Helm.Disabled != nil && *cfg.ReplLint.Linters.Helm.Disabled {
 					t.Error("helm.disabled = true, want false")
-				}
-				if !cfg.ReplLint.Linters.Preflight.Strict {
-					t.Error("preflight.strict = false, want true")
-				}
-				if cfg.ReplLint.Tools[ToolHelm] != "3.14.4" {
-					t.Errorf("helm version = %q, want 3.14.4", cfg.ReplLint.Tools[ToolHelm])
-				}
-			},
-		},
-		{
-			name:    "valid JSON with all fields",
-			fixture: "valid-full.json",
-			wantErr: false,
-			checkConfig: func(t *testing.T, cfg *Config) {
-				if cfg.ReplLint.Version != 1 {
-					t.Errorf("version = %d, want 1", cfg.ReplLint.Version)
 				}
 				if cfg.ReplLint.Tools[ToolHelm] != "3.14.4" {
 					t.Errorf("helm version = %q, want 3.14.4", cfg.ReplLint.Tools[ToolHelm])
@@ -113,10 +94,6 @@ func TestConfigParser_DefaultConfig(t *testing.T) {
 		t.Errorf("version = %d, want 1", config.ReplLint.Version)
 	}
 
-	if !config.ReplLint.Enabled {
-		t.Error("enabled should default to true")
-	}
-
 	// Check default tool versions
 	if config.ReplLint.Tools[ToolHelm] != DefaultHelmVersion {
 		t.Errorf("helm version = %q, want %q", config.ReplLint.Tools[ToolHelm], DefaultHelmVersion)
@@ -157,7 +134,6 @@ func TestConfigParser_FindAndParseConfig(t *testing.T) {
 
 		// Write a config file at the root
 		configData := []byte(`repl-lint:
-  enabled: true
   tools:
     helm: "3.14.4"
 `)
@@ -262,4 +238,951 @@ func TestIsValidSemver(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestConfigParser_MergeConfigs(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("scalar fields override", func(t *testing.T) {
+		parent := &Config{
+			AppId:        "parent-app",
+			AppSlug:      "parent-slug",
+			ReleaseLabel: "parent-label",
+		}
+		child := &Config{
+			AppId:        "child-app",
+			AppSlug:      "child-slug",
+			ReleaseLabel: "child-label",
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if merged.AppId != "child-app" {
+			t.Errorf("AppId = %q, want %q", merged.AppId, "child-app")
+		}
+		if merged.AppSlug != "child-slug" {
+			t.Errorf("AppSlug = %q, want %q", merged.AppSlug, "child-slug")
+		}
+		if merged.ReleaseLabel != "child-label" {
+			t.Errorf("ReleaseLabel = %q, want %q", merged.ReleaseLabel, "child-label")
+		}
+	})
+
+	t.Run("channel arrays override", func(t *testing.T) {
+		parent := &Config{
+			PromoteToChannelIds:   []string{"channel-1", "channel-2"},
+			PromoteToChannelNames: []string{"stable", "beta"},
+		}
+		child := &Config{
+			PromoteToChannelIds:   []string{"channel-3"},
+			PromoteToChannelNames: []string{"alpha"},
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if len(merged.PromoteToChannelIds) != 1 || merged.PromoteToChannelIds[0] != "channel-3" {
+			t.Errorf("PromoteToChannelIds = %v, want [channel-3]", merged.PromoteToChannelIds)
+		}
+		if len(merged.PromoteToChannelNames) != 1 || merged.PromoteToChannelNames[0] != "alpha" {
+			t.Errorf("PromoteToChannelNames = %v, want [alpha]", merged.PromoteToChannelNames)
+		}
+	})
+
+	t.Run("charts append", func(t *testing.T) {
+		parent := &Config{
+			Charts: []ChartConfig{
+				{Path: "/parent/chart1"},
+				{Path: "/parent/chart2"},
+			},
+		}
+		child := &Config{
+			Charts: []ChartConfig{
+				{Path: "/child/chart3"},
+			},
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if len(merged.Charts) != 3 {
+			t.Fatalf("len(Charts) = %d, want 3", len(merged.Charts))
+		}
+		if merged.Charts[0].Path != "/parent/chart1" {
+			t.Errorf("Charts[0].Path = %q, want %q", merged.Charts[0].Path, "/parent/chart1")
+		}
+		if merged.Charts[1].Path != "/parent/chart2" {
+			t.Errorf("Charts[1].Path = %q, want %q", merged.Charts[1].Path, "/parent/chart2")
+		}
+		if merged.Charts[2].Path != "/child/chart3" {
+			t.Errorf("Charts[2].Path = %q, want %q", merged.Charts[2].Path, "/child/chart3")
+		}
+	})
+
+	t.Run("preflights append", func(t *testing.T) {
+		parent := &Config{
+			Preflights: []PreflightConfig{
+				{Path: "/parent/preflight1"},
+			},
+		}
+		child := &Config{
+			Preflights: []PreflightConfig{
+				{Path: "/child/preflight2"},
+			},
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if len(merged.Preflights) != 2 {
+			t.Fatalf("len(Preflights) = %d, want 2", len(merged.Preflights))
+		}
+		if merged.Preflights[0].Path != "/parent/preflight1" {
+			t.Errorf("Preflights[0].Path = %q, want %q", merged.Preflights[0].Path, "/parent/preflight1")
+		}
+		if merged.Preflights[1].Path != "/child/preflight2" {
+			t.Errorf("Preflights[1].Path = %q, want %q", merged.Preflights[1].Path, "/child/preflight2")
+		}
+	})
+
+	t.Run("manifests append", func(t *testing.T) {
+		parent := &Config{
+			Manifests: []string{"/parent/**/*.yaml"},
+		}
+		child := &Config{
+			Manifests: []string{"/child/**/*.yaml"},
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if len(merged.Manifests) != 2 {
+			t.Fatalf("len(Manifests) = %d, want 2", len(merged.Manifests))
+		}
+		if merged.Manifests[0] != "/parent/**/*.yaml" {
+			t.Errorf("Manifests[0] = %q, want %q", merged.Manifests[0], "/parent/**/*.yaml")
+		}
+		if merged.Manifests[1] != "/child/**/*.yaml" {
+			t.Errorf("Manifests[1] = %q, want %q", merged.Manifests[1], "/child/**/*.yaml")
+		}
+	})
+
+	t.Run("empty values dont override", func(t *testing.T) {
+		parent := &Config{
+			AppId:                 "parent-app",
+			PromoteToChannelIds:   []string{"channel-1"},
+			PromoteToChannelNames: []string{"stable"},
+		}
+		child := &Config{
+			AppId:                 "", // Empty - should not override
+			PromoteToChannelIds:   nil, // Nil - should not override
+			PromoteToChannelNames: []string{}, // Empty slice - should not override
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if merged.AppId != "parent-app" {
+			t.Errorf("AppId = %q, want %q (empty child should not override)", merged.AppId, "parent-app")
+		}
+		if len(merged.PromoteToChannelIds) != 1 || merged.PromoteToChannelIds[0] != "channel-1" {
+			t.Errorf("PromoteToChannelIds = %v, want [channel-1] (nil child should not override)", merged.PromoteToChannelIds)
+		}
+		if len(merged.PromoteToChannelNames) != 1 || merged.PromoteToChannelNames[0] != "stable" {
+			t.Errorf("PromoteToChannelNames = %v, want [stable] (empty child should not override)", merged.PromoteToChannelNames)
+		}
+	})
+
+	t.Run("three level merge", func(t *testing.T) {
+		grandparent := &Config{
+			AppId: "grandparent-app",
+			Charts: []ChartConfig{
+				{Path: "/gp/chart"},
+			},
+		}
+		parent := &Config{
+			AppSlug: "parent-slug",
+			Charts: []ChartConfig{
+				{Path: "/parent/chart"},
+			},
+		}
+		child := &Config{
+			ReleaseLabel: "child-label",
+			Charts: []ChartConfig{
+				{Path: "/child/chart"},
+			},
+		}
+
+		merged := parser.mergeConfigs([]*Config{grandparent, parent, child})
+
+		// Scalars - last non-empty wins
+		if merged.AppId != "grandparent-app" {
+			t.Errorf("AppId = %q, want %q", merged.AppId, "grandparent-app")
+		}
+		if merged.AppSlug != "parent-slug" {
+			t.Errorf("AppSlug = %q, want %q", merged.AppSlug, "parent-slug")
+		}
+		if merged.ReleaseLabel != "child-label" {
+			t.Errorf("ReleaseLabel = %q, want %q", merged.ReleaseLabel, "child-label")
+		}
+
+		// Charts - all accumulated
+		if len(merged.Charts) != 3 {
+			t.Fatalf("len(Charts) = %d, want 3", len(merged.Charts))
+		}
+	})
+
+	t.Run("repl-lint merge preserved", func(t *testing.T) {
+		// Helper to create bool pointers
+		boolPtr := func(b bool) *bool { return &b }
+
+		parent := &Config{
+			ReplLint: &ReplLintConfig{
+				Version: 1,
+				Linters: LintersConfig{
+					Helm: LinterConfig{Disabled: boolPtr(false)},
+				},
+				Tools: map[string]string{
+					"helm": "3.14.4",
+				},
+			},
+		}
+		child := &Config{
+			ReplLint: &ReplLintConfig{
+				Linters: LintersConfig{
+					Helm: LinterConfig{Disabled: boolPtr(true)},
+				},
+				Tools: map[string]string{
+					"helm": "3.19.0",
+				},
+			},
+		}
+
+		merged := parser.mergeConfigs([]*Config{parent, child})
+
+		if merged.ReplLint == nil {
+			t.Fatal("ReplLint is nil")
+		}
+		// Verify child's disabled setting overrides parent
+		if merged.ReplLint.Linters.Helm.Disabled == nil || !*merged.ReplLint.Linters.Helm.Disabled {
+			t.Errorf("Helm.Disabled = %v, want true (child overrides parent)", merged.ReplLint.Linters.Helm.Disabled)
+		}
+		if merged.ReplLint.Tools["helm"] != "3.19.0" {
+			t.Errorf("Tools[helm] = %q, want %q", merged.ReplLint.Tools["helm"], "3.19.0")
+		}
+	})
+}
+
+func TestConfigParser_ParseFullConfig(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("parse config with all fields", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`appId: "app-123"
+appSlug: "my-app"
+promoteToChannelIds: ["channel-1", "channel-2"]
+promoteToChannelNames: ["stable", "beta"]
+charts:
+  - path: ./charts/chart1
+    chartVersion: "1.0.0"
+    appVersion: "1.0.0"
+  - path: ./charts/chart2
+preflights:
+  - path: ./preflights/check1
+    valuesPath: ./charts/chart1
+  - path: ./preflights/check2
+releaseLabel: "v{{.Version}}"
+manifests:
+  - "replicated/**/*.yaml"
+  - "manifests/**/*.yaml"
+repl-lint:
+  linters:
+    helm:
+      disabled: false
+  tools:
+    helm: "3.14.4"
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify all fields are populated
+		if config.AppId != "app-123" {
+			t.Errorf("AppId = %q, want %q", config.AppId, "app-123")
+		}
+		if config.AppSlug != "my-app" {
+			t.Errorf("AppSlug = %q, want %q", config.AppSlug, "my-app")
+		}
+		if len(config.PromoteToChannelIds) != 2 {
+			t.Errorf("len(PromoteToChannelIds) = %d, want 2", len(config.PromoteToChannelIds))
+		}
+		if len(config.PromoteToChannelNames) != 2 {
+			t.Errorf("len(PromoteToChannelNames) = %d, want 2", len(config.PromoteToChannelNames))
+		}
+		if len(config.Charts) != 2 {
+			t.Errorf("len(Charts) = %d, want 2", len(config.Charts))
+		}
+		if len(config.Preflights) != 2 {
+			t.Errorf("len(Preflights) = %d, want 2", len(config.Preflights))
+		}
+		if config.ReleaseLabel != "v{{.Version}}" {
+			t.Errorf("ReleaseLabel = %q, want %q", config.ReleaseLabel, "v{{.Version}}")
+		}
+		if len(config.Manifests) != 2 {
+			t.Errorf("len(Manifests) = %d, want 2", len(config.Manifests))
+		}
+		if config.ReplLint == nil {
+			t.Fatal("ReplLint is nil")
+		}
+	})
+
+	t.Run("parse config with missing fields", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		// Minimal config with only repl-lint
+		configData := []byte(`repl-lint:
+  version: 1
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config - should not error
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify empty fields are empty, not nil
+		if config.AppId != "" {
+			t.Errorf("AppId should be empty, got %q", config.AppId)
+		}
+		if config.PromoteToChannelIds != nil {
+			t.Errorf("PromoteToChannelIds should be nil, got %v", config.PromoteToChannelIds)
+		}
+		if config.Charts != nil {
+			t.Errorf("Charts should be nil, got %v", config.Charts)
+		}
+	})
+}
+
+func TestConfigParser_ResolvePaths(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("relative chart paths resolved to absolute", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		// Write a config file with relative chart paths
+		configData := []byte(`charts:
+  - path: ./charts/chart1
+  - path: ./charts/chart2
+  - path: charts/chart3
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify all chart paths are absolute and relative to config file directory
+		if len(config.Charts) != 3 {
+			t.Fatalf("expected 3 charts, got %d", len(config.Charts))
+		}
+
+		expectedPaths := []string{
+			filepath.Join(tmpDir, "charts/chart1"),
+			filepath.Join(tmpDir, "charts/chart2"),
+			filepath.Join(tmpDir, "charts/chart3"),
+		}
+
+		for i, chart := range config.Charts {
+			if !filepath.IsAbs(chart.Path) {
+				t.Errorf("chart[%d].Path = %q, expected absolute path", i, chart.Path)
+			}
+			if chart.Path != expectedPaths[i] {
+				t.Errorf("chart[%d].Path = %q, want %q", i, chart.Path, expectedPaths[i])
+			}
+		}
+	})
+
+	t.Run("relative preflight paths resolved to absolute", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`preflights:
+  - path: ./preflights/check1
+    valuesPath: ./charts/chart1
+  - path: preflights/check2
+    valuesPath: ../parent-charts/chart2
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		if len(config.Preflights) != 2 {
+			t.Fatalf("expected 2 preflights, got %d", len(config.Preflights))
+		}
+
+		// Check first preflight
+		expectedPath := filepath.Join(tmpDir, "preflights/check1")
+		if config.Preflights[0].Path != expectedPath {
+			t.Errorf("preflights[0].Path = %q, want %q", config.Preflights[0].Path, expectedPath)
+		}
+		expectedValuesPath := filepath.Join(tmpDir, "charts/chart1")
+		if config.Preflights[0].ValuesPath != expectedValuesPath {
+			t.Errorf("preflights[0].ValuesPath = %q, want %q", config.Preflights[0].ValuesPath, expectedValuesPath)
+		}
+
+		// Check second preflight
+		expectedPath2 := filepath.Join(tmpDir, "preflights/check2")
+		if config.Preflights[1].Path != expectedPath2 {
+			t.Errorf("preflights[1].Path = %q, want %q", config.Preflights[1].Path, expectedPath2)
+		}
+		expectedValuesPath2 := filepath.Join(tmpDir, "../parent-charts/chart2")
+		if config.Preflights[1].ValuesPath != expectedValuesPath2 {
+			t.Errorf("preflights[1].ValuesPath = %q, want %q", config.Preflights[1].ValuesPath, expectedValuesPath2)
+		}
+	})
+
+	t.Run("relative manifest paths resolved to absolute", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`manifests:
+  - "replicated/**/*.yaml"
+  - "./manifests/**/*.yaml"
+  - "other/*.yaml"
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		if len(config.Manifests) != 3 {
+			t.Fatalf("expected 3 manifests, got %d", len(config.Manifests))
+		}
+
+		expectedManifests := []string{
+			filepath.Join(tmpDir, "replicated/**/*.yaml"),
+			filepath.Join(tmpDir, "manifests/**/*.yaml"),
+			filepath.Join(tmpDir, "other/*.yaml"),
+		}
+
+		for i, manifest := range config.Manifests {
+			if !filepath.IsAbs(manifest) {
+				t.Errorf("manifests[%d] = %q, expected absolute path", i, manifest)
+			}
+			if manifest != expectedManifests[i] {
+				t.Errorf("manifests[%d] = %q, want %q", i, manifest, expectedManifests[i])
+			}
+		}
+	})
+
+	t.Run("absolute paths preserved", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		absolutePath := "/absolute/path/to/chart"
+		configData := []byte(`charts:
+  - path: ` + absolutePath + `
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify absolute path is preserved
+		if len(config.Charts) != 1 {
+			t.Fatalf("expected 1 chart, got %d", len(config.Charts))
+		}
+
+		if config.Charts[0].Path != absolutePath {
+			t.Errorf("chart.Path = %q, want %q (absolute path should be preserved)", config.Charts[0].Path, absolutePath)
+		}
+	})
+
+	t.Run("mixed relative and absolute paths", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, "subdir", ".replicated")
+
+		// Create subdirectory
+		if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+			t.Fatalf("creating test dirs: %v", err)
+		}
+
+		absolutePath := "/absolute/path/to/chart"
+		configData := []byte(`charts:
+  - path: ./charts/relative-chart
+  - path: ` + absolutePath + `
+  - path: ../parent-chart
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		// Verify paths
+		if len(config.Charts) != 3 {
+			t.Fatalf("expected 3 charts, got %d", len(config.Charts))
+		}
+
+		configDir := filepath.Dir(configPath)
+		expectedPaths := []string{
+			filepath.Join(configDir, "charts/relative-chart"),
+			absolutePath, // preserved
+			filepath.Join(configDir, "../parent-chart"),
+		}
+
+		for i, chart := range config.Charts {
+			if !filepath.IsAbs(chart.Path) {
+				t.Errorf("chart[%d].Path = %q, expected absolute path", i, chart.Path)
+			}
+			if chart.Path != expectedPaths[i] {
+				t.Errorf("chart[%d].Path = %q, want %q", i, chart.Path, expectedPaths[i])
+			}
+		}
+	})
+
+	t.Run("no charts in config", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		// Parse the config - should not error even with no charts
+		config, err := parser.ParseConfigFile(configPath)
+		if err != nil {
+			t.Fatalf("ParseConfigFile() error = %v", err)
+		}
+
+		if len(config.Charts) != 0 {
+			t.Errorf("expected 0 charts, got %d", len(config.Charts))
+		}
+	})
+}
+
+func TestConfigParser_MonorepoEndToEnd(t *testing.T) {
+	// End-to-end integration test for monorepo support
+	// Tests the complete flow: discovery -> parsing -> path resolution -> merging
+	parser := NewConfigParser()
+
+	// Create monorepo directory structure
+	tmpDir := t.TempDir()
+	rootDir := tmpDir
+	appDir := filepath.Join(rootDir, "apps", "app1")
+
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		t.Fatalf("creating directories: %v", err)
+	}
+
+	// Root config: defines common chart and org-wide settings
+	rootConfigPath := filepath.Join(rootDir, ".replicated")
+	rootConfigData := []byte(`charts:
+  - path: ./common/lib-chart
+repl-lint:
+  linters:
+    helm:
+      disabled: false
+  tools:
+    helm: "3.14.4"
+`)
+	if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+		t.Fatalf("writing root config: %v", err)
+	}
+
+	// App config: defines app-specific resources and metadata
+	appConfigPath := filepath.Join(appDir, ".replicated")
+	appConfigData := []byte(`appId: "app-123"
+appSlug: "my-app"
+charts:
+  - path: ./chart
+manifests:
+  - "manifests/**/*.yaml"
+repl-lint:
+  tools:
+    helm: "3.19.0"
+`)
+	if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+		t.Fatalf("writing app config: %v", err)
+	}
+
+	// Parse config from app directory (should discover and merge both configs)
+	config, err := parser.FindAndParseConfig(appDir)
+	if err != nil {
+		t.Fatalf("FindAndParseConfig() error = %v", err)
+	}
+
+	// Verify: Charts from both configs are present (accumulated)
+	if len(config.Charts) != 2 {
+		t.Errorf("len(Charts) = %d, want 2 (root + app charts should accumulate)", len(config.Charts))
+	}
+
+	// Verify: Both chart paths are absolute and resolved relative to their config files
+	expectedRootChart := filepath.Join(rootDir, "common/lib-chart")
+	expectedAppChart := filepath.Join(appDir, "chart")
+
+	chartPaths := make(map[string]bool)
+	for _, chart := range config.Charts {
+		if !filepath.IsAbs(chart.Path) {
+			t.Errorf("Chart path %q is not absolute", chart.Path)
+		}
+		chartPaths[chart.Path] = true
+	}
+
+	if !chartPaths[expectedRootChart] {
+		t.Errorf("Expected root chart %q not found in merged config", expectedRootChart)
+	}
+	if !chartPaths[expectedAppChart] {
+		t.Errorf("Expected app chart %q not found in merged config", expectedAppChart)
+	}
+
+	// Verify: Manifests from app config are present and absolute
+	if len(config.Manifests) != 1 {
+		t.Errorf("len(Manifests) = %d, want 1", len(config.Manifests))
+	} else {
+		expectedManifest := filepath.Join(appDir, "manifests/**/*.yaml")
+		if config.Manifests[0] != expectedManifest {
+			t.Errorf("Manifests[0] = %q, want %q", config.Manifests[0], expectedManifest)
+		}
+		if !filepath.IsAbs(config.Manifests[0]) {
+			t.Errorf("Manifest path %q is not absolute", config.Manifests[0])
+		}
+	}
+
+	// Verify: AppId from child config (override)
+	if config.AppId != "app-123" {
+		t.Errorf("AppId = %q, want %q (from app config)", config.AppId, "app-123")
+	}
+
+	// Verify: AppSlug from child config (override)
+	if config.AppSlug != "my-app" {
+		t.Errorf("AppSlug = %q, want %q (from app config)", config.AppSlug, "my-app")
+	}
+
+	// Verify: ReplLint config present and valid
+	if config.ReplLint == nil {
+		t.Fatal("ReplLint is nil")
+	}
+
+	// Verify: Helm disabled setting inherited from root config
+	// Child config doesn't specify disabled, so should inherit parent's value
+	if config.ReplLint.Linters.Helm.Disabled == nil || *config.ReplLint.Linters.Helm.Disabled {
+		t.Error("Helm.Disabled should be false (inherited from root config)")
+	}
+
+	// Verify: Tool version from app config (override)
+	if config.ReplLint.Tools[ToolHelm] != "3.19.0" {
+		t.Errorf("Tools[helm] = %q, want %q (from app config)", config.ReplLint.Tools[ToolHelm], "3.19.0")
+	}
+}
+
+func TestConfigParser_PathValidation(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("empty chart path rejected", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`charts:
+  - path: ""
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for empty chart path, got nil")
+		}
+		if !strings.Contains(err.Error(), "chart[0]: path is required") {
+			t.Errorf("Expected 'chart[0]: path is required' error, got: %v", err)
+		}
+	})
+
+	t.Run("empty preflight path rejected", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`preflights:
+  - path: ""
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for empty preflight path, got nil")
+		}
+		if !strings.Contains(err.Error(), "preflight[0]: path is required") {
+			t.Errorf("Expected 'preflight[0]: path is required' error, got: %v", err)
+		}
+	})
+
+	t.Run("empty manifest path rejected", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`manifests:
+  - ""
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for empty manifest path, got nil")
+		}
+		if !strings.Contains(err.Error(), "manifest[0]: path is required") {
+			t.Errorf("Expected 'manifest[0]: path is required' error, got: %v", err)
+		}
+	})
+
+	t.Run("multiple empty paths all reported", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`charts:
+  - path: "./chart1"
+  - path: ""
+  - path: "./chart3"
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for empty chart path, got nil")
+		}
+		// Should report the first empty path (index 1)
+		if !strings.Contains(err.Error(), "chart[1]: path is required") {
+			t.Errorf("Expected 'chart[1]: path is required' error, got: %v", err)
+		}
+	})
+}
+
+func TestConfigParser_Deduplication(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("duplicate chart paths removed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		rootDir := tmpDir
+		appDir := filepath.Join(rootDir, "app")
+
+		if err := os.MkdirAll(appDir, 0755); err != nil {
+			t.Fatalf("creating directories: %v", err)
+		}
+
+		// Root config: defines a chart
+		rootConfigPath := filepath.Join(rootDir, ".replicated")
+		rootConfigData := []byte(`charts:
+  - path: ./common/chart1
+repl-lint:
+`)
+		if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+			t.Fatalf("writing root config: %v", err)
+		}
+
+		// App config: references the same chart (same absolute path after resolution)
+		appConfigPath := filepath.Join(appDir, ".replicated")
+		appConfigData := []byte(`charts:
+  - path: ../common/chart1
+repl-lint:
+`)
+		if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+			t.Fatalf("writing app config: %v", err)
+		}
+
+		// Parse from app directory - should merge and deduplicate
+		config, err := parser.FindAndParseConfig(appDir)
+		if err != nil {
+			t.Fatalf("FindAndParseConfig() error = %v", err)
+		}
+
+		// Should only have 1 chart after deduplication
+		if len(config.Charts) != 1 {
+			t.Errorf("len(Charts) = %d, want 1 (duplicate should be removed)", len(config.Charts))
+		}
+
+		expectedPath := filepath.Join(rootDir, "common/chart1")
+		if config.Charts[0].Path != expectedPath {
+			t.Errorf("Charts[0].Path = %q, want %q", config.Charts[0].Path, expectedPath)
+		}
+	})
+
+	t.Run("duplicate preflight paths removed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		rootDir := tmpDir
+		appDir := filepath.Join(rootDir, "app")
+
+		if err := os.MkdirAll(appDir, 0755); err != nil {
+			t.Fatalf("creating directories: %v", err)
+		}
+
+		rootConfigPath := filepath.Join(rootDir, ".replicated")
+		rootConfigData := []byte(`preflights:
+  - path: ./checks/preflight1
+repl-lint:
+`)
+		if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+			t.Fatalf("writing root config: %v", err)
+		}
+
+		appConfigPath := filepath.Join(appDir, ".replicated")
+		appConfigData := []byte(`preflights:
+  - path: ../checks/preflight1
+repl-lint:
+`)
+		if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+			t.Fatalf("writing app config: %v", err)
+		}
+
+		config, err := parser.FindAndParseConfig(appDir)
+		if err != nil {
+			t.Fatalf("FindAndParseConfig() error = %v", err)
+		}
+
+		// Should only have 1 preflight after deduplication
+		if len(config.Preflights) != 1 {
+			t.Errorf("len(Preflights) = %d, want 1 (duplicate should be removed)", len(config.Preflights))
+		}
+	})
+
+	t.Run("duplicate manifest paths removed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		rootDir := tmpDir
+		appDir := filepath.Join(rootDir, "app")
+
+		if err := os.MkdirAll(appDir, 0755); err != nil {
+			t.Fatalf("creating directories: %v", err)
+		}
+
+		rootConfigPath := filepath.Join(rootDir, ".replicated")
+		rootConfigData := []byte(`manifests:
+  - "./manifests/**/*.yaml"
+repl-lint:
+`)
+		if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+			t.Fatalf("writing root config: %v", err)
+		}
+
+		appConfigPath := filepath.Join(appDir, ".replicated")
+		appConfigData := []byte(`manifests:
+  - "../manifests/**/*.yaml"
+repl-lint:
+`)
+		if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+			t.Fatalf("writing app config: %v", err)
+		}
+
+		config, err := parser.FindAndParseConfig(appDir)
+		if err != nil {
+			t.Fatalf("FindAndParseConfig() error = %v", err)
+		}
+
+		// Should only have 1 manifest after deduplication
+		if len(config.Manifests) != 1 {
+			t.Errorf("len(Manifests) = %d, want 1 (duplicate should be removed)", len(config.Manifests))
+		}
+	})
+
+	t.Run("unique paths preserved, duplicates removed", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		rootDir := tmpDir
+		appDir := filepath.Join(rootDir, "app")
+
+		if err := os.MkdirAll(appDir, 0755); err != nil {
+			t.Fatalf("creating directories: %v", err)
+		}
+
+		rootConfigPath := filepath.Join(rootDir, ".replicated")
+		rootConfigData := []byte(`charts:
+  - path: ./common/chart1
+  - path: ./common/chart2
+repl-lint:
+`)
+		if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
+			t.Fatalf("writing root config: %v", err)
+		}
+
+		appConfigPath := filepath.Join(appDir, ".replicated")
+		appConfigData := []byte(`charts:
+  - path: ../common/chart1
+  - path: ./app-chart
+repl-lint:
+`)
+		if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
+			t.Fatalf("writing app config: %v", err)
+		}
+
+		config, err := parser.FindAndParseConfig(appDir)
+		if err != nil {
+			t.Fatalf("FindAndParseConfig() error = %v", err)
+		}
+
+		// Should have 3 charts: chart1 (deduped), chart2, app-chart
+		if len(config.Charts) != 3 {
+			t.Errorf("len(Charts) = %d, want 3", len(config.Charts))
+		}
+
+		chartPaths := make(map[string]bool)
+		for _, chart := range config.Charts {
+			chartPaths[chart.Path] = true
+		}
+
+		expectedPaths := []string{
+			filepath.Join(rootDir, "common/chart1"),
+			filepath.Join(rootDir, "common/chart2"),
+			filepath.Join(appDir, "app-chart"),
+		}
+
+		for _, expected := range expectedPaths {
+			if !chartPaths[expected] {
+				t.Errorf("Expected chart path %q not found in merged config", expected)
+			}
+		}
+	})
 }

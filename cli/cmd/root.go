@@ -301,6 +301,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	cobra.AddTemplateFunc("indent", sprig.FuncMap()["indent"])
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
+	// Add top-level lint command
+	runCmds.InitLint(runCmds.rootCmd)
+
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			creds, err := credentials.GetCurrentCredentials()
