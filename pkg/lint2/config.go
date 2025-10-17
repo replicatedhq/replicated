@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -52,19 +53,7 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 
 // containsGlob checks if a path contains glob wildcards
 func containsGlob(path string) bool {
-	return filepath.Base(path) != path &&
-		(containsAny(path, []rune{'*', '?', '['}))
-}
-
-func containsAny(s string, chars []rune) bool {
-	for _, c := range s {
-		for _, target := range chars {
-			if c == target {
-				return true
-			}
-		}
-	}
-	return false
+	return strings.ContainsAny(path, "*?[")
 }
 
 // validateChartPath checks if a path is a valid Helm chart directory

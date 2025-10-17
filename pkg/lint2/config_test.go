@@ -22,10 +22,11 @@ func TestGetChartPathsFromConfig(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		config  *tools.Config
-		wantErr bool
-		errMsg  string
+		name      string
+		config    *tools.Config
+		wantPaths []string
+		wantErr   bool
+		errMsg    string
 	}{
 		{
 			name: "no charts in config",
@@ -42,13 +43,14 @@ func TestGetChartPathsFromConfig(t *testing.T) {
 					{Path: validChartDir},
 				},
 			},
-			wantErr: false,
+			wantPaths: []string{validChartDir},
+			wantErr:   false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := GetChartPathsFromConfig(tt.config)
+			paths, err := GetChartPathsFromConfig(tt.config)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetChartPathsFromConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -57,8 +59,221 @@ func TestGetChartPathsFromConfig(t *testing.T) {
 				if err == nil || !contains(err.Error(), tt.errMsg) {
 					t.Errorf("GetChartPathsFromConfig() error = %v, want error containing %q", err, tt.errMsg)
 				}
+				return
+			}
+			// Validate actual paths match expected
+			if !tt.wantErr {
+				if len(paths) != len(tt.wantPaths) {
+					t.Errorf("GetChartPathsFromConfig() returned %d paths, want %d", len(paths), len(tt.wantPaths))
+					return
+				}
+				for i, path := range paths {
+					if path != tt.wantPaths[i] {
+						t.Errorf("GetChartPathsFromConfig() path[%d] = %q, want %q", i, path, tt.wantPaths[i])
+					}
+				}
 			}
 		})
+	}
+}
+
+func TestGetChartPathsFromConfig_GlobExpansion(t *testing.T) {
+	// Create test directory structure with multiple charts
+	tmpDir := t.TempDir()
+
+	// Create charts directory with multiple charts
+	chartsDir := filepath.Join(tmpDir, "charts")
+	chart1Dir := filepath.Join(chartsDir, "chart1")
+	chart2Dir := filepath.Join(chartsDir, "chart2")
+	chart3Dir := filepath.Join(tmpDir, "standalone-chart")
+
+	for _, dir := range []string{chart1Dir, chart2Dir, chart3Dir} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		chartYaml := filepath.Join(dir, "Chart.yaml")
+		if err := os.WriteFile(chartYaml, []byte("name: test\nversion: 1.0.0\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct {
+		name      string
+		config    *tools.Config
+		wantPaths []string
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name: "glob pattern expansion",
+			config: &tools.Config{
+				Charts: []tools.ChartConfig{
+					{Path: filepath.Join(chartsDir, "*")},
+				},
+			},
+			wantPaths: []string{chart1Dir, chart2Dir},
+			wantErr:   false,
+		},
+		{
+			name: "multiple charts - mixed glob and direct",
+			config: &tools.Config{
+				Charts: []tools.ChartConfig{
+					{Path: filepath.Join(chartsDir, "*")},
+					{Path: chart3Dir},
+				},
+			},
+			wantPaths: []string{chart1Dir, chart2Dir, chart3Dir},
+			wantErr:   false,
+		},
+		{
+			name: "glob with no matches",
+			config: &tools.Config{
+				Charts: []tools.ChartConfig{
+					{Path: filepath.Join(tmpDir, "nonexistent", "*")},
+				},
+			},
+			wantErr: true,
+			errMsg:  "no charts found matching pattern",
+		},
+		{
+			name: "glob pattern in current directory",
+			config: &tools.Config{
+				Charts: []tools.ChartConfig{
+					{Path: filepath.Join(chartsDir, "chart*")},
+				},
+			},
+			wantPaths: []string{chart1Dir, chart2Dir},
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			paths, err := GetChartPathsFromConfig(tt.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetChartPathsFromConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !contains(err.Error(), tt.errMsg) {
+					t.Errorf("GetChartPathsFromConfig() error = %v, want error containing %q", err, tt.errMsg)
+				}
+				return
+			}
+			// Validate actual paths match expected (for success cases)
+			if !tt.wantErr {
+				if len(paths) != len(tt.wantPaths) {
+					t.Errorf("GetChartPathsFromConfig() returned %d paths, want %d", len(paths), len(tt.wantPaths))
+					return
+				}
+				// Build map of expected paths for order-independent comparison
+				expectedPaths := make(map[string]bool)
+				for _, p := range tt.wantPaths {
+					expectedPaths[p] = false
+				}
+				// Mark found paths
+				for _, path := range paths {
+					if _, ok := expectedPaths[path]; ok {
+						expectedPaths[path] = true
+					} else {
+						t.Errorf("GetChartPathsFromConfig() returned unexpected path: %q", path)
+					}
+				}
+				// Check all expected paths were found
+				for path, found := range expectedPaths {
+					if !found {
+						t.Errorf("GetChartPathsFromConfig() missing expected path: %q", path)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetChartPathsFromConfig_InvalidChartsInGlob(t *testing.T) {
+	// Create directory with mix of valid and invalid charts
+	tmpDir := t.TempDir()
+	chartsDir := filepath.Join(tmpDir, "charts")
+
+	// Valid chart
+	validChartDir := filepath.Join(chartsDir, "valid-chart")
+	if err := os.MkdirAll(validChartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chartYaml := filepath.Join(validChartDir, "Chart.yaml")
+	if err := os.WriteFile(chartYaml, []byte("name: test\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Invalid chart (no Chart.yaml)
+	invalidChartDir := filepath.Join(chartsDir, "invalid-chart")
+	if err := os.MkdirAll(invalidChartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	config := &tools.Config{
+		Charts: []tools.ChartConfig{
+			{Path: filepath.Join(chartsDir, "*")},
+		},
+	}
+
+	_, err := GetChartPathsFromConfig(config)
+	if err == nil {
+		t.Error("GetChartPathsFromConfig() should fail when glob matches invalid chart, got nil error")
+	}
+	if !contains(err.Error(), "Chart.yaml or Chart.yml not found") {
+		t.Errorf("GetChartPathsFromConfig() error = %v, want error about Chart.yaml not found", err)
+	}
+}
+
+func TestGetChartPathsFromConfig_MultipleCharts(t *testing.T) {
+	// Create multiple valid charts
+	tmpDir := t.TempDir()
+	chart1Dir := filepath.Join(tmpDir, "chart1")
+	chart2Dir := filepath.Join(tmpDir, "chart2")
+	chart3Dir := filepath.Join(tmpDir, "chart3")
+
+	for _, dir := range []string{chart1Dir, chart2Dir, chart3Dir} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		chartYaml := filepath.Join(dir, "Chart.yaml")
+		if err := os.WriteFile(chartYaml, []byte("name: test\nversion: 1.0.0\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	config := &tools.Config{
+		Charts: []tools.ChartConfig{
+			{Path: chart1Dir},
+			{Path: chart2Dir},
+			{Path: chart3Dir},
+		},
+	}
+
+	paths, err := GetChartPathsFromConfig(config)
+	if err != nil {
+		t.Fatalf("GetChartPathsFromConfig() unexpected error = %v", err)
+	}
+	if len(paths) != 3 {
+		t.Errorf("GetChartPathsFromConfig() returned %d paths, want 3", len(paths))
+	}
+
+	// Verify all paths are present
+	expectedPaths := map[string]bool{
+		chart1Dir: false,
+		chart2Dir: false,
+		chart3Dir: false,
+	}
+	for _, path := range paths {
+		if _, ok := expectedPaths[path]; ok {
+			expectedPaths[path] = true
+		}
+	}
+	for path, found := range expectedPaths {
+		if !found {
+			t.Errorf("Expected path %s not found in results", path)
+		}
 	}
 }
 

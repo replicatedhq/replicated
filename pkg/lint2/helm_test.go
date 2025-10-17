@@ -101,10 +101,13 @@ func TestParseHelmOutput(t *testing.T) {
 
 func TestParseHelmOutput_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name     string
-		output   string
-		wantLen  int
-		desc     string
+		name         string
+		output       string
+		wantLen      int
+		desc         string
+		wantSeverity string
+		wantPath     string
+		wantMessage  string
 	}{
 		{
 			name:    "whitespace only",
@@ -122,8 +125,11 @@ func TestParseHelmOutput_EdgeCases(t *testing.T) {
 			name: "message with multiple colons",
 			output: `[INFO] templates/service.yaml: port: should be number: got string
 `,
-			wantLen: 1,
-			desc:    "should handle multiple colons in message",
+			wantLen:      1,
+			desc:         "should handle multiple colons in message",
+			wantSeverity: "INFO",
+			wantPath:     "templates/service.yaml",
+			wantMessage:  "port: should be number: got string",
 		},
 	}
 
@@ -132,6 +138,19 @@ func TestParseHelmOutput_EdgeCases(t *testing.T) {
 			result := ParseHelmOutput(tt.output)
 			if len(result) != tt.wantLen {
 				t.Errorf("%s: got %d messages, want %d", tt.desc, len(result), tt.wantLen)
+				return
+			}
+			// Validate parsed structure for tests that expect messages
+			if tt.wantLen > 0 && tt.wantSeverity != "" {
+				if result[0].Severity != tt.wantSeverity {
+					t.Errorf("%s: got Severity=%q, want %q", tt.desc, result[0].Severity, tt.wantSeverity)
+				}
+				if result[0].Path != tt.wantPath {
+					t.Errorf("%s: got Path=%q, want %q", tt.desc, result[0].Path, tt.wantPath)
+				}
+				if result[0].Message != tt.wantMessage {
+					t.Errorf("%s: got Message=%q, want %q", tt.desc, result[0].Message, tt.wantMessage)
+				}
 			}
 		})
 	}

@@ -20,7 +20,9 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 		return nil, fmt.Errorf("resolving helm: %w", err)
 	}
 
-	// Validate chart path exists
+	// Defensive check: validate chart path exists
+	// Note: charts are validated during config parsing, but we check again here
+	// since LintChart is a public function that could be called directly
 	if _, err := os.Stat(chartPath); err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("chart path does not exist: %s", chartPath)
