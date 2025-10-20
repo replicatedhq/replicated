@@ -10,6 +10,7 @@ type Config struct {
 	Preflights            []PreflightConfig `yaml:"preflights,omitempty"`
 	ReleaseLabel          string            `yaml:"releaseLabel,omitempty"`
 	Manifests             []string          `yaml:"manifests,omitempty"`
+	Profile               string            `yaml:"profile,omitempty"`
 	ReplLint              *ReplLintConfig   `yaml:"repl-lint,omitempty"`
 }
 
