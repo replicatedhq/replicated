@@ -8,24 +8,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitProfileSetDefaultCommand(parent *cobra.Command) *cobra.Command {
+func (r *runners) InitProfileUseCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "set-default [profile-name]",
+		Use:   "use [profile-name]",
 		Short: "Set the default authentication profile",
 		Long: `Set the default authentication profile that will be used when no --profile flag is specified
 and no environment variables are set.`,
-		Example: `# Set production as the default profile
-replicated profile set-default prod`,
+		Example: `# Use production as the default profile
+replicated profile use prod`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
-		RunE:         r.profileSetDefault,
+		RunE:         r.profileUse,
 	}
 	parent.AddCommand(cmd)
 
 	return cmd
 }
 
-func (r *runners) profileSetDefault(_ *cobra.Command, args []string) error {
+func (r *runners) profileUse(_ *cobra.Command, args []string) error {
 	profileName := args[0]
 
 	if profileName == "" {
@@ -46,6 +46,6 @@ func (r *runners) profileSetDefault(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to set default profile")
 	}
 
-	fmt.Printf("Default profile set to '%s'\n", profileName)
+	fmt.Printf("Now using profile '%s' as default\n", profileName)
 	return nil
 }
