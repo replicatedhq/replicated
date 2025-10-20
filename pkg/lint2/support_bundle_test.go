@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestParsePreflightOutput(t *testing.T) {
+func TestParseSupportBundleOutput(t *testing.T) {
 	tests := []struct {
 		name     string
 		output   string
@@ -16,13 +16,13 @@ func TestParsePreflightOutput(t *testing.T) {
 			output: `{
   "results": [
     {
-      "filePath": "/tmp/preflight-test/valid-preflight.yaml",
+      "filePath": "/tmp/support-bundle-test/valid-spec.yaml",
       "errors": [],
       "warnings": [
         {
           "line": 5,
           "column": 0,
-          "message": "Some analyzers and collectors are missing docString (recommended for v1beta3)",
+          "message": "Some collectors are missing docString (recommended for v1beta3)",
           "field": "spec"
         }
       ]
@@ -32,8 +32,8 @@ func TestParsePreflightOutput(t *testing.T) {
 			expected: []LintMessage{
 				{
 					Severity: "WARNING",
-					Path:     "/tmp/preflight-test/valid-preflight.yaml",
-					Message:  "line 5: Some analyzers and collectors are missing docString (recommended for v1beta3) (field: spec)",
+					Path:     "/tmp/support-bundle-test/valid-spec.yaml",
+					Message:  "line 5: Some collectors are missing docString (recommended for v1beta3) (field: spec)",
 				},
 			},
 			wantErr: false,
@@ -43,7 +43,7 @@ func TestParsePreflightOutput(t *testing.T) {
 			output: `{
   "results": [
     {
-      "filePath": "/tmp/preflight-test/invalid-yaml.yaml",
+      "filePath": "/tmp/support-bundle-test/invalid-yaml.yaml",
       "errors": [
         {
           "line": 15,
@@ -59,7 +59,7 @@ func TestParsePreflightOutput(t *testing.T) {
 			expected: []LintMessage{
 				{
 					Severity: "ERROR",
-					Path:     "/tmp/preflight-test/invalid-yaml.yaml",
+					Path:     "/tmp/support-bundle-test/invalid-yaml.yaml",
 					Message:  "line 15: YAML syntax error: error converting YAML to JSON: yaml: line 15: mapping values are not allowed in this context",
 				},
 			},
@@ -70,13 +70,13 @@ func TestParsePreflightOutput(t *testing.T) {
 			output: `{
   "results": [
     {
-      "filePath": "/tmp/preflight-test/missing-fields.yaml",
+      "filePath": "/tmp/support-bundle-test/missing-fields.yaml",
       "errors": [
         {
           "line": 8,
           "column": 0,
-          "message": "Preflight spec must have at least one analyzer",
-          "field": "spec.analyzers"
+          "message": "Support bundle spec must have at least one collector",
+          "field": "spec.collectors"
         }
       ],
       "warnings": [
@@ -93,12 +93,12 @@ func TestParsePreflightOutput(t *testing.T) {
 			expected: []LintMessage{
 				{
 					Severity: "ERROR",
-					Path:     "/tmp/preflight-test/missing-fields.yaml",
-					Message:  "line 8: Preflight spec must have at least one analyzer (field: spec.analyzers)",
+					Path:     "/tmp/support-bundle-test/missing-fields.yaml",
+					Message:  "line 8: Support bundle spec must have at least one collector (field: spec.collectors)",
 				},
 				{
 					Severity: "WARNING",
-					Path:     "/tmp/preflight-test/missing-fields.yaml",
+					Path:     "/tmp/support-bundle-test/missing-fields.yaml",
 					Message:  "line 6: Some collectors are missing docString (recommended for v1beta3) (field: spec.collectors)",
 				},
 			},
@@ -115,7 +115,7 @@ func TestParsePreflightOutput(t *testing.T) {
           "line": 10,
           "column": 0,
           "message": "Missing required field",
-          "field": "spec.analyzers"
+          "field": "spec.collectors"
         }
       ],
       "warnings": []
@@ -128,7 +128,7 @@ func TestParsePreflightOutput(t *testing.T) {
           "line": 5,
           "column": 0,
           "message": "Deprecated field usage",
-          "field": "spec.collectors"
+          "field": "spec.hostCollectors"
         }
       ]
     }
@@ -138,12 +138,12 @@ func TestParsePreflightOutput(t *testing.T) {
 				{
 					Severity: "ERROR",
 					Path:     "/tmp/spec1.yaml",
-					Message:  "line 10: Missing required field (field: spec.analyzers)",
+					Message:  "line 10: Missing required field (field: spec.collectors)",
 				},
 				{
 					Severity: "WARNING",
 					Path:     "/tmp/spec2.yaml",
-					Message:  "line 5: Deprecated field usage (field: spec.collectors)",
+					Message:  "line 5: Deprecated field usage (field: spec.hostCollectors)",
 				},
 			},
 			wantErr: false,
@@ -240,22 +240,22 @@ func TestParsePreflightOutput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParsePreflightOutput(tt.output)
+			result, err := ParseSupportBundleOutput(tt.output)
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("ParsePreflightOutput() expected error, got nil")
+					t.Errorf("ParseSupportBundleOutput() expected error, got nil")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("ParsePreflightOutput() unexpected error: %v", err)
+				t.Errorf("ParseSupportBundleOutput() unexpected error: %v", err)
 				return
 			}
 
 			if len(result) != len(tt.expected) {
-				t.Errorf("ParsePreflightOutput() returned %d messages, want %d", len(result), len(tt.expected))
+				t.Errorf("ParseSupportBundleOutput() returned %d messages, want %d", len(result), len(tt.expected))
 				return
 			}
 
@@ -275,25 +275,25 @@ func TestParsePreflightOutput(t *testing.T) {
 	}
 }
 
-func TestFormatPreflightMessage(t *testing.T) {
+func TestFormatSupportBundleMessage(t *testing.T) {
 	tests := []struct {
 		name     string
-		issue    PreflightLintIssue
+		issue    SupportBundleLintIssue
 		expected string
 	}{
 		{
 			name: "full issue with line and field",
-			issue: PreflightLintIssue{
+			issue: SupportBundleLintIssue{
 				Line:    10,
 				Column:  0,
 				Message: "Missing required field",
-				Field:   "spec.analyzers",
+				Field:   "spec.collectors",
 			},
-			expected: "line 10: Missing required field (field: spec.analyzers)",
+			expected: "line 10: Missing required field (field: spec.collectors)",
 		},
 		{
 			name: "issue with line only",
-			issue: PreflightLintIssue{
+			issue: SupportBundleLintIssue{
 				Line:    5,
 				Column:  0,
 				Message: "YAML syntax error",
@@ -303,17 +303,17 @@ func TestFormatPreflightMessage(t *testing.T) {
 		},
 		{
 			name: "issue with field only",
-			issue: PreflightLintIssue{
+			issue: SupportBundleLintIssue{
 				Line:    0,
 				Column:  0,
 				Message: "Deprecated usage",
-				Field:   "spec.collectors",
+				Field:   "spec.hostCollectors",
 			},
-			expected: "Deprecated usage (field: spec.collectors)",
+			expected: "Deprecated usage (field: spec.hostCollectors)",
 		},
 		{
 			name: "issue with message only",
-			issue: PreflightLintIssue{
+			issue: SupportBundleLintIssue{
 				Line:    0,
 				Column:  0,
 				Message: "General warning",

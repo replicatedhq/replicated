@@ -5,11 +5,9 @@ package lint2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -20,10 +18,10 @@ type PreflightLintResult struct {
 }
 
 type PreflightFileResult struct {
-	FilePath string                `json:"filePath"`
-	Errors   []PreflightLintIssue  `json:"errors"`
-	Warnings []PreflightLintIssue  `json:"warnings"`
-	Infos    []PreflightLintIssue  `json:"infos"`
+	FilePath string               `json:"filePath"`
+	Errors   []PreflightLintIssue `json:"errors"`
+	Warnings []PreflightLintIssue `json:"warnings"`
+	Infos    []PreflightLintIssue `json:"infos"`
 }
 
 type PreflightLintIssue struct {
@@ -80,77 +78,12 @@ func LintPreflight(ctx context.Context, specPath string, preflightVersion string
 	}, nil
 }
 
-// ParsePreflightOutput parses preflight lint JSON output into structured messages
+// ParsePreflightOutput parses preflight lint JSON output into structured messages.
+// Uses the common troubleshoot.sh JSON parsing infrastructure.
 func ParsePreflightOutput(output string) ([]LintMessage, error) {
-	// The preflight binary may output "Error:" on stderr after the JSON when there are issues.
-	// This gets combined with stdout by CombinedOutput(), so we extract just the JSON portion.
-	// We use Index (first '{') and LastIndex (last '}') to handle nested objects in the JSON structure.
-	// This approach works reliably because the top-level JSON object encompasses all nested content.
-	startIdx := strings.Index(output, "{")
-	if startIdx == -1 {
-		return nil, fmt.Errorf("no JSON found in output")
+	result, err := parseTroubleshootJSON[PreflightLintIssue](output)
+	if err != nil {
+		return nil, err
 	}
-
-	endIdx := strings.LastIndex(output, "}")
-	if endIdx == -1 || endIdx < startIdx {
-		return nil, fmt.Errorf("malformed JSON in output")
-	}
-
-	jsonOutput := output[startIdx : endIdx+1]
-
-	var result PreflightLintResult
-	if err := json.Unmarshal([]byte(jsonOutput), &result); err != nil {
-		return nil, fmt.Errorf("unmarshaling JSON: %w", err)
-	}
-
-	var messages []LintMessage
-
-	// Process all file results
-	for _, fileResult := range result.Results {
-		// Process errors
-		for _, issue := range fileResult.Errors {
-			messages = append(messages, LintMessage{
-				Severity: "ERROR",
-				Path:     fileResult.FilePath,
-				Message:  formatPreflightMessage(issue),
-			})
-		}
-
-		// Process warnings
-		for _, issue := range fileResult.Warnings {
-			messages = append(messages, LintMessage{
-				Severity: "WARNING",
-				Path:     fileResult.FilePath,
-				Message:  formatPreflightMessage(issue),
-			})
-		}
-
-		// Process infos (future-proofing for when preflight adds INFO severity)
-		for _, issue := range fileResult.Infos {
-			messages = append(messages, LintMessage{
-				Severity: "INFO",
-				Path:     fileResult.FilePath,
-				Message:  formatPreflightMessage(issue),
-			})
-		}
-	}
-
-	return messages, nil
-}
-
-// formatPreflightMessage formats a preflight issue into a readable message
-func formatPreflightMessage(issue PreflightLintIssue) string {
-	msg := issue.Message
-
-	// Add line number if available
-	if issue.Line > 0 {
-		msg = fmt.Sprintf("line %d: %s", issue.Line, msg)
-	}
-
-	// Add field information if available
-	if issue.Field != "" {
-		msg = fmt.Sprintf("%s (field: %s)", msg, issue.Field)
-	}
-
-	return msg
+	return convertTroubleshootResultToMessages(result), nil
 }
