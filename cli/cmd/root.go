@@ -15,7 +15,6 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -317,7 +316,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
-			// Try to load profile from --profile flag, then .replicated.yaml
+			// Try to load profile from --profile flag, then default profile
 			var profileName string
 			var profileSource string
 			if profileNameFlag != "" {
@@ -325,19 +324,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				profileName = profileNameFlag
 				profileSource = "--profile flag"
 			} else {
-				// Fall back to profile from .replicated.yaml
-				configParser := tools.NewConfigParser()
-				config, err := configParser.FindAndParseConfig("")
-				if err == nil && config.Profile != "" {
-					profileName = config.Profile
-					profileSource = ".replicated.yaml"
-				} else {
-					profileSource = "default profile"
-				}
-			}
-
-			// If no profile name yet, check if there's a default profile
-			if profileName == "" {
+				// Fall back to default profile from ~/.replicated/config.yaml
 				defaultProfileName, err := credentials.GetDefaultProfile()
 				if err == nil && defaultProfileName != "" {
 					profileName = defaultProfileName

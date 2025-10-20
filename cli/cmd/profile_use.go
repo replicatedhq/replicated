@@ -12,8 +12,8 @@ func (r *runners) InitProfileUseCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "use [profile-name]",
 		Short: "Set the default authentication profile",
-		Long: `Set the default authentication profile that will be used when no profile is specified
-in .replicated.yaml and no environment variables are set.`,
+		Long: `Set the default authentication profile that will be used when no --profile flag is specified
+and no environment variables are set.`,
 		Example: `# Use production as the default profile
 replicated profile use prod`,
 		Args:         cobra.ExactArgs(1),
