@@ -2,11 +2,9 @@ package lint2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -82,91 +80,12 @@ func LintSupportBundle(ctx context.Context, specPath string, sbVersion string) (
 	}, nil
 }
 
-// ParseSupportBundleOutput parses support-bundle lint JSON output into structured messages
+// ParseSupportBundleOutput parses support-bundle lint JSON output into structured messages.
+// Uses the common troubleshoot.sh JSON parsing infrastructure.
 func ParseSupportBundleOutput(output string) ([]LintMessage, error) {
-	// The support-bundle binary may output "Error:" on stderr before/after the JSON when there are issues.
-	// This gets combined with stdout by CombinedOutput(). We search for each potential JSON object
-	// and try to decode it. The decoder automatically handles trailing garbage after valid JSON.
-
-	var result SupportBundleLintResult
-	var lastErr error
-
-	// Try to find and decode JSON starting from each { in the output
-	// This handles cases where error messages contain braces before the actual JSON
-	searchOffset := 0
-	for {
-		idx := strings.Index(output[searchOffset:], "{")
-		if idx == -1 {
-			break
-		}
-
-		startIdx := searchOffset + idx
-		decoder := json.NewDecoder(strings.NewReader(output[startIdx:]))
-		err := decoder.Decode(&result)
-		if err == nil {
-			// Successfully decoded JSON
-			break
-		}
-
-		lastErr = err
-		searchOffset = startIdx + 1
+	result, err := parseTroubleshootJSON[SupportBundleLintIssue](output)
+	if err != nil {
+		return nil, err
 	}
-
-	if result.Results == nil {
-		if lastErr != nil {
-			return nil, fmt.Errorf("no valid JSON found in output: %w", lastErr)
-		}
-		return nil, fmt.Errorf("no JSON found in output")
-	}
-
-	var messages []LintMessage
-
-	// Process all file results
-	for _, fileResult := range result.Results {
-		// Process errors
-		for _, issue := range fileResult.Errors {
-			messages = append(messages, LintMessage{
-				Severity: "ERROR",
-				Path:     fileResult.FilePath,
-				Message:  formatSupportBundleMessage(issue),
-			})
-		}
-
-		// Process warnings
-		for _, issue := range fileResult.Warnings {
-			messages = append(messages, LintMessage{
-				Severity: "WARNING",
-				Path:     fileResult.FilePath,
-				Message:  formatSupportBundleMessage(issue),
-			})
-		}
-
-		// Process infos
-		for _, issue := range fileResult.Infos {
-			messages = append(messages, LintMessage{
-				Severity: "INFO",
-				Path:     fileResult.FilePath,
-				Message:  formatSupportBundleMessage(issue),
-			})
-		}
-	}
-
-	return messages, nil
-}
-
-// formatSupportBundleMessage formats a support bundle issue into a readable message
-func formatSupportBundleMessage(issue SupportBundleLintIssue) string {
-	msg := issue.Message
-
-	// Add line number if available
-	if issue.Line > 0 {
-		msg = fmt.Sprintf("line %d: %s", issue.Line, msg)
-	}
-
-	// Add field information if available
-	if issue.Field != "" {
-		msg = fmt.Sprintf("%s (field: %s)", msg, issue.Field)
-	}
-
-	return msg
+	return convertTroubleshootResultToMessages(result), nil
 }

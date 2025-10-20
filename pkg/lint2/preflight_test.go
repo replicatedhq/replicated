@@ -325,9 +325,9 @@ func TestFormatPreflightMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatPreflightMessage(tt.issue)
+			result := formatTroubleshootMessage(tt.issue)
 			if result != tt.expected {
-				t.Errorf("formatPreflightMessage() = %q, want %q", result, tt.expected)
+				t.Errorf("formatTroubleshootMessage() = %q, want %q", result, tt.expected)
 			}
 		})
 	}
