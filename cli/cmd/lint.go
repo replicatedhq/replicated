@@ -179,10 +179,17 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Confi
 		}
 	}
 
-	// Check if there are any support bundle specs configured
-	sbPaths, err := lint2.GetSupportBundlePathsFromConfig(config)
+	// Discover support bundle specs from manifests
+	// Support bundles are co-located with other Kubernetes manifests,
+	// unlike preflights which are moving to a separate location
+	sbPaths, err := lint2.DiscoverSupportBundlesFromManifests(config.Manifests)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to expand support bundle paths")
+		return false, errors.Wrap(err, "failed to discover support bundle specs from manifests")
+	}
+
+	// If no support bundles found, that's not an error - they're optional
+	if len(sbPaths) == 0 {
+		return false, nil
 	}
 
 	// Lint all support bundle specs and collect results
