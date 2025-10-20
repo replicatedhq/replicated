@@ -1,0 +1,6 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: missing-collectors
+spec:
+  collectors: []
