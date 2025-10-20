@@ -15,11 +15,10 @@ This is useful when working with different Replicated accounts (production, deve
 or different API endpoints.
 
 Credentials are stored in ~/.replicated/config.yaml with file permissions set to 600 (owner read/write only).
-You can reference profiles in your .replicated.yaml files using the 'profile' field.
 
 Authentication priority:
 1. REPLICATED_API_TOKEN environment variable (highest priority)
-2. Profile specified in .replicated.yaml
+2. --profile flag (per-command override)
 3. Default profile from ~/.replicated/config.yaml
 4. Legacy single token (backward compatibility)
 
