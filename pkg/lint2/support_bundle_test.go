@@ -208,6 +208,34 @@ func TestParseSupportBundleOutput(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "error message with braces before JSON",
+			output: `Error: failed to parse {invalid} syntax
+{
+  "results": [
+    {
+      "filePath": "/tmp/spec.yaml",
+      "errors": [
+        {
+          "line": 10,
+          "column": 0,
+          "message": "Validation failed",
+          "field": "spec"
+        }
+      ],
+      "warnings": []
+    }
+  ]
+}`,
+			expected: []LintMessage{
+				{
+					Severity: "ERROR",
+					Path:     "/tmp/spec.yaml",
+					Message:  "line 10: Validation failed (field: spec)",
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
