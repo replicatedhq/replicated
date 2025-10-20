@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/imageextract"
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
@@ -14,9 +17,11 @@ func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "lint",
 		Short:        "Lint Helm charts and Preflight specs",
-		Long:         `Lint Helm charts and Preflight specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource.`,
+		Long:         `Lint Helm charts and Preflight specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource. Use --verbose to also display extracted container images.`,
 		SilenceUsage: true,
 	}
+
+	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images")
 
 	cmd.RunE = r.runLint
 
@@ -33,6 +38,21 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	}
 
 	hasFailure := false
+
+	// Extract and display images if verbose mode is enabled
+	if r.args.lintVerbose {
+		if err := r.extractAndDisplayImagesFromConfig(cmd.Context(), config); err != nil {
+			// Log warning but don't fail the lint command
+			fmt.Fprintf(r.w, "Warning: Failed to extract images: %v\n\n", err)
+			r.w.Flush()
+		}
+
+		// Print separator
+		fmt.Fprintln(r.w, "────────────────────────────────────────────────────────────────────────────")
+		fmt.Fprintln(r.w, "\nRunning lint checks...")
+		fmt.Fprintln(r.w)
+		r.w.Flush()
+	}
 
 	// Lint Helm charts if enabled
 	if config.ReplLint.Linters.Helm.IsEnabled() {
@@ -263,4 +283,71 @@ func displayOverallSummary(w io.Writer, resourceType string, totalResources, fai
 	} else {
 		fmt.Fprintf(w, "\nOverall Status: Passed\n")
 	}
+}
+
+func (r *runners) extractAndDisplayImagesFromConfig(ctx context.Context, config *tools.Config) error {
+	extractor := imageextract.NewExtractor()
+
+	opts := imageextract.Options{
+		IncludeDuplicates: false,
+		NoWarnings:        true, // Suppress warnings in lint context
+	}
+
+	fmt.Fprintln(r.w, "Extracting images from Helm charts...")
+	fmt.Fprintln(r.w)
+	r.w.Flush()
+
+	// Get chart paths from config
+	chartPaths, err := lint2.GetChartPathsFromConfig(config)
+	if err != nil {
+		return errors.Wrap(err, "failed to get chart paths from config")
+	}
+
+	if len(chartPaths) == 0 {
+		fmt.Fprintln(r.w, "No Helm charts found in .replicated config")
+		fmt.Fprintln(r.w)
+		r.w.Flush()
+		return nil
+	}
+
+	// Collect all images from all charts
+	var allImages []imageextract.ImageRef
+	imageMap := make(map[string]imageextract.ImageRef) // For deduplication
+
+	for _, chartPath := range chartPaths {
+		result, err := extractor.ExtractFromChart(ctx, chartPath, opts)
+		if err != nil {
+			fmt.Fprintf(r.w, "Warning: Failed to extract images from %s: %v\n", chartPath, err)
+			continue
+		}
+
+		// Add images to deduplicated map
+		for _, img := range result.Images {
+			if existing, ok := imageMap[img.Raw]; ok {
+				// Merge sources
+				existing.Sources = append(existing.Sources, img.Sources...)
+				imageMap[img.Raw] = existing
+			} else {
+				imageMap[img.Raw] = img
+			}
+		}
+	}
+
+	// Convert map back to slice
+	for _, img := range imageMap {
+		allImages = append(allImages, img)
+	}
+
+	// Create a result with all images
+	combinedResult := &imageextract.Result{
+		Images: allImages,
+	}
+
+	// Print images using existing print function
+	if err := print.Images("table", r.w, combinedResult); err != nil {
+		return err
+	}
+
+	fmt.Fprintf(r.w, "\nFound %d unique images across %d chart(s)\n\n", len(allImages), len(chartPaths))
+	return r.w.Flush()
 }

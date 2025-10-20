@@ -46,6 +46,17 @@ from YAML files without making any network calls or downloading images.`,
 }
 
 func (r *runners) releaseExtractImages(cmd *cobra.Command, args []string) error {
+	// Display deprecation warning
+	deprecationMsg := `⚠️  WARNING: This command is deprecated and will be removed in a future version.
+   Please use: replicated lint --verbose
+   
+   Note: The new 'replicated lint' command extracts images from Helm charts 
+   defined in your .replicated config file.
+
+`
+	fmt.Fprint(r.w, deprecationMsg)
+	r.w.Flush()
+
 	// Validate inputs
 	if r.args.extractImagesYamlDir == "" && r.args.extractImagesChart == "" {
 		return errors.New("either --yaml-dir or --chart must be specified")

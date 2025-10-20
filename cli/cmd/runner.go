@@ -73,6 +73,7 @@ type runnerArgs struct {
 	lintReleaseYamlDir    string
 	lintReleaseChart      string
 	lintReleaseFailOn     string
+	lintVerbose           bool
 	releaseOptional       bool
 	releaseRequired       bool
 	releaseNotes          string
