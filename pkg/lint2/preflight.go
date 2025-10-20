@@ -20,10 +20,10 @@ type PreflightLintResult struct {
 }
 
 type PreflightFileResult struct {
-	FilePath string                `json:"filePath"`
-	Errors   []PreflightLintIssue  `json:"errors"`
-	Warnings []PreflightLintIssue  `json:"warnings"`
-	Infos    []PreflightLintIssue  `json:"infos"`
+	FilePath string               `json:"filePath"`
+	Errors   []PreflightLintIssue `json:"errors"`
+	Warnings []PreflightLintIssue `json:"warnings"`
+	Infos    []PreflightLintIssue `json:"infos"`
 }
 
 type PreflightLintIssue struct {
@@ -82,25 +82,39 @@ func LintPreflight(ctx context.Context, specPath string, preflightVersion string
 
 // ParsePreflightOutput parses preflight lint JSON output into structured messages
 func ParsePreflightOutput(output string) ([]LintMessage, error) {
-	// The preflight binary may output "Error:" on stderr after the JSON when there are issues.
-	// This gets combined with stdout by CombinedOutput(), so we extract just the JSON portion.
-	// We use Index (first '{') and LastIndex (last '}') to handle nested objects in the JSON structure.
-	// This approach works reliably because the top-level JSON object encompasses all nested content.
-	startIdx := strings.Index(output, "{")
-	if startIdx == -1 {
-		return nil, fmt.Errorf("no JSON found in output")
-	}
-
-	endIdx := strings.LastIndex(output, "}")
-	if endIdx == -1 || endIdx < startIdx {
-		return nil, fmt.Errorf("malformed JSON in output")
-	}
-
-	jsonOutput := output[startIdx : endIdx+1]
+	// The preflight binary may output "Error:" on stderr before/after the JSON when there are issues.
+	// This gets combined with stdout by CombinedOutput(). We search for each potential JSON object
+	// and try to decode it. The decoder automatically handles trailing garbage after valid JSON.
 
 	var result PreflightLintResult
-	if err := json.Unmarshal([]byte(jsonOutput), &result); err != nil {
-		return nil, fmt.Errorf("unmarshaling JSON: %w", err)
+	var lastErr error
+
+	// Try to find and decode JSON starting from each { in the output
+	// This handles cases where error messages contain braces before the actual JSON
+	searchOffset := 0
+	for {
+		idx := strings.Index(output[searchOffset:], "{")
+		if idx == -1 {
+			break
+		}
+
+		startIdx := searchOffset + idx
+		decoder := json.NewDecoder(strings.NewReader(output[startIdx:]))
+		err := decoder.Decode(&result)
+		if err == nil {
+			// Successfully decoded JSON
+			break
+		}
+
+		lastErr = err
+		searchOffset = startIdx + 1
+	}
+
+	if result.Results == nil {
+		if lastErr != nil {
+			return nil, fmt.Errorf("no valid JSON found in output: %w", lastErr)
+		}
+		return nil, fmt.Errorf("no JSON found in output")
 	}
 
 	var messages []LintMessage
