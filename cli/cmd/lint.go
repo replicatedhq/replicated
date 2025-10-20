@@ -478,6 +478,8 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 	fmt.Fprintf(r.w, "Created %s\n", configPath)
 
 	return nil
+}
+
 func (r *runners) extractAndDisplayImagesFromConfig(ctx context.Context, config *tools.Config) error {
 	extractor := imageextract.NewExtractor()
 
