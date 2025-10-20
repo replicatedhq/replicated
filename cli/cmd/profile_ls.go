@@ -16,7 +16,7 @@ func (r *runners) InitProfileLsCommand(parent *cobra.Command) *cobra.Command {
 		Short: "List all authentication profiles",
 		Long: `List all authentication profiles configured in ~/.replicated/config.yaml.
 
-The default profile is indicated with an asterisk (*). API tokens are masked for security.`,
+The default profile is indicated with an asterisk (*).`,
 		Example: `# List all profiles
 replicated profile ls`,
 		SilenceUsage: true,
@@ -37,12 +37,12 @@ func (r *runners) profileLs(_ *cobra.Command, _ []string) error {
 		fmt.Println("No profiles configured")
 		fmt.Println("")
 		fmt.Println("To add a profile, run:")
-		fmt.Println("  replicated profile add <name> --token=<your-token>")
+		fmt.Println("  replicated profile add <name>")
 		return nil
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "DEFAULT\tNAME\tAPI ORIGIN\tREGISTRY ORIGIN\tTOKEN")
+	fmt.Fprintln(w, "DEFAULT\tNAME\tAPI ORIGIN\tREGISTRY ORIGIN")
 
 	for name, profile := range profiles {
 		isDefault := ""
@@ -60,28 +60,14 @@ func (r *runners) profileLs(_ *cobra.Command, _ []string) error {
 			registryOrigin = "<default>"
 		}
 
-		// Mask the token for security (show first 8 chars)
-		maskedToken := maskToken(profile.APIToken)
-
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 			isDefault,
 			name,
 			apiOrigin,
 			registryOrigin,
-			maskedToken,
 		)
 	}
 
 	w.Flush()
 	return nil
-}
-
-func maskToken(token string) string {
-	if token == "" {
-		return ""
-	}
-	if len(token) <= 8 {
-		return token[:len(token)/2] + "..."
-	}
-	return token[:8] + "..." + token[len(token)-4:]
 }

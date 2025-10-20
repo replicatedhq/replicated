@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/credentials/types"
@@ -15,11 +16,15 @@ func (r *runners) InitProfileAddCommand(parent *cobra.Command) *cobra.Command {
 		Short: "Add a new authentication profile",
 		Long: `Add a new authentication profile with the specified name.
 
-You must provide an API token. Optionally, you can specify custom API and registry origins.
+You can provide an API token via the --token flag, or you will be prompted to enter it securely.
+Optionally, you can specify custom API and registry origins.
 If a profile with the same name already exists, it will be updated.
 
 The profile will be stored in ~/.replicated/config.yaml with file permissions 600 (owner read/write only).`,
-		Example: `# Add a production profile
+		Example: `# Add a production profile (will prompt for token)
+replicated profile add prod
+
+# Add a production profile with token flag
 replicated profile add prod --token=your-prod-token
 
 # Add a development profile with custom origins
@@ -33,11 +38,9 @@ replicated profile add dev \
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (required)")
+	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (optional, will prompt if not provided)")
 	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor)")
 	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com)")
-
-	cmd.MarkFlagRequired("token")
 
 	return cmd
 }
@@ -49,12 +52,18 @@ func (r *runners) profileAdd(_ *cobra.Command, args []string) error {
 		return errors.New("profile name cannot be empty")
 	}
 
-	if r.args.profileAddToken == "" {
-		return errors.New("token is required")
+	// If token is not provided via flag, prompt for it securely
+	token := r.args.profileAddToken
+	if token == "" {
+		var err error
+		token, err = r.readAPITokenFromPrompt("API Token")
+		if err != nil {
+			return errors.Wrap(err, "failed to read API token")
+		}
 	}
 
 	profile := types.Profile{
-		APIToken:       r.args.profileAddToken,
+		APIToken:       token,
 		APIOrigin:      r.args.profileAddAPIOrigin,
 		RegistryOrigin: r.args.profileAddRegistryOrigin,
 	}
@@ -76,4 +85,27 @@ func (r *runners) profileAdd(_ *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func (r *runners) readAPITokenFromPrompt(label string) (string, error) {
+	prompt := promptui.Prompt{
+		Label: label,
+		Mask:  '*',
+		Validate: func(input string) error {
+			if len(input) == 0 {
+				return errors.New("API token cannot be empty")
+			}
+			return nil
+		},
+	}
+
+	result, err := prompt.Run()
+	if err != nil {
+		if err == promptui.ErrInterrupt {
+			return "", errors.New("interrupted")
+		}
+		return "", err
+	}
+
+	return result, nil
 }
