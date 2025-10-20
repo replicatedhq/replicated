@@ -1,0 +1,15 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: invalid-yaml-syntax
+spec:
+  collectors:
+    - clusterInfo: {}
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.19.0"
+              message: Missing closing quote
+          - pass
+              message: "This line is malformed - missing colon after pass"
