@@ -32,6 +32,7 @@ const (
 var (
 	appSlugOrID     string
 	apiToken        string
+	profileNameFlag string
 	platformOrigin  = "https://api.replicated.com/vendor"
 	kurlDotSHOrigin = "https://kurl.sh"
 	cache           *replicatedcache.Cache
@@ -66,6 +67,7 @@ func GetRootCmd() *cobra.Command {
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
+	rootCmd.PersistentFlags().StringVar(&profileNameFlag, "profile", "", "The authentication profile to use for this command")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Enable debug output")
 
 	return rootCmd
@@ -299,6 +301,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitProfileLsCommand(profileCmd)
 	runCmds.InitProfileRmCommand(profileCmd)
 	runCmds.InitProfileSetDefaultCommand(profileCmd)
+	runCmds.InitProfileUseCommand(profileCmd)
 
 	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
 	runCmds.InitAPIGet(apiCmd)
@@ -314,12 +317,36 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
-			// Try to load profile from .replicated.yaml
+			// Try to load profile from --profile flag, then .replicated.yaml
 			var profileName string
-			configParser := tools.NewConfigParser()
-			config, err := configParser.FindAndParseConfig("")
-			if err == nil && config.Profile != "" {
-				profileName = config.Profile
+			var profileSource string
+			if profileNameFlag != "" {
+				// Command-line flag takes precedence
+				profileName = profileNameFlag
+				profileSource = "--profile flag"
+			} else {
+				// Fall back to profile from .replicated.yaml
+				configParser := tools.NewConfigParser()
+				config, err := configParser.FindAndParseConfig("")
+				if err == nil && config.Profile != "" {
+					profileName = config.Profile
+					profileSource = ".replicated.yaml"
+				} else {
+					profileSource = "default profile"
+				}
+			}
+
+			// If no profile name yet, check if there's a default profile
+			if profileName == "" {
+				defaultProfileName, err := credentials.GetDefaultProfile()
+				if err == nil && defaultProfileName != "" {
+					profileName = defaultProfileName
+					profileSource = "default profile"
+				}
+			}
+
+			if debugFlag && profileName != "" {
+				fmt.Fprintf(os.Stderr, "[DEBUG] Using profile '%s' (from %s)\n", profileName, profileSource)
 			}
 
 			// Get credentials with profile support
@@ -337,18 +364,47 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 			apiToken = creds.APIToken
 
+			if debugFlag {
+				maskedToken := apiToken
+				if len(maskedToken) > 8 {
+					maskedToken = maskedToken[:4] + "..." + maskedToken[len(maskedToken)-4:]
+				}
+				fmt.Fprintf(os.Stderr, "[DEBUG] API Token: %s\n", maskedToken)
+			}
+
 			// If using a profile, check if it has custom origins
 			if creds.IsProfile && profileName != "" {
 				apiOrigin, registryOrigin, err := credentials.GetProfileOrigins(profileName)
 				if err == nil {
 					if apiOrigin != "" {
-						platformOrigin = apiOrigin
+						// Strip trailing slashes to avoid double-slash in URL construction
+						platformOrigin = strings.TrimRight(apiOrigin, "/")
+						if debugFlag {
+							if apiOrigin != platformOrigin {
+								fmt.Fprintf(os.Stderr, "[DEBUG] Normalized API origin (removed trailing slash): %s -> %s\n", apiOrigin, platformOrigin)
+							} else {
+								fmt.Fprintf(os.Stderr, "[DEBUG] Using custom API origin from profile: %s\n", platformOrigin)
+							}
+						}
 					}
 					if registryOrigin != "" {
 						// Store registry origin for later use (if needed by commands)
-						os.Setenv("REPLICATED_REGISTRY_ORIGIN", registryOrigin)
+						// Also strip trailing slashes from registry origin
+						normalizedRegistryOrigin := strings.TrimRight(registryOrigin, "/")
+						os.Setenv("REPLICATED_REGISTRY_ORIGIN", normalizedRegistryOrigin)
+						if debugFlag {
+							if registryOrigin != normalizedRegistryOrigin {
+								fmt.Fprintf(os.Stderr, "[DEBUG] Normalized registry origin (removed trailing slash): %s -> %s\n", registryOrigin, normalizedRegistryOrigin)
+							} else {
+								fmt.Fprintf(os.Stderr, "[DEBUG] Using custom registry origin from profile: %s\n", normalizedRegistryOrigin)
+							}
+						}
 					}
 				}
+			}
+
+			if debugFlag {
+				fmt.Fprintf(os.Stderr, "[DEBUG] Platform API origin: %s\n", platformOrigin)
 			}
 		}
 
