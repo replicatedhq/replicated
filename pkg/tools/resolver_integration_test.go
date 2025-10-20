@@ -1,3 +1,6 @@
+//go:build integration
+// +build integration
+
 package tools
 
 import (
@@ -13,10 +16,6 @@ import (
 // Currently FAILS due to bug: Download() discards the actual version used,
 // so Resolver looks for the tool at the wrong path.
 func TestResolverWithInvalidVersionFallback(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test that downloads from network")
-	}
-
 	ctx := context.Background()
 	resolver := NewResolver()
 

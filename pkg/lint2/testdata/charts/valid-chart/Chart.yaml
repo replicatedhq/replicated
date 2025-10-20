@@ -1,0 +1,6 @@
+apiVersion: v2
+name: valid-chart
+description: A valid Helm chart for testing
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
