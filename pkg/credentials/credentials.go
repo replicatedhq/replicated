@@ -115,8 +115,9 @@ func getProfileCredentials(profileName string) (*types.Credentials, error) {
 	}
 
 	return &types.Credentials{
-		APIToken:  profile.APIToken,
-		IsProfile: true,
+		APIToken:    profile.APIToken,
+		IsProfile:   true,
+		ProfileName: profileName, // Store the actual profile name that was used
 	}, nil
 }
 

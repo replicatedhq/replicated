@@ -337,8 +337,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 			apiToken = creds.APIToken
 
-			// If using a profile, check if it has custom origins
-			if creds.IsProfile && profileName != "" {
+			// If using a profile, update the profileName variable and load custom origins
+			if creds.IsProfile && creds.ProfileName != "" {
+				// Update profileName to the actual profile that was loaded
+				profileName = creds.ProfileName
+
 				apiOrigin, registryOrigin, err := credentials.GetProfileOrigins(profileName)
 				if err == nil {
 					if apiOrigin != "" {
