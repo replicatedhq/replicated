@@ -1,10 +1,11 @@
 package lint2
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -68,33 +69,34 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 }
 
 // isSupportBundleSpec checks if a YAML file contains a SupportBundle kind.
-// Handles multi-document YAML files (documents separated by ---).
+// Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
+// handles document separators (---) even when they appear inside strings or block scalars.
 func isSupportBundleSpec(path string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, err
 	}
 
-	// Handle multi-document YAML by splitting on document separator
-	// Note: This is a simple split - proper YAML parsing would use yaml.Decoder
-	// but this is sufficient for kind detection
-	documents := strings.Split(string(data), "\n---")
+	// Use yaml.Decoder for proper multi-document YAML parsing
+	// This correctly handles --- separators according to the YAML spec
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
 
-	for _, doc := range documents {
-		// Skip empty documents
-		doc = strings.TrimSpace(doc)
-		if doc == "" {
-			continue
-		}
-
+	// Iterate through all documents in the file
+	for {
 		// Parse just the kind field (lightweight)
 		var kindDoc struct {
 			Kind string `yaml:"kind"`
 		}
 
-		if err := yaml.Unmarshal([]byte(doc), &kindDoc); err != nil {
-			// Skip documents that can't be parsed
-			continue
+		err := decoder.Decode(&kindDoc)
+		if err != nil {
+			if err == io.EOF {
+				// Reached end of file - no more documents
+				break
+			}
+			// Parse error - file is malformed, skip it gracefully
+			// Cannot continue decoding as decoder is in error state
+			return false, nil
 		}
 
 		// Check if this document is a SupportBundle
