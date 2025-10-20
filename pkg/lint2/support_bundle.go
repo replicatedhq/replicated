@@ -19,10 +19,10 @@ type SupportBundleLintResult struct {
 }
 
 type SupportBundleFileResult struct {
-	FilePath string                     `json:"filePath"`
-	Errors   []SupportBundleLintIssue   `json:"errors"`
-	Warnings []SupportBundleLintIssue   `json:"warnings"`
-	Infos    []SupportBundleLintIssue   `json:"infos"`
+	FilePath string                   `json:"filePath"`
+	Errors   []SupportBundleLintIssue `json:"errors"`
+	Warnings []SupportBundleLintIssue `json:"warnings"`
+	Infos    []SupportBundleLintIssue `json:"infos"`
 }
 
 type SupportBundleLintIssue struct {

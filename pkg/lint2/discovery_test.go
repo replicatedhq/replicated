@@ -88,7 +88,7 @@ spec:
 			wantErr:       false,
 		},
 		{
-			name:          "multiple glob patterns with overlap",
+			name: "multiple glob patterns with overlap",
 			manifestGlobs: []string{
 				filepath.Join(tmpDir, "*.yaml"),
 				sbSpec, // Duplicate - should be deduplicated
