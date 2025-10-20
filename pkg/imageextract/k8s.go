@@ -4,11 +4,20 @@ import (
 	"bytes"
 
 	kotsv1beta1 "github.com/replicatedhq/kotskinds/apis/kots/v1beta1"
+	kotsscheme "github.com/replicatedhq/kotskinds/client/kotsclientset/scheme"
 	troubleshootv1beta2 "github.com/replicatedhq/troubleshoot/pkg/apis/troubleshoot/v1beta2"
+	troubleshootscheme "github.com/replicatedhq/troubleshoot/pkg/client/troubleshootclientset/scheme"
 	"github.com/replicatedhq/troubleshoot/pkg/docrewrite"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/kubernetes/scheme"
 )
+
+// init registers KOTS and Troubleshoot types with the Kubernetes scheme
+// so that the Universal Deserializer can decode these custom resources.
+func init() {
+	kotsscheme.AddToScheme(scheme.Scheme)
+	troubleshootscheme.AddToScheme(scheme.Scheme)
+}
 
 // extractImagesFromFile extracts all image references from a YAML file.
 // Ported from airgap-builder/pkg/builder/images.go lines 212-239
@@ -90,6 +99,11 @@ func listImagesInPod(doc *k8sPodDoc) []string {
 		}
 	}
 	for _, container := range doc.Spec.InitContainers {
+		if container.Image != "" {
+			images = append(images, container.Image)
+		}
+	}
+	for _, container := range doc.Spec.EphemeralContainers {
 		if container.Image != "" {
 			images = append(images, container.Image)
 		}
