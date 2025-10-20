@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -91,6 +92,22 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 	// Create new config
 	config := &tools.Config{}
 
+	// If API is available (profile flag used), offer to select from apps
+	var selectedAppSlug string
+	if r.kotsAPI != nil && !nonInteractive {
+		appSlug, err := r.promptForAppSelection(cmd.Context())
+		if err != nil {
+			// If error fetching apps, just continue without it
+			if !strings.Contains(err.Error(), "cancelled") {
+				fmt.Fprintf(r.w, "Note: Could not fetch apps from API (%v)\n\n", err)
+			} else {
+				return err
+			}
+		} else if appSlug != "" {
+			selectedAppSlug = appSlug
+		}
+	}
+
 	// Auto-detect resources unless skipped
 	var detected *tools.DetectedResources
 	if !skipDetection {
@@ -132,24 +149,29 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 
 	// Interactive prompts
 	if !nonInteractive {
-		// Prompt for app ID or slug
-		appPrompt := promptui.Prompt{
-			Label:   "App ID or App Slug (optional, check vendor.replicated.com)",
-			Default: "",
-		}
-		appValue, err := appPrompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				fmt.Fprintf(r.w, "\nCancelled\n")
-				return nil
+		// Use selected app from API if available, otherwise prompt
+		if selectedAppSlug != "" {
+			config.AppSlug = selectedAppSlug
+		} else {
+			// Prompt for app ID or slug
+			appPrompt := promptui.Prompt{
+				Label:   "App ID or App Slug (optional, check vendor.replicated.com)",
+				Default: "",
 			}
-			return errors.Wrap(err, "failed to read app value")
-		}
+			appValue, err := appPrompt.Run()
+			if err != nil {
+				if err == promptui.ErrInterrupt {
+					fmt.Fprintf(r.w, "\nCancelled\n")
+					return nil
+				}
+				return errors.Wrap(err, "failed to read app value")
+			}
 
-		// Store in AppSlug by default since that's more commonly used
-		// The API accepts both, and commands will resolve it
-		if appValue != "" {
-			config.AppSlug = appValue
+			// Store in AppSlug by default since that's more commonly used
+			// The API accepts both, and commands will resolve it
+			if appValue != "" {
+				config.AppSlug = appValue
+			}
 		}
 
 		// Prompt for charts
@@ -876,4 +898,57 @@ func (r *runners) promptForLintConfig(hasCharts, hasPreflights bool) (*tools.Rep
 	config.Linters.SupportBundle.Disabled = &sbDisabled
 
 	return config, nil
+}
+
+func (r *runners) promptForAppSelection(ctx context.Context) (string, error) {
+	// Fetch apps from API
+	fmt.Fprintf(r.w, "Fetching apps from your account...\n")
+	r.w.Flush()
+
+	kotsApps, err := r.kotsAPI.ListApps(ctx, false)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to list apps")
+	}
+
+	if len(kotsApps) == 0 {
+		fmt.Fprintf(r.w, "No apps found in your account.\n\n")
+		return "", nil
+	}
+
+	// Build list of app display names
+	type appChoice struct {
+		label string
+		slug  string
+	}
+
+	choices := []appChoice{}
+	choices = append(choices, appChoice{label: "Skip (enter manually)", slug: ""})
+
+	for _, app := range kotsApps {
+		label := fmt.Sprintf("%s (%s)", app.App.Name, app.App.Slug)
+		choices = append(choices, appChoice{label: label, slug: app.App.Slug})
+	}
+
+	// Create list of labels for promptui
+	labels := make([]string, len(choices))
+	for i, choice := range choices {
+		labels[i] = choice.label
+	}
+
+	prompt := promptui.Select{
+		Label: "Select an app",
+		Items: labels,
+		Size:  10,
+	}
+
+	idx, _, err := prompt.Run()
+	if err != nil {
+		if err == promptui.ErrInterrupt {
+			return "", errors.New("cancelled")
+		}
+		return "", errors.Wrap(err, "failed to select app")
+	}
+
+	fmt.Fprintf(r.w, "\n")
+	return choices[idx].slug, nil
 }
