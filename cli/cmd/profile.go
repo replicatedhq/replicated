@@ -28,7 +28,10 @@ Use the various subcommands to:
 - List all profiles
 - Remove profiles
 - Set the default profile`,
-		Example: `# Add a production profile
+		Example: `# Add a production profile (will prompt for token)
+replicated profile add prod
+
+# Add a production profile with token flag
 replicated profile add prod --token=your-prod-token
 
 # Add a development profile with custom API origin
