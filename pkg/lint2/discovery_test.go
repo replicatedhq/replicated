@@ -252,6 +252,73 @@ metadata:
 	}
 }
 
+func TestDiscoverSupportBundlesFromManifests_YmlExtension(t *testing.T) {
+	// Test that .yml extension is also supported (not just .yaml)
+	tmpDir := t.TempDir()
+
+	// Create support bundle with .yml extension
+	sbSpec := filepath.Join(tmpDir, "support-bundle.yml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: test-yml-extension`
+
+	if err := os.WriteFile(sbSpec, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	paths, err := DiscoverSupportBundlesFromManifests([]string{filepath.Join(tmpDir, "*.yml")})
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlesFromManifests() unexpected error: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned %d paths, want 1", len(paths))
+		return
+	}
+
+	if paths[0] != sbSpec {
+		t.Errorf("DiscoverSupportBundlesFromManifests() path = %s, want %s", paths[0], sbSpec)
+	}
+}
+
+func TestDiscoverSupportBundlesFromManifests_DirectoryWithYamlExtension(t *testing.T) {
+	// Test that directories with .yaml extension are skipped
+	tmpDir := t.TempDir()
+
+	// Create a directory with .yaml extension
+	yamlDir := filepath.Join(tmpDir, "not-a-file.yaml")
+	if err := os.MkdirAll(yamlDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a valid support bundle file
+	sbSpec := filepath.Join(tmpDir, "valid-bundle.yaml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: valid`
+
+	if err := os.WriteFile(sbSpec, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should skip directory and only return the file
+	paths, err := DiscoverSupportBundlesFromManifests([]string{filepath.Join(tmpDir, "*.yaml")})
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlesFromManifests() unexpected error: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned %d paths, want 1 (directory should be skipped)", len(paths))
+		return
+	}
+
+	if paths[0] != sbSpec {
+		t.Errorf("DiscoverSupportBundlesFromManifests() path = %s, want %s", paths[0], sbSpec)
+	}
+}
+
 func TestIsSupportBundleSpec(t *testing.T) {
 	tmpDir := t.TempDir()
 
@@ -313,6 +380,34 @@ kind: Deployment`,
 			name:    "invalid yaml",
 			content: "this is: not: valid: yaml:",
 			want:    false,
+		},
+		{
+			name: "triple dash in string content",
+			content: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: test
+  description: "This string contains --- which should not be treated as document separator"
+spec:
+  collectors: []`,
+			want: true,
+		},
+		{
+			name: "triple dash in multiline string",
+			content: `apiVersion: v1
+kind: ConfigMap
+data:
+  script: |
+    #!/bin/bash
+    # This is a comment
+    ---
+    # The above should not be treated as separator
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: test`,
+			want: true,
 		},
 	}
 

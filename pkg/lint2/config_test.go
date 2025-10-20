@@ -392,6 +392,354 @@ func TestContainsGlob(t *testing.T) {
 	}
 }
 
+func TestGetPreflightPathsFromConfig(t *testing.T) {
+	// Create a test preflight spec file
+	tmpDir := t.TempDir()
+	validPreflightSpec := filepath.Join(tmpDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(validPreflightSpec, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name      string
+		config    *tools.Config
+		wantPaths []string
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name: "no preflights in config",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{},
+			},
+			wantErr: true,
+			errMsg:  "no preflights found",
+		},
+		{
+			name: "single preflight path",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{
+					{Path: validPreflightSpec},
+				},
+			},
+			wantPaths: []string{validPreflightSpec},
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			paths, err := GetPreflightPathsFromConfig(tt.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetPreflightPathsFromConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !contains(err.Error(), tt.errMsg) {
+					t.Errorf("GetPreflightPathsFromConfig() error = %v, want error containing %q", err, tt.errMsg)
+				}
+				return
+			}
+			if !tt.wantErr {
+				if len(paths) != len(tt.wantPaths) {
+					t.Errorf("GetPreflightPathsFromConfig() returned %d paths, want %d", len(paths), len(tt.wantPaths))
+					return
+				}
+				for i, path := range paths {
+					if path != tt.wantPaths[i] {
+						t.Errorf("GetPreflightPathsFromConfig() path[%d] = %q, want %q", i, path, tt.wantPaths[i])
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetPreflightPathsFromConfig_GlobExpansion(t *testing.T) {
+	// Create test directory structure with multiple preflight specs
+	tmpDir := t.TempDir()
+
+	// Create preflights directory with multiple specs
+	preflightsDir := filepath.Join(tmpDir, "preflights")
+	if err := os.MkdirAll(preflightsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	preflight1 := filepath.Join(preflightsDir, "preflight1.yaml")
+	preflight2 := filepath.Join(preflightsDir, "preflight2.yaml")
+	preflight3 := filepath.Join(tmpDir, "standalone-preflight.yaml")
+
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+
+	for _, file := range []string{preflight1, preflight2, preflight3} {
+		if err := os.WriteFile(file, []byte(preflightContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tests := []struct {
+		name      string
+		config    *tools.Config
+		wantPaths []string
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name: "glob pattern expansion",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{
+					{Path: filepath.Join(preflightsDir, "*.yaml")},
+				},
+			},
+			wantPaths: []string{preflight1, preflight2},
+			wantErr:   false,
+		},
+		{
+			name: "multiple preflights - mixed glob and direct",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{
+					{Path: filepath.Join(preflightsDir, "*.yaml")},
+					{Path: preflight3},
+				},
+			},
+			wantPaths: []string{preflight1, preflight2, preflight3},
+			wantErr:   false,
+		},
+		{
+			name: "glob with no matches",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{
+					{Path: filepath.Join(tmpDir, "nonexistent", "*.yaml")},
+				},
+			},
+			wantErr: true,
+			errMsg:  "no preflight specs found matching pattern",
+		},
+		{
+			name: "glob pattern with prefix",
+			config: &tools.Config{
+				Preflights: []tools.PreflightConfig{
+					{Path: filepath.Join(preflightsDir, "preflight*.yaml")},
+				},
+			},
+			wantPaths: []string{preflight1, preflight2},
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			paths, err := GetPreflightPathsFromConfig(tt.config)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetPreflightPathsFromConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !contains(err.Error(), tt.errMsg) {
+					t.Errorf("GetPreflightPathsFromConfig() error = %v, want error containing %q", err, tt.errMsg)
+				}
+				return
+			}
+			if !tt.wantErr {
+				if len(paths) != len(tt.wantPaths) {
+					t.Errorf("GetPreflightPathsFromConfig() returned %d paths, want %d", len(paths), len(tt.wantPaths))
+					return
+				}
+				// Build map of expected paths for order-independent comparison
+				expectedPaths := make(map[string]bool)
+				for _, p := range tt.wantPaths {
+					expectedPaths[p] = false
+				}
+				// Mark found paths
+				for _, path := range paths {
+					if _, ok := expectedPaths[path]; ok {
+						expectedPaths[path] = true
+					} else {
+						t.Errorf("GetPreflightPathsFromConfig() returned unexpected path: %q", path)
+					}
+				}
+				// Check all expected paths were found
+				for path, found := range expectedPaths {
+					if !found {
+						t.Errorf("GetPreflightPathsFromConfig() missing expected path: %q", path)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestGetPreflightPathsFromConfig_InvalidPreflightsInGlob(t *testing.T) {
+	// Create directory with mix of valid and invalid preflight specs
+	tmpDir := t.TempDir()
+	preflightsDir := filepath.Join(tmpDir, "preflights")
+	if err := os.MkdirAll(preflightsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Valid preflight spec
+	validPreflight := filepath.Join(preflightsDir, "valid.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(validPreflight, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Invalid preflight spec (non-existent file that glob might match)
+	// For preflight, we test the case where one of the matched files doesn't exist
+	invalidPreflight := filepath.Join(preflightsDir, "nonexistent.yaml")
+
+	config := &tools.Config{
+		Preflights: []tools.PreflightConfig{
+			{Path: validPreflight},
+			{Path: invalidPreflight},
+		},
+	}
+
+	_, err := GetPreflightPathsFromConfig(config)
+	if err == nil {
+		t.Error("GetPreflightPathsFromConfig() should fail when spec file doesn't exist, got nil error")
+	}
+	if !contains(err.Error(), "does not exist") {
+		t.Errorf("GetPreflightPathsFromConfig() error = %v, want error about file not existing", err)
+	}
+}
+
+func TestGetPreflightPathsFromConfig_MultiplePreflights(t *testing.T) {
+	// Create multiple valid preflight specs
+	tmpDir := t.TempDir()
+	preflight1 := filepath.Join(tmpDir, "preflight1.yaml")
+	preflight2 := filepath.Join(tmpDir, "preflight2.yaml")
+	preflight3 := filepath.Join(tmpDir, "preflight3.yaml")
+
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+
+	for _, file := range []string{preflight1, preflight2, preflight3} {
+		if err := os.WriteFile(file, []byte(preflightContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	config := &tools.Config{
+		Preflights: []tools.PreflightConfig{
+			{Path: preflight1},
+			{Path: preflight2},
+			{Path: preflight3},
+		},
+	}
+
+	paths, err := GetPreflightPathsFromConfig(config)
+	if err != nil {
+		t.Fatalf("GetPreflightPathsFromConfig() unexpected error = %v", err)
+	}
+	if len(paths) != 3 {
+		t.Errorf("GetPreflightPathsFromConfig() returned %d paths, want 3", len(paths))
+	}
+
+	// Verify all paths are present
+	expectedPaths := map[string]bool{
+		preflight1: false,
+		preflight2: false,
+		preflight3: false,
+	}
+	for _, path := range paths {
+		if _, ok := expectedPaths[path]; ok {
+			expectedPaths[path] = true
+		}
+	}
+	for path, found := range expectedPaths {
+		if !found {
+			t.Errorf("Expected path %s not found in results", path)
+		}
+	}
+}
+
+func TestValidatePreflightPath(t *testing.T) {
+	// Create a temporary valid preflight spec file
+	tmpDir := t.TempDir()
+	validPreflight := filepath.Join(tmpDir, "valid-preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(validPreflight, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a directory (not a file)
+	notAFile := filepath.Join(tmpDir, "not-a-file")
+	if err := os.MkdirAll(notAFile, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		path    string
+		wantErr bool
+		errMsg  string
+	}{
+		{
+			name:    "valid preflight spec file",
+			path:    validPreflight,
+			wantErr: false,
+		},
+		{
+			name:    "non-existent file",
+			path:    filepath.Join(tmpDir, "does-not-exist.yaml"),
+			wantErr: true,
+			errMsg:  "does not exist",
+		},
+		{
+			name:    "path is a directory",
+			path:    notAFile,
+			wantErr: true,
+			errMsg:  "is a directory",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validatePreflightPath(tt.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validatePreflightPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && tt.errMsg != "" {
+				if err == nil || !contains(err.Error(), tt.errMsg) {
+					t.Errorf("validatePreflightPath() error = %v, want error containing %q", err, tt.errMsg)
+				}
+			}
+		})
+	}
+}
+
 // Helper function
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
