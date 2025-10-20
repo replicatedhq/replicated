@@ -314,6 +314,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	// Add top-level lint command
 	runCmds.InitLint(runCmds.rootCmd)
 
+	// Add config command with init subcommand
+	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)
+	runCmds.InitInitCommand(configCmd)
+
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			// Try to load profile from --profile flag, then default profile

@@ -3,7 +3,10 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"path/filepath"
+	"strings"
 
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
@@ -29,19 +32,57 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	parser := tools.NewConfigParser()
 	config, err := parser.FindAndParseConfig(".")
 	if err != nil {
-		return errors.Wrap(err, "failed to load .replicated config")
+		// Check if error is "no config found"
+		if strings.Contains(err.Error(), "no .replicated config file found") {
+			// Offer to create one
+			if tools.IsNonInteractive() {
+				return errors.New("no .replicated config found. Run 'replicated config init' to create one, or use --chart-dir flag to specify charts directly")
+			}
+
+			fmt.Fprintf(r.w, "No .replicated config file found.\n\n")
+
+			// Ask if they want to create one
+			prompt := promptui.Select{
+				Label: "Would you like to create a .replicated config now?",
+				Items: []string{"Yes", "No"},
+			}
+
+			_, result, err := prompt.Run()
+			if err != nil || result == "No" {
+				return errors.New("config file required. Run 'replicated config init' to create one")
+			}
+
+			// Run init flow inline
+			if err := r.initConfigForLint(cmd); err != nil {
+				return errors.Wrap(err, "failed to initialize config")
+			}
+
+			// Try loading config again
+			config, err = parser.FindAndParseConfig(".")
+			if err != nil {
+				return errors.Wrap(err, "failed to load newly created config")
+			}
+
+			fmt.Fprintf(r.w, "\n")
+		} else {
+			return errors.Wrap(err, "failed to load .replicated config")
+		}
 	}
 
 	hasFailure := false
 
 	// Lint Helm charts if enabled
 	if config.ReplLint.Linters.Helm.IsEnabled() {
-		helmFailed, err := r.lintHelmCharts(cmd, config)
-		if err != nil {
-			return err
-		}
-		if helmFailed {
-			hasFailure = true
+		if len(config.Charts) == 0 {
+			fmt.Fprintf(r.w, "No Helm charts configured (skipping Helm linting)\n\n")
+		} else {
+			helmFailed, err := r.lintHelmCharts(cmd, config)
+			if err != nil {
+				return err
+			}
+			if helmFailed {
+				hasFailure = true
+			}
 		}
 	} else {
 		fmt.Fprintf(r.w, "Helm linting is disabled in .replicated config\n\n")
@@ -49,12 +90,16 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Lint Preflight specs if enabled
 	if config.ReplLint.Linters.Preflight.IsEnabled() {
-		preflightFailed, err := r.lintPreflightSpecs(cmd, config)
-		if err != nil {
-			return err
-		}
-		if preflightFailed {
-			hasFailure = true
+		if len(config.Preflights) == 0 {
+			fmt.Fprintf(r.w, "No preflight specs configured (skipping preflight linting)\n\n")
+		} else {
+			preflightFailed, err := r.lintPreflightSpecs(cmd, config)
+			if err != nil {
+				return err
+			}
+			if preflightFailed {
+				hasFailure = true
+			}
 		}
 	} else {
 		fmt.Fprintf(r.w, "Preflight linting is disabled in .replicated config\n\n")
@@ -263,4 +308,92 @@ func displayOverallSummary(w io.Writer, resourceType string, totalResources, fai
 	} else {
 		fmt.Fprintf(w, "\nOverall Status: Passed\n")
 	}
+}
+
+// initConfigForLint is a simplified version of init flow specifically for lint command
+func (r *runners) initConfigForLint(cmd *cobra.Command) error {
+	fmt.Fprintf(r.w, "Let's set up a basic linting configuration.\n\n")
+
+	// Auto-detect resources
+	detected, err := tools.AutoDetectResources(".")
+	if err != nil {
+		return errors.Wrap(err, "auto-detecting resources")
+	}
+
+	config := &tools.Config{}
+
+	// Show what was detected
+	if len(detected.Charts) > 0 {
+		fmt.Fprintf(r.w, "Found %d Helm chart(s):\n", len(detected.Charts))
+		for _, chart := range detected.Charts {
+			fmt.Fprintf(r.w, "  - %s\n", chart)
+		}
+		fmt.Fprintf(r.w, "\n")
+
+		// Add to config
+		for _, chartPath := range detected.Charts {
+			if !strings.HasPrefix(chartPath, ".") {
+				chartPath = "./" + chartPath
+			}
+			config.Charts = append(config.Charts, tools.ChartConfig{
+				Path: chartPath,
+			})
+		}
+	}
+
+	if len(detected.Preflights) > 0 {
+		fmt.Fprintf(r.w, "Found %d preflight spec(s):\n", len(detected.Preflights))
+		for _, preflight := range detected.Preflights {
+			fmt.Fprintf(r.w, "  - %s\n", preflight)
+		}
+		fmt.Fprintf(r.w, "\n")
+
+		// Add to config
+		for _, preflightPath := range detected.Preflights {
+			if !strings.HasPrefix(preflightPath, ".") {
+				preflightPath = "./" + preflightPath
+			}
+			config.Preflights = append(config.Preflights, tools.PreflightConfig{
+				Path: preflightPath,
+			})
+		}
+	}
+
+	if len(config.Charts) == 0 && len(config.Preflights) == 0 {
+		fmt.Fprintf(r.w, "No Helm charts or preflight specs detected.\n")
+
+		// Prompt for chart path
+		chartPrompt := promptui.Prompt{
+			Label:   "Chart path (leave empty to skip)",
+			Default: "",
+		}
+		chartPath, _ := chartPrompt.Run()
+		if chartPath != "" {
+			config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
+		}
+
+		// Prompt for preflight path
+		preflightPrompt := promptui.Prompt{
+			Label:   "Preflight spec path (leave empty to skip)",
+			Default: "",
+		}
+		preflightPath, _ := preflightPrompt.Run()
+		if preflightPath != "" {
+			config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
+		}
+	}
+
+	// Apply defaults
+	parser := tools.NewConfigParser()
+	parser.ApplyDefaults(config)
+
+	// Write config file
+	configPath := filepath.Join(".", ".replicated")
+	if err := tools.WriteConfigFile(config, configPath); err != nil {
+		return errors.Wrap(err, "writing config file")
+	}
+
+	fmt.Fprintf(r.w, "Created %s\n", configPath)
+
+	return nil
 }
