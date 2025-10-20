@@ -1,0 +1,95 @@
+# Example .replicated configuration
+#
+# This file demonstrates how to configure the replicated CLI for:
+# - Helm chart linting
+# - Preflight spec linting
+# - Support Bundle spec linting
+#
+# Copy this file to .replicated in your project root and customize as needed.
+
+spec-version: 1
+
+# Application metadata (optional)
+appId: ""
+appSlug: ""
+profile: "prod"
+
+# Helm charts to lint
+# The replicated lint command will validate these charts using helm lint
+charts:
+  # Single chart with explicit path
+  - path: "./charts/my-app"
+    chartVersion: ""
+    appVersion: ""
+
+  # Glob pattern to match multiple charts
+  - path: "./charts/*"
+    chartVersion: ""
+    appVersion: ""
+
+# Preflight specs to lint
+# The replicated lint command will validate these using preflight lint
+preflights:
+  # Single preflight spec
+  - path: "./preflight.yaml"
+    valuesPath: ""  # Optional: path to helm chart for template context
+
+  # Glob pattern to match multiple preflight specs
+  - path: "./preflights/*.yaml"
+
+# Kubernetes manifests
+# Support bundles are automatically discovered from these globs
+# Any YAML file containing "kind: SupportBundle" will be linted
+manifests:
+  - "./manifests/**/*.yaml"
+  - "./k8s/*.yaml"
+
+# Release configuration (optional)
+releaseLabel: ""
+promoteToChannelIds: []
+promoteToChannelNames: []
+
+# Linter configuration
+repl-lint:
+  # Config schema version (currently only version 1 is supported)
+  version: 1
+
+  # Configure which linters to run
+  linters:
+    # Helm chart linting
+    helm:
+      disabled: false  # Set to true to skip helm linting
+
+    # Preflight spec linting
+    preflight:
+      disabled: false  # Set to true to skip preflight linting
+
+    # Support Bundle spec linting
+    # Note: Support bundles are auto-discovered from the manifests globs above
+    # Any file with "kind: SupportBundle" will be linted
+    support-bundle:
+      disabled: false  # Set to true to skip support bundle linting
+
+    # Future linters (not yet implemented)
+    embedded-cluster:
+      disabled: true
+    kots:
+      disabled: true
+
+  # Optional: Pin specific tool versions
+  # If not specified, default versions will be used
+  # Tools are automatically downloaded and cached in ~/.replicated/tools/
+  tools:
+    helm: "3.14.4"              # Helm CLI version for chart linting
+    preflight: "0.123.9"        # Preflight CLI version from troubleshoot.sh
+    support-bundle: "0.123.9"   # Support Bundle CLI version from troubleshoot.sh
+
+# Usage:
+#   replicated lint                    # Lint all configured resources
+#
+# Exit codes:
+#   0 - All linting passed
+#   non-zero - Linting failed (errors found)
+#
+# For detailed documentation, see:
+#   https://github.com/replicatedhq/replicated

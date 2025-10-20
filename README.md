@@ -203,3 +203,78 @@ vim config.yaml
 cat config.yaml | replicated release create --yaml -
 # SEQUENCE: 131
 ```
+
+## Linting
+
+The `replicated lint` command validates Helm charts, Preflight specs, and Support Bundle specs locally before deployment.
+
+### Quick Start
+
+1. **Create a `.replicated` configuration file** in your project root:
+
+```yaml
+spec-version: 1
+
+# Helm charts to validate
+charts:
+  - path: ./charts/*
+
+# Preflight specs to validate
+preflights:
+  - path: ./preflights/*.yaml
+
+# Manifests (Support Bundles are auto-discovered)
+manifests:
+  - ./manifests/**/*.yaml
+
+# Configure linters
+repl-lint:
+  linters:
+    helm:
+      disabled: false
+    preflight:
+      disabled: false
+    support-bundle:
+      disabled: false
+  tools:
+    helm: "3.14.4"
+    preflight: "0.123.9"
+    support-bundle: "0.123.9"
+```
+
+See [.replicated.example](.replicated.example) for a complete configuration example.
+
+2. **Run linting:**
+
+```bash
+replicated lint
+```
+
+The command will validate all configured resources and report any errors or warnings.
+
+### CI/CD Integration
+
+Add linting to your CI pipeline to catch issues before deployment:
+
+```bash
+#!/bin/bash
+# Fail the build if linting finds errors
+replicated lint || exit 1
+```
+
+**Exit codes:**
+- `0` - All linting passed
+- Non-zero - Linting failed
+
+### Features
+
+- **Helm Charts**: Validates chart structure and values using `helm lint`
+- **Preflight Specs**: Validates troubleshoot.sh preflight specs
+- **Support Bundles**: Auto-discovers and validates support bundle specs from manifest files
+- **Tool Auto-Download**: Automatically downloads and caches required linting tools
+- **Version Pinning**: Pin specific tool versions for reproducible builds
+
+### Documentation
+
+- [Configuration Reference](docs/lint-format.md) - Detailed configuration options
+- [.replicated.example](.replicated.example) - Complete example configuration
