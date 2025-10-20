@@ -4,7 +4,7 @@ This document defines the structure for the `repl-lint` section of the `.replica
 
 ## Format
 
-Both YAML and JSON are supported; YAML is shown here for readability.
+The `.replicated` configuration file uses YAML format.
 
 ```yaml
 repl-lint:

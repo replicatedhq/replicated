@@ -90,7 +90,7 @@ Overall Status: Passed
 
 ### File Format
 
-The `.replicated` file uses YAML (or JSON) format. Here's a comprehensive example:
+The `.replicated` file uses YAML format. Here's a comprehensive example:
 
 ```yaml
 spec-version: 1
