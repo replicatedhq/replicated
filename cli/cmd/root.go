@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -293,6 +294,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
+	profileCmd := runCmds.InitProfileCommand(runCmds.rootCmd)
+	runCmds.InitProfileAddCommand(profileCmd)
+	runCmds.InitProfileLsCommand(profileCmd)
+	runCmds.InitProfileRmCommand(profileCmd)
+	runCmds.InitProfileSetDefaultCommand(profileCmd)
+
 	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
 	runCmds.InitAPIGet(apiCmd)
 	runCmds.InitAPIPost(apiCmd)
@@ -307,15 +314,42 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
-			creds, err := credentials.GetCurrentCredentials()
+			// Try to load profile from .replicated.yaml
+			var profileName string
+			configParser := tools.NewConfigParser()
+			config, err := configParser.FindAndParseConfig("")
+			if err == nil && config.Profile != "" {
+				profileName = config.Profile
+			}
+
+			// Get credentials with profile support
+			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {
-				if err == credentials.ErrCredentialsNotFound {
-					return errors.New("Please provide your API token or log in with `replicated login`")
+				if err == credentials.ErrCredentialsNotFound || err == credentials.ErrProfileNotFound {
+					msg := "Please provide your API token or log in with `replicated login`"
+					if profileName != "" {
+						msg = fmt.Sprintf("%s (profile '%s' not found; run `replicated profile add %s --token=<your-token>`)", msg, profileName, profileName)
+					}
+					return errors.New(msg)
 				}
 				return errors.Wrap(err, "get current credentials")
 			}
 
 			apiToken = creds.APIToken
+
+			// If using a profile, check if it has custom origins
+			if creds.IsProfile && profileName != "" {
+				apiOrigin, registryOrigin, err := credentials.GetProfileOrigins(profileName)
+				if err == nil {
+					if apiOrigin != "" {
+						platformOrigin = apiOrigin
+					}
+					if registryOrigin != "" {
+						// Store registry origin for later use (if needed by commands)
+						os.Setenv("REPLICATED_REGISTRY_ORIGIN", registryOrigin)
+					}
+				}
+			}
 		}
 
 		// allow override
@@ -429,9 +463,9 @@ func printIfError(cmd *cobra.Command, err error) {
 
 	switch err := errors.Cause(err).(type) {
 	case platformclient.APIError:
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ERROR: %d", err.StatusCode))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("METHOD: %s", err.Method))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ENDPOINT: %s", err.Endpoint))
+		fmt.Fprintf(os.Stderr, "ERROR: %d\n", err.StatusCode)
+		fmt.Fprintf(os.Stderr, "METHOD: %s\n", err.Method)
+		fmt.Fprintf(os.Stderr, "ENDPOINT: %s\n", err.Endpoint)
 		fmt.Fprintln(os.Stderr, err.Message) // note that this can have multiple lines
 	case ClusterTimeoutError:
 		fmt.Fprintf(os.Stderr, "Error: Wait timeout exceeded for cluster %s\n", err.Cluster.ID)

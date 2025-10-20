@@ -1,3 +1,4 @@
+profile: "prod"
 appId: ""
 appSlug: "" 
 promoteToChannelIds: []
