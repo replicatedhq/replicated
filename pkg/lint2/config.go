@@ -149,3 +149,69 @@ func validatePreflightPath(path string) error {
 
 	return nil
 }
+
+// GetSupportBundlePathsFromConfig extracts and expands support bundle spec paths from config
+func GetSupportBundlePathsFromConfig(config *tools.Config) ([]string, error) {
+	if len(config.SupportBundles) == 0 {
+		return nil, fmt.Errorf("no support bundles found in .replicated config")
+	}
+
+	return expandSupportBundlePaths(config.SupportBundles)
+}
+
+// expandSupportBundlePaths expands glob patterns in support bundle paths and returns a list of concrete file paths
+func expandSupportBundlePaths(sbConfigs []tools.SupportBundleConfig) ([]string, error) {
+	var paths []string
+
+	for _, sbConfig := range sbConfigs {
+		// Check if path contains glob pattern
+		if containsGlob(sbConfig.Path) {
+			matches, err := filepath.Glob(sbConfig.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", sbConfig.Path, err)
+			}
+			if len(matches) == 0 {
+				return nil, fmt.Errorf("no support bundle specs found matching pattern: %s", sbConfig.Path)
+			}
+			// Validate each matched path
+			for _, match := range matches {
+				if err := validateSupportBundlePath(match); err != nil {
+					return nil, fmt.Errorf("invalid support bundle spec path %s: %w", match, err)
+				}
+			}
+			paths = append(paths, matches...)
+		} else {
+			// Validate single path
+			if err := validateSupportBundlePath(sbConfig.Path); err != nil {
+				return nil, fmt.Errorf("invalid support bundle spec path %s: %w", sbConfig.Path, err)
+			}
+			paths = append(paths, sbConfig.Path)
+		}
+	}
+
+	return paths, nil
+}
+
+// validateSupportBundlePath checks if a path is a valid support bundle spec file
+func validateSupportBundlePath(path string) error {
+	// Check if path exists and is a file
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("path does not exist")
+		}
+		return fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	if info.IsDir() {
+		return fmt.Errorf("path is a directory, expected a file")
+	}
+
+	// Check if file has .yaml or .yml extension
+	ext := filepath.Ext(path)
+	if ext != ".yaml" && ext != ".yml" {
+		return fmt.Errorf("file must have .yaml or .yml extension")
+	}
+
+	return nil
+}

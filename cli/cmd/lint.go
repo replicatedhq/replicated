@@ -13,8 +13,8 @@ import (
 func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "lint",
-		Short:        "Lint Helm charts and Preflight specs",
-		Long:         `Lint Helm charts and Preflight specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource.`,
+		Short:        "Lint Helm charts, Preflight specs, and Support Bundle specs",
+		Long:         `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file. This command reads paths from the .replicated config and executes linting locally on each resource.`,
 		SilenceUsage: true,
 	}
 
@@ -58,6 +58,19 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 	} else {
 		fmt.Fprintf(r.w, "Preflight linting is disabled in .replicated config\n\n")
+	}
+
+	// Lint Support Bundle specs if enabled
+	if config.ReplLint.Linters.SupportBundle.IsEnabled() {
+		sbFailed, err := r.lintSupportBundleSpecs(cmd, config)
+		if err != nil {
+			return err
+		}
+		if sbFailed {
+			hasFailure = true
+		}
+	} else {
+		fmt.Fprintf(r.w, "Support Bundle linting is disabled in .replicated config\n\n")
 	}
 
 	// Flush the tab writer
@@ -151,6 +164,48 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 
 	// Display results for all preflight specs
 	if err := displayAllLintResults(r.w, "preflight spec", allPaths, allResults); err != nil {
+		return false, errors.Wrap(err, "failed to display lint results")
+	}
+
+	return hasFailure, nil
+}
+
+func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
+	// Get support-bundle version from config
+	sbVersion := tools.DefaultSupportBundleVersion
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
+			sbVersion = v
+		}
+	}
+
+	// Check if there are any support bundle specs configured
+	sbPaths, err := lint2.GetSupportBundlePathsFromConfig(config)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to expand support bundle paths")
+	}
+
+	// Lint all support bundle specs and collect results
+	var allResults []*lint2.LintResult
+	var allPaths []string
+	hasFailure := false
+
+	for _, specPath := range sbPaths {
+		result, err := lint2.LintSupportBundle(cmd.Context(), specPath, sbVersion)
+		if err != nil {
+			return false, errors.Wrapf(err, "failed to lint support bundle spec: %s", specPath)
+		}
+
+		allResults = append(allResults, result)
+		allPaths = append(allPaths, specPath)
+
+		if !result.Success {
+			hasFailure = true
+		}
+	}
+
+	// Display results for all support bundle specs
+	if err := displayAllLintResults(r.w, "support bundle spec", allPaths, allResults); err != nil {
 		return false, errors.Wrap(err, "failed to display lint results")
 	}
 

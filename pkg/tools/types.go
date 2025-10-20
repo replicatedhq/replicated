@@ -2,16 +2,17 @@ package tools
 
 // Config represents the parsed .replicated configuration file
 type Config struct {
-	AppId                 string            `yaml:"appId,omitempty"`
-	AppSlug               string            `yaml:"appSlug,omitempty"`
-	PromoteToChannelIds   []string          `yaml:"promoteToChannelIds,omitempty"`
-	PromoteToChannelNames []string          `yaml:"promoteToChannelNames,omitempty"`
-	Charts                []ChartConfig     `yaml:"charts,omitempty"`
-	Preflights            []PreflightConfig `yaml:"preflights,omitempty"`
-	ReleaseLabel          string            `yaml:"releaseLabel,omitempty"`
-	Manifests             []string          `yaml:"manifests,omitempty"`
-	Profile               string            `yaml:"profile,omitempty"`
-	ReplLint              *ReplLintConfig   `yaml:"repl-lint,omitempty"`
+	AppId                 string                  `yaml:"appId,omitempty"`
+	AppSlug               string                  `yaml:"appSlug,omitempty"`
+	PromoteToChannelIds   []string                `yaml:"promoteToChannelIds,omitempty"`
+	PromoteToChannelNames []string                `yaml:"promoteToChannelNames,omitempty"`
+	Charts                []ChartConfig           `yaml:"charts,omitempty"`
+	Preflights            []PreflightConfig       `yaml:"preflights,omitempty"`
+	SupportBundles        []SupportBundleConfig   `yaml:"supportBundles,omitempty"`
+	ReleaseLabel          string                  `yaml:"releaseLabel,omitempty"`
+	Manifests             []string                `yaml:"manifests,omitempty"`
+	Profile               string                  `yaml:"profile,omitempty"`
+	ReplLint              *ReplLintConfig         `yaml:"repl-lint,omitempty"`
 }
 
 // ChartConfig represents a chart entry in the config
@@ -25,6 +26,11 @@ type ChartConfig struct {
 type PreflightConfig struct {
 	Path       string `yaml:"path"`
 	ValuesPath string `yaml:"valuesPath,omitempty"`
+}
+
+// SupportBundleConfig represents a support bundle entry in the config
+type SupportBundleConfig struct {
+	Path string `yaml:"path"`
 }
 
 // ReplLintConfig is the lint configuration section
