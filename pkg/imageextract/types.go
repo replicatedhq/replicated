@@ -98,8 +98,9 @@ type k8sTemplate struct {
 }
 
 type k8sPodSpec struct {
-	Containers     []k8sContainer `yaml:"containers"`
-	InitContainers []k8sContainer `yaml:"initContainers"`
+	Containers          []k8sContainer `yaml:"containers"`
+	InitContainers      []k8sContainer `yaml:"initContainers"`
+	EphemeralContainers []k8sContainer `yaml:"ephemeralContainers"`
 }
 
 type k8sContainer struct {
