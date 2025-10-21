@@ -1,0 +1,7 @@
+apiVersion: v2
+name: invalid-yaml-chart
+description: A chart with YAML syntax errors for testing
+type: application
+version: 1.0.0
+appVersion: "1.0.0
+# Missing closing quote above - this is a syntax error
