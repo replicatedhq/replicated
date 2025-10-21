@@ -14,10 +14,6 @@ import (
 // with actual preflight binary execution. This test requires the preflight
 // tool to be downloadable and should be run with: go test -tags=integration
 func TestLintPreflight_Integration(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test in short mode")
-	}
-
 	ctx := context.Background()
 
 	t.Run("valid preflight spec", func(t *testing.T) {
