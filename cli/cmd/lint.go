@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,38 +46,53 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	parser := tools.NewConfigParser()
 	config, err := parser.FindAndParseConfig(".")
 	if err != nil {
-		// Check if error is "no config found"
+		// If no config found, auto-discover resources and proceed without prompts
 		if strings.Contains(err.Error(), "no .replicated config file found") {
-			// Offer to create one
-			if tools.IsNonInteractive() {
-				return errors.New("no .replicated config found. Run 'replicated config init' to create one, or use --chart-dir flag to specify charts directly")
-			}
+			fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
+			r.w.Flush()
 
-			fmt.Fprintf(r.w, "No .replicated config file found.\n\n")
+			// Build an in-memory config via discovery
+			config = &tools.Config{}
+			parser.ApplyDefaults(config)
 
-			// Ask if they want to create one
-			prompt := promptui.Select{
-				Label: "Would you like to create a .replicated config now?",
-				Items: []string{"Yes", "No"},
-			}
-
-			_, result, err := prompt.Run()
-			if err != nil || result == "No" {
-				return errors.New("config file required. Run 'replicated config init' to create one")
-			}
-
-			// Run init flow inline
-			if err := r.initConfigForLint(cmd); err != nil {
-				return errors.Wrap(err, "failed to initialize config")
-			}
-
-			// Try loading config again
-			config, err = parser.FindAndParseConfig(".")
+			// Auto-discover Helm charts
+			chartPaths, err := lint2.DiscoverHelmChartsInDirectory(".")
 			if err != nil {
-				return errors.Wrap(err, "failed to load newly created config")
+				return errors.Wrap(err, "failed to discover helm charts")
+			}
+			for _, chartPath := range chartPaths {
+				config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
 			}
 
-			fmt.Fprintf(r.w, "\n")
+			// Auto-discover Preflight specs
+			preflightPaths, err := lint2.DiscoverPreflightsInDirectory(".")
+			if err != nil {
+				return errors.Wrap(err, "failed to discover preflight specs")
+			}
+			for _, preflightPath := range preflightPaths {
+				config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
+			}
+
+			// Auto-discover Support Bundle specs (added to manifests for discovery-based linting)
+			sbPaths, err := lint2.DiscoverSupportBundlesInDirectory(".")
+			if err != nil {
+				return errors.Wrap(err, "failed to discover support bundle specs")
+			}
+			config.Manifests = append(config.Manifests, sbPaths...)
+
+			// Print what was discovered
+			fmt.Fprintf(r.w, "Discovered resources:\n")
+			fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
+			fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
+			fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n\n", len(sbPaths))
+			r.w.Flush()
+
+			// If nothing was found, exit early without error
+			if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+				fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
+				r.w.Flush()
+				return nil
+			}
 		} else {
 			return errors.Wrap(err, "failed to load .replicated config")
 		}
@@ -173,9 +187,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to discover support bundle specs")
 		}
 		// Convert to manifests glob patterns for compatibility
-		for _, sbPath := range sbPaths {
-			config.Manifests = append(config.Manifests, sbPath)
-		}
+		config.Manifests = append(config.Manifests, sbPaths...)
 
 		// Print what was discovered
 		fmt.Fprintf(r.w, "Discovered resources:\n")
@@ -473,113 +485,7 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Confi
 	return results, nil
 }
 
-type resourceSummary struct {
-	errorCount   int
-	warningCount int
-	infoCount    int
-}
-
-func displayAllLintResults(w io.Writer, resourceType string, resourcePaths []string, results []*lint2.LintResult) error {
-	totalErrors := 0
-	totalWarnings := 0
-	totalInfo := 0
-	totalResourcesFailed := 0
-
-	// Display results for each resource
-	for i, result := range results {
-		resourcePath := resourcePaths[i]
-		summary := displaySingleResourceResult(w, resourceType, resourcePath, result)
-
-		totalErrors += summary.errorCount
-		totalWarnings += summary.warningCount
-		totalInfo += summary.infoCount
-
-		if !result.Success {
-			totalResourcesFailed++
-		}
-	}
-
-	// Print overall summary if multiple resources
-	if len(results) > 1 {
-		displayOverallSummary(w, resourceType, len(results), totalResourcesFailed, totalErrors, totalWarnings, totalInfo)
-	}
-
-	return nil
-}
-
-func displaySingleResourceResult(w io.Writer, resourceType string, resourcePath string, result *lint2.LintResult) resourceSummary {
-	// Print header for this resource
-	fmt.Fprintf(w, "==> Linting %s: %s\n\n", resourceType, resourcePath)
-
-	// Print messages
-	if len(result.Messages) == 0 {
-		fmt.Fprintf(w, "No issues found\n")
-	} else {
-		for _, msg := range result.Messages {
-			displayLintMessage(w, msg)
-		}
-	}
-
-	// Count messages by severity
-	summary := countMessagesBySeverity(result.Messages)
-
-	// Print per-resource summary
-	fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-		resourcePath, summary.errorCount, summary.warningCount, summary.infoCount)
-
-	// Print per-resource status
-	if result.Success {
-		fmt.Fprintf(w, "Status: Passed\n\n")
-	} else {
-		fmt.Fprintf(w, "Status: Failed\n\n")
-	}
-
-	return summary
-}
-
-func displayLintMessage(w io.Writer, msg lint2.LintMessage) {
-	if msg.Path != "" {
-		fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-	} else {
-		fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
-	}
-}
-
-func countMessagesBySeverity(messages []lint2.LintMessage) resourceSummary {
-	summary := resourceSummary{}
-	for _, msg := range messages {
-		switch msg.Severity {
-		case "ERROR":
-			summary.errorCount++
-		case "WARNING":
-			summary.warningCount++
-		case "INFO":
-			summary.infoCount++
-		}
-	}
-	return summary
-}
-
-func displayOverallSummary(w io.Writer, resourceType string, totalResources, failedResources, totalErrors, totalWarnings, totalInfo int) {
-	// Pluralize resource type (simple 's' suffix)
-	// Note: Works for current resource types (chart→charts, preflight spec→preflight specs)
-	// Would need enhancement for irregular plurals if new resource types are added
-	resourceTypePlural := resourceType + "s"
-
-	fmt.Fprintf(w, "==> Overall Summary\n")
-	fmt.Fprintf(w, "%s linted: %d\n", resourceTypePlural, totalResources)
-	fmt.Fprintf(w, "%s passed: %d\n", resourceTypePlural, totalResources-failedResources)
-	fmt.Fprintf(w, "%s failed: %d\n", resourceTypePlural, failedResources)
-	fmt.Fprintf(w, "Total errors: %d\n", totalErrors)
-	fmt.Fprintf(w, "Total warnings: %d\n", totalWarnings)
-	fmt.Fprintf(w, "Total info: %d\n", totalInfo)
-
-	if failedResources > 0 {
-		fmt.Fprintf(w, "\nOverall Status: Failed\n")
-	} else {
-		fmt.Fprintf(w, "\nOverall Status: Passed\n")
-	}
-}
+// Removed unused generic display helpers in favor of specific display functions
 
 // initConfigForLint is a simplified version of init flow specifically for lint command
 func (r *runners) initConfigForLint(cmd *cobra.Command) error {
