@@ -2221,3 +2221,60 @@ spec:
 		t.Error("isSupportBundleSpec() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
 	}
 }
+
+func TestIsSupportBundleSpec_FallbackDoesNotMatchFalsePositives(t *testing.T) {
+	// Test that fallback regex doesn't match "kind: SupportBundle" in comments or strings
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		content string
+		want    bool
+	}{
+		{
+			name: "not in comment",
+			content: `# This file is not a kind: SupportBundle
+apiVersion: v1
+kind: ConfigMap
+[malformed yaml`,
+			want: false,
+		},
+		{
+			name: "not in string value",
+			content: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test
+data:
+  comment: "This is not a kind: SupportBundle but it appears in a string"
+[malformed yaml`,
+			want: false,
+		},
+		{
+			name: "actual kind on own line",
+			content: `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: [unclosed bracket
+`,
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(tmpDir, tt.name+".yaml")
+			if err := os.WriteFile(path, []byte(tt.content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := isSupportBundleSpec(path)
+			if err != nil {
+				t.Fatalf("isSupportBundleSpec() error = %v", err)
+			}
+			if got != tt.want {
+				t.Errorf("isSupportBundleSpec() = %v, want %v for content:\n%s", got, tt.want, tt.content)
+			}
+		})
+	}
+}

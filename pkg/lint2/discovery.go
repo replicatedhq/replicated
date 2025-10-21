@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -179,9 +180,11 @@ func isPreflightSpec(path string) (bool, error) {
 				break
 			}
 			// Parse error - file is malformed
-			// Fall back to simple string matching to detect if this looks like a Preflight
+			// Fall back to regex matching to detect if this looks like a Preflight
 			// This allows invalid YAML files to still be discovered and linted
-			if bytes.Contains(data, []byte("kind: Preflight")) {
+			// Use regex to match "kind: Preflight" as a complete line (not in comments/strings)
+			matched, _ := regexp.Match(`(?m)^kind:\s+Preflight\s*$`, data)
+			if matched {
 				return true, nil
 			}
 			return false, nil
@@ -311,9 +314,11 @@ func isSupportBundleSpec(path string) (bool, error) {
 				break
 			}
 			// Parse error - file is malformed
-			// Fall back to simple string matching to detect if this looks like a SupportBundle
+			// Fall back to regex matching to detect if this looks like a SupportBundle
 			// This allows invalid YAML files to still be discovered and linted (consistent with preflights)
-			if bytes.Contains(data, []byte("kind: SupportBundle")) {
+			// Use regex to match "kind: SupportBundle" as a complete line (not in comments/strings)
+			matched, _ := regexp.Match(`(?m)^kind:\s+SupportBundle\s*$`, data)
+			if matched {
 				return true, nil
 			}
 			return false, nil

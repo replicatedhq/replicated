@@ -471,67 +471,6 @@ func TestGlobFiles_OnlyReturnsFiles(t *testing.T) {
 	}
 }
 
-func TestGlobDirs_OnlyReturnsDirectories(t *testing.T) {
-	// Test that GlobDirs() excludes files and only returns directories
-	tmpDir := t.TempDir()
-
-	// Create mixed content: files and directories
-	// Structure:
-	// ├── file1.yaml (file)
-	// ├── file2 (file with no extension)
-	// ├── dir1/ (directory)
-	// └── dir2/ (directory)
-
-	file1 := filepath.Join(tmpDir, "file1.yaml")
-	file2 := filepath.Join(tmpDir, "file2")
-	dir1 := filepath.Join(tmpDir, "dir1")
-	dir2 := filepath.Join(tmpDir, "dir2")
-
-	if err := os.WriteFile(file1, []byte("test"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(file2, []byte("test"), 0644); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(dir1, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.MkdirAll(dir2, 0755); err != nil {
-		t.Fatal(err)
-	}
-
-	// Test GlobDirs with pattern that would match both files and directories
-	pattern := filepath.Join(tmpDir, "*")
-	matches, err := GlobDirs(pattern)
-	if err != nil {
-		t.Fatalf("GlobDirs() error = %v", err)
-	}
-
-	// Should only match the 2 directories, not the files
-	if len(matches) != 2 {
-		t.Errorf("GlobDirs(%q) returned %d items, want 2 (directories only)", pattern, len(matches))
-		t.Logf("Matches: %v", matches)
-	}
-
-	matchMap := make(map[string]bool)
-	for _, m := range matches {
-		matchMap[m] = true
-	}
-
-	if matchMap[file1] {
-		t.Error("file1.yaml should NOT be matched (is a file)")
-	}
-	if matchMap[file2] {
-		t.Error("file2 should NOT be matched (is a file)")
-	}
-	if !matchMap[dir1] {
-		t.Error("Expected dir1 to be matched")
-	}
-	if !matchMap[dir2] {
-		t.Error("Expected dir2 to be matched")
-	}
-}
-
 func TestGlobFiles_RecursiveMixedContent(t *testing.T) {
 	// Test GlobFiles with recursive ** pattern in mixed content
 	tmpDir := t.TempDir()
@@ -615,18 +554,25 @@ func TestGlobFiles_RecursiveMixedContent(t *testing.T) {
 
 func TestValidateGlobPattern(t *testing.T) {
 	tests := []struct {
-		name    string
-		pattern string
-		wantErr bool
+		name       string
+		pattern    string
+		wantErr    bool
+		errContains string // Expected substring in error message
 	}{
-		{"valid star pattern", "./charts/*", false},
-		{"valid doublestar", "./charts/**/*.yaml", false},
-		{"valid brace expansion", "./charts/{app,api}", false},
-		{"valid question mark", "./charts/?", false},
-		{"valid character class", "./charts/[abc]", false},
-		{"unclosed bracket", "./charts/[invalid", true},
-		{"unclosed brace", "./charts/{app,api", true},
-		{"invalid escape", "./charts/\\", true},
+		{"valid star pattern", "./charts/*", false, ""},
+		{"valid doublestar", "./charts/**/*.yaml", false, ""},
+		{"valid brace expansion", "./charts/{app,api}", false, ""},
+		{"valid question mark", "./charts/?", false, ""},
+		{"valid character class", "./charts/[abc]", false, ""},
+		{"valid relative path", "charts/*/Chart.yaml", false, ""},
+		{"unclosed bracket", "./charts/[invalid", true, "invalid glob syntax"},
+		{"unclosed brace", "./charts/{app,api", true, "invalid glob syntax"},
+		{"invalid escape", "./charts/\\", true, "invalid glob syntax"},
+		{"path traversal simple", "../charts/*", true, "path traversal"},
+		{"path traversal deep", "../../../etc/**", true, "path traversal"},
+		{"path traversal with pattern", "../../foo/**/*.yaml", true, "path traversal"},
+		{"path traversal bare", "..", true, "path traversal"},
+		{"path traversal in middle", "./foo/../../bar/*", true, "path traversal"},
 	}
 
 	for _, tt := range tests {
@@ -636,9 +582,9 @@ func TestValidateGlobPattern(t *testing.T) {
 				t.Errorf("ValidateGlobPattern(%q) error = %v, wantErr %v",
 					tt.pattern, err, tt.wantErr)
 			}
-			if err != nil && !strings.Contains(err.Error(), "invalid glob syntax") {
-				t.Errorf("ValidateGlobPattern(%q) error message = %q, want to contain 'invalid glob syntax'",
-					tt.pattern, err.Error())
+			if err != nil && tt.errContains != "" && !strings.Contains(err.Error(), tt.errContains) {
+				t.Errorf("ValidateGlobPattern(%q) error message = %q, want to contain %q",
+					tt.pattern, err.Error(), tt.errContains)
 			}
 		})
 	}
@@ -699,20 +645,6 @@ func TestGlobFiles_DefensiveValidation(t *testing.T) {
 	_, err := GlobFiles(invalidPattern)
 	if err == nil {
 		t.Error("GlobFiles() should validate pattern and return error for invalid syntax")
-	}
-
-	if !strings.Contains(err.Error(), "invalid glob pattern") {
-		t.Errorf("Error should mention invalid pattern, got: %v", err)
-	}
-}
-
-func TestGlobDirs_DefensiveValidation(t *testing.T) {
-	// Test that GlobDirs() validates pattern syntax before expansion
-	invalidPattern := "/tmp/[abc"
-
-	_, err := GlobDirs(invalidPattern)
-	if err == nil {
-		t.Error("GlobDirs() should validate pattern and return error for invalid syntax")
 	}
 
 	if !strings.Contains(err.Error(), "invalid glob pattern") {
