@@ -151,15 +151,22 @@ func TestConfigParser_FindAndParseConfig(t *testing.T) {
 		}
 	})
 
-	// Test when no config found (should return error)
-	t.Run("no config found returns error", func(t *testing.T) {
+	// Test when no config found (should return default config for auto-discovery mode)
+	t.Run("no config found returns default config", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		_, err := parser.FindAndParseConfig(tmpDir)
-		if err == nil {
-			t.Error("FindAndParseConfig() expected error when no config found, got nil")
+		config, err := parser.FindAndParseConfig(tmpDir)
+		if err != nil {
+			t.Errorf("FindAndParseConfig() unexpected error = %v", err)
 		}
-		if !strings.Contains(err.Error(), "no .replicated config file found") {
-			t.Errorf("Expected 'no .replicated config file found' error, got: %v", err)
+		if config == nil {
+			t.Error("FindAndParseConfig() returned nil config, expected default config")
+		}
+		// Verify it's a valid default config
+		if config.ReplLint == nil {
+			t.Error("Default config should have ReplLint section")
+		}
+		if config.ReplLint.Version != 1 {
+			t.Errorf("Default config version = %d, want 1", config.ReplLint.Version)
 		}
 	})
 }
