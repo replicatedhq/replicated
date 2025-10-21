@@ -1186,3 +1186,98 @@ repl-lint:
 		}
 	})
 }
+
+func TestParseConfig_InvalidGlobPatterns(t *testing.T) {
+	tests := []struct {
+		name       string
+		configYAML string
+		wantErrMsg string
+	}{
+		{
+			name: "invalid chart glob pattern - unclosed bracket",
+			configYAML: `
+charts:
+  - path: "./charts/[invalid"
+`,
+			wantErrMsg: "invalid glob pattern in charts[0].path",
+		},
+		{
+			name: "invalid preflight glob pattern - unclosed brace",
+			configYAML: `
+preflights:
+  - path: "./preflights/{unclosed"
+`,
+			wantErrMsg: "invalid glob pattern in preflights[0].path",
+		},
+		{
+			name: "invalid manifest glob pattern - unclosed bracket",
+			configYAML: `
+manifests:
+  - "./manifests/[invalid/*.yaml"
+`,
+			wantErrMsg: "invalid glob pattern in manifests[0]",
+		},
+		{
+			name: "multiple invalid patterns",
+			configYAML: `
+charts:
+  - path: "./charts/*"
+  - path: "./charts/[bad"
+preflights:
+  - path: "./preflights/{invalid"
+`,
+			wantErrMsg: "invalid glob pattern in charts[1].path",
+		},
+		{
+			name: "valid patterns should not error",
+			configYAML: `
+charts:
+  - path: "./charts/**"
+preflights:
+  - path: "./preflights/{dev,prod}/*.yaml"
+manifests:
+  - "./manifests/**/*.yaml"
+`,
+			wantErrMsg: "", // No error expected
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			// Write config file
+			configPath := filepath.Join(tmpDir, ".replicated.yaml")
+			err := os.WriteFile(configPath, []byte(tt.configYAML), 0644)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// Parse config
+			parser := NewConfigParser()
+			_, err = parser.FindAndParseConfig(tmpDir)
+
+			// Check error expectations
+			if tt.wantErrMsg == "" {
+				// Should succeed
+				if err != nil {
+					t.Errorf("Expected no error, got: %v", err)
+				}
+			} else {
+				// Should fail with specific error
+				if err == nil {
+					t.Fatalf("Expected error containing %q, got nil", tt.wantErrMsg)
+				}
+
+				if !strings.Contains(err.Error(), tt.wantErrMsg) {
+					t.Errorf("Error %q does not contain %q", err.Error(), tt.wantErrMsg)
+				}
+
+				// Verify it says "invalid glob syntax"
+				if !strings.Contains(err.Error(), "invalid glob syntax") {
+					t.Errorf("Error %q does not contain 'invalid glob syntax'", err.Error())
+				}
+			}
+		})
+	}
+}
