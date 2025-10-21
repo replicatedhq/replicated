@@ -22,7 +22,7 @@ func LintResults(format string, w *tabwriter.Writer, output interface{}) error {
 	case "json":
 		return printLintResultsJSON(w, output)
 	default:
-		return errors.Errorf("invalid output format: %s. Supported formats: json, table", format)
+		return errors.Errorf("invalid format: %s. Supported formats: json, table", format)
 	}
 }
 

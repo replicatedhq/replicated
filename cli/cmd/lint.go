@@ -31,25 +31,25 @@ on each resource. Use --verbose to also display extracted container images.`,
   replicated lint
 
   # Output JSON to stdout
-  replicated lint --output json
+  replicated lint --format json
 
   # Save results to file (writes to both stdout and file)
-  replicated lint --output-file results.txt
+  replicated lint --output results.txt
 
   # Save JSON results to file
-  replicated lint --output json --output-file results.json
+  replicated lint --format json --output results.json
 
   # Use in CI/CD pipelines
-  replicated lint -o json | jq '.summary.overall_success'
+  replicated lint --format json | jq '.summary.overall_success'
 
   # Verbose mode with image extraction
-  replicated lint --verbose`,
+  replicated lint --verbose --format json`,
 		SilenceUsage: true,
 	}
 
 	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-	cmd.Flags().StringVar(&r.args.lintOutputFile, "output-file", "", "Write output to file at specified path")
+	cmd.Flags().StringVar(&r.outputFormat, "format", "table", "The output format to use. One of: json|table")
+	cmd.Flags().StringVarP(&r.args.lintOutputFile, "output", "o", "", "Write output to file at specified path")
 
 	cmd.RunE = r.runLint
 
@@ -58,9 +58,9 @@ on each resource. Use --verbose to also display extracted container images.`,
 }
 
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
-	// Validate output format
+	// Validate format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
-		return errors.Errorf("invalid output format: %s. Supported formats: json, table", r.outputFormat)
+		return errors.Errorf("invalid format: %s. Supported formats: json, table", r.outputFormat)
 	}
 
 	// Load .replicated config using tools parser (supports monorepos)
@@ -208,7 +208,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Check if output file already exists
 	if r.args.lintOutputFile != "" {
 		if _, err := os.Stat(r.args.lintOutputFile); err == nil {
-			return errors.Errorf("File already exists: %s. Please specify a different path or remove the existing file.", r.args.lintOutputFile)
+			return errors.Errorf("file already exists: %s. Please specify a different path or remove the existing file", r.args.lintOutputFile)
 		} else if !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to check if file exists: %s", r.args.lintOutputFile)
 		}
