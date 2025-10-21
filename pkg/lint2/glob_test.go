@@ -669,3 +669,68 @@ func TestContainsGlob(t *testing.T) {
 		})
 	}
 }
+
+// Defensive validation tests - ensure public API validates patterns even if caller didn't
+
+func TestGlob_DefensiveValidation(t *testing.T) {
+	// Test that public Glob() validates pattern even if caller didn't
+	// This follows the lint2 pattern where all public functions validate defensively
+	invalidPattern := "/tmp/[unclosed"
+
+	_, err := Glob(invalidPattern)
+	if err == nil {
+		t.Error("Glob() should validate pattern and return error for invalid syntax")
+	}
+
+	if !strings.Contains(err.Error(), "invalid glob pattern") {
+		t.Errorf("Error should mention invalid pattern, got: %v", err)
+	}
+
+	// Should include helpful details in error
+	if !strings.Contains(err.Error(), "unclosed brackets") {
+		t.Errorf("Error should include helpful details about what might be wrong, got: %v", err)
+	}
+}
+
+func TestGlobFiles_DefensiveValidation(t *testing.T) {
+	// Test that GlobFiles() validates pattern syntax before expansion
+	invalidPattern := "/tmp/{unclosed"
+
+	_, err := GlobFiles(invalidPattern)
+	if err == nil {
+		t.Error("GlobFiles() should validate pattern and return error for invalid syntax")
+	}
+
+	if !strings.Contains(err.Error(), "invalid glob pattern") {
+		t.Errorf("Error should mention invalid pattern, got: %v", err)
+	}
+}
+
+func TestGlobDirs_DefensiveValidation(t *testing.T) {
+	// Test that GlobDirs() validates pattern syntax before expansion
+	invalidPattern := "/tmp/[abc"
+
+	_, err := GlobDirs(invalidPattern)
+	if err == nil {
+		t.Error("GlobDirs() should validate pattern and return error for invalid syntax")
+	}
+
+	if !strings.Contains(err.Error(), "invalid glob pattern") {
+		t.Errorf("Error should mention invalid pattern, got: %v", err)
+	}
+}
+
+func TestGlob_DefensiveValidation_ValidPattern(t *testing.T) {
+	// Test that validation doesn't reject valid patterns
+	// Using a pattern that won't match any files but is syntactically valid
+	tmpDir := t.TempDir()
+	validPattern := filepath.Join(tmpDir, "**", "*.nonexistent")
+
+	_, err := Glob(validPattern)
+	if err != nil {
+		t.Fatalf("Glob() should accept valid pattern, got error: %v", err)
+	}
+
+	// No error means validation passed - we're testing validation, not matching
+	// (doublestar may return nil or empty slice for no matches, both are fine)
+}
