@@ -9,11 +9,12 @@ import (
 
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
-	Metadata         LintMetadata          `json:"metadata"`
-	HelmResults      *HelmLintResults      `json:"helm_results,omitempty"`
-	PreflightResults *PreflightLintResults `json:"preflight_results,omitempty"`
-	Summary          LintSummary           `json:"summary"`
-	Images           *ImageExtractResults  `json:"images,omitempty"` // Only if --verbose
+	Metadata             LintMetadata              `json:"metadata"`
+	HelmResults          *HelmLintResults          `json:"helm_results,omitempty"`
+	PreflightResults     *PreflightLintResults     `json:"preflight_results,omitempty"`
+	SupportBundleResults *SupportBundleLintResults `json:"support_bundle_results,omitempty"`
+	Summary              LintSummary               `json:"summary"`
+	Images               *ImageExtractResults      `json:"images,omitempty"` // Only if --verbose
 }
 
 // LintMetadata contains execution context and environment information
@@ -46,6 +47,20 @@ type PreflightLintResults struct {
 
 // PreflightLintResult represents lint results for a single Preflight spec
 type PreflightLintResult struct {
+	Path     string          `json:"path"`
+	Success  bool            `json:"success"`
+	Messages []LintMessage   `json:"messages"`
+	Summary  ResourceSummary `json:"summary"`
+}
+
+// SupportBundleLintResults contains all Support Bundle spec lint results
+type SupportBundleLintResults struct {
+	Enabled bool                       `json:"enabled"`
+	Specs   []SupportBundleLintResult `json:"specs"`
+}
+
+// SupportBundleLintResult represents lint results for a single Support Bundle spec
+type SupportBundleLintResult struct {
 	Path     string          `json:"path"`
 	Success  bool            `json:"success"`
 	Messages []LintMessage   `json:"messages"`

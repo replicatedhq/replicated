@@ -187,16 +187,13 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Lint Support Bundle specs if enabled
 	if config.ReplLint.Linters.SupportBundle.IsEnabled() {
-		sbFailed, err := r.lintSupportBundleSpecs(cmd, config)
+		sbResults, err := r.lintSupportBundleSpecs(cmd, config)
 		if err != nil {
 			return err
 		}
-		// Support Bundle results not yet in structured output
-		// Update OverallSuccess if Support Bundle linting failed
-		if sbFailed {
-			output.Summary.OverallSuccess = false
-		}
+		output.SupportBundleResults = sbResults
 	} else {
+		output.SupportBundleResults = &SupportBundleLintResults{Enabled: false, Specs: []SupportBundleLintResult{}}
 		if r.outputFormat == "table" {
 			fmt.Fprintf(r.w, "Support Bundle linting is disabled in .replicated config\n\n")
 		}
@@ -336,7 +333,7 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 	return results, nil
 }
 
-func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
+func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (*SupportBundleLintResults, error) {
 	// Get support-bundle version from config
 	sbVersion := tools.DefaultSupportBundleVersion
 	if config.ReplLint.Tools != nil {
@@ -350,39 +347,44 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Confi
 	// unlike preflights which are moving to a separate location
 	sbPaths, err := lint2.DiscoverSupportBundlesFromManifests(config.Manifests)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to discover support bundle specs from manifests")
+		return nil, errors.Wrap(err, "failed to discover support bundle specs from manifests")
+	}
+
+	results := &SupportBundleLintResults{
+		Enabled: true,
+		Specs:   make([]SupportBundleLintResult, 0, len(sbPaths)),
 	}
 
 	// If no support bundles found, that's not an error - they're optional
 	if len(sbPaths) == 0 {
-		return false, nil
+		return results, nil
 	}
 
 	// Lint all support bundle specs and collect results
-	var allResults []*lint2.LintResult
-	var allPaths []string
-	hasFailure := false
-
 	for _, specPath := range sbPaths {
-		result, err := lint2.LintSupportBundle(cmd.Context(), specPath, sbVersion)
+		lint2Result, err := lint2.LintSupportBundle(cmd.Context(), specPath, sbVersion)
 		if err != nil {
-			return false, errors.Wrapf(err, "failed to lint support bundle spec: %s", specPath)
+			return nil, errors.Wrapf(err, "failed to lint support bundle spec: %s", specPath)
 		}
 
-		allResults = append(allResults, result)
-		allPaths = append(allPaths, specPath)
+		// Convert to structured format
+		sbResult := SupportBundleLintResult{
+			Path:     specPath,
+			Success:  lint2Result.Success,
+			Messages: convertLint2Messages(lint2Result.Messages),
+			Summary:  calculateResourceSummary(lint2Result.Messages),
+		}
+		results.Specs = append(results.Specs, sbResult)
+	}
 
-		if !result.Success {
-			hasFailure = true
+	// Display results in table format (only if table output)
+	if r.outputFormat == "table" {
+		if err := r.displaySupportBundleResults(results); err != nil {
+			return nil, errors.Wrap(err, "failed to display support bundle results")
 		}
 	}
 
-	// Display results for all support bundle specs
-	if err := displayAllLintResults(r.w, "support bundle spec", allPaths, allResults); err != nil {
-		return false, errors.Wrap(err, "failed to display lint results")
-	}
-
-	return hasFailure, nil
+	return results, nil
 }
 
 type resourceSummary struct {
@@ -707,6 +709,21 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 		}
 	}
 
+	// Count from Support Bundle results
+	if output.SupportBundleResults != nil {
+		for _, spec := range output.SupportBundleResults.Specs {
+			summary.TotalResources++
+			if spec.Success {
+				summary.PassedResources++
+			} else {
+				summary.FailedResources++
+			}
+			summary.TotalErrors += spec.Summary.ErrorCount
+			summary.TotalWarnings += spec.Summary.WarningCount
+			summary.TotalInfo += spec.Summary.InfoCount
+		}
+	}
+
 	summary.OverallSuccess = summary.FailedResources == 0
 
 	return summary
@@ -828,6 +845,71 @@ func (r *runners) displayPreflightResults(results *PreflightLintResults) error {
 		fmt.Fprintf(r.w, "preflight specs linted: %d\n", len(results.Specs))
 		fmt.Fprintf(r.w, "preflight specs passed: %d\n", len(results.Specs)-failedSpecs)
 		fmt.Fprintf(r.w, "preflight specs failed: %d\n", failedSpecs)
+		fmt.Fprintf(r.w, "Total errors: %d\n", totalErrors)
+		fmt.Fprintf(r.w, "Total warnings: %d\n", totalWarnings)
+		fmt.Fprintf(r.w, "Total info: %d\n", totalInfo)
+
+		if failedSpecs > 0 {
+			fmt.Fprintf(r.w, "\nOverall Status: Failed\n")
+		} else {
+			fmt.Fprintf(r.w, "\nOverall Status: Passed\n")
+		}
+	}
+
+	return nil
+}
+
+// displaySupportBundleResults displays Support Bundle lint results in table format
+func (r *runners) displaySupportBundleResults(results *SupportBundleLintResults) error {
+	if results == nil || len(results.Specs) == 0 {
+		return nil
+	}
+
+	for _, spec := range results.Specs {
+		fmt.Fprintf(r.w, "==> Linting support bundle spec: %s\n\n", spec.Path)
+
+		if len(spec.Messages) == 0 {
+			fmt.Fprintf(r.w, "No issues found\n")
+		} else {
+			for _, msg := range spec.Messages {
+				if msg.Path != "" {
+					fmt.Fprintf(r.w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
+				} else {
+					fmt.Fprintf(r.w, "[%s] %s\n", msg.Severity, msg.Message)
+				}
+			}
+		}
+
+		fmt.Fprintf(r.w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
+			spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
+
+		if spec.Success {
+			fmt.Fprintf(r.w, "Status: Passed\n\n")
+		} else {
+			fmt.Fprintf(r.w, "Status: Failed\n\n")
+		}
+	}
+
+	// Print overall summary if multiple specs
+	if len(results.Specs) > 1 {
+		totalErrors := 0
+		totalWarnings := 0
+		totalInfo := 0
+		failedSpecs := 0
+
+		for _, spec := range results.Specs {
+			totalErrors += spec.Summary.ErrorCount
+			totalWarnings += spec.Summary.WarningCount
+			totalInfo += spec.Summary.InfoCount
+			if !spec.Success {
+				failedSpecs++
+			}
+		}
+
+		fmt.Fprintf(r.w, "==> Overall Summary\n")
+		fmt.Fprintf(r.w, "support bundle specs linted: %d\n", len(results.Specs))
+		fmt.Fprintf(r.w, "support bundle specs passed: %d\n", len(results.Specs)-failedSpecs)
+		fmt.Fprintf(r.w, "support bundle specs failed: %d\n", failedSpecs)
 		fmt.Fprintf(r.w, "Total errors: %d\n", totalErrors)
 		fmt.Fprintf(r.w, "Total warnings: %d\n", totalWarnings)
 		fmt.Fprintf(r.w, "Total info: %d\n", totalInfo)
@@ -986,12 +1068,43 @@ func (r *runners) writeOutputToFile(output *JSONLintOutput) error {
 		}
 	}
 
+	// Display support bundle results
+	if output.SupportBundleResults != nil && output.SupportBundleResults.Enabled {
+		for _, spec := range output.SupportBundleResults.Specs {
+			fmt.Fprintf(w, "==> Linting support bundle spec: %s\n\n", spec.Path)
+
+			if len(spec.Messages) == 0 {
+				fmt.Fprintf(w, "No issues found\n")
+			} else {
+				for _, msg := range spec.Messages {
+					if msg.Path != "" {
+						fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
+					} else {
+						fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
+					}
+				}
+			}
+
+			fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
+				spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
+
+			if spec.Success {
+				fmt.Fprintf(w, "Status: Passed\n\n")
+			} else {
+				fmt.Fprintf(w, "Status: Failed\n\n")
+			}
+		}
+	}
+
 	// Display disabled linters messages
 	if output.HelmResults != nil && !output.HelmResults.Enabled {
 		fmt.Fprintf(w, "Helm linting is disabled in .replicated config\n\n")
 	}
 	if output.PreflightResults != nil && !output.PreflightResults.Enabled {
 		fmt.Fprintf(w, "Preflight linting is disabled in .replicated config\n\n")
+	}
+	if output.SupportBundleResults != nil && !output.SupportBundleResults.Enabled {
+		fmt.Fprintf(w, "Support Bundle linting is disabled in .replicated config\n\n")
 	}
 
 	// Flush and close
