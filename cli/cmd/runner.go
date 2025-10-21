@@ -66,6 +66,7 @@ type runnerArgs struct {
 	lintReleaseChart      string
 	lintReleaseFailOn     string
 	lintVerbose           bool
+	lintOutputFile        string
 	releaseOptional       bool
 	releaseRequired       bool
 	releaseNotes          string

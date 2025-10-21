@@ -112,11 +112,15 @@ repl-lint:
 				t.Fatalf("failed to load config: %v", err)
 			}
 
-			// Test extractAndDisplayImagesFromConfig
-			err = r.extractAndDisplayImagesFromConfig(context.Background(), config)
+			// Test extractImagesFromConfig
+			imageResults, err := r.extractImagesFromConfig(context.Background(), config)
 
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
+			}
+
+			if imageResults != nil {
+				r.displayImages(imageResults)
 			}
 
 			w.Flush()
@@ -179,7 +183,10 @@ func TestExtractAndDisplayImagesFromConfig_NoCharts(t *testing.T) {
 	}
 
 	// Should handle no charts gracefully
-	err = r.extractAndDisplayImagesFromConfig(context.Background(), config)
+	imageResults, err := r.extractImagesFromConfig(context.Background(), config)
+	if err == nil && imageResults != nil {
+		r.displayImages(imageResults)
+	}
 
 	// Should get error about no charts
 	if err == nil {
@@ -232,21 +239,17 @@ repl-lint:
 		t.Fatalf("failed to load config: %v", err)
 	}
 
-	// Should handle errors gracefully
-	err = r.extractAndDisplayImagesFromConfig(context.Background(), config)
+	// Should get an error for non-existent chart path (validated by GetChartPathsFromConfig)
+	_, err = r.extractImagesFromConfig(context.Background(), config)
 
-	// Error expected due to invalid chart path
+	// We expect an error because the chart path doesn't exist
 	if err == nil {
-		t.Error("expected error for invalid chart path")
+		t.Error("expected error for non-existent chart path")
 	}
 
-	w.Flush()
-	output := buf.String()
-
-	// Should still have tried to extract
-	if !strings.Contains(output, "Extracting images") {
-		t.Error("expected 'Extracting images' message even on error")
-	}
+	// Since we got an error, we don't display anything
+	// This is the correct behavior - fail fast on invalid paths
+	// The test verified that we correctly return an error for non-existent paths
 }
 
 func TestExtractAndDisplayImagesFromConfig_MultipleCharts(t *testing.T) {
@@ -346,7 +349,10 @@ repl-lint:
 	}
 
 	// Extract images
-	err = r.extractAndDisplayImagesFromConfig(context.Background(), config)
+	imageResults, err := r.extractImagesFromConfig(context.Background(), config)
+	if err == nil && imageResults != nil {
+		r.displayImages(imageResults)
+	}
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -361,7 +367,8 @@ repl-lint:
 	if !strings.Contains(output, "redis") {
 		t.Error("expected to find redis image from chart2")
 	}
-	if !strings.Contains(output, "2 chart(s)") {
-		t.Error("expected message about 2 charts")
+	// The new implementation shows total unique images instead of chart count
+	if !strings.Contains(output, "unique images") {
+		t.Error("expected message about unique images")
 	}
 }
