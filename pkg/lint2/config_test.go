@@ -133,7 +133,7 @@ func TestGetChartPathsFromConfig_GlobExpansion(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "no charts found matching pattern",
+			errMsg:  "no directories found matching pattern",
 		},
 		{
 			name: "glob pattern in current directory",
@@ -217,12 +217,16 @@ func TestGetChartPathsFromConfig_InvalidChartsInGlob(t *testing.T) {
 		},
 	}
 
-	_, err := GetChartPathsFromConfig(config)
-	if err == nil {
-		t.Error("GetChartPathsFromConfig() should fail when glob matches invalid chart, got nil error")
+	// With the new behavior, we filter to only valid charts instead of failing
+	paths, err := GetChartPathsFromConfig(config)
+	if err != nil {
+		t.Errorf("GetChartPathsFromConfig() should succeed and filter to valid charts, got error: %v", err)
 	}
-	if !contains(err.Error(), "Chart.yaml or Chart.yml not found") {
-		t.Errorf("GetChartPathsFromConfig() error = %v, want error about Chart.yaml not found", err)
+	if len(paths) != 1 {
+		t.Errorf("GetChartPathsFromConfig() returned %d paths, want 1 (only the valid chart)", len(paths))
+	}
+	if len(paths) > 0 && paths[0] != validChartDir {
+		t.Errorf("GetChartPathsFromConfig() returned path %s, want %s", paths[0], validChartDir)
 	}
 }
 
