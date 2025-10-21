@@ -20,48 +20,26 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 		return []string{}, nil
 	}
 
-	var supportBundlePaths []string
-	seenPaths := make(map[string]bool) // For deduplication
+	var allPaths []string
+	seenPaths := make(map[string]bool) // Global deduplication across all patterns
 
-	for _, globPattern := range manifestGlobs {
-		// Expand glob pattern to concrete file paths (files only)
-		matches, err := GlobFiles(globPattern)
+	for _, pattern := range manifestGlobs {
+		// Use smart pattern discovery
+		paths, err := discoverSupportBundlePaths(pattern)
 		if err != nil {
-			return nil, fmt.Errorf("expanding glob pattern %s: %w", globPattern, err)
+			return nil, fmt.Errorf("failed to discover support bundles from pattern %s: %w", pattern, err)
 		}
 
-		for _, path := range matches {
-			// Skip hidden paths (.git, .github, etc.)
-			if isHiddenPath(path) {
-				continue
-			}
-
-			// Skip if already processed (handle overlapping globs)
-			if seenPaths[path] {
-				continue
-			}
-			seenPaths[path] = true
-
-			// Check if file is a YAML file
-			ext := filepath.Ext(path)
-			if ext != ".yaml" && ext != ".yml" {
-				continue
-			}
-
-			// Read and check if it's a support bundle spec
-			isSupportBundle, err := isSupportBundleSpec(path)
-			if err != nil {
-				// Skip files we can't read or parse - linting will catch issues later
-				continue
-			}
-
-			if isSupportBundle {
-				supportBundlePaths = append(supportBundlePaths, path)
+		// Deduplicate across patterns
+		for _, path := range paths {
+			if !seenPaths[path] {
+				seenPaths[path] = true
+				allPaths = append(allPaths, path)
 			}
 		}
 	}
 
-	return supportBundlePaths, nil
+	return allPaths, nil
 }
 
 // isHiddenPath checks if a path contains any hidden directory components (starting with .)
@@ -105,9 +83,17 @@ func isChartDirectory(dirPath string) (bool, error) {
 //   - "./charts/{app,api}/**"    (finds charts in specific subdirectories)
 //   - "./pkg/**/Chart.yaml"      (explicit Chart.yaml pattern)
 func discoverChartPaths(pattern string) ([]string, error) {
-	// Normalize pattern: strip trailing slashes to ensure consistent matching
+	// Validate: reject empty patterns
+	if pattern == "" {
+		return nil, fmt.Errorf("pattern cannot be empty")
+	}
+
+	// Preserve original for error messages
+	originalPattern := pattern
+
+	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
 	// This allows "./charts/**/" to work the same as "./charts/**"
-	pattern = strings.TrimRight(pattern, "/")
+	pattern = filepath.Clean(pattern)
 
 	var chartDirs []string
 	seenDirs := make(map[string]bool) // Deduplication
@@ -140,7 +126,7 @@ func discoverChartPaths(pattern string) ([]string, error) {
 	for _, p := range patterns {
 		matches, err := GlobFiles(p)
 		if err != nil {
-			return nil, fmt.Errorf("expanding pattern %s: %w", p, err)
+			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
 		}
 
 		// Extract parent directories (the chart directories)
@@ -219,9 +205,17 @@ func isPreflightSpec(path string) (bool, error) {
 //   - "./preflights/**/*.yaml"    (explicit YAML extension)
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
 func discoverPreflightPaths(pattern string) ([]string, error) {
-	// Normalize pattern: strip trailing slashes to ensure consistent matching
+	// Validate: reject empty patterns
+	if pattern == "" {
+		return nil, fmt.Errorf("pattern cannot be empty")
+	}
+
+	// Preserve original for error messages
+	originalPattern := pattern
+
+	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
 	// This allows "./preflights/**/" to work the same as "./preflights/**"
-	pattern = strings.TrimRight(pattern, "/")
+	pattern = filepath.Clean(pattern)
 
 	var preflightPaths []string
 	seenPaths := make(map[string]bool) // Deduplication
@@ -258,7 +252,7 @@ func discoverPreflightPaths(pattern string) ([]string, error) {
 	for _, p := range patterns {
 		matches, err := GlobFiles(p)
 		if err != nil {
-			return nil, fmt.Errorf("expanding pattern %s: %w", p, err)
+			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
 		}
 
 		// Filter to only Preflight specs
@@ -316,8 +310,12 @@ func isSupportBundleSpec(path string) (bool, error) {
 				// Reached end of file - no more documents
 				break
 			}
-			// Parse error - file is malformed, skip it gracefully
-			// Cannot continue decoding as decoder is in error state
+			// Parse error - file is malformed
+			// Fall back to simple string matching to detect if this looks like a SupportBundle
+			// This allows invalid YAML files to still be discovered and linted (consistent with preflights)
+			if bytes.Contains(data, []byte("kind: SupportBundle")) {
+				return true, nil
+			}
 			return false, nil
 		}
 
@@ -328,4 +326,92 @@ func isSupportBundleSpec(path string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+// discoverSupportBundlePaths discovers Support Bundle spec files from a glob pattern.
+// It finds all YAML files matching the pattern, then filters to only those
+// containing kind: SupportBundle.
+//
+// Supports patterns like:
+//   - "./manifests/**"             (finds all Support Bundle specs recursively)
+//   - "./manifests/**/*.yaml"      (explicit YAML extension)
+//   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
+func discoverSupportBundlePaths(pattern string) ([]string, error) {
+	// Validate: reject empty patterns
+	if pattern == "" {
+		return nil, fmt.Errorf("pattern cannot be empty")
+	}
+
+	// Preserve original for error messages
+	originalPattern := pattern
+
+	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
+	// This allows "./manifests/**/" to work the same as "./manifests/**"
+	pattern = filepath.Clean(pattern)
+
+	var supportBundlePaths []string
+	seenPaths := make(map[string]bool) // Deduplication
+
+	// Build patterns to find YAML files
+	var patterns []string
+	if strings.HasSuffix(pattern, ".yaml") || strings.HasSuffix(pattern, ".yml") {
+		// Pattern already specifies extension
+		patterns = []string{pattern}
+	} else if strings.HasSuffix(pattern, "/*") {
+		// Single-level wildcard: replace /* with /*.yaml and /*.yml
+		basePattern := strings.TrimSuffix(pattern, "/*")
+		patterns = []string{
+			filepath.Join(basePattern, "*.yaml"),
+			filepath.Join(basePattern, "*.yml"),
+		}
+	} else if strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
+		// Recursive wildcard or brace expansion - append file patterns
+		patterns = []string{
+			filepath.Join(pattern, "*.yaml"),
+			filepath.Join(pattern, "*.yml"),
+		}
+	} else {
+		// Pattern might be a single file
+		ext := filepath.Ext(pattern)
+		if ext == ".yaml" || ext == ".yml" {
+			patterns = []string{pattern}
+		} else {
+			return nil, fmt.Errorf("pattern must end with .yaml, .yml, *, or **")
+		}
+	}
+
+	// Expand patterns to find YAML files
+	for _, p := range patterns {
+		matches, err := GlobFiles(p)
+		if err != nil {
+			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
+		}
+
+		// Filter to only Support Bundle specs
+		for _, path := range matches {
+			// Skip hidden paths (.git, .github, etc.)
+			if isHiddenPath(path) {
+				continue
+			}
+
+			// Skip if already processed
+			if seenPaths[path] {
+				continue
+			}
+			seenPaths[path] = true
+
+			// Check if it's a Support Bundle spec
+			isSupportBundle, err := isSupportBundleSpec(path)
+			if err != nil {
+				// Skip files we can't read or parse
+				continue
+			}
+
+			if isSupportBundle {
+				supportBundlePaths = append(supportBundlePaths, path)
+			}
+		}
+	}
+
+	return supportBundlePaths, nil
 }

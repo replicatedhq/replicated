@@ -2048,3 +2048,176 @@ spec:
 		t.Error("isPreflightSpec() = true for nested kind, want false (only top-level kind should match)")
 	}
 }
+
+// Phase 9 Tests: Support Bundle Smart Pattern Logic
+
+func TestDiscoverSupportBundlePaths_SmartPatternRecursive(t *testing.T) {
+	// Test that recursive wildcard patterns are smart-appended with *.yaml
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+
+	// Create support bundle and K8s resources
+	bundlePath := filepath.Join(manifestsDir, "bundle.yaml")
+	createTestSupportBundle(t, bundlePath)
+	createTestK8sResource(t, filepath.Join(manifestsDir, "deployment.yaml"), "Deployment")
+
+	// User provides directory pattern without file extension
+	pattern := filepath.Join(manifestsDir, "**")
+
+	paths, err := discoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+	}
+
+	// Should find the support bundle, filter out deployment
+	want := []string{bundlePath}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverSupportBundlePaths_ExplicitPattern(t *testing.T) {
+	// Test that explicit file patterns are respected (not transformed)
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+
+	// Create support bundles with different naming
+	bundle1 := filepath.Join(manifestsDir, "support-bundle.yaml")
+	bundle2 := filepath.Join(manifestsDir, "bundle-prod.yaml")
+	bundle3 := filepath.Join(manifestsDir, "other.yaml")
+	createTestSupportBundle(t, bundle1)
+	createTestSupportBundle(t, bundle2)
+	createTestSupportBundle(t, bundle3)
+
+	// User provides custom naming pattern
+	pattern := filepath.Join(manifestsDir, "bundle-*.yaml")
+
+	paths, err := discoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+	}
+
+	// Should find only bundle-prod.yaml (custom pattern respected)
+	want := []string{bundle2}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverSupportBundlePaths_TrailingSlash(t *testing.T) {
+	// Test that trailing slashes are normalized
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+
+	bundlePath := filepath.Join(manifestsDir, "bundle.yaml")
+	createTestSupportBundle(t, bundlePath)
+
+	// Pattern with trailing slash
+	pattern := filepath.Join(manifestsDir, "**") + "/"
+
+	paths, err := discoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverSupportBundlePaths() error = %v for pattern with trailing slash", err)
+	}
+
+	want := []string{bundlePath}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverSupportBundlePaths_EmptyPattern(t *testing.T) {
+	// Test that empty patterns error
+	pattern := ""
+
+	_, err := discoverSupportBundlePaths(pattern)
+	if err == nil {
+		t.Error("discoverSupportBundlePaths() expected error for empty pattern, got nil")
+	}
+	if err != nil && err.Error() != "pattern cannot be empty" {
+		t.Errorf("discoverSupportBundlePaths() error = %q, want %q", err.Error(), "pattern cannot be empty")
+	}
+}
+
+func TestDiscoverSupportBundlePaths_SingleLevel(t *testing.T) {
+	// Test single-level wildcard pattern
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+
+	// Create support bundle at root level
+	rootBundle := filepath.Join(manifestsDir, "bundle.yaml")
+	createTestSupportBundle(t, rootBundle)
+
+	// Create support bundle in subdirectory (should NOT be found with /*)
+	subdirBundle := filepath.Join(manifestsDir, "subdir", "bundle.yaml")
+	createTestSupportBundle(t, subdirBundle)
+
+	// Single-level wildcard
+	pattern := filepath.Join(manifestsDir, "/*")
+
+	paths, err := discoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+	}
+
+	// Should find only root level
+	want := []string{rootBundle}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverSupportBundlePaths_InvalidPattern(t *testing.T) {
+	// Test that patterns without extension or wildcard error
+	tmpDir := t.TempDir()
+
+	pattern := filepath.Join(tmpDir, "manifests", "check")
+
+	_, err := discoverSupportBundlePaths(pattern)
+	if err == nil {
+		t.Error("discoverSupportBundlePaths() expected error for pattern without extension or wildcard")
+	}
+	if err != nil && err.Error() != "pattern must end with .yaml, .yml, *, or **" {
+		t.Errorf("discoverSupportBundlePaths() error = %q, want error about pattern requirements", err.Error())
+	}
+}
+
+func TestDiscoverSupportBundlesFromManifests_SmartPatternConsistency(t *testing.T) {
+	// Test that DiscoverSupportBundlesFromManifests uses smart patterns
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+
+	bundlePath := filepath.Join(manifestsDir, "bundle.yaml")
+	createTestSupportBundle(t, bundlePath)
+	createTestK8sResource(t, filepath.Join(manifestsDir, "deployment.yaml"), "Deployment")
+
+	// Use directory pattern (should be smart-appended)
+	patterns := []string{filepath.Join(manifestsDir, "**")}
+
+	paths, err := DiscoverSupportBundlesFromManifests(patterns)
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlesFromManifests() error = %v", err)
+	}
+
+	// Should find support bundle, filter out deployment
+	want := []string{bundlePath}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestIsSupportBundleSpec_FallbackStringMatching(t *testing.T) {
+	// Test that malformed YAML with "kind: SupportBundle" is still discovered
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "malformed.yaml")
+
+	// Malformed YAML but contains kind: SupportBundle
+	content := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: [invalid yaml - unclosed bracket
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := isSupportBundleSpec(path)
+	if err != nil {
+		t.Fatalf("isSupportBundleSpec() error = %v", err)
+	}
+	if !got {
+		t.Error("isSupportBundleSpec() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
+	}
+}
