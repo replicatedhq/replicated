@@ -85,22 +85,14 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		return defaultConfig, nil
 	}
 
-<<<<<<< HEAD
-	// If only one config, parse and apply defaults
-=======
 	// If only one config, parse it and apply defaults
->>>>>>> 3a40e9af (properly detects all support bundles and preflights without .replicated)
 	if len(configPaths) == 1 {
 		config, err := p.ParseConfigFile(configPaths[0])
 		if err != nil {
 			return nil, err
 		}
-<<<<<<< HEAD
 		// Apply defaults to single config
 		p.ApplyDefaults(config)
-=======
-		p.applyDefaults(config)
->>>>>>> 3a40e9af (properly detects all support bundles and preflights without .replicated)
 		return config, nil
 	}
 
