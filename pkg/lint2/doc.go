@@ -15,6 +15,12 @@
 //   - Output parsing into structured results
 //   - Support for custom tool versions
 //
+// Glob pattern support (powered by doublestar library):
+//   - Basic patterns: * (any chars), ? (one char), [abc] (char class)
+//   - Recursive matching: ** (matches zero or more directories)
+//   - Brace expansion: {alt1,alt2} (matches alternatives)
+//   - Pattern validation: Early syntax checking during config parse
+//
 // Helm-specific:
 //   - Chart directory validation (Chart.yaml presence)
 //   - Multi-chart linting with summary results
