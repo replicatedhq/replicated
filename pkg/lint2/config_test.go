@@ -192,6 +192,7 @@ func TestGetChartPathsFromConfig_GlobExpansion(t *testing.T) {
 
 func TestGetChartPathsFromConfig_InvalidChartsInGlob(t *testing.T) {
 	// Create directory with mix of valid and invalid charts
+	// With content-aware discovery, invalid directories should be filtered out automatically
 	tmpDir := t.TempDir()
 	chartsDir := filepath.Join(tmpDir, "charts")
 
@@ -205,7 +206,7 @@ func TestGetChartPathsFromConfig_InvalidChartsInGlob(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Invalid chart (no Chart.yaml)
+	// Invalid chart (no Chart.yaml) - should be silently filtered out
 	invalidChartDir := filepath.Join(chartsDir, "invalid-chart")
 	if err := os.MkdirAll(invalidChartDir, 0755); err != nil {
 		t.Fatal(err)
@@ -217,12 +218,16 @@ func TestGetChartPathsFromConfig_InvalidChartsInGlob(t *testing.T) {
 		},
 	}
 
-	_, err := GetChartPathsFromConfig(config)
-	if err == nil {
-		t.Error("GetChartPathsFromConfig() should fail when glob matches invalid chart, got nil error")
+	// Content-aware discovery should find only the valid chart
+	paths, err := GetChartPathsFromConfig(config)
+	if err != nil {
+		t.Errorf("GetChartPathsFromConfig() unexpected error: %v", err)
 	}
-	if !contains(err.Error(), "Chart.yaml or Chart.yml not found") {
-		t.Errorf("GetChartPathsFromConfig() error = %v, want error about Chart.yaml not found", err)
+	if len(paths) != 1 {
+		t.Errorf("GetChartPathsFromConfig() returned %d paths, want 1", len(paths))
+	}
+	if len(paths) > 0 && paths[0] != validChartDir {
+		t.Errorf("GetChartPathsFromConfig() returned path %q, want %q", paths[0], validChartDir)
 	}
 }
 
