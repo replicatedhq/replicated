@@ -1,7 +1,7 @@
 apiVersion: troubleshoot.sh/v1beta2
-kind: Preflight
+kind: SupportBundle
 metadata:
-  name: valid-preflight-spec
+  name: valid-support-bundle-spec
 spec:
   collectors:
     - clusterInfo: {}

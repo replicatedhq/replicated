@@ -1,8 +1,0 @@
-apiVersion: troubleshoot.sh/v1beta2
-kind: Preflight
-metadata:
-  name: missing-analyzers
-spec:
-  collectors:
-    - clusterInfo: {}
-  analyzers: []

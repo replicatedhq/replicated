@@ -44,7 +44,7 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 			return nil, err
 		}
 		// Apply defaults for single-file case
-		p.applyDefaults(config)
+		p.ApplyDefaults(config)
 		return config, nil
 	}
 
@@ -103,7 +103,7 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	merged := p.mergeConfigs(configs)
 
 	// Apply defaults to merged config
-	p.applyDefaults(merged)
+	p.ApplyDefaults(merged)
 
 	// Deduplicate resources (charts, preflights, manifests)
 	p.deduplicateResources(merged)
@@ -246,12 +246,12 @@ func (p *ConfigParser) DefaultConfig() *Config {
 		},
 	}
 
-	p.applyDefaults(config)
+	p.ApplyDefaults(config)
 	return config
 }
 
-// applyDefaults fills in default values for missing fields
-func (p *ConfigParser) applyDefaults(config *Config) {
+// ApplyDefaults fills in default values for missing fields
+func (p *ConfigParser) ApplyDefaults(config *Config) {
 	// Initialize lint config if nil
 	if config.ReplLint == nil {
 		config.ReplLint = &ReplLintConfig{

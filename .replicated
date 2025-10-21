@@ -1,0 +1,8 @@
+charts: []
+repl-lint:
+  linters:
+    helm: {}
+    preflight:
+      disabled: true
+    support-bundle:
+      disabled: true
