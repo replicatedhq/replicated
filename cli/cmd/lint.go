@@ -295,7 +295,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (bool, error) {
+func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (*HelmLintResults, error) {
 	// Get helm version from config, default to "latest" if not specified
 	helmVersion := "latest"
 	if config.ReplLint.Tools != nil {
@@ -342,7 +342,7 @@ func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (bool
 	return results, nil
 }
 
-func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
+func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (*PreflightLintResults, error) {
 	// Get preflight version from config, default to "latest" if not specified
 	preflightVersion := "latest"
 	if config.ReplLint.Tools != nil {
@@ -389,7 +389,7 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 	return results, nil
 }
 
-func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
+func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (*SupportBundleLintResults, error) {
 	// Get support-bundle version from config, default to "latest" if not specified
 	sbVersion := "latest"
 	if config.ReplLint.Tools != nil {
