@@ -141,5 +141,14 @@ func validatePreflightPath(path string) error {
 		return fmt.Errorf("file must have .yaml or .yml extension")
 	}
 
+	// Check if file actually contains kind: Preflight
+	isPreflight, err := isPreflightSpec(path)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+	if !isPreflight {
+		return fmt.Errorf("file does not contain kind: Preflight (not a valid Preflight spec)")
+	}
+
 	return nil
 }

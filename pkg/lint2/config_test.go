@@ -962,3 +962,176 @@ func TestGetChartPathsFromConfig_BraceExpansion(t *testing.T) {
 		t.Error("web chart should NOT be in results (not in brace expansion)")
 	}
 }
+
+func TestGetPreflightPathsFromConfig_ExplicitPathNotPreflight(t *testing.T) {
+	// Test that explicit paths fail loudly if they're not actually Preflight specs
+	tmpDir := t.TempDir()
+
+	// Create a YAML file that's NOT a Preflight
+	notAPreflightPath := filepath.Join(tmpDir, "deployment.yaml")
+	deploymentContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  replicas: 1
+`
+	if err := os.WriteFile(notAPreflightPath, []byte(deploymentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	config := &tools.Config{
+		Preflights: []tools.PreflightConfig{
+			{Path: notAPreflightPath},
+		},
+	}
+
+	_, err := GetPreflightPathsFromConfig(config)
+	if err == nil {
+		t.Error("GetPreflightPathsFromConfig() should error for explicit path that's not a Preflight, got nil")
+	}
+	if err != nil && !contains(err.Error(), "does not contain kind: Preflight") {
+		t.Errorf("GetPreflightPathsFromConfig() error = %v, want error mentioning 'does not contain kind: Preflight'", err)
+	}
+}
+
+func TestGetPreflightPathsFromConfig_ExplicitPathValidPreflight(t *testing.T) {
+	// Test that explicit paths succeed for valid Preflight specs
+	tmpDir := t.TempDir()
+
+	// Create a valid Preflight spec
+	preflightPath := filepath.Join(tmpDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(preflightPath, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	config := &tools.Config{
+		Preflights: []tools.PreflightConfig{
+			{Path: preflightPath},
+		},
+	}
+
+	paths, err := GetPreflightPathsFromConfig(config)
+	if err != nil {
+		t.Errorf("GetPreflightPathsFromConfig() unexpected error = %v", err)
+	}
+	if len(paths) != 1 {
+		t.Errorf("GetPreflightPathsFromConfig() returned %d paths, want 1", len(paths))
+	}
+	if len(paths) > 0 && paths[0] != preflightPath {
+		t.Errorf("GetPreflightPathsFromConfig() returned path %q, want %q", paths[0], preflightPath)
+	}
+}
+
+func TestDiscoverSupportBundlesFromManifests_ExplicitPathNotSupportBundle(t *testing.T) {
+	// Test that explicit paths fail loudly if they're not actually Support Bundle specs
+	tmpDir := t.TempDir()
+
+	// Create a YAML file that's NOT a Support Bundle
+	notABundlePath := filepath.Join(tmpDir, "deployment.yaml")
+	deploymentContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  replicas: 1
+`
+	if err := os.WriteFile(notABundlePath, []byte(deploymentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := DiscoverSupportBundlesFromManifests([]string{notABundlePath})
+	if err == nil {
+		t.Error("DiscoverSupportBundlesFromManifests() should error for explicit path that's not a Support Bundle, got nil")
+	}
+	if err != nil && !contains(err.Error(), "does not contain kind: SupportBundle") {
+		t.Errorf("DiscoverSupportBundlesFromManifests() error = %v, want error mentioning 'does not contain kind: SupportBundle'", err)
+	}
+}
+
+func TestDiscoverSupportBundlesFromManifests_ExplicitPathValidSupportBundle(t *testing.T) {
+	// Test that explicit paths succeed for valid Support Bundle specs
+	tmpDir := t.TempDir()
+
+	// Create a valid Support Bundle spec
+	bundlePath := filepath.Join(tmpDir, "support-bundle.yaml")
+	bundleContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(bundlePath, []byte(bundleContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	paths, err := DiscoverSupportBundlesFromManifests([]string{bundlePath})
+	if err != nil {
+		t.Errorf("DiscoverSupportBundlesFromManifests() unexpected error = %v", err)
+	}
+	if len(paths) != 1 {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned %d paths, want 1", len(paths))
+	}
+	if len(paths) > 0 && paths[0] != bundlePath {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned path %q, want %q", paths[0], bundlePath)
+	}
+}
+
+func TestDiscoverSupportBundlesFromManifests_GlobPatternFiltersCorrectly(t *testing.T) {
+	// Test that glob patterns still use silent filtering (don't error on non-bundles)
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a Support Bundle spec
+	bundlePath := filepath.Join(manifestsDir, "support-bundle.yaml")
+	bundleContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(bundlePath, []byte(bundleContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a Deployment (NOT a Support Bundle) - should be filtered out, not error
+	deploymentPath := filepath.Join(manifestsDir, "deployment.yaml")
+	deploymentContent := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  replicas: 1
+`
+	if err := os.WriteFile(deploymentPath, []byte(deploymentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Use glob pattern - should filter silently
+	pattern := filepath.Join(manifestsDir, "*.yaml")
+	paths, err := DiscoverSupportBundlesFromManifests([]string{pattern})
+	if err != nil {
+		t.Errorf("DiscoverSupportBundlesFromManifests() unexpected error = %v", err)
+	}
+
+	// Should only find the support bundle, not the deployment
+	if len(paths) != 1 {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned %d paths, want 1 (deployment should be filtered out)", len(paths))
+		t.Logf("Paths: %v", paths)
+	}
+	if len(paths) > 0 && paths[0] != bundlePath {
+		t.Errorf("DiscoverSupportBundlesFromManifests() returned path %q, want %q", paths[0], bundlePath)
+	}
+}

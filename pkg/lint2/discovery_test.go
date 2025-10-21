@@ -2160,17 +2160,19 @@ func TestDiscoverSupportBundlePaths_SingleLevel(t *testing.T) {
 }
 
 func TestDiscoverSupportBundlePaths_InvalidPattern(t *testing.T) {
-	// Test that patterns without extension or wildcard error
+	// Test that paths without extension or wildcard error
 	tmpDir := t.TempDir()
 
 	pattern := filepath.Join(tmpDir, "manifests", "check")
 
 	_, err := discoverSupportBundlePaths(pattern)
 	if err == nil {
-		t.Error("discoverSupportBundlePaths() expected error for pattern without extension or wildcard")
+		t.Error("discoverSupportBundlePaths() expected error for path without extension or wildcard")
 	}
-	if err != nil && err.Error() != "pattern must end with .yaml, .yml, *, or **" {
-		t.Errorf("discoverSupportBundlePaths() error = %q, want error about pattern requirements", err.Error())
+	// Since this pattern has no wildcards, it's treated as an explicit path
+	// and must have .yaml or .yml extension
+	if err != nil && err.Error() != "file must have .yaml or .yml extension" {
+		t.Errorf("discoverSupportBundlePaths() error = %q, want error about file extension", err.Error())
 	}
 }
 

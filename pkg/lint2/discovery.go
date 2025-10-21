@@ -354,6 +354,44 @@ func discoverSupportBundlePaths(pattern string) ([]string, error) {
 	// This allows "./manifests/**/" to work the same as "./manifests/**"
 	pattern = filepath.Clean(pattern)
 
+	// Check if this is an explicit path (no glob wildcards) vs a pattern
+	isExplicitPath := !ContainsGlob(pattern)
+
+	// For explicit paths: validate strictly (fail loudly if not a support bundle)
+	// For glob patterns: filter silently (allow mixed content directories)
+	if isExplicitPath {
+		// Check file extension
+		ext := filepath.Ext(pattern)
+		if ext != ".yaml" && ext != ".yml" {
+			return nil, fmt.Errorf("file must have .yaml or .yml extension")
+		}
+
+		// Check if file exists
+		info, err := os.Stat(pattern)
+		if err != nil {
+			if os.IsNotExist(err) {
+				return nil, fmt.Errorf("path does not exist")
+			}
+			return nil, fmt.Errorf("failed to stat path: %w", err)
+		}
+
+		if info.IsDir() {
+			return nil, fmt.Errorf("path is a directory, expected a file")
+		}
+
+		// Check if file contains kind: SupportBundle
+		isSupportBundle, err := isSupportBundleSpec(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read file: %w", err)
+		}
+		if !isSupportBundle {
+			return nil, fmt.Errorf("file does not contain kind: SupportBundle (not a valid Support Bundle spec)")
+		}
+
+		return []string{pattern}, nil
+	}
+
+	// Pattern contains wildcards - use content-aware filtering
 	var supportBundlePaths []string
 	seenPaths := make(map[string]bool) // Deduplication
 
