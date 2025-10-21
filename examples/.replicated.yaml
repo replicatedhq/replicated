@@ -4,19 +4,19 @@ promoteToChannelIds: []
 promoteToChannelNames: []
 charts: [
   {
-    path: "../pkg/imageextract/testdata/helm-chart",
+    path: "./helm-chart",
     chartVersion: "",
     appVersion: "",
   },
 ]
 preflights: [
   {
-      path: "./preflights/stuff",
+      path: "./preflights/**",
       valuesPath: "./chart/something", # directory to corresponding helm chart
   }
 ]
 releaseLabel: ""  ## some sort of semver pattern?
-manifests: ["replicated/**/*.yaml"]
+manifests: ["./support-bundles/**"]
 repl-lint:
   version: 1
   linters:
@@ -26,10 +26,6 @@ repl-lint:
       disabled: false
     support-bundle:
       disabled: false
-    embedded-cluster:
-      disabled: true
-    kots:
-      disabled: true
   tools:
     helm: "3.19.0"
     preflight: "0.123.9"
