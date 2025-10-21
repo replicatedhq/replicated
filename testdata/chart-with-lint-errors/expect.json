@@ -1,0 +1,10 @@
+{
+  "lintMessages": [
+    {
+      "severity": "INFO",
+      "path": "Chart.yaml",
+      "message": "icon is recommended"
+    }
+  ]
+}
+

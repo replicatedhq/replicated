@@ -1,0 +1,16 @@
+appSlug: "chart-with-lint-errors"
+charts: [
+  {
+    path: "./charts/broken-chart"
+  },
+]
+repl-lint:
+  version: 1
+  linters:
+    helm:
+      disabled: false
+    preflight:
+      disabled: false
+    support-bundle:
+      disabled: true
+

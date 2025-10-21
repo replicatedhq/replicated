@@ -1,0 +1,7 @@
+apiVersion: v2
+name: broken-chart
+description: A Helm chart with intentional linting errors
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
