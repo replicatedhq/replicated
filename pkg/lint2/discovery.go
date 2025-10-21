@@ -12,6 +12,153 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DiscoverHelmChartsInDirectory recursively searches for Helm charts in the given directory.
+// A directory is considered a Helm chart if it contains a Chart.yaml or Chart.yml file.
+func DiscoverHelmChartsInDirectory(rootDir string) ([]string, error) {
+	var chartPaths []string
+
+	// Resolve to absolute path for consistent comparisons
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return nil, fmt.Errorf("resolving root directory: %w", err)
+	}
+
+	err = filepath.Walk(absRootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// Skip directories we can't access
+			return nil
+		}
+
+		// Skip hidden directories (like .git), but not the root directory
+		if info.IsDir() && path != absRootDir && len(info.Name()) > 0 && info.Name()[0] == '.' {
+			return filepath.SkipDir
+		}
+
+		// Check if this is a Chart.yaml or Chart.yml file
+		if !info.IsDir() && (info.Name() == "Chart.yaml" || info.Name() == "Chart.yml") {
+			// Add the directory containing the Chart.yaml, not the file itself
+			chartDir := filepath.Dir(path)
+			chartPaths = append(chartPaths, chartDir)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("walking directory tree: %w", err)
+	}
+
+	return chartPaths, nil
+}
+
+// DiscoverPreflightsInDirectory recursively searches for Preflight specs in the given directory.
+// A file is considered a Preflight spec if it has kind: Preflight.
+func DiscoverPreflightsInDirectory(rootDir string) ([]string, error) {
+	var preflightPaths []string
+
+	// Resolve to absolute path for consistent comparisons
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return nil, fmt.Errorf("resolving root directory: %w", err)
+	}
+
+	err = filepath.Walk(absRootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// Skip files/directories we can't access
+			return nil
+		}
+
+		// Skip hidden directories (like .git), but not the root directory
+		if info.IsDir() && path != absRootDir && len(info.Name()) > 0 && info.Name()[0] == '.' {
+			return filepath.SkipDir
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Check if file is a YAML file
+		ext := filepath.Ext(path)
+		if ext != ".yaml" && ext != ".yml" {
+			return nil
+		}
+
+		// Check if it's a preflight spec
+		isPreflight, err := isPreflightSpec(path)
+		if err != nil {
+			// Skip files we can't read or parse
+			return nil
+		}
+
+		if isPreflight {
+			preflightPaths = append(preflightPaths, path)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("walking directory tree: %w", err)
+	}
+
+	return preflightPaths, nil
+}
+
+// DiscoverSupportBundlesInDirectory recursively searches for SupportBundle specs in the given directory.
+// A file is considered a SupportBundle spec if it has kind: SupportBundle.
+func DiscoverSupportBundlesInDirectory(rootDir string) ([]string, error) {
+	var supportBundlePaths []string
+
+	// Resolve to absolute path for consistent comparisons
+	absRootDir, err := filepath.Abs(rootDir)
+	if err != nil {
+		return nil, fmt.Errorf("resolving root directory: %w", err)
+	}
+
+	err = filepath.Walk(absRootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// Skip files/directories we can't access
+			return nil
+		}
+
+		// Skip hidden directories (like .git), but not the root directory
+		if info.IsDir() && path != absRootDir && len(info.Name()) > 0 && info.Name()[0] == '.' {
+			return filepath.SkipDir
+		}
+
+		// Skip directories
+		if info.IsDir() {
+			return nil
+		}
+
+		// Check if file is a YAML file
+		ext := filepath.Ext(path)
+		if ext != ".yaml" && ext != ".yml" {
+			return nil
+		}
+
+		// Check if it's a support bundle spec
+		isSupportBundle, err := isSupportBundleSpec(path)
+		if err != nil {
+			// Skip files we can't read or parse
+			return nil
+		}
+
+		if isSupportBundle {
+			supportBundlePaths = append(supportBundlePaths, path)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("walking directory tree: %w", err)
+	}
+
+	return supportBundlePaths, nil
+}
+
 // DiscoverSupportBundlesFromManifests discovers support bundle spec files from manifest glob patterns.
 // It expands the glob patterns, reads each YAML file, and identifies files containing kind: SupportBundle.
 // This allows support bundles to be co-located with other Kubernetes manifests without explicit configuration.
@@ -287,9 +434,12 @@ func discoverPreflightPaths(pattern string) ([]string, error) {
 	return preflightPaths, nil
 }
 
+// (duplicate isPreflightSpec removed)
+
 // isSupportBundleSpec checks if a YAML file contains a SupportBundle kind.
 // Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
 // handles document separators (---) even when they appear inside strings or block scalars.
+// For files with syntax errors, falls back to simple string matching to detect the kind.
 func isSupportBundleSpec(path string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

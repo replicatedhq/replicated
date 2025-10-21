@@ -21,29 +21,9 @@ import (
 
 func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "lint",
-		Short: "Lint Helm charts, Preflight specs, and Support Bundle specs",
-		Long: `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file.
-
-This command reads paths from the .replicated config and executes linting locally 
-on each resource. Use --verbose to also display extracted container images.`,
-		Example: `  # Lint with default table output
-  replicated lint
-
-  # Output JSON to stdout
-  replicated lint --format json
-
-  # Save results to file (writes to both stdout and file)
-  replicated lint --output results.txt
-
-  # Save JSON results to file
-  replicated lint --format json --output results.json
-
-  # Use in CI/CD pipelines
-  replicated lint --format json | jq '.summary.overall_success'
-
-  # Verbose mode with image extraction
-  replicated lint --verbose --format json`,
+		Use:          "lint",
+		Short:        "Lint Helm charts, Preflight specs, and Support Bundle specs",
+		Long:         `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file. If no .replicated config is found, this command automatically discovers and lints all resources in the current directory. Use --verbose to also display extracted container images.`,
 		SilenceUsage: true,
 	}
 
@@ -161,6 +141,56 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
 	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, "v0.90.0") // TODO: Get actual CLI version
+
+	// Check if we're in auto-discovery mode (no charts/preflights/manifests configured)
+	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
+
+	if autoDiscoveryMode {
+		fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
+		r.w.Flush()
+
+		// Auto-discover Helm charts
+		chartPaths, err := lint2.DiscoverHelmChartsInDirectory(".")
+		if err != nil {
+			return errors.Wrap(err, "failed to discover helm charts")
+		}
+		for _, chartPath := range chartPaths {
+			config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
+		}
+
+		// Auto-discover Preflight specs
+		preflightPaths, err := lint2.DiscoverPreflightsInDirectory(".")
+		if err != nil {
+			return errors.Wrap(err, "failed to discover preflight specs")
+		}
+		for _, preflightPath := range preflightPaths {
+			config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
+		}
+
+		// Auto-discover Support Bundle specs
+		sbPaths, err := lint2.DiscoverSupportBundlesInDirectory(".")
+		if err != nil {
+			return errors.Wrap(err, "failed to discover support bundle specs")
+		}
+		// Convert to manifests glob patterns for compatibility
+		for _, sbPath := range sbPaths {
+			config.Manifests = append(config.Manifests, sbPath)
+		}
+
+		// Print what was discovered
+		fmt.Fprintf(r.w, "Discovered resources:\n")
+		fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
+		fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
+		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n\n", len(sbPaths))
+		r.w.Flush()
+
+		// If nothing was found, exit early
+		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
+			r.w.Flush()
+			return nil
+		}
+	}
 
 	// Extract and display images if verbose mode is enabled
 	if r.args.lintVerbose {
