@@ -107,7 +107,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
 
-	// Resolve all tool versions
+	// Resolve all tool versions (including "latest" to actual versions)
 	resolver := tools.NewResolver()
 
 	// Get Helm version from config and resolve if needed
