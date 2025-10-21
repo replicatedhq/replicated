@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -25,19 +24,16 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	for _, chartConfig := range chartConfigs {
 		// Check if path contains glob pattern
 		if containsGlob(chartConfig.Path) {
-			matches, err := filepath.Glob(chartConfig.Path)
+			// Use content-aware discovery to find charts
+			matches, err := discoverChartPaths(chartConfig.Path)
 			if err != nil {
-				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", chartConfig.Path, err)
+				return nil, fmt.Errorf("failed to discover charts from pattern %s: %w", chartConfig.Path, err)
 			}
 			if len(matches) == 0 {
+				// Error if pattern matches nothing - this catches typos and invalid patterns
 				return nil, fmt.Errorf("no charts found matching pattern: %s", chartConfig.Path)
 			}
-			// Validate each matched path
-			for _, match := range matches {
-				if err := validateChartPath(match); err != nil {
-					return nil, fmt.Errorf("invalid chart path %s: %w", match, err)
-				}
-			}
+			// All matches are already validated by discoverChartPaths
 			paths = append(paths, matches...)
 		} else {
 			// Validate single path
@@ -52,8 +48,9 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 }
 
 // containsGlob checks if a path contains glob wildcards
+// Calls exported ContainsGlob for consistency
 func containsGlob(path string) bool {
-	return strings.ContainsAny(path, "*?[")
+	return ContainsGlob(path)
 }
 
 // validateChartPath checks if a path is a valid Helm chart directory
@@ -100,19 +97,16 @@ func expandPreflightPaths(preflightConfigs []tools.PreflightConfig) ([]string, e
 	for _, preflightConfig := range preflightConfigs {
 		// Check if path contains glob pattern
 		if containsGlob(preflightConfig.Path) {
-			matches, err := filepath.Glob(preflightConfig.Path)
+			// Use content-aware discovery to find preflights
+			matches, err := discoverPreflightPaths(preflightConfig.Path)
 			if err != nil {
-				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", preflightConfig.Path, err)
+				return nil, fmt.Errorf("failed to discover preflights from pattern %s: %w", preflightConfig.Path, err)
 			}
 			if len(matches) == 0 {
+				// Error if pattern matches nothing - this catches typos and invalid patterns
 				return nil, fmt.Errorf("no preflight specs found matching pattern: %s", preflightConfig.Path)
 			}
-			// Validate each matched path
-			for _, match := range matches {
-				if err := validatePreflightPath(match); err != nil {
-					return nil, fmt.Errorf("invalid preflight spec path %s: %w", match, err)
-				}
-			}
+			// All matches are already validated by discoverPreflightPaths
 			paths = append(paths, matches...)
 		} else {
 			// Validate single path
@@ -145,6 +139,15 @@ func validatePreflightPath(path string) error {
 	ext := filepath.Ext(path)
 	if ext != ".yaml" && ext != ".yml" {
 		return fmt.Errorf("file must have .yaml or .yml extension")
+	}
+
+	// Check if file actually contains kind: Preflight
+	isPreflight, err := isPreflightSpec(path)
+	if err != nil {
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+	if !isPreflight {
+		return fmt.Errorf("file does not contain kind: Preflight (not a valid Preflight spec)")
 	}
 
 	return nil

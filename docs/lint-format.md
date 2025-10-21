@@ -42,7 +42,7 @@ Notes:
     },
     {
         path: "./chart/new-chart/*",
-        chartVersion:,
+        chartVersion: "",
         appVersion: "",
     }
   ]
@@ -77,6 +77,63 @@ Notes:
             preflight: "0.123.9"
             support-bundle: "0.123.9"
 ```
+
+## Glob Pattern Support
+
+The `replicated lint` command supports glob patterns for discovering files. This allows you to lint multiple charts, preflights, or manifests with a single pattern.
+
+### Supported Patterns
+
+- `*` - Matches any sequence of characters in a single directory level
+- `**` - Matches zero or more directories recursively
+- `?` - Matches any single character
+- `[abc]` - Matches any character in the brackets
+- `[a-z]` - Matches any character in the range
+- `{alt1,alt2}` - Matches any of the alternatives (brace expansion)
+
+### Examples
+
+**Helm Charts:**
+```yaml
+charts:
+  - path: "./charts/*"                    # All charts in charts/
+  - path: "./charts/{app,api,web}"        # Specific charts only
+  - path: "./environments/*/charts/*"     # Charts in any environment
+```
+
+**Preflights:**
+```yaml
+preflights:
+  - path: "./preflights/**/*.yaml"        # All YAML files recursively
+  - path: "./checks/{basic,advanced}.yaml" # Specific check files
+```
+
+**Manifests (Support Bundles):**
+```yaml
+manifests:
+  - "./k8s/**/*.yaml"                     # All YAML in k8s/, recursively
+  - "./manifests/{dev,staging,prod}/**/*" # Multiple environments
+```
+
+### Important Notes
+
+**Recursive Matching (`**`):**
+- `**` matches zero or more directories
+- `./manifests/**/*.yaml` matches:
+  - `manifests/app.yaml` (no subdirectory)
+  - `manifests/base/deployment.yaml` (one level)
+  - `manifests/overlays/prod/patch.yaml` (two levels)
+  - Any depth recursively
+
+**Brace Expansion (`{}`):**
+- `{a,b,c}` expands to multiple separate patterns
+- Useful for matching specific directories or files
+- Cannot be nested: `{a,{b,c}}` is not supported
+
+**Hidden Files:**
+- Unlike shell behavior, glob patterns match hidden files (files starting with `.`)
+- `*.yaml` WILL match `.hidden.yaml`
+- To exclude hidden files, use explicit patterns that don't start with `.`
 
 Inline directive examples:
 - Ignore next line:

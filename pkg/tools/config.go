@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"gopkg.in/yaml.v3"
 )
 
@@ -312,6 +313,11 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		}
 	}
 
+	// Validate glob patterns in all paths
+	if err := p.validateGlobPatterns(config); err != nil {
+		return err
+	}
+
 	// Skip validation if no lint config
 	if config.ReplLint == nil {
 		return nil
@@ -330,6 +336,44 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 	}
 
 	return nil
+}
+
+// validateGlobPatterns validates all glob patterns in the config for correct syntax.
+// This provides early validation before attempting to expand patterns during linting.
+func (p *ConfigParser) validateGlobPatterns(config *Config) error {
+	// Validate chart paths
+	for i, chart := range config.Charts {
+		if containsGlob(chart.Path) {
+			if !doublestar.ValidatePattern(chart.Path) {
+				return fmt.Errorf("invalid glob pattern in charts[%d].path %q: invalid glob syntax", i, chart.Path)
+			}
+		}
+	}
+
+	// Validate preflight paths
+	for i, preflight := range config.Preflights {
+		if containsGlob(preflight.Path) {
+			if !doublestar.ValidatePattern(preflight.Path) {
+				return fmt.Errorf("invalid glob pattern in preflights[%d].path %q: invalid glob syntax", i, preflight.Path)
+			}
+		}
+	}
+
+	// Validate manifest patterns
+	for i, manifest := range config.Manifests {
+		if containsGlob(manifest) {
+			if !doublestar.ValidatePattern(manifest) {
+				return fmt.Errorf("invalid glob pattern in manifests[%d] %q: invalid glob syntax", i, manifest)
+			}
+		}
+	}
+
+	return nil
+}
+
+// containsGlob checks if a path contains glob wildcards (* ? [ {)
+func containsGlob(path string) bool {
+	return strings.ContainsAny(path, "*?[{")
 }
 
 // GetToolVersions extracts the tool versions from a config
