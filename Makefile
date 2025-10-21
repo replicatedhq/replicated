@@ -18,6 +18,10 @@ test-pact:
 test-integration: build
 	go test -v ./pkg/integration/...
 
+.PHONY: test-lint
+test-lint: build
+	./scripts/test-lint.sh
+
 .PHONY: publish-pact
 publish-pact:
 	pact-broker publish ./pacts \

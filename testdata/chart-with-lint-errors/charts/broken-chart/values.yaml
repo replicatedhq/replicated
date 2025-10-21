@@ -1,0 +1,7 @@
+# This values file is intentionally incomplete to trigger lint warnings
+replicaCount: 1
+
+# Missing image.tag will cause warnings
+image:
+  repository: nginx
+
