@@ -491,6 +491,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
 
+	// Add config command with init subcommand
+	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)
+	runCmds.InitInitCommand(configCmd)
+	configCmd.PersistentPreRunE = preRunSetupAPIs
+
 	runCmds.rootCmd.AddCommand(Version())
 
 	return runCmds.rootCmd.Execute()
