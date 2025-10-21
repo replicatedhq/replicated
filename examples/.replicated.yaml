@@ -4,15 +4,10 @@ promoteToChannelIds: []
 promoteToChannelNames: []
 charts: [
   {
-    path: "./chart/something",
+    path: "../pkg/imageextract/testdata/helm-chart",
     chartVersion: "",
     appVersion: "",
   },
-  {
-      path: "./chart/new-chart/*",
-      chartVersion: "",
-      appVersion: "",
-  }
 ]
 preflights: [
   {
@@ -27,19 +22,14 @@ repl-lint:
   linters:
     helm:
       disabled: false
-      strict: false
     preflight:
       disabled: false
-      strict: true
     support-bundle:
       disabled: false
-      strict: false
     embedded-cluster:
       disabled: true
-      strict: false
     kots:
       disabled: true
-      strict: false
   tools:
     helm: "3.19.0"
     preflight: "0.123.9"
