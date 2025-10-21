@@ -23,8 +23,8 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 	seenPaths := make(map[string]bool) // For deduplication
 
 	for _, globPattern := range manifestGlobs {
-		// Expand glob pattern to concrete file paths
-		matches, err := filepath.Glob(globPattern)
+		// Expand glob pattern to concrete file paths (files only)
+		matches, err := GlobFiles(globPattern)
 		if err != nil {
 			return nil, fmt.Errorf("expanding glob pattern %s: %w", globPattern, err)
 		}
@@ -39,16 +39,6 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 			// Check if file is a YAML file
 			ext := filepath.Ext(path)
 			if ext != ".yaml" && ext != ".yml" {
-				continue
-			}
-
-			// Check if file is a regular file (not directory, symlink handled by Glob)
-			info, err := os.Stat(path)
-			if err != nil {
-				// Skip files we can't stat (permission issues, etc.)
-				continue
-			}
-			if info.IsDir() {
 				continue
 			}
 

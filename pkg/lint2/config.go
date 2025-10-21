@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -25,7 +24,7 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	for _, chartConfig := range chartConfigs {
 		// Check if path contains glob pattern
 		if containsGlob(chartConfig.Path) {
-			matches, err := filepath.Glob(chartConfig.Path)
+			matches, err := GlobDirs(chartConfig.Path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", chartConfig.Path, err)
 			}
@@ -52,8 +51,9 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 }
 
 // containsGlob checks if a path contains glob wildcards
+// Calls exported ContainsGlob for consistency
 func containsGlob(path string) bool {
-	return strings.ContainsAny(path, "*?[")
+	return ContainsGlob(path)
 }
 
 // validateChartPath checks if a path is a valid Helm chart directory
@@ -100,7 +100,7 @@ func expandPreflightPaths(preflightConfigs []tools.PreflightConfig) ([]string, e
 	for _, preflightConfig := range preflightConfigs {
 		// Check if path contains glob pattern
 		if containsGlob(preflightConfig.Path) {
-			matches, err := filepath.Glob(preflightConfig.Path)
+			matches, err := GlobFiles(preflightConfig.Path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", preflightConfig.Path, err)
 			}
