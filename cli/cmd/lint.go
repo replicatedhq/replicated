@@ -91,6 +91,62 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		r.w.Flush()
 	}
 
+	// Display tool versions if verbose mode is enabled
+	if r.args.lintVerbose {
+		fmt.Fprintln(r.w, "Tool versions:")
+
+		// Resolve and display Helm version
+		helmVersion := "latest"
+		if config.ReplLint.Tools != nil {
+			if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
+				helmVersion = v
+			}
+		}
+		if helmVersion == "latest" || helmVersion == "" {
+			resolver := tools.NewResolver()
+			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolHelm)
+			if err == nil {
+				helmVersion = resolvedVersion
+			}
+		}
+		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
+
+		// Resolve and display Preflight version
+		preflightVersion := "latest"
+		if config.ReplLint.Tools != nil {
+			if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
+				preflightVersion = v
+			}
+		}
+		if preflightVersion == "latest" || preflightVersion == "" {
+			resolver := tools.NewResolver()
+			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolPreflight)
+			if err == nil {
+				preflightVersion = resolvedVersion
+			}
+		}
+		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
+
+		// Resolve and display Support Bundle version
+		sbVersion := "latest"
+		if config.ReplLint.Tools != nil {
+			if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
+				sbVersion = v
+			}
+		}
+		if sbVersion == "latest" || sbVersion == "" {
+			resolver := tools.NewResolver()
+			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolSupportBundle)
+			if err == nil {
+				sbVersion = resolvedVersion
+			}
+		}
+		fmt.Fprintf(r.w, "  Support Bundle: %s\n", sbVersion)
+
+		fmt.Fprintln(r.w)
+		r.w.Flush()
+	}
+
 	// Lint Helm charts if enabled
 	if config.ReplLint.Linters.Helm.IsEnabled() {
 		if len(config.Charts) == 0 {
@@ -152,8 +208,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 }
 
 func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (bool, error) {
-	// Get helm version from config
-	helmVersion := tools.DefaultHelmVersion
+	// Get helm version from config, default to "latest" if not specified
+	helmVersion := "latest"
 	if config.ReplLint.Tools != nil {
 		if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
 			helmVersion = v
@@ -194,8 +250,8 @@ func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (bool
 }
 
 func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
-	// Get preflight version from config
-	preflightVersion := tools.DefaultPreflightVersion
+	// Get preflight version from config, default to "latest" if not specified
+	preflightVersion := "latest"
 	if config.ReplLint.Tools != nil {
 		if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
 			preflightVersion = v
@@ -236,8 +292,8 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 }
 
 func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (bool, error) {
-	// Get support-bundle version from config
-	sbVersion := tools.DefaultSupportBundleVersion
+	// Get support-bundle version from config, default to "latest" if not specified
+	sbVersion := "latest"
 	if config.ReplLint.Tools != nil {
 		if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
 			sbVersion = v

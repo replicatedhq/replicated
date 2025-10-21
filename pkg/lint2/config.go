@@ -25,20 +25,24 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	for _, chartConfig := range chartConfigs {
 		// Check if path contains glob pattern
 		if containsGlob(chartConfig.Path) {
-			matches, err := filepath.Glob(chartConfig.Path)
+			matches, err := GlobDirs(chartConfig.Path)
 			if err != nil {
 				return nil, fmt.Errorf("failed to expand glob pattern %s: %w", chartConfig.Path, err)
 			}
 			if len(matches) == 0 {
-				return nil, fmt.Errorf("no charts found matching pattern: %s", chartConfig.Path)
+				return nil, fmt.Errorf("no directories found matching pattern: %s", chartConfig.Path)
 			}
-			// Validate each matched path
+			// Filter to only valid chart directories (directories containing Chart.yaml)
+			var validCharts []string
 			for _, match := range matches {
-				if err := validateChartPath(match); err != nil {
-					return nil, fmt.Errorf("invalid chart path %s: %w", match, err)
+				if err := validateChartPath(match); err == nil {
+					validCharts = append(validCharts, match)
 				}
 			}
-			paths = append(paths, matches...)
+			if len(validCharts) == 0 {
+				return nil, fmt.Errorf("no valid Helm charts found matching pattern: %s", chartConfig.Path)
+			}
+			paths = append(paths, validCharts...)
 		} else {
 			// Validate single path
 			if err := validateChartPath(chartConfig.Path); err != nil {
