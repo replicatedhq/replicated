@@ -19,10 +19,12 @@ type JSONLintOutput struct {
 
 // LintMetadata contains execution context and environment information
 type LintMetadata struct {
-	Timestamp   string `json:"timestamp"`
-	ConfigFile  string `json:"config_file"`
-	HelmVersion string `json:"helm_version,omitempty"`
-	CLIVersion  string `json:"cli_version"`
+	Timestamp            string `json:"timestamp"`
+	ConfigFile           string `json:"config_file"`
+	HelmVersion          string `json:"helm_version,omitempty"`
+	PreflightVersion     string `json:"preflight_version,omitempty"`
+	SupportBundleVersion string `json:"support_bundle_version,omitempty"`
+	CLIVersion           string `json:"cli_version"`
 }
 
 // HelmLintResults contains all Helm chart lint results
@@ -137,11 +139,13 @@ func calculateResourceSummary(messages []lint2.LintMessage) ResourceSummary {
 }
 
 // newLintMetadata creates metadata for the lint output
-func newLintMetadata(configFile, helmVersion, cliVersion string) LintMetadata {
+func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVersion, cliVersion string) LintMetadata {
 	return LintMetadata{
-		Timestamp:   time.Now().UTC().Format(time.RFC3339),
-		ConfigFile:  configFile,
-		HelmVersion: helmVersion,
-		CLIVersion:  cliVersion,
+		Timestamp:            time.Now().UTC().Format(time.RFC3339),
+		ConfigFile:           configFile,
+		HelmVersion:          helmVersion,
+		PreflightVersion:     preflightVersion,
+		SupportBundleVersion: supportBundleVersion,
+		CLIVersion:           cliVersion,
 	}
 }

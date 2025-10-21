@@ -107,17 +107,60 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
 
-	// Get Helm version from config
-	helmVersion := tools.DefaultHelmVersion
+	// Resolve all tool versions
+	resolver := tools.NewResolver()
+
+	// Get Helm version from config and resolve if needed
+	helmVersion := "latest"
 	if config.ReplLint.Tools != nil {
 		if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
 			helmVersion = v
 		}
 	}
+	if helmVersion == "latest" || helmVersion == "" {
+		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolHelm)
+		if err == nil {
+			helmVersion = resolvedVersion
+		} else {
+			helmVersion = tools.DefaultHelmVersion // Fallback to default
+		}
+	}
 
-	// Populate metadata
+	// Get Preflight version from config and resolve if needed
+	preflightVersion := "latest"
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
+			preflightVersion = v
+		}
+	}
+	if preflightVersion == "latest" || preflightVersion == "" {
+		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolPreflight)
+		if err == nil {
+			preflightVersion = resolvedVersion
+		} else {
+			preflightVersion = tools.DefaultPreflightVersion // Fallback to default
+		}
+	}
+
+	// Get Support Bundle version from config and resolve if needed
+	supportBundleVersion := "latest"
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
+			supportBundleVersion = v
+		}
+	}
+	if supportBundleVersion == "latest" || supportBundleVersion == "" {
+		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolSupportBundle)
+		if err == nil {
+			supportBundleVersion = resolvedVersion
+		} else {
+			supportBundleVersion = tools.DefaultSupportBundleVersion // Fallback to default
+		}
+	}
+
+	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
-	output.Metadata = newLintMetadata(configPath, helmVersion, "v0.90.0") // TODO: Get actual CLI version
+	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, "v0.90.0") // TODO: Get actual CLI version
 
 	// Extract and display images if verbose mode is enabled
 	if r.args.lintVerbose {
@@ -147,53 +190,10 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	if r.args.lintVerbose {
 		fmt.Fprintln(r.w, "Tool versions:")
 
-		// Resolve and display Helm version
-		helmVersion := "latest"
-		if config.ReplLint.Tools != nil {
-			if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
-				helmVersion = v
-			}
-		}
-		if helmVersion == "latest" || helmVersion == "" {
-			resolver := tools.NewResolver()
-			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolHelm)
-			if err == nil {
-				helmVersion = resolvedVersion
-			}
-		}
+		// Display already resolved versions
 		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
-
-		// Resolve and display Preflight version
-		preflightVersion := "latest"
-		if config.ReplLint.Tools != nil {
-			if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
-				preflightVersion = v
-			}
-		}
-		if preflightVersion == "latest" || preflightVersion == "" {
-			resolver := tools.NewResolver()
-			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolPreflight)
-			if err == nil {
-				preflightVersion = resolvedVersion
-			}
-		}
 		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
-
-		// Resolve and display Support Bundle version
-		sbVersion := "latest"
-		if config.ReplLint.Tools != nil {
-			if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
-				sbVersion = v
-			}
-		}
-		if sbVersion == "latest" || sbVersion == "" {
-			resolver := tools.NewResolver()
-			resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolSupportBundle)
-			if err == nil {
-				sbVersion = resolvedVersion
-			}
-		}
-		fmt.Fprintf(r.w, "  Support Bundle: %s\n", sbVersion)
+		fmt.Fprintf(r.w, "  Support Bundle: %s\n", supportBundleVersion)
 
 		fmt.Fprintln(r.w)
 		r.w.Flush()
