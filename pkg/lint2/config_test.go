@@ -133,7 +133,7 @@ func TestGetChartPathsFromConfig_GlobExpansion(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "no directories found matching pattern",
+			errMsg:  "no charts found matching pattern",
 		},
 		{
 			name: "glob pattern in current directory",

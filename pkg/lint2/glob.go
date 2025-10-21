@@ -2,7 +2,6 @@ package lint2
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
