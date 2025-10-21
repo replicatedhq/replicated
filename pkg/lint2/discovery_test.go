@@ -1664,3 +1664,387 @@ func TestDiscoverSupportBundlesFromManifests_NonYamlFilesIgnored(t *testing.T) {
 	want := []string{bundlePath}
 	assertPathsEqual(t, paths, want)
 }
+
+// Phase 6 Tests: Error Handling Paths
+
+func TestDiscoverChartPaths_GlobError(t *testing.T) {
+	// Test that malformed glob patterns are handled gracefully
+	// Patterns with unclosed brackets should cause glob to fail
+	pattern := "./charts/[invalid"
+
+	_, err := discoverChartPaths(pattern)
+	if err == nil {
+		t.Errorf("discoverChartPaths() expected error for malformed pattern %s, got nil", pattern)
+	}
+}
+
+func TestDiscoverPreflightPaths_GlobError(t *testing.T) {
+	// Test that malformed glob patterns are handled gracefully
+	// Patterns with unclosed brackets should cause glob to fail
+	pattern := "./preflights/[invalid"
+
+	_, err := discoverPreflightPaths(pattern)
+	if err == nil {
+		t.Errorf("discoverPreflightPaths() expected error for malformed pattern %s, got nil", pattern)
+	}
+}
+
+func TestIsPreflightSpec_FileReadError(t *testing.T) {
+	// Test that file read permission errors are handled
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "preflight.yaml")
+
+	// Create a file
+	content := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\n"
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove read permission
+	if err := os.Chmod(path, 0000); err != nil {
+		t.Fatal(err)
+	}
+
+	// Restore permissions for cleanup
+	t.Cleanup(func() {
+		os.Chmod(path, 0644)
+	})
+
+	// Try to read - should get permission error
+	_, err := isPreflightSpec(path)
+	if err == nil {
+		t.Error("isPreflightSpec() expected error for unreadable file, got nil")
+	}
+}
+
+func TestIsChartDirectory_PermissionDenied(t *testing.T) {
+	// Test that directory permission errors are handled
+	// Note: With current implementation, isChartDirectory returns (false, nil)
+	// for permission errors, but this tests the defensive error handling
+	tmpDir := t.TempDir()
+	chartDir := filepath.Join(tmpDir, "restricted")
+
+	// Create chart directory with Chart.yaml
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	if err := os.WriteFile(chartYaml, []byte("apiVersion: v2\nname: test\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Remove all permissions from directory
+	if err := os.Chmod(chartDir, 0000); err != nil {
+		t.Fatal(err)
+	}
+
+	// Restore permissions for cleanup
+	t.Cleanup(func() {
+		os.Chmod(chartDir, 0755)
+	})
+
+	// Try to check if it's a chart - current implementation returns (false, nil)
+	// This verifies the function handles inaccessible directories gracefully
+	isChart, err := isChartDirectory(chartDir)
+	if err != nil {
+		t.Logf("isChartDirectory() returned error (as expected for permission denied): %v", err)
+	}
+	if isChart {
+		t.Error("isChartDirectory() should return false for inaccessible directory")
+	}
+}
+
+func TestDiscoverPreflightPaths_InvalidPattern(t *testing.T) {
+	// Test that patterns without proper extension or wildcards return an error
+	tmpDir := t.TempDir()
+
+	// Pattern with no extension and no wildcard should error
+	pattern := filepath.Join(tmpDir, "preflights", "check")
+
+	_, err := discoverPreflightPaths(pattern)
+	if err == nil {
+		t.Error("discoverPreflightPaths() expected error for pattern without extension or wildcard")
+	}
+	if err != nil && err.Error() != "pattern must end with .yaml, .yml, *, or **" {
+		t.Errorf("discoverPreflightPaths() error = %q, want error about pattern requirements", err.Error())
+	}
+}
+
+// Phase 7 Tests: Pattern Edge Cases
+
+func TestDiscoverChartPaths_TrailingSlash(t *testing.T) {
+	// Test that patterns with trailing slashes work correctly after normalization
+	tmpDir := t.TempDir()
+	chartsDir := filepath.Join(tmpDir, "charts")
+
+	chartDir := createTestChart(t, chartsDir, "app")
+
+	want := []string{chartDir}
+
+	// Pattern with ** and trailing slash should work (normalized to **)
+	pattern := filepath.Join(chartsDir, "**") + "/"
+	paths, err := discoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverChartPaths() error = %v for pattern %q", err, pattern)
+	}
+	assertPathsEqual(t, paths, want)
+
+	// Pattern without trailing slash should still work
+	pattern = filepath.Join(chartsDir, "**")
+	paths, err = discoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverChartPaths() error = %v for pattern %q", err, pattern)
+	}
+	assertPathsEqual(t, paths, want)
+
+	// Pattern with single trailing slash on directory should work as literal check
+	// This will error because chartsDir itself is not a chart
+	pattern = chartsDir + "/"
+	_, err = discoverChartPaths(pattern)
+	if err == nil {
+		t.Errorf("discoverChartPaths() expected error for literal directory %q that is not a chart", pattern)
+	}
+}
+
+func TestDiscoverChartPaths_EmptyPattern(t *testing.T) {
+	// Test that empty pattern is handled gracefully
+	pattern := ""
+
+	paths, err := discoverChartPaths(pattern)
+
+	// Empty pattern might error or return empty - either is acceptable
+	// This test documents the behavior
+	if err != nil {
+		t.Logf("discoverChartPaths(\"\") returned error: %v", err)
+	} else {
+		t.Logf("discoverChartPaths(\"\") returned %d paths: %v", len(paths), paths)
+	}
+
+	// At minimum, should not crash
+	if paths == nil {
+		paths = []string{}
+	}
+}
+
+func TestDiscoverChartPaths_LiteralDirectory(t *testing.T) {
+	// Test that literal directory paths (no wildcards) are handled correctly
+	// This is the code path at lines 123-132 in discovery.go
+	tmpDir := t.TempDir()
+	chartsDir := filepath.Join(tmpDir, "charts")
+
+	// Create a valid chart
+	chartDir := createTestChart(t, chartsDir, "myapp")
+
+	// Pattern is the literal chart directory path (no wildcards)
+	pattern := chartDir
+
+	paths, err := discoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverChartPaths() error = %v for literal directory", err)
+	}
+
+	want := []string{chartDir}
+	assertPathsEqual(t, paths, want)
+
+	// Also test a directory that is NOT a chart
+	notChartDir := filepath.Join(chartsDir, "not-a-chart")
+	if err := os.MkdirAll(notChartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = discoverChartPaths(notChartDir)
+	if err == nil {
+		t.Error("discoverChartPaths() expected error for literal directory without Chart.yaml")
+	}
+}
+
+func TestDiscoverPreflightPaths_NestedBraceExpansion(t *testing.T) {
+	// Test that nested brace expansions work correctly
+	tmpDir := t.TempDir()
+	preflightsDir := filepath.Join(tmpDir, "preflights")
+
+	// Create structure: preflights/{dev,prod}/{app,api}/check.yaml
+	devAppPath := filepath.Join(preflightsDir, "dev", "app", "check.yaml")
+	devApiPath := filepath.Join(preflightsDir, "dev", "api", "check.yaml")
+	prodAppPath := filepath.Join(preflightsDir, "prod", "app", "check.yaml")
+	prodApiPath := filepath.Join(preflightsDir, "prod", "api", "check.yaml")
+
+	createTestPreflight(t, devAppPath)
+	createTestPreflight(t, devApiPath)
+	createTestPreflight(t, prodAppPath)
+	createTestPreflight(t, prodApiPath)
+
+	// Also create some K8s resources that should be filtered
+	createTestK8sResource(t, filepath.Join(preflightsDir, "dev", "app", "deployment.yaml"), "Deployment")
+
+	// Pattern with nested brace expansion
+	pattern := filepath.Join(preflightsDir, "{dev,prod}", "{app,api}", "*.yaml")
+
+	paths, err := discoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverPreflightPaths() error = %v", err)
+	}
+
+	// Should find all 4 preflights, not the deployment
+	want := []string{devAppPath, devApiPath, prodAppPath, prodApiPath}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverPreflightPaths_TrailingSlash(t *testing.T) {
+	// Test that patterns with trailing slashes work correctly after normalization
+	tmpDir := t.TempDir()
+	preflightsDir := filepath.Join(tmpDir, "preflights")
+
+	// Create a preflight spec
+	preflightPath := filepath.Join(preflightsDir, "check.yaml")
+	createTestPreflight(t, preflightPath)
+
+	want := []string{preflightPath}
+
+	// Pattern with ** and trailing slash should work (normalized to **)
+	pattern := filepath.Join(preflightsDir, "**") + "/"
+	paths, err := discoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+	}
+	assertPathsEqual(t, paths, want)
+
+	// Pattern without trailing slash should still work
+	pattern = filepath.Join(preflightsDir, "**")
+	paths, err = discoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+	}
+	assertPathsEqual(t, paths, want)
+
+	// Pattern with /* and trailing slash should work (normalized to /*)
+	pattern = filepath.Join(preflightsDir, "/*") + "/"
+	paths, err = discoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+	}
+	assertPathsEqual(t, paths, want)
+}
+
+// Phase 8 Tests: Content Detection Edge Cases
+
+func TestIsPreflightSpec_CaseSensitive(t *testing.T) {
+	// Test that kind field is case-sensitive - only "Preflight" should match
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		kind     string
+		expected bool
+	}{
+		{"uppercase", "Preflight", true},
+		{"lowercase", "preflight", false},
+		{"mixed_case", "PreFlight", false},
+		{"all_caps", "PREFLIGHT", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(tmpDir, tt.name+".yaml")
+			content := "apiVersion: troubleshoot.sh/v1beta2\nkind: " + tt.kind + "\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := isPreflightSpec(path)
+			if err != nil {
+				t.Fatalf("isPreflightSpec() error = %v", err)
+			}
+			if got != tt.expected {
+				t.Errorf("isPreflightSpec() = %v for kind=%q, want %v", got, tt.kind, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIsPreflightSpec_KindInComment(t *testing.T) {
+	// Test that "kind: Preflight" in a YAML comment should NOT match
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "commented.yaml")
+
+	content := `apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  # kind: Preflight - this is commented out
+spec:
+  ports:
+    - port: 80
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := isPreflightSpec(path)
+	if err != nil {
+		t.Fatalf("isPreflightSpec() error = %v", err)
+	}
+	if got {
+		t.Error("isPreflightSpec() = true for kind in comment, want false")
+	}
+}
+
+func TestIsPreflightSpec_KindWrongType(t *testing.T) {
+	// Test that kind with wrong type (not string) should NOT match
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name    string
+		content string
+	}{
+		{"kind_as_number", "apiVersion: v1\nkind: 123\n"},
+		{"kind_as_array", "apiVersion: v1\nkind: [Preflight]\n"},
+		{"kind_as_object", "apiVersion: v1\nkind: {type: Preflight}\n"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := filepath.Join(tmpDir, tt.name+".yaml")
+			if err := os.WriteFile(path, []byte(tt.content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := isPreflightSpec(path)
+			if err != nil {
+				t.Fatalf("isPreflightSpec() error = %v", err)
+			}
+			if got {
+				t.Errorf("isPreflightSpec() = true for %s, want false", tt.name)
+			}
+		})
+	}
+}
+
+func TestIsPreflightSpec_NestedKind(t *testing.T) {
+	// Test that kind nested in metadata should NOT match
+	// Only top-level kind should match
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "nested.yaml")
+
+	content := `apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+  annotations:
+    kind: Preflight
+spec:
+  ports:
+    - port: 80
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := isPreflightSpec(path)
+	if err != nil {
+		t.Fatalf("isPreflightSpec() error = %v", err)
+	}
+	if got {
+		t.Error("isPreflightSpec() = true for nested kind, want false (only top-level kind should match)")
+	}
+}

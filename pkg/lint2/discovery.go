@@ -105,6 +105,10 @@ func isChartDirectory(dirPath string) (bool, error) {
 //   - "./charts/{app,api}/**"    (finds charts in specific subdirectories)
 //   - "./pkg/**/Chart.yaml"      (explicit Chart.yaml pattern)
 func discoverChartPaths(pattern string) ([]string, error) {
+	// Normalize pattern: strip trailing slashes to ensure consistent matching
+	// This allows "./charts/**/" to work the same as "./charts/**"
+	pattern = strings.TrimRight(pattern, "/")
+
 	var chartDirs []string
 	seenDirs := make(map[string]bool) // Deduplication
 
@@ -215,6 +219,10 @@ func isPreflightSpec(path string) (bool, error) {
 //   - "./preflights/**/*.yaml"    (explicit YAML extension)
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
 func discoverPreflightPaths(pattern string) ([]string, error) {
+	// Normalize pattern: strip trailing slashes to ensure consistent matching
+	// This allows "./preflights/**/" to work the same as "./preflights/**"
+	pattern = strings.TrimRight(pattern, "/")
+
 	var preflightPaths []string
 	seenPaths := make(map[string]bool) // Deduplication
 
