@@ -44,15 +44,15 @@ func TestConfigParser_ParseConfig(t *testing.T) {
 				if cfg.ReplLint.Version != 1 {
 					t.Errorf("version = %d, want 1 (default)", cfg.ReplLint.Version)
 				}
-				// Tools should be populated with defaults
-				if cfg.ReplLint.Tools[ToolHelm] != DefaultHelmVersion {
-					t.Errorf("helm version = %q, want default %q", cfg.ReplLint.Tools[ToolHelm], DefaultHelmVersion)
+				// Tools should be populated with "latest" as defaults
+				if cfg.ReplLint.Tools[ToolHelm] != "latest" {
+					t.Errorf("helm version = %q, want %q", cfg.ReplLint.Tools[ToolHelm], "latest")
 				}
-				if cfg.ReplLint.Tools[ToolPreflight] != DefaultPreflightVersion {
-					t.Errorf("preflight version = %q, want default %q", cfg.ReplLint.Tools[ToolPreflight], DefaultPreflightVersion)
+				if cfg.ReplLint.Tools[ToolPreflight] != "latest" {
+					t.Errorf("preflight version = %q, want %q", cfg.ReplLint.Tools[ToolPreflight], "latest")
 				}
-				if cfg.ReplLint.Tools[ToolSupportBundle] != DefaultSupportBundleVersion {
-					t.Errorf("support-bundle version = %q, want default %q", cfg.ReplLint.Tools[ToolSupportBundle], DefaultSupportBundleVersion)
+				if cfg.ReplLint.Tools[ToolSupportBundle] != "latest" {
+					t.Errorf("support-bundle version = %q, want %q", cfg.ReplLint.Tools[ToolSupportBundle], "latest")
 				}
 			},
 		},
@@ -94,15 +94,15 @@ func TestConfigParser_DefaultConfig(t *testing.T) {
 		t.Errorf("version = %d, want 1", config.ReplLint.Version)
 	}
 
-	// Check default tool versions
-	if config.ReplLint.Tools[ToolHelm] != DefaultHelmVersion {
-		t.Errorf("helm version = %q, want %q", config.ReplLint.Tools[ToolHelm], DefaultHelmVersion)
+	// Check default tool versions - now defaults to "latest" which resolves at runtime
+	if config.ReplLint.Tools[ToolHelm] != "latest" {
+		t.Errorf("helm version = %q, want %q", config.ReplLint.Tools[ToolHelm], "latest")
 	}
-	if config.ReplLint.Tools[ToolPreflight] != DefaultPreflightVersion {
-		t.Errorf("preflight version = %q, want %q", config.ReplLint.Tools[ToolPreflight], DefaultPreflightVersion)
+	if config.ReplLint.Tools[ToolPreflight] != "latest" {
+		t.Errorf("preflight version = %q, want %q", config.ReplLint.Tools[ToolPreflight], "latest")
 	}
-	if config.ReplLint.Tools[ToolSupportBundle] != DefaultSupportBundleVersion {
-		t.Errorf("support-bundle version = %q, want %q", config.ReplLint.Tools[ToolSupportBundle], DefaultSupportBundleVersion)
+	if config.ReplLint.Tools[ToolSupportBundle] != "latest" {
+		t.Errorf("support-bundle version = %q, want %q", config.ReplLint.Tools[ToolSupportBundle], "latest")
 	}
 }
 
