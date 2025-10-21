@@ -84,9 +84,15 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml)")
 	}
 
-	// If only one config, just parse and return it
+	// If only one config, parse and apply defaults
 	if len(configPaths) == 1 {
-		return p.ParseConfigFile(configPaths[0])
+		config, err := p.ParseConfigFile(configPaths[0])
+		if err != nil {
+			return nil, err
+		}
+		// Apply defaults to single config
+		p.ApplyDefaults(config)
+		return config, nil
 	}
 
 	// Multiple configs found - parse and merge them

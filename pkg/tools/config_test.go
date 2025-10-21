@@ -1281,3 +1281,100 @@ manifests:
 		})
 	}
 }
+
+// TestApplyDefaultsWithNilTools tests that ApplyDefaults correctly initializes tools map
+func TestApplyDefaultsWithNilTools(t *testing.T) {
+	parser := NewConfigParser()
+
+	// Create config with ReplLint but no tools
+	config := &Config{
+		ReplLint: &ReplLintConfig{
+			Version: 1,
+			Linters: LintersConfig{
+				Helm: LinterConfig{},
+			},
+			// Tools is nil here
+		},
+	}
+
+	// Apply defaults
+	parser.ApplyDefaults(config)
+
+	// Check that tools map was initialized
+	if config.ReplLint.Tools == nil {
+		t.Fatal("Tools map should be initialized after ApplyDefaults")
+	}
+
+	// Check that all tools have "latest" as default
+	if v, ok := config.ReplLint.Tools[ToolHelm]; !ok || v != "latest" {
+		t.Errorf("Expected Helm to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+	if v, ok := config.ReplLint.Tools[ToolPreflight]; !ok || v != "latest" {
+		t.Errorf("Expected Preflight to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+	if v, ok := config.ReplLint.Tools[ToolSupportBundle]; !ok || v != "latest" {
+		t.Errorf("Expected SupportBundle to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+}
+
+// TestFindAndParseConfigWithMinimalConfig tests that a minimal config gets defaults applied
+func TestFindAndParseConfigWithMinimalConfig(t *testing.T) {
+	// Create a temporary directory with minimal config
+	tmpDir := t.TempDir()
+
+	// Create minimal .replicated config WITHOUT tool versions
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `repl-lint:
+  version: 1
+  linters:
+    helm: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory for test
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Load and parse config
+	parser := NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		t.Fatalf("Failed to parse config: %v", err)
+	}
+
+	// Check that ReplLint exists
+	if config.ReplLint == nil {
+		t.Fatal("ReplLint should be initialized")
+	}
+
+	// Check that tools map was initialized with "latest" defaults
+	if config.ReplLint.Tools == nil {
+		t.Logf("Tools is nil, full ReplLint: %+v", config.ReplLint)
+		t.Fatal("Tools map should be initialized")
+	}
+
+	// Log the tools map content for debugging
+	t.Logf("Tools map length: %d", len(config.ReplLint.Tools))
+	for k, v := range config.ReplLint.Tools {
+		t.Logf("Tool %s = %s", k, v)
+	}
+
+	// All tools should default to "latest"
+	if v, ok := config.ReplLint.Tools[ToolHelm]; !ok || v != "latest" {
+		t.Errorf("Expected Helm to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+	if v, ok := config.ReplLint.Tools[ToolPreflight]; !ok || v != "latest" {
+		t.Errorf("Expected Preflight to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+	if v, ok := config.ReplLint.Tools[ToolSupportBundle]; !ok || v != "latest" {
+		t.Errorf("Expected SupportBundle to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+}
