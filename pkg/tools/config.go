@@ -278,15 +278,16 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 		config.ReplLint.Tools = make(map[string]string)
 	}
 
-	// Apply default tool versions if not specified
+	// Apply "latest" for tool versions if not specified
+	// The resolver will fetch the actual latest version from GitHub
 	if _, exists := config.ReplLint.Tools[ToolHelm]; !exists {
-		config.ReplLint.Tools[ToolHelm] = DefaultHelmVersion
+		config.ReplLint.Tools[ToolHelm] = "latest"
 	}
 	if _, exists := config.ReplLint.Tools[ToolPreflight]; !exists {
-		config.ReplLint.Tools[ToolPreflight] = DefaultPreflightVersion
+		config.ReplLint.Tools[ToolPreflight] = "latest"
 	}
 	if _, exists := config.ReplLint.Tools[ToolSupportBundle]; !exists {
-		config.ReplLint.Tools[ToolSupportBundle] = DefaultSupportBundleVersion
+		config.ReplLint.Tools[ToolSupportBundle] = "latest"
 	}
 }
 
