@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"github.com/spf13/cobra"
 )
 
 func TestLint_VerboseFlag(t *testing.T) {
@@ -371,4 +373,454 @@ repl-lint:
 	if !strings.Contains(output, "unique images") {
 		t.Error("expected message about unique images")
 	}
+}
+
+// TestJSONOutputContainsAllToolVersions tests that JSON output includes all tool versions
+func TestJSONOutputContainsAllToolVersions(t *testing.T) {
+	// Create a temporary directory with a test chart
+	tmpDir := t.TempDir()
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create minimal Chart.yaml
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with specific tool versions
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+    preflight: {}
+    support-bundle: {}
+  tools:
+    helm: "3.14.4"
+    preflight: "0.123.9"
+    support-bundle: "0.123.9"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory for test
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "json",
+		args: runnerArgs{
+			lintVerbose: false, // Test without verbose - versions should still be in JSON
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	// We might get lint errors, but we should still get output
+	// Ignore the error and check the output
+
+	w.Flush()
+	jsonOutput := buf.String()
+
+	// Parse the JSON output
+	var output JSONLintOutput
+	if err := json.Unmarshal([]byte(jsonOutput), &output); err != nil {
+		// If we can't parse, check if there's output at all
+		if jsonOutput == "" {
+			t.Skip("No JSON output produced (likely due to missing tools)")
+		}
+		t.Fatalf("Failed to parse JSON output: %v\nOutput: %s", err, jsonOutput)
+	}
+
+	// Check that all three tool versions are present in metadata
+	if output.Metadata.HelmVersion == "" {
+		t.Error("HelmVersion missing from JSON metadata")
+	}
+	if output.Metadata.PreflightVersion == "" {
+		t.Error("PreflightVersion missing from JSON metadata")
+	}
+	if output.Metadata.SupportBundleVersion == "" {
+		t.Error("SupportBundleVersion missing from JSON metadata")
+	}
+
+	// Check that versions match what was in config (not "latest")
+	if output.Metadata.HelmVersion != "3.14.4" {
+		t.Errorf("Expected HelmVersion to be '3.14.4', got '%s'", output.Metadata.HelmVersion)
+	}
+	if output.Metadata.PreflightVersion != "0.123.9" {
+		t.Errorf("Expected PreflightVersion to be '0.123.9', got '%s'", output.Metadata.PreflightVersion)
+	}
+	if output.Metadata.SupportBundleVersion != "0.123.9" {
+		t.Errorf("Expected SupportBundleVersion to be '0.123.9', got '%s'", output.Metadata.SupportBundleVersion)
+	}
+
+	t.Logf("JSON metadata contains all tool versions: Helm=%s, Preflight=%s, SupportBundle=%s",
+		output.Metadata.HelmVersion,
+		output.Metadata.PreflightVersion,
+		output.Metadata.SupportBundleVersion)
+}
+
+// TestJSONOutputWithLatestVersions tests that "latest" in config resolves to actual versions
+func TestJSONOutputWithLatestVersions(t *testing.T) {
+	// This test may require network access to resolve "latest"
+	if testing.Short() {
+		t.Skip("Skipping test that requires network access in short mode")
+	}
+
+	// Create a temporary directory with a test chart
+	tmpDir := t.TempDir()
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create minimal Chart.yaml
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with "latest" for all tools
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+    preflight: {}
+    support-bundle: {}
+  tools:
+    helm: "latest"
+    preflight: "latest"
+    support-bundle: "latest"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory for test
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "json",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{}) // Ignore error, we care about the output
+
+	w.Flush()
+	jsonOutput := buf.String()
+
+	// Parse the JSON output
+	var output JSONLintOutput
+	if err := json.Unmarshal([]byte(jsonOutput), &output); err != nil {
+		if jsonOutput == "" {
+			t.Skip("No JSON output produced (likely network issue resolving latest versions)")
+		}
+		t.Fatalf("Failed to parse JSON output: %v", err)
+	}
+
+	// Check that versions are resolved (not "latest")
+	if output.Metadata.HelmVersion == "latest" {
+		t.Error("HelmVersion should be resolved to actual version, not 'latest'")
+	}
+	if output.Metadata.PreflightVersion == "latest" {
+		t.Error("PreflightVersion should be resolved to actual version, not 'latest'")
+	}
+	if output.Metadata.SupportBundleVersion == "latest" {
+		t.Error("SupportBundleVersion should be resolved to actual version, not 'latest'")
+	}
+
+	// Check that versions look like semantic versions (x.y.z)
+	if !isValidSemVer(output.Metadata.HelmVersion) {
+		t.Errorf("HelmVersion doesn't look like a semantic version: %s", output.Metadata.HelmVersion)
+	}
+	if !isValidSemVer(output.Metadata.PreflightVersion) {
+		t.Errorf("PreflightVersion doesn't look like a semantic version: %s", output.Metadata.PreflightVersion)
+	}
+	if !isValidSemVer(output.Metadata.SupportBundleVersion) {
+		t.Errorf("SupportBundleVersion doesn't look like a semantic version: %s", output.Metadata.SupportBundleVersion)
+	}
+
+	t.Logf("'latest' resolved to: Helm=%s, Preflight=%s, SupportBundle=%s",
+		output.Metadata.HelmVersion,
+		output.Metadata.PreflightVersion,
+		output.Metadata.SupportBundleVersion)
+}
+
+// TestJSONOutputToFile tests that JSON output can be written to a file with -o flag
+func TestJSONOutputToFile(t *testing.T) {
+	// Create a temporary directory with a test chart
+	tmpDir := t.TempDir()
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create minimal Chart.yaml
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+  tools:
+    helm: "3.14.4"
+    preflight: "0.123.8"
+    support-bundle: "0.123.8"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory for test
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output file path
+	outputFile := filepath.Join(tmpDir, "output.json")
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "json",
+		args: runnerArgs{
+			lintOutputFile: outputFile,
+			lintVerbose:    false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{}) // Ignore error, we care about the output file
+
+	// Check that output file was created
+	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		t.Fatal("Output file was not created")
+	}
+
+	// Read and parse the output file
+	fileContent, err := os.ReadFile(outputFile)
+	if err != nil {
+		t.Fatalf("Failed to read output file: %v", err)
+	}
+
+	var output JSONLintOutput
+	if err := json.Unmarshal(fileContent, &output); err != nil {
+		t.Fatalf("Failed to parse JSON from output file: %v", err)
+	}
+
+	// Verify all tool versions are in the file
+	if output.Metadata.HelmVersion == "" {
+		t.Error("HelmVersion missing from output file")
+	}
+	if output.Metadata.PreflightVersion == "" {
+		t.Error("PreflightVersion missing from output file")
+	}
+	if output.Metadata.SupportBundleVersion == "" {
+		t.Error("SupportBundleVersion missing from output file")
+	}
+
+	// Verify the versions match what was in config
+	if output.Metadata.HelmVersion != "3.14.4" {
+		t.Errorf("Expected HelmVersion to be '3.14.4' in file, got '%s'", output.Metadata.HelmVersion)
+	}
+	if output.Metadata.PreflightVersion != "0.123.8" {
+		t.Errorf("Expected PreflightVersion to be '0.123.8' in file, got '%s'", output.Metadata.PreflightVersion)
+	}
+	if output.Metadata.SupportBundleVersion != "0.123.8" {
+		t.Errorf("Expected SupportBundleVersion to be '0.123.8' in file, got '%s'", output.Metadata.SupportBundleVersion)
+	}
+
+	t.Logf("Output file contains all tool versions: Helm=%s, Preflight=%s, SupportBundle=%s",
+		output.Metadata.HelmVersion,
+		output.Metadata.PreflightVersion,
+		output.Metadata.SupportBundleVersion)
+}
+
+// TestConfigMissingToolVersions tests that missing tool versions default to "latest"
+func TestConfigMissingToolVersions(t *testing.T) {
+	// Create a temporary directory with a test chart
+	tmpDir := t.TempDir()
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create minimal Chart.yaml
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config WITHOUT tool versions
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory for test
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Load and parse config
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		t.Fatalf("Failed to parse config: %v", err)
+	}
+
+	// Check that ReplLint exists
+	if config.ReplLint == nil {
+		t.Fatal("ReplLint should be initialized")
+	}
+
+	// Debug to see what we have
+	t.Logf("ReplLint: %+v", config.ReplLint)
+	t.Logf("Tools is nil: %v", config.ReplLint.Tools == nil)
+
+	// Check that tools map was initialized with "latest" defaults
+	if config.ReplLint.Tools == nil {
+		t.Fatal("Tools map should be initialized")
+	}
+
+	// Debug: print what's in the tools map
+	t.Logf("Tools map contents: %+v", config.ReplLint.Tools)
+	t.Logf("Number of tools in map: %d", len(config.ReplLint.Tools))
+
+	// All tools should default to "latest"
+	if v, ok := config.ReplLint.Tools[tools.ToolHelm]; !ok {
+		t.Error("Helm tool not found in config")
+	} else if v != "latest" {
+		t.Errorf("Expected Helm to default to 'latest', got '%s'", v)
+	}
+	if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; !ok {
+		t.Error("Preflight tool not found in config")
+	} else if v != "latest" {
+		t.Errorf("Expected Preflight to default to 'latest', got '%s'", v)
+	}
+	if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; !ok {
+		t.Error("SupportBundle tool not found in config")
+	} else if v != "latest" {
+		t.Errorf("Expected SupportBundle to default to 'latest', got '%s'", v)
+	}
+}
+
+// Helper function to check if a string looks like a semantic version
+func isValidSemVer(version string) bool {
+	// Basic check: should contain at least one dot and start with a digit
+	// Examples: "3.14.4", "0.123.9", "v3.14.4"
+	if version == "" {
+		return false
+	}
+	// Remove 'v' prefix if present
+	version = strings.TrimPrefix(version, "v")
+
+	// Should have format x.y.z or x.y
+	parts := strings.Split(version, ".")
+	if len(parts) < 2 || len(parts) > 3 {
+		return false
+	}
+
+	// Each part should be numeric
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		// Check first character is a digit
+		if part[0] < '0' || part[0] > '9' {
+			return false
+		}
+	}
+
+	return true
 }
