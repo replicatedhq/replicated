@@ -686,4 +686,53 @@ func TestLintPreflight_Integration(t *testing.T) {
 
 		t.Logf("✓ Empty builder works: chart defaults used (enabled=true, name=default-feature, timeout=30)")
 	})
+
+	t.Run("manifests without HelmChart kind", func(t *testing.T) {
+		// This test verifies the error path when manifests are configured but don't contain any kind: HelmChart.
+		// Scenario: User has Deployment, Service, ConfigMap manifests, but forgot the HelmChart custom resource.
+		// Expected:
+		// 1. DiscoverHelmChartManifests() returns empty map (no error)
+		// 2. LintPreflight() returns error with helpful message pointing to the issue
+
+		// Manifests directory contains Deployment, Service, ConfigMap - but NO HelmChart
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/no-helmchart-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("DiscoverHelmChartManifests() should not error when no HelmChart found, got: %v", err)
+		}
+
+		// Should return empty map, not error
+		if len(helmChartManifests) != 0 {
+			t.Errorf("Expected empty map when no HelmChart found, got %d manifests", len(helmChartManifests))
+		}
+
+		// Now try to lint a templated preflight with this empty map
+		_, err = LintPreflight(
+			ctx,
+			"testdata/preflights/no-helmchart-test/preflight-templated.yaml",
+			"testdata/preflights/no-helmchart-test/chart/values.yaml",
+			"test-app-no-helmchart",
+			"1.0.0",
+			helmChartManifests, // Empty map
+			tools.DefaultPreflightVersion,
+		)
+
+		// Should error with helpful message
+		if err == nil {
+			t.Fatal("Expected error when HelmChart not found in manifests, got nil")
+		}
+
+		// Verify error message is helpful
+		expectedPhrases := []string{
+			"no HelmChart manifest found",
+			"test-app-no-helmchart:1.0.0",
+			"manifests paths",
+		}
+		for _, phrase := range expectedPhrases {
+			if !contains(err.Error(), phrase) {
+				t.Errorf("Error message should contain %q, got: %v", phrase, err)
+			}
+		}
+
+		t.Logf("✓ Helpful error when manifests configured but no HelmChart found: %v", err)
+	})
 }
