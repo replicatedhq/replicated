@@ -44,7 +44,11 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Load .replicated config using tools parser (supports monorepos)
 	parser := tools.NewConfigParser()
-	config, _ := parser.FindAndParseConfig(".")
+	config, err := parser.FindAndParseConfig(".")
+
+	if err != nil {
+		return errors.Wrap(err, "failed to load .replicated config")
+	}
 
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
