@@ -1,0 +1,5 @@
+apiVersion: v2
+name: test-app-nested
+description: Test chart for nested partial overrides
+version: 1.0.0
+appVersion: "1.0"

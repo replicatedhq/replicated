@@ -1,0 +1,4 @@
+feature:
+  enabled: true
+  name: default-feature
+  timeout: 30

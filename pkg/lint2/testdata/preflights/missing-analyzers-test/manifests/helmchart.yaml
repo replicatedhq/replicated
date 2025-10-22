@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-app-missing-analyzers
+spec:
+  chart:
+    name: test-app-missing-analyzers
+    chartVersion: 1.0.0
+  builder: {}

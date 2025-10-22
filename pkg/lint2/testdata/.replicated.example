@@ -36,16 +36,19 @@ charts:
   - path: "./charts/my-chart"
   - path: "./charts/*"  # Glob patterns are supported
 
-# Preflight specs to lint
+# Preflight specs to lint (valuesPath is required for all preflights)
 preflights:
-  # Single file
+  # Single file with chart values
   - path: "./preflight.yaml"
+    valuesPath: "./chart/values.yaml"
 
   # Glob pattern to match multiple files
   - path: "./preflights/*.yaml"
+    valuesPath: "./chart/values.yaml"
 
   # Absolute paths also work
   - path: "/absolute/path/to/preflight.yaml"
+    valuesPath: "/absolute/path/to/chart/values.yaml"
 
 # Manifests to lint (optional, for future support)
 manifests:

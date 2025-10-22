@@ -1,0 +1,23 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: nested-partial-override
+spec:
+  collectors:
+  {{- if .Values.postgresql.enabled }}
+    - postgres:
+        collectorName: database
+        uri: 'postgresql://user:password@{{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}/{{ .Values.postgresql.database }}'
+  {{- end }}
+  analyzers:
+  {{- if .Values.postgresql.enabled }}
+    - postgres:
+        checkName: database-connection
+        collectorName: database
+        outcomes:
+          - fail:
+              when: "connected == false"
+              message: Cannot connect to database at {{ .Values.postgresql.host }}:{{ .Values.postgresql.port }}
+          - pass:
+              message: Successfully connected to database
+  {{- end }}

@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart-nested
+spec:
+  chart:
+    name: test-app-nested
+    chartVersion: 1.0.0
+  builder:
+    postgresql:
+      enabled: true
+      # Note: host, port, database NOT overridden - should come from chart values

@@ -313,12 +313,18 @@ spec:
 
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
+
+		// With fail-fast validation, we now expect an error when no valid HelmCharts found
+		if err == nil {
+			t.Fatal("expected error when all HelmCharts are invalid (fail-fast), got nil")
 		}
 
-		if len(manifests) != 0 {
-			t.Fatalf("expected 0 manifests (invalid files skipped), got %d", len(manifests))
+		if !contains(err.Error(), "no HelmChart resources found") {
+			t.Errorf("expected error about no HelmCharts found, got: %v", err)
+		}
+
+		if manifests != nil {
+			t.Errorf("expected nil manifests on error, got %d manifests", len(manifests))
 		}
 	})
 
@@ -338,12 +344,18 @@ spec:
 
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
-		if err != nil {
-			t.Fatalf("unexpected error (should skip invalid YAML): %v", err)
+
+		// With fail-fast validation, we now expect an error when no valid HelmCharts found
+		if err == nil {
+			t.Fatal("expected error when all files are invalid (fail-fast), got nil")
 		}
 
-		if len(manifests) != 0 {
-			t.Fatalf("expected 0 manifests (invalid YAML skipped), got %d", len(manifests))
+		if !contains(err.Error(), "no HelmChart resources found") {
+			t.Errorf("expected error about no HelmCharts found, got: %v", err)
+		}
+
+		if manifests != nil {
+			t.Errorf("expected nil manifests on error, got %d manifests", len(manifests))
 		}
 	})
 

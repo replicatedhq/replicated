@@ -1,0 +1,23 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: array-values-test
+spec:
+  collectors:
+  {{- range .Values.ingress.hosts }}
+    - http:
+        collectorName: check-{{ . }}
+        get:
+          url: https://{{ . }}/health
+  {{- end }}
+  analyzers:
+  {{- range .Values.ingress.hosts }}
+    - textAnalyze:
+        checkName: {{ . }}-health
+        collectorName: check-{{ . }}
+        fileName: {{ . }}.txt
+        outcomes:
+          - pass:
+              when: "true"
+              message: Host {{ . }} is configured
+  {{- end }}

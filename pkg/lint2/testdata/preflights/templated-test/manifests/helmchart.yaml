@@ -1,0 +1,17 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart
+spec:
+  chart:
+    name: test-app
+    chartVersion: 1.0.0
+  builder:
+    database:
+      enabled: true
+      host: postgres.example.com
+      port: 5432
+    redis:
+      enabled: true
+      host: redis.example.com
+      port: 6379

@@ -1,0 +1,39 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: templated-preflight-disabled
+spec:
+  collectors:
+  {{- if .Values.database.enabled }}
+    - postgres:
+        collectorName: database
+        uri: 'postgresql://user:password@{{ .Values.database.host }}:{{ .Values.database.port }}/dbname'
+  {{- end }}
+  {{- if .Values.redis.enabled }}
+    - redis:
+        collectorName: redis
+        uri: 'redis://{{ .Values.redis.host }}:{{ .Values.redis.port }}'
+  {{- end }}
+  analyzers:
+  {{- if .Values.database.enabled }}
+    - postgres:
+        checkName: database-connection
+        collectorName: database
+        outcomes:
+          - fail:
+              when: "connected == false"
+              message: Cannot connect to database at {{ .Values.database.host }}
+          - pass:
+              message: Successfully connected to database
+  {{- end }}
+  {{- if .Values.redis.enabled }}
+    - redis:
+        checkName: redis-connection
+        collectorName: redis
+        outcomes:
+          - fail:
+              when: "connected == false"
+              message: Cannot connect to Redis at {{ .Values.redis.host }}
+          - pass:
+              message: Successfully connected to Redis
+  {{- end }}
