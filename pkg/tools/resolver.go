@@ -18,20 +18,10 @@ func NewResolver() *Resolver {
 	}
 }
 
-// ResolveLatestVersion fetches the latest stable version for a tool from GitHub
+// ResolveLatestVersion fetches the latest stable version for a tool from replicated.app/ping
 // without downloading it. Useful for displaying version information.
 func (r *Resolver) ResolveLatestVersion(ctx context.Context, name string) (string, error) {
-	var repo string
-	switch name {
-	case ToolHelm:
-		repo = "helm/helm"
-	case ToolPreflight, ToolSupportBundle:
-		repo = "replicatedhq/troubleshoot"
-	default:
-		return "", fmt.Errorf("unknown tool: %s", name)
-	}
-
-	latestVersion, err := getLatestStableVersion(repo)
+	latestVersion, err := getLatestStableVersion(name)
 	if err != nil {
 		return "", fmt.Errorf("failed to get latest version for %s: %w", name, err)
 	}
@@ -41,19 +31,9 @@ func (r *Resolver) ResolveLatestVersion(ctx context.Context, name string) (strin
 
 // Resolve returns the path to a tool binary, downloading if not cached
 func (r *Resolver) Resolve(ctx context.Context, name, version string) (string, error) {
-	// If version is "latest" or empty, fetch the latest stable version from GitHub
+	// If version is "latest" or empty, fetch the latest stable version from replicated.app/ping
 	if version == "latest" || version == "" {
-		var repo string
-		switch name {
-		case ToolHelm:
-			repo = "helm/helm"
-		case ToolPreflight, ToolSupportBundle:
-			repo = "replicatedhq/troubleshoot"
-		default:
-			return "", fmt.Errorf("unknown tool: %s", name)
-		}
-
-		latestVersion, err := getLatestStableVersion(repo)
+		latestVersion, err := getLatestStableVersion(name)
 		if err != nil {
 			return "", fmt.Errorf("failed to get latest version for %s: %w", name, err)
 		}
