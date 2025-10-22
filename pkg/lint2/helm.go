@@ -115,7 +115,12 @@ func GetChartMetadata(chartPath string) (*ChartMetadata, error) {
 
 	data, err := os.ReadFile(chartYamlPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
+		// Try Chart.yml as fallback (some charts use lowercase extension)
+		chartYmlPath := filepath.Join(chartPath, "Chart.yml")
+		data, err = os.ReadFile(chartYmlPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read Chart.yaml or Chart.yml: %w", err)
+		}
 	}
 
 	var chart struct {

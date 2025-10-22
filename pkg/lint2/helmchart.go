@@ -55,10 +55,8 @@ func (e *DuplicateHelmChartError) Error() string {
 //   - Hidden directories (.git, .github, etc.)
 func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartManifest, error) {
 	if len(manifestGlobs) == 0 {
-		// Error instead of returning empty map (unlike DiscoverSupportBundlesFromManifests)
-		// because HelmChart discovery is only called when preflights have templated values,
-		// so manifests are required to find builder values
-		return nil, fmt.Errorf("no manifests configured - cannot discover HelmChart resources (required for templated preflights)")
+		// Error when no manifest patterns provided - caller needs at least one pattern to search
+		return nil, fmt.Errorf("no manifests configured - cannot discover HelmChart resources")
 	}
 
 	helmCharts := make(map[string]*HelmChartManifest)
@@ -115,11 +113,11 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 		}
 	}
 
-	// Fail-fast if no HelmCharts found - prevents confusing "no HelmChart manifest found for chart X" error later
-	// This is required because preflights with valuesPath always need builder values from a HelmChart manifest
+	// Fail-fast if no HelmCharts found
+	// Both preflight linting and image extraction require HelmCharts when manifests are configured
 	if len(helmCharts) == 0 {
 		return nil, fmt.Errorf("no HelmChart resources found in manifests\n"+
-			"At least one HelmChart manifest is required for preflight linting\n"+
+			"At least one HelmChart manifest is required when manifests are configured.\n"+
 			"Checked patterns: %v", manifestGlobs)
 	}
 
