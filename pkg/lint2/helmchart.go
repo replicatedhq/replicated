@@ -41,7 +41,7 @@ func (e *DuplicateHelmChartError) Error() string {
 // DiscoverHelmChartManifests scans manifest glob patterns and extracts HelmChart custom resources.
 // It returns a map keyed by "name:chartVersion" for efficient lookup during preflight rendering.
 //
-// Supports both kots.io/v1beta1 and kots.io/v1beta2 HelmChart resources.
+// Accepts HelmChart resources with any apiVersion (validation happens in the linter).
 //
 // Returns an error if:
 //   - manifestGlobs is empty (required to find builder values for templated preflights)
@@ -55,6 +55,9 @@ func (e *DuplicateHelmChartError) Error() string {
 //   - Hidden directories (.git, .github, etc.)
 func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartManifest, error) {
 	if len(manifestGlobs) == 0 {
+		// Error instead of returning empty map (unlike DiscoverSupportBundlesFromManifests)
+		// because HelmChart discovery is only called when preflights have templated values,
+		// so manifests are required to find builder values
 		return nil, fmt.Errorf("no manifests configured - cannot discover HelmChart resources (required for templated preflights)")
 	}
 
@@ -159,7 +162,7 @@ func isHelmChartManifest(path string) (bool, error) {
 }
 
 // parseHelmChartManifest parses a HelmChart manifest and extracts the fields needed for preflight rendering.
-// Supports both kots.io/v1beta1 and kots.io/v1beta2.
+// Accepts any apiVersion (validation happens in the linter).
 //
 // Returns an error if required fields are missing:
 //   - spec.chart.name
@@ -212,10 +215,9 @@ func parseHelmChartManifest(path string) (*HelmChartManifest, error) {
 		return nil, fmt.Errorf("spec.chart.chartVersion is required but not found")
 	}
 
-	// Validate apiVersion
-	if helmChart.APIVersion != "kots.io/v1beta1" && helmChart.APIVersion != "kots.io/v1beta2" {
-		return nil, fmt.Errorf("unsupported apiVersion %q (expected kots.io/v1beta1 or kots.io/v1beta2)", helmChart.APIVersion)
-	}
+	// Note: We don't validate apiVersion here - discovery is permissive.
+	// The preflight linter will validate apiVersion when it processes the HelmChart.
+	// This allows future apiVersions to work without code changes.
 
 	return &HelmChartManifest{
 		Name:          helmChart.Spec.Chart.Name,
