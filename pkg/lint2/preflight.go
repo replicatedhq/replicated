@@ -174,7 +174,7 @@ func lintPreflightWithTemplating(
 	templateArgs := []string{
 		"template",
 		specPath,
-		"--values", valuesPath,        // Chart values first
+		"--values", valuesPath, // Chart values first
 		"--values", builderValuesPath, // Builder overrides second
 		"--output", renderedPath,
 	}
