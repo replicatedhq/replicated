@@ -634,6 +634,44 @@ spec:
 		}
 	})
 
+	t.Run("future apiVersion accepted", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		helmChartFile := filepath.Join(tmpDir, "v3.yaml")
+		content := `apiVersion: kots.io/v1beta3
+kind: HelmChart
+metadata:
+  name: future-chart
+spec:
+  chart:
+    name: my-app
+    chartVersion: 2.0.0
+  builder:
+    future: true
+`
+		if err := os.WriteFile(helmChartFile, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		manifests, err := DiscoverHelmChartManifests([]string{pattern})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Discovery should accept any apiVersion - validation happens in linter
+		if len(manifests) != 1 {
+			t.Fatalf("expected 1 manifest (future apiVersion accepted), got %d", len(manifests))
+		}
+
+		manifest := manifests["my-app:2.0.0"]
+		if manifest == nil {
+			t.Fatal("expected future apiVersion to be discovered")
+		}
+		if manifest.BuilderValues["future"] != true {
+			t.Errorf("expected future=true in builder values, got %v", manifest.BuilderValues["future"])
+		}
+	})
+
 	t.Run("complex nested builder values", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		helmChartFile := filepath.Join(tmpDir, "complex.yaml")
