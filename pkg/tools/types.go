@@ -24,7 +24,7 @@ type ChartConfig struct {
 // Both Path and ValuesPath are required for all preflight specs
 type PreflightConfig struct {
 	Path       string `yaml:"path"`
-	ValuesPath string `yaml:"valuesPath,omitempty"` // Required: path to chart values.yaml for template rendering
+	ValuesPath string `yaml:"valuesPath"` // Required: path to chart values.yaml for template rendering
 }
 
 // ReplLintConfig is the lint configuration section
