@@ -131,34 +131,52 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 	return nil
 }
 
-// githubRelease represents a GitHub release
-type githubRelease struct {
-	TagName    string `json:"tag_name"`
-	Prerelease bool   `json:"prerelease"`
+// replicatedPingResponse represents the response from replicated.app/ping
+type replicatedPingResponse struct {
+	ClientIP       string            `json:"client_ip"`
+	ClientVersions map[string]string `json:"client_versions"`
 }
 
-// getLatestStableVersion fetches the latest non-prerelease version from GitHub
-func getLatestStableVersion(repo string) (string, error) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/releases/latest", repo)
+// getLatestStableVersion fetches the latest version from replicated.app/ping
+func getLatestStableVersion(toolName string) (string, error) {
+	url := "https://replicated.app/ping"
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(url)
 	if err != nil {
-		return "", fmt.Errorf("fetching latest release: %w", err)
+		return "", fmt.Errorf("fetching versions from replicated.app: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("GitHub API returned HTTP %d", resp.StatusCode)
+		return "", fmt.Errorf("replicated.app/ping returned HTTP %d", resp.StatusCode)
 	}
 
-	var release githubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", fmt.Errorf("parsing release JSON: %w", err)
+	var pingResp replicatedPingResponse
+	if err := json.NewDecoder(resp.Body).Decode(&pingResp); err != nil {
+		return "", fmt.Errorf("parsing ping response JSON: %w", err)
+	}
+
+	// Map tool names to client_versions keys
+	var versionKey string
+	switch toolName {
+	case ToolHelm:
+		versionKey = "helm"
+	case ToolPreflight:
+		versionKey = "preflight"
+	case ToolSupportBundle:
+		versionKey = "support_bundle"
+	default:
+		return "", fmt.Errorf("unknown tool: %s", toolName)
+	}
+
+	version, ok := pingResp.ClientVersions[versionKey]
+	if !ok {
+		return "", fmt.Errorf("version not found for tool %s in ping response", toolName)
 	}
 
 	// Remove 'v' prefix if present
-	version := strings.TrimPrefix(release.TagName, "v")
+	version = strings.TrimPrefix(version, "v")
 
 	return version, nil
 }
@@ -175,17 +193,7 @@ func (d *Downloader) DownloadWithFallback(ctx context.Context, name, version str
 	fmt.Printf("⚠️  Version %s failed: %v\n", version, err)
 	fmt.Printf("Attempting to download latest stable version...\n")
 
-	var repo string
-	switch name {
-	case ToolHelm:
-		repo = "helm/helm"
-	case ToolPreflight, ToolSupportBundle:
-		repo = "replicatedhq/troubleshoot"
-	default:
-		return "", fmt.Errorf("unknown tool: %s", name)
-	}
-
-	latestVersion, err := getLatestStableVersion(repo)
+	latestVersion, err := getLatestStableVersion(name)
 	if err != nil {
 		return "", fmt.Errorf("could not get latest version: %w", err)
 	}

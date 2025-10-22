@@ -37,7 +37,7 @@ func TestResolveLatestVersion(t *testing.T) {
 			name:       "unknown tool should error",
 			tool:       "unknown-tool",
 			wantErr:    true,
-			errMessage: "unknown tool: unknown-tool",
+			errMessage: "failed to get latest version for unknown-tool: unknown tool: unknown-tool",
 		},
 	}
 
