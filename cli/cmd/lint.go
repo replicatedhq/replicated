@@ -340,27 +340,41 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 		}
 	}
 
-	// Check if there are any preflight specs configured
-	preflightPaths, err := lint2.GetPreflightPathsFromConfig(config)
+	// Discover HelmChart manifests once (needed for templated preflights)
+	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
+	}
+
+	// Get preflight paths with values information
+	preflights, err := lint2.GetPreflightWithValuesFromConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to expand preflight paths")
 	}
 
 	results := &PreflightLintResults{
 		Enabled: true,
-		Specs:   make([]PreflightLintResult, 0, len(preflightPaths)),
+		Specs:   make([]PreflightLintResult, 0, len(preflights)),
 	}
 
 	// Lint all preflight specs and collect results
-	for _, specPath := range preflightPaths {
-		lint2Result, err := lint2.LintPreflight(cmd.Context(), specPath, preflightVersion)
+	for _, pf := range preflights {
+		lint2Result, err := lint2.LintPreflight(
+			cmd.Context(),
+			pf.SpecPath,
+			pf.ValuesPath,
+			pf.ChartName,
+			pf.ChartVersion,
+			helmChartManifests,
+			preflightVersion,
+		)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to lint preflight spec: %s", specPath)
+			return nil, errors.Wrapf(err, "failed to lint preflight spec: %s", pf.SpecPath)
 		}
 
 		// Convert to structured format
 		preflightResult := PreflightLintResult{
-			Path:     specPath,
+			Path:     pf.SpecPath,
 			Success:  lint2Result.Success,
 			Messages: convertLint2Messages(lint2Result.Messages),
 			Summary:  calculateResourceSummary(lint2Result.Messages),

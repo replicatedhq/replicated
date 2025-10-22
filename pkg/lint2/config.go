@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"gopkg.in/yaml.v3"
 )
 
 // GetChartPathsFromConfig extracts and expands chart paths from config
@@ -151,4 +152,108 @@ func validatePreflightPath(path string) error {
 	}
 
 	return nil
+}
+
+// PreflightWithValues contains preflight spec path and associated chart/values information
+type PreflightWithValues struct {
+	SpecPath     string // Path to the preflight spec file
+	ValuesPath   string // Path to values.yaml (empty if no templating)
+	ChartName    string // Chart name from Chart.yaml (empty if no templating)
+	ChartVersion string // Chart version from Chart.yaml (empty if no templating)
+}
+
+// ChartMetadata represents the minimal Chart.yaml structure needed for matching
+type ChartMetadata struct {
+	Name    string `yaml:"name"`
+	Version string `yaml:"version"`
+}
+
+// parseChartYaml reads and parses a Chart.yaml file
+func parseChartYaml(path string) (*ChartMetadata, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
+	}
+
+	var chart ChartMetadata
+	if err := yaml.Unmarshal(data, &chart); err != nil {
+		return nil, fmt.Errorf("failed to parse Chart.yaml: %w", err)
+	}
+
+	if chart.Name == "" {
+		return nil, fmt.Errorf("Chart.yaml missing required field: name")
+	}
+	if chart.Version == "" {
+		return nil, fmt.Errorf("Chart.yaml missing required field: version")
+	}
+
+	return &chart, nil
+}
+
+// GetPreflightWithValuesFromConfig extracts preflight paths with associated chart/values information
+func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValues, error) {
+	if len(config.Preflights) == 0 {
+		return nil, fmt.Errorf("no preflights found in .replicated config")
+	}
+
+	var results []PreflightWithValues
+
+	for _, preflightConfig := range config.Preflights {
+		// Handle glob patterns in preflight path
+		var specPaths []string
+		if containsGlob(preflightConfig.Path) {
+			matches, err := discoverPreflightPaths(preflightConfig.Path)
+			if err != nil {
+				return nil, fmt.Errorf("failed to discover preflights from pattern %s: %w", preflightConfig.Path, err)
+			}
+			if len(matches) == 0 {
+				return nil, fmt.Errorf("no preflight specs found matching pattern: %s", preflightConfig.Path)
+			}
+			specPaths = matches
+		} else {
+			if err := validatePreflightPath(preflightConfig.Path); err != nil {
+				return nil, fmt.Errorf("invalid preflight spec path %s: %w", preflightConfig.Path, err)
+			}
+			specPaths = []string{preflightConfig.Path}
+		}
+
+		// Create PreflightWithValues for each discovered spec
+		for _, specPath := range specPaths {
+			result := PreflightWithValues{
+				SpecPath: specPath,
+			}
+
+			// If valuesPath is set, extract chart metadata
+			if preflightConfig.ValuesPath != "" {
+				result.ValuesPath = preflightConfig.ValuesPath
+
+				// Find adjacent Chart.yaml (in same directory as values file)
+				valuesDir := filepath.Dir(preflightConfig.ValuesPath)
+				chartYamlPath := filepath.Join(valuesDir, "Chart.yaml")
+
+				// Try Chart.yml as fallback
+				if _, err := os.Stat(chartYamlPath); err != nil {
+					chartYmlPath := filepath.Join(valuesDir, "Chart.yml")
+					if _, err := os.Stat(chartYmlPath); err == nil {
+						chartYamlPath = chartYmlPath
+					} else {
+						return nil, fmt.Errorf("Chart.yaml not found for preflight with valuesPath\nExpected at: %s\nPreflight: %s", chartYamlPath, specPath)
+					}
+				}
+
+				// Parse Chart.yaml to get name and version
+				chart, err := parseChartYaml(chartYamlPath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse Chart.yaml for preflight %s: %w", specPath, err)
+				}
+
+				result.ChartName = chart.Name
+				result.ChartVersion = chart.Version
+			}
+
+			results = append(results, result)
+		}
+	}
+
+	return results, nil
 }
