@@ -22,9 +22,9 @@ import (
 // internally by the release lint command.
 
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
-	// Validate format
+	// Validate output format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
-		return errors.Errorf("invalid format: %s. Supported formats: json, table", r.outputFormat)
+		return errors.Errorf("invalid output: %s. Supported output formats: json, table", r.outputFormat)
 	}
 
 	// Load .replicated config using tools parser (supports monorepos)
