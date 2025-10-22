@@ -1,0 +1,11 @@
+# Required values - must be provided via builder
+database:
+  image:
+    repository: ""
+    tag: ""
+
+cache:
+  image:
+    repository: ""
+    tag: ""
+

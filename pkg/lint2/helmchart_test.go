@@ -12,7 +12,7 @@ func TestDiscoverHelmChartManifests(t *testing.T) {
 		if err == nil {
 			t.Fatal("expected error for empty manifests list, got nil")
 		}
-		if err.Error() != "no manifests configured - cannot discover HelmChart resources (required for templated preflights)" {
+		if err.Error() != "no manifests configured - cannot discover HelmChart resources" {
 			t.Errorf("unexpected error message: %v", err)
 		}
 	})
@@ -314,7 +314,7 @@ spec:
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
 
-		// With fail-fast validation, we now expect an error when no valid HelmCharts found
+		// With fail-fast validation, we expect an error when no valid HelmCharts found
 		if err == nil {
 			t.Fatal("expected error when all HelmCharts are invalid (fail-fast), got nil")
 		}
@@ -345,7 +345,7 @@ spec:
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
 
-		// With fail-fast validation, we now expect an error when no valid HelmCharts found
+		// With fail-fast validation, we expect an error when no valid HelmCharts found
 		if err == nil {
 			t.Fatal("expected error when all files are invalid (fail-fast), got nil")
 		}

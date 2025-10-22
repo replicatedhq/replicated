@@ -1,0 +1,16 @@
+charts: [
+  {
+    path: "./chart"
+  },
+]
+manifests: ["./manifests/*.yaml"]
+repl-lint:
+  version: 1
+  linters:
+    helm:
+      disabled: false
+    preflight:
+      disabled: true
+    support-bundle:
+      disabled: true
+

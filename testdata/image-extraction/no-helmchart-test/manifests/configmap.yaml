@@ -1,0 +1,8 @@
+# Regular ConfigMap - NOT a HelmChart
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  key: value
+

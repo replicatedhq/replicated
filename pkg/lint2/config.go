@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
-	"gopkg.in/yaml.v3"
 )
 
 // GetChartPathsFromConfig extracts and expands chart paths from config
@@ -46,6 +45,39 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	}
 
 	return paths, nil
+}
+
+// ChartWithMetadata pairs a chart path with its metadata from Chart.yaml
+type ChartWithMetadata struct {
+	Path    string // Absolute path to the chart directory
+	Name    string // Chart name from Chart.yaml
+	Version string // Chart version from Chart.yaml
+}
+
+// GetChartsWithMetadataFromConfig extracts chart paths and their metadata from config
+// This function combines GetChartPathsFromConfig with metadata extraction, reducing
+// boilerplate for callers that need both path and metadata information (like image extraction).
+func GetChartsWithMetadataFromConfig(config *tools.Config) ([]ChartWithMetadata, error) {
+	chartPaths, err := GetChartPathsFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []ChartWithMetadata
+	for _, chartPath := range chartPaths {
+		metadata, err := GetChartMetadata(chartPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read chart metadata for %s: %w", chartPath, err)
+		}
+
+		results = append(results, ChartWithMetadata{
+			Path:    chartPath,
+			Name:    metadata.Name,
+			Version: metadata.Version,
+		})
+	}
+
+	return results, nil
 }
 
 // containsGlob checks if a path contains glob wildcards
@@ -163,34 +195,6 @@ type PreflightWithValues struct {
 	ChartVersion string // Chart version from Chart.yaml (required)
 }
 
-// ChartMetadata represents the minimal Chart.yaml structure needed for matching
-type ChartMetadata struct {
-	Name    string `yaml:"name"`
-	Version string `yaml:"version"`
-}
-
-// parseChartYaml reads and parses a Chart.yaml file
-func parseChartYaml(path string) (*ChartMetadata, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read Chart.yaml: %w", err)
-	}
-
-	var chart ChartMetadata
-	if err := yaml.Unmarshal(data, &chart); err != nil {
-		return nil, fmt.Errorf("failed to parse Chart.yaml: %w", err)
-	}
-
-	if chart.Name == "" {
-		return nil, fmt.Errorf("Chart.yaml missing required field: name")
-	}
-	if chart.Version == "" {
-		return nil, fmt.Errorf("Chart.yaml missing required field: version")
-	}
-
-	return &chart, nil
-}
-
 // GetPreflightWithValuesFromConfig extracts preflight paths with associated chart/values information
 func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValues, error) {
 	if len(config.Preflights) == 0 {
@@ -233,30 +237,25 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 
 			// Extract chart metadata (always required)
 			valuesDir := filepath.Dir(preflightConfig.ValuesPath)
-			chartYamlPath := filepath.Join(valuesDir, "Chart.yaml")
-
-			// Try Chart.yml as fallback
-			if _, err := os.Stat(chartYamlPath); err != nil {
-				chartYmlPath := filepath.Join(valuesDir, "Chart.yml")
-				if _, err := os.Stat(chartYmlPath); err == nil {
-					chartYamlPath = chartYmlPath
-				} else {
-					return nil, fmt.Errorf("Chart.yaml not found for preflight\nExpected at: %s\nPreflight: %s", chartYamlPath, specPath)
-				}
-			}
-
-			// Parse Chart.yaml to get name and version
-			chart, err := parseChartYaml(chartYamlPath)
+			chartMetadata, err := GetChartMetadata(valuesDir)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse Chart.yaml for preflight %s: %w", specPath, err)
+				return nil, fmt.Errorf("failed to read chart metadata for preflight %s: %w", specPath, err)
 			}
 
-			result.ChartName = chart.Name
-			result.ChartVersion = chart.Version
+			result.ChartName = chartMetadata.Name
+			result.ChartVersion = chartMetadata.Version
 
 			results = append(results, result)
 		}
 	}
 
 	return results, nil
+}
+
+// GetHelmChartManifestsFromConfig discovers HelmChart manifests from config
+// This is a convenience wrapper around DiscoverHelmChartManifests that takes a Config object
+// and returns the discovered manifests. Manifests are required for both preflight linting
+// and image extraction.
+func GetHelmChartManifestsFromConfig(config *tools.Config) (map[string]*HelmChartManifest, error) {
+	return DiscoverHelmChartManifests(config.Manifests)
 }

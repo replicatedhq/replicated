@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"gopkg.in/yaml.v3"
 )
 
 // LintChart executes helm lint on the given chart path and returns structured results
@@ -99,4 +101,46 @@ func ParseHelmOutput(output string) []LintMessage {
 	}
 
 	return messages
+}
+
+// ChartMetadata represents basic metadata from a Helm chart's Chart.yaml
+type ChartMetadata struct {
+	Name    string
+	Version string
+}
+
+// GetChartMetadata reads Chart.yaml and returns the chart name and version
+func GetChartMetadata(chartPath string) (*ChartMetadata, error) {
+	chartYamlPath := filepath.Join(chartPath, "Chart.yaml")
+
+	data, err := os.ReadFile(chartYamlPath)
+	if err != nil {
+		// Try Chart.yml as fallback (some charts use lowercase extension)
+		chartYmlPath := filepath.Join(chartPath, "Chart.yml")
+		data, err = os.ReadFile(chartYmlPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read Chart.yaml or Chart.yml: %w", err)
+		}
+	}
+
+	var chart struct {
+		Name    string `yaml:"name"`
+		Version string `yaml:"version"`
+	}
+
+	if err := yaml.Unmarshal(data, &chart); err != nil {
+		return nil, fmt.Errorf("failed to parse Chart.yaml: %w", err)
+	}
+
+	if chart.Name == "" {
+		return nil, fmt.Errorf("chart name is empty in Chart.yaml")
+	}
+	if chart.Version == "" {
+		return nil, fmt.Errorf("chart version is empty in Chart.yaml")
+	}
+
+	return &ChartMetadata{
+		Name:    chart.Name,
+		Version: chart.Version,
+	}, nil
 }

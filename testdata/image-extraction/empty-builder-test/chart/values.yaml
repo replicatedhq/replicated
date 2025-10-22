@@ -1,0 +1,6 @@
+# Required values - empty defaults
+app:
+  image:
+    repository: ""
+    tag: ""
+

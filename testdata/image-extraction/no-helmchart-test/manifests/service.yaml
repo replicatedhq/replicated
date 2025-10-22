@@ -1,0 +1,12 @@
+# Regular Service - NOT a HelmChart
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-service
+spec:
+  selector:
+    app: other
+  ports:
+  - port: 80
+    targetPort: 8080
+
