@@ -12,6 +12,30 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DiscoverHelmChartsInDirectory recursively searches for Helm charts in the given directory.
+// A directory is considered a Helm chart if it contains a Chart.yaml or Chart.yml file.
+func DiscoverHelmChartsInDirectory(rootDir string) ([]string, error) {
+	// Use glob-based discovery for simplicity and performance
+	pattern := filepath.Join(rootDir, "**")
+	return discoverChartPaths(pattern)
+}
+
+// DiscoverPreflightsInDirectory recursively searches for Preflight specs in the given directory.
+// A file is considered a Preflight spec if it has kind: Preflight.
+func DiscoverPreflightsInDirectory(rootDir string) ([]string, error) {
+	// Use glob-based discovery to find YAMLs, then filter by kind
+	pattern := filepath.Join(rootDir, "**")
+	return discoverPreflightPaths(pattern)
+}
+
+// DiscoverSupportBundlesInDirectory recursively searches for SupportBundle specs in the given directory.
+// A file is considered a SupportBundle spec if it has kind: SupportBundle.
+func DiscoverSupportBundlesInDirectory(rootDir string) ([]string, error) {
+	// Use glob-based discovery to find YAMLs, then filter by kind
+	pattern := filepath.Join(rootDir, "**")
+	return discoverSupportBundlePaths(pattern)
+}
+
 // DiscoverSupportBundlesFromManifests discovers support bundle spec files from manifest glob patterns.
 // It expands the glob patterns, reads each YAML file, and identifies files containing kind: SupportBundle.
 // This allows support bundles to be co-located with other Kubernetes manifests without explicit configuration.
@@ -287,9 +311,12 @@ func discoverPreflightPaths(pattern string) ([]string, error) {
 	return preflightPaths, nil
 }
 
+// (duplicate isPreflightSpec removed)
+
 // isSupportBundleSpec checks if a YAML file contains a SupportBundle kind.
 // Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
 // handles document separators (---) even when they appear inside strings or block scalars.
+// For files with syntax errors, falls back to simple string matching to detect the kind.
 func isSupportBundleSpec(path string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
