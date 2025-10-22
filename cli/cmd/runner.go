@@ -279,7 +279,12 @@ type runnerArgs struct {
 	unDemoteChannelSequence int64
 
 	// Profile management
-	profileAddToken          string
-	profileAddAPIOrigin      string
-	profileAddRegistryOrigin string
+	profileAddToken           string
+	profileAddAPIOrigin       string
+	profileAddRegistryOrigin  string
+	profileAddNamespace       string
+	profileEditToken          string
+	profileEditAPIOrigin      string
+	profileEditRegistryOrigin string
+	profileEditNamespace      string
 }

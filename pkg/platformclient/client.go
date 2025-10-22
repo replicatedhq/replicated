@@ -62,6 +62,11 @@ func NewHTTPClient(origin string, apiKey string) *HTTPClient {
 	return c
 }
 
+// GetOrigin returns the API origin this client is configured to use
+func (c *HTTPClient) GetOrigin() string {
+	return c.apiOrigin
+}
+
 func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody string) ([]byte, error) {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf *bytes.Buffer

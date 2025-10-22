@@ -24,6 +24,7 @@ Authentication priority:
 
 Use the various subcommands to:
 - Add new profiles
+- Edit existing profiles
 - List all profiles
 - Remove profiles
 - Set the default profile`,
@@ -35,6 +36,9 @@ replicated profile add prod --token=your-prod-token
 
 # Add a development profile with custom API origin
 replicated profile add dev --token=your-dev-token --api-origin=https://vendor-api-dev.com
+
+# Edit an existing profile's API origin
+replicated profile edit dev --api-origin=https://vendor-api-noahecampbell.okteto.repldev.com
 
 # List all profiles
 replicated profile ls

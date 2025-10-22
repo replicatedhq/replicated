@@ -51,7 +51,15 @@ func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
 		return r.releaseLintV1(cmd, args)
 	}
 
-	// Fetch feature flags to determine which linting behavior to use
+	// Check for environment variable override for testing
+	if envOverride := os.Getenv("REPLICATED_RELEASE_VALIDATION_V2"); envOverride != "" {
+		if envOverride == "1" {
+			return r.runLint(cmd, args)
+		}
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Fetch feature flags from vendor-api
 	features, err := r.platformAPI.GetFeatures(cmd.Context())
 	if err != nil {
 		// If feature flag fetch fails, default to old release lint behavior (flag=0)

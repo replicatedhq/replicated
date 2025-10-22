@@ -39,17 +39,27 @@ replicated profile add dev \
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (optional, will prompt if not provided)")
-	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor)")
-	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com)")
+	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor). Mutually exclusive with --namespace")
+	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com). Mutually exclusive with --namespace")
+	cmd.Flags().StringVar(&r.args.profileAddNamespace, "namespace", "", "Okteto namespace for dev environments (e.g., 'noahecampbell'). Auto-generates service URLs. Mutually exclusive with --api-origin and --registry-origin")
 
 	return cmd
 }
 
-func (r *runners) profileAdd(_ *cobra.Command, args []string) error {
+func (r *runners) profileAdd(cmd *cobra.Command, args []string) error {
 	profileName := args[0]
 
 	if profileName == "" {
 		return errors.New("profile name cannot be empty")
+	}
+
+	// Check for mutually exclusive flags
+	hasNamespace := cmd.Flags().Changed("namespace")
+	hasAPIOrigin := cmd.Flags().Changed("api-origin")
+	hasRegistryOrigin := cmd.Flags().Changed("registry-origin")
+
+	if hasNamespace && (hasAPIOrigin || hasRegistryOrigin) {
+		return errors.New("--namespace cannot be used with --api-origin or --registry-origin. Use --namespace for dev environments, or use explicit origins for custom endpoints")
 	}
 
 	// If token is not provided via flag, prompt for it securely
@@ -66,6 +76,7 @@ func (r *runners) profileAdd(_ *cobra.Command, args []string) error {
 		APIToken:       token,
 		APIOrigin:      r.args.profileAddAPIOrigin,
 		RegistryOrigin: r.args.profileAddRegistryOrigin,
+		Namespace:      r.args.profileAddNamespace,
 	}
 
 	if err := credentials.AddProfile(profileName, profile); err != nil {
