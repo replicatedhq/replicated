@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -17,7 +18,7 @@ func (r *runners) InitProfileAddCommand(parent *cobra.Command) *cobra.Command {
 		Long: `Add a new authentication profile with the specified name.
 
 You can provide an API token via the --token flag, or you will be prompted to enter it securely.
-Optionally, you can specify custom API and registry origins.
+The --token flag supports environment variable expansion using $VAR or ${VAR} syntax.
 If a profile with the same name already exists, it will be updated.
 
 The profile will be stored in ~/.replicated/config.yaml with file permissions 600 (owner read/write only).`,
@@ -27,21 +28,23 @@ replicated profile add prod
 # Add a production profile with token flag
 replicated profile add prod --token=your-prod-token
 
-# Add a development profile with custom origins
-replicated profile add dev \
-  --token=your-dev-token \
-  --api-origin=https://vendor-api-noahecampbell.okteto.repldev.com \
-  --registry-origin=vendor-registry-v2-noahecampbell.okteto.repldev.com`,
+# Add a profile using an environment variable
+replicated profile add prod --token='$REPLICATED_API_TOKEN'`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE:         r.profileAdd,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (optional, will prompt if not provided)")
+	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (supports $VAR syntax, optional, will prompt if not provided)")
 	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor). Mutually exclusive with --namespace")
 	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com). Mutually exclusive with --namespace")
 	cmd.Flags().StringVar(&r.args.profileAddNamespace, "namespace", "", "Okteto namespace for dev environments (e.g., 'noahecampbell'). Auto-generates service URLs. Mutually exclusive with --api-origin and --registry-origin")
+
+	// Hide flags for internal/development use
+	cmd.Flags().MarkHidden("api-origin")
+	cmd.Flags().MarkHidden("registry-origin")
+	cmd.Flags().MarkHidden("namespace")
 
 	return cmd
 }
@@ -70,6 +73,9 @@ func (r *runners) profileAdd(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to read API token")
 		}
+	} else {
+		// Expand environment variables in the token (e.g., $REPLICATED_API_TOKEN or ${REPLICATED_API_TOKEN})
+		token = os.ExpandEnv(token)
 	}
 
 	profile := types.Profile{
