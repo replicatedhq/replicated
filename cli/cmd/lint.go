@@ -44,59 +44,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Load .replicated config using tools parser (supports monorepos)
 	parser := tools.NewConfigParser()
-	config, err := parser.FindAndParseConfig(".")
-	if err != nil {
-		// If no config found, auto-discover resources and proceed without prompts
-		if strings.Contains(err.Error(), "no .replicated config file found") {
-			fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
-			r.w.Flush()
-
-			// Build an in-memory config via discovery
-			config = &tools.Config{}
-			parser.ApplyDefaults(config)
-
-			// Auto-discover Helm charts
-			chartPaths, err := lint2.DiscoverHelmChartsInDirectory(".")
-			if err != nil {
-				return errors.Wrap(err, "failed to discover helm charts")
-			}
-			for _, chartPath := range chartPaths {
-				config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
-			}
-
-			// Auto-discover Preflight specs
-			preflightPaths, err := lint2.DiscoverPreflightsInDirectory(".")
-			if err != nil {
-				return errors.Wrap(err, "failed to discover preflight specs")
-			}
-			for _, preflightPath := range preflightPaths {
-				config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
-			}
-
-			// Auto-discover Support Bundle specs (added to manifests for discovery-based linting)
-			sbPaths, err := lint2.DiscoverSupportBundlesInDirectory(".")
-			if err != nil {
-				return errors.Wrap(err, "failed to discover support bundle specs")
-			}
-			config.Manifests = append(config.Manifests, sbPaths...)
-
-			// Print what was discovered
-			fmt.Fprintf(r.w, "Discovered resources:\n")
-			fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
-			fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
-			fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n\n", len(sbPaths))
-			r.w.Flush()
-
-			// If nothing was found, exit early without error
-			if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
-				fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
-				r.w.Flush()
-				return nil
-			}
-		} else {
-			return errors.Wrap(err, "failed to load .replicated config")
-		}
-	}
+	config, _ := parser.FindAndParseConfig(".")
 
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
