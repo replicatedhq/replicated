@@ -1,0 +1,24 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: empty-builder-test
+spec:
+  collectors:
+  {{- if .Values.feature.enabled }}
+    - http:
+        collectorName: feature-check
+        get:
+          url: http://localhost/{{ .Values.feature.name }}
+          timeout: {{ .Values.feature.timeout }}s
+  {{- end }}
+  analyzers:
+  {{- if .Values.feature.enabled }}
+    - textAnalyze:
+        checkName: feature-availability
+        collectorName: feature-check
+        fileName: response.txt
+        outcomes:
+          - pass:
+              when: "true"
+              message: Feature {{ .Values.feature.name }} is available with {{ .Values.feature.timeout }}s timeout
+  {{- end }}

@@ -389,4 +389,301 @@ func TestLintPreflight_Integration(t *testing.T) {
 			t.Logf("✓ End-to-end workflow succeeded: config → extract metadata → discover manifests → render → lint")
 		}
 	})
+
+	t.Run("complex nested partial override", func(t *testing.T) {
+		// This test verifies that builder values can partially override nested structures.
+		// Chart values: postgresql.enabled=false, postgresql.host=localhost, postgresql.port=5432
+		// Builder values: postgresql.enabled=true (ONLY enabled, not host/port)
+		// Expected: enabled comes from builder (true), host/port come from chart (localhost:5432)
+		// This is a common pattern - override feature flags but keep connection details
+
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/nested-override-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		if len(helmChartManifests) != 1 {
+			t.Fatalf("Expected 1 HelmChart manifest, got %d", len(helmChartManifests))
+		}
+
+		// Verify builder only has 'enabled', not 'host' or 'port'
+		helmChart, found := helmChartManifests["test-app-nested:1.0.0"]
+		if !found {
+			t.Fatal("HelmChart manifest not found for test-app-nested:1.0.0")
+		}
+		if postgresql, ok := helmChart.BuilderValues["postgresql"].(map[string]interface{}); ok {
+			if _, hasHost := postgresql["host"]; hasHost {
+				t.Error("Builder should NOT have postgresql.host (should come from chart)")
+			}
+			if _, hasPort := postgresql["port"]; hasPort {
+				t.Error("Builder should NOT have postgresql.port (should come from chart)")
+			}
+			if enabled, ok := postgresql["enabled"].(bool); !ok || !enabled {
+				t.Error("Builder should have postgresql.enabled=true")
+			}
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			"testdata/preflights/nested-override-test/preflight-nested.yaml",
+			"testdata/preflights/nested-override-test/chart/values.yaml",
+			"test-app-nested",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for nested partial override, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		for _, msg := range result.Messages {
+			if msg.Severity == "ERROR" {
+				t.Errorf("Unexpected ERROR: %s", msg.Message)
+			}
+		}
+
+		t.Logf("✓ Partial nested override works: builder.enabled=true, chart.host/port used")
+	})
+
+	t.Run("array values from builder", func(t *testing.T) {
+		// This test verifies that builder can provide array values.
+		// Chart values: ingress.hosts=[] (empty array)
+		// Builder values: ingress.hosts=[host1, host2, host3]
+		// Template uses: {{- range .Values.ingress.hosts }}
+		// Expected: Template iterates over builder's 3 hosts
+
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/array-values-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		// Verify builder has array with 3 hosts
+		helmChart, found := helmChartManifests["test-app-arrays:1.0.0"]
+		if !found {
+			t.Fatal("HelmChart manifest not found for test-app-arrays:1.0.0")
+		}
+		if ingress, ok := helmChart.BuilderValues["ingress"].(map[string]interface{}); ok {
+			if hosts, ok := ingress["hosts"].([]interface{}); ok {
+				if len(hosts) != 3 {
+					t.Errorf("Expected 3 hosts in builder, got %d", len(hosts))
+				}
+			} else {
+				t.Error("Builder should have ingress.hosts as array")
+			}
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			"testdata/preflights/array-values-test/preflight-arrays.yaml",
+			"testdata/preflights/array-values-test/chart/values.yaml",
+			"test-app-arrays",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for array values, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		for _, msg := range result.Messages {
+			if msg.Severity == "ERROR" {
+				t.Errorf("Unexpected ERROR: %s", msg.Message)
+			}
+		}
+
+		t.Logf("✓ Array values work: {{- range }} iterates over builder's 3 hosts")
+	})
+
+	t.Run("string interpolation without conditionals", func(t *testing.T) {
+		// This test verifies direct value substitution in strings (no {{- if }} conditionals).
+		// Chart values: database.host=localhost, database.port=5432, database.name=devdb
+		// Builder values: database.host=prod.database.example.com, database.port=5432, database.name=proddb
+		// Template: uri: 'postgresql://{{ .Values.database.user }}@{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}'
+		// Expected: Builder values substitute directly into connection string
+
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/string-interpolation-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		// Verify builder has production values
+		helmChart, found := helmChartManifests["test-app-strings:1.0.0"]
+		if !found {
+			t.Fatal("HelmChart manifest not found for test-app-strings:1.0.0")
+		}
+		if database, ok := helmChart.BuilderValues["database"].(map[string]interface{}); ok {
+			if host, ok := database["host"].(string); !ok || host != "prod.database.example.com" {
+				t.Errorf("Expected builder to have database.host=prod.database.example.com, got %v", database["host"])
+			}
+			if name, ok := database["name"].(string); !ok || name != "proddb" {
+				t.Errorf("Expected builder to have database.name=proddb, got %v", database["name"])
+			}
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			"testdata/preflights/string-interpolation-test/preflight-strings.yaml",
+			"testdata/preflights/string-interpolation-test/chart/values.yaml",
+			"test-app-strings",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for string interpolation, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		for _, msg := range result.Messages {
+			if msg.Severity == "ERROR" {
+				t.Errorf("Unexpected ERROR: %s", msg.Message)
+			}
+		}
+
+		t.Logf("✓ String interpolation works: builder values substituted in connection strings")
+	})
+
+	t.Run("multiple charts with multiple preflights", func(t *testing.T) {
+		// This test verifies that multiple charts/preflights work correctly.
+		// Charts: frontend-app:1.0.0, backend-app:2.0.0
+		// Preflights: One for frontend (uses service.port), one for backend (uses api.port)
+		// Expected: Each preflight gets correct builder values for its chart
+
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/multi-chart-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		if len(helmChartManifests) != 2 {
+			t.Fatalf("Expected 2 HelmChart manifests, got %d", len(helmChartManifests))
+		}
+
+		// Verify we have both charts
+		frontendChart, foundFrontend := helmChartManifests["frontend-app:1.0.0"]
+		backendChart, foundBackend := helmChartManifests["backend-app:2.0.0"]
+		if !foundFrontend || !foundBackend {
+			t.Fatal("Expected to find both frontend-app:1.0.0 and backend-app:2.0.0")
+		}
+
+		// Lint frontend preflight with frontend chart
+		frontendResult, err := LintPreflight(
+			ctx,
+			"testdata/preflights/multi-chart-test/preflight-frontend.yaml",
+			"testdata/preflights/multi-chart-test/frontend-chart/values.yaml",
+			"frontend-app",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() frontend error = %v, want nil", err)
+		}
+
+		if !frontendResult.Success {
+			t.Errorf("Expected success=true for frontend preflight, got false")
+		}
+
+		// Verify frontend used correct builder (service.enabled=true, service.port=3000)
+		if service, ok := frontendChart.BuilderValues["service"].(map[string]interface{}); ok {
+			if port, ok := service["port"].(int); !ok || port != 3000 {
+				t.Errorf("Frontend builder should have service.port=3000, got %v", service["port"])
+			}
+		}
+
+		// Lint backend preflight with backend chart
+		backendResult, err := LintPreflight(
+			ctx,
+			"testdata/preflights/multi-chart-test/preflight-backend.yaml",
+			"testdata/preflights/multi-chart-test/backend-chart/values.yaml",
+			"backend-app",
+			"2.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() backend error = %v, want nil", err)
+		}
+
+		if !backendResult.Success {
+			t.Errorf("Expected success=true for backend preflight, got false")
+		}
+
+		// Verify backend used correct builder (api.enabled=true, api.port=8080)
+		if api, ok := backendChart.BuilderValues["api"].(map[string]interface{}); ok {
+			if port, ok := api["port"].(int); !ok || port != 8080 {
+				t.Errorf("Backend builder should have api.port=8080, got %v", api["port"])
+			}
+		}
+
+		t.Logf("✓ Multiple charts work: frontend used service.port=3000, backend used api.port=8080")
+	})
+
+	t.Run("empty builder values uses chart defaults", func(t *testing.T) {
+		// This test verifies that when builder is empty (builder: {}), chart defaults are used.
+		// Chart values: feature.enabled=true, feature.name=default-feature, feature.timeout=30
+		// Builder values: {} (explicitly empty, not nil)
+		// Expected: All values come from chart defaults
+
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/empty-builder-test/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		// Verify builder is empty
+		helmChart, found := helmChartManifests["test-app-empty-builder:1.0.0"]
+		if !found {
+			t.Fatal("HelmChart manifest not found for test-app-empty-builder:1.0.0")
+		}
+		if helmChart.BuilderValues == nil || len(helmChart.BuilderValues) != 0 {
+			t.Errorf("Expected empty builder values map, got %v", helmChart.BuilderValues)
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			"testdata/preflights/empty-builder-test/preflight-empty-builder.yaml",
+			"testdata/preflights/empty-builder-test/chart/values.yaml",
+			"test-app-empty-builder",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for empty builder, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		for _, msg := range result.Messages {
+			if msg.Severity == "ERROR" {
+				t.Errorf("Unexpected ERROR: %s", msg.Message)
+			}
+		}
+
+		t.Logf("✓ Empty builder works: chart defaults used (enabled=true, name=default-feature, timeout=30)")
+	})
 }

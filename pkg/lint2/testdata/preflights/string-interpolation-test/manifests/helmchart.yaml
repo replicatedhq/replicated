@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart-strings
+spec:
+  chart:
+    name: test-app-strings
+    chartVersion: 1.0.0
+  builder:
+    database:
+      host: prod.database.example.com
+      port: 5432
+      name: proddb
+      user: produser

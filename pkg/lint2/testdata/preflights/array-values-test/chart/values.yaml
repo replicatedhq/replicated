@@ -1,0 +1,2 @@
+ingress:
+  hosts: []  # Empty array in chart defaults

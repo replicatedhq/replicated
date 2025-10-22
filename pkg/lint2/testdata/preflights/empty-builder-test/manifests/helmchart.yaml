@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart-empty-builder
+spec:
+  chart:
+    name: test-app-empty-builder
+    chartVersion: 1.0.0
+  builder: {}
