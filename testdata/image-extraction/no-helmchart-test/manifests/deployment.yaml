@@ -1,0 +1,19 @@
+# Regular Kubernetes Deployment - NOT a HelmChart
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: other-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: other
+  template:
+    metadata:
+      labels:
+        app: other
+    spec:
+      containers:
+      - name: app
+        image: "busybox:latest"
+

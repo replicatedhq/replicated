@@ -1,0 +1,7 @@
+apiVersion: v2
+name: empty-builder-app
+version: 1.0.0
+description: Chart with required values but empty builder section
+type: application
+appVersion: "1.0.0"
+

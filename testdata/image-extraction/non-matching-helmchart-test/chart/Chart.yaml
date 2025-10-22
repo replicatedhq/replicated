@@ -1,0 +1,7 @@
+apiVersion: v2
+name: app-requiring-values
+version: 1.0.0
+description: Chart that requires values but has non-matching HelmChart manifest
+type: application
+appVersion: "1.0.0"
+

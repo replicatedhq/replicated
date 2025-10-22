@@ -1,0 +1,6 @@
+# Required values
+service:
+  image:
+    repository: ""
+    tag: ""
+
