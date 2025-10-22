@@ -62,6 +62,8 @@ func lintPreflightDirect(ctx context.Context, specPath string, preflightVersion 
 	}
 
 	// Defensive check: validate spec path exists
+	// Note: specs are validated during config parsing, but we check again here
+	// since LintPreflight is a public function that could be called directly
 	if _, err := os.Stat(specPath); err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("preflight spec path does not exist: %s", specPath)
@@ -69,14 +71,18 @@ func lintPreflightDirect(ctx context.Context, specPath string, preflightVersion 
 		return nil, fmt.Errorf("failed to access preflight spec path: %w", err)
 	}
 
-	// Execute preflight lint with JSON output
+	// Execute preflight lint with JSON output for easier parsing
 	cmd := exec.CommandContext(ctx, preflightPath, "lint", "--format", "json", specPath)
 	output, err := cmd.CombinedOutput()
+
+	// preflight lint returns exit code 2 if there are errors,
+	// but we still want to parse and display the output
 	outputStr := string(output)
 
 	// Parse the JSON output
 	messages, parseErr := ParsePreflightOutput(outputStr)
 	if parseErr != nil {
+		// If we can't parse the output, return both the parse error and original error
 		if err != nil {
 			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
 		}
@@ -84,6 +90,7 @@ func lintPreflightDirect(ctx context.Context, specPath string, preflightVersion 
 	}
 
 	// Determine success based on exit code
+	// Exit code 0 = no errors, exit code 2 = validation errors
 	success := err == nil
 
 	return &LintResult{
@@ -174,7 +181,7 @@ func lintPreflightWithTemplating(
 
 	templateCmd := exec.CommandContext(ctx, preflightPath, templateArgs...)
 	if output, err := templateCmd.CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("failed to render preflight template:\nPreflight: %s\nValues: %s\nBuilder values: chart %q\n\nTemplate error: %w\nOutput: %s",
+		return nil, fmt.Errorf("failed to render preflight template:\nPreflight: %s\nValues: %s\nBuilder values: chart %q\n\nHint: Check for invalid template expressions ({{ ... }})\n\nTemplate error: %w\nOutput: %s",
 			specPath, valuesPath, key, err, string(output))
 	}
 

@@ -1135,3 +1135,54 @@ spec:
 		t.Errorf("DiscoverSupportBundlesFromManifests() returned path %q, want %q", paths[0], bundlePath)
 	}
 }
+
+func TestGetPreflightWithValuesFromConfig_MissingChartYaml(t *testing.T) {
+	// Test that GetPreflightWithValuesFromConfig errors when valuesPath is set but Chart.yaml is missing
+	tmpDir := t.TempDir()
+
+	// Create a preflight spec
+	preflightPath := filepath.Join(tmpDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: test
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(preflightPath, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a values.yaml file WITHOUT adjacent Chart.yaml
+	valuesDir := filepath.Join(tmpDir, "chart")
+	if err := os.MkdirAll(valuesDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	valuesPath := filepath.Join(valuesDir, "values.yaml")
+	valuesContent := `database:
+  enabled: true
+`
+	if err := os.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Config with valuesPath but no Chart.yaml
+	config := &tools.Config{
+		Preflights: []tools.PreflightConfig{
+			{
+				Path:       preflightPath,
+				ValuesPath: valuesPath,
+			},
+		},
+	}
+
+	_, err := GetPreflightWithValuesFromConfig(config)
+	if err == nil {
+		t.Fatal("GetPreflightWithValuesFromConfig() should error when Chart.yaml is missing, got nil")
+	}
+
+	// Error should mention Chart.yaml not found
+	if !contains(err.Error(), "Chart.yaml not found") {
+		t.Errorf("Error should mention Chart.yaml not found, got: %v", err)
+	}
+}
