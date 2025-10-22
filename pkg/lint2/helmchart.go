@@ -115,6 +115,14 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 		}
 	}
 
+	// Fail-fast if no HelmCharts found - prevents confusing "no HelmChart manifest found for chart X" error later
+	// This is required because preflights with valuesPath always need builder values from a HelmChart manifest
+	if len(helmCharts) == 0 {
+		return nil, fmt.Errorf("no HelmChart resources found in manifests\n"+
+			"At least one HelmChart manifest is required for preflight linting\n"+
+			"Checked patterns: %v", manifestGlobs)
+	}
+
 	return helmCharts, nil
 }
 

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: test-app-arrays
+description: Test chart for array values
+version: 1.0.0
+appVersion: "1.0"

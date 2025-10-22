@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: backend-chart
+spec:
+  chart:
+    name: backend-app
+    chartVersion: 2.0.0
+  builder:
+    api:
+      enabled: true
+      port: 8080

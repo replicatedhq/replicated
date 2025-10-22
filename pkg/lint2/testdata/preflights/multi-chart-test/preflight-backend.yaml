@@ -1,0 +1,23 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: backend-preflight
+spec:
+  collectors:
+  {{- if .Values.api.enabled }}
+    - http:
+        collectorName: backend-api
+        get:
+          url: http://localhost:{{ .Values.api.port }}/api/health
+  {{- end }}
+  analyzers:
+  {{- if .Values.api.enabled }}
+    - textAnalyze:
+        checkName: backend-health
+        collectorName: backend-api
+        fileName: health.txt
+        outcomes:
+          - pass:
+              when: "true"
+              message: Backend API on port {{ .Values.api.port }} is configured
+  {{- end }}

@@ -1,0 +1,12 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: frontend-chart
+spec:
+  chart:
+    name: frontend-app
+    chartVersion: 1.0.0
+  builder:
+    service:
+      enabled: true
+      port: 3000

@@ -1,0 +1,17 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart-disabled
+spec:
+  chart:
+    name: test-app-disabled
+    chartVersion: 2.0.0
+  builder:
+    database:
+      enabled: false
+      host: postgres.example.com
+      port: 5432
+    redis:
+      enabled: false
+      host: redis.example.com
+      port: 6379
