@@ -315,7 +315,7 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 	}
 
 	// Discover HelmChart manifests once (needed for templated preflights)
-	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	helmChartManifests, err := lint2.GetHelmChartManifestsFromConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
 	}
@@ -514,13 +514,13 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Config) (*ImageExtractResults, error) {
 	extractor := imageextract.NewExtractor()
 
-	// Get chart paths from config
-	chartPaths, err := lint2.GetChartPathsFromConfig(config)
+	// Get charts with metadata from config
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get chart paths from config")
 	}
 
-	if len(chartPaths) == 0 {
+	if len(charts) == 0 {
 		return &ImageExtractResults{
 			Images:   []imageextract.ImageRef{},
 			Warnings: []imageextract.Warning{},
@@ -529,31 +529,17 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 	}
 
 	// Discover HelmChart manifests from config to get builder values
-	var helmChartManifests map[string]*lint2.HelmChartManifest
-	if len(config.Manifests) > 0 {
-		helmChartManifests, err = lint2.DiscoverHelmChartManifests(config.Manifests)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
-		}
-	} else {
-		helmChartManifests = make(map[string]*lint2.HelmChartManifest)
+	// Manifests are required for both preflight linting and image extraction
+	helmChartManifests, err := lint2.GetHelmChartManifestsFromConfig(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
 	}
 
 	// Collect all images from all charts
 	imageMap := make(map[string]imageextract.ImageRef) // For deduplication
 	var allWarnings []imageextract.Warning
 
-	for _, chartPath := range chartPaths {
-		// Get chart metadata to match with HelmChart manifest
-		chartMetadata, err := lint2.GetChartMetadata(chartPath)
-		if err != nil {
-			allWarnings = append(allWarnings, imageextract.Warning{
-				Image:   chartPath,
-				Message: fmt.Sprintf("Failed to read chart metadata: %v", err),
-			})
-			continue
-		}
-
+	for _, chart := range charts {
 		// Create options for this chart
 		opts := imageextract.Options{
 			IncludeDuplicates: false,
@@ -561,16 +547,15 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 		}
 
 		// Look for matching HelmChart manifest and apply builder values
-		chartKey := fmt.Sprintf("%s:%s", chartMetadata.Name, chartMetadata.Version)
-		if helmChartManifest, found := helmChartManifests[chartKey]; found {
+		if helmChartManifest := lint2.FindHelmChartManifest(chart.Name, chart.Version, helmChartManifests); helmChartManifest != nil {
 			// Apply builder values from HelmChart manifest
 			opts.HelmValues = helmChartManifest.BuilderValues
 		}
 
-		result, err := extractor.ExtractFromChart(ctx, chartPath, opts)
+		result, err := extractor.ExtractFromChart(ctx, chart.Path, opts)
 		if err != nil {
 			allWarnings = append(allWarnings, imageextract.Warning{
-				Image:   chartPath,
+				Image:   chart.Path,
 				Message: fmt.Sprintf("Failed to extract images: %v", err),
 			})
 			continue

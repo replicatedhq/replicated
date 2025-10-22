@@ -20,6 +20,15 @@ type HelmChartManifest struct {
 	FilePath      string                 // Source file path for error reporting
 }
 
+// FindHelmChartManifest looks up a HelmChart manifest by chart name and version.
+// The matching key format is "name:version" which must exactly match both the chart
+// metadata and the HelmChart manifest's spec.chart.name and spec.chart.chartVersion.
+// Returns nil if no matching manifest is found.
+func FindHelmChartManifest(chartName, chartVersion string, manifests map[string]*HelmChartManifest) *HelmChartManifest {
+	key := fmt.Sprintf("%s:%s", chartName, chartVersion)
+	return manifests[key]
+}
+
 // DuplicateHelmChartError is returned when multiple HelmChart manifests
 // are found with the same name:chartVersion combination.
 type DuplicateHelmChartError struct {

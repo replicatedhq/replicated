@@ -47,6 +47,39 @@ func expandChartPaths(chartConfigs []tools.ChartConfig) ([]string, error) {
 	return paths, nil
 }
 
+// ChartWithMetadata pairs a chart path with its metadata from Chart.yaml
+type ChartWithMetadata struct {
+	Path    string // Absolute path to the chart directory
+	Name    string // Chart name from Chart.yaml
+	Version string // Chart version from Chart.yaml
+}
+
+// GetChartsWithMetadataFromConfig extracts chart paths and their metadata from config
+// This function combines GetChartPathsFromConfig with metadata extraction, reducing
+// boilerplate for callers that need both path and metadata information (like image extraction).
+func GetChartsWithMetadataFromConfig(config *tools.Config) ([]ChartWithMetadata, error) {
+	chartPaths, err := GetChartPathsFromConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []ChartWithMetadata
+	for _, chartPath := range chartPaths {
+		metadata, err := GetChartMetadata(chartPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read chart metadata for %s: %w", chartPath, err)
+		}
+
+		results = append(results, ChartWithMetadata{
+			Path:    chartPath,
+			Name:    metadata.Name,
+			Version: metadata.Version,
+		})
+	}
+
+	return results, nil
+}
+
 // containsGlob checks if a path contains glob wildcards
 // Calls exported ContainsGlob for consistency
 func containsGlob(path string) bool {
@@ -217,4 +250,12 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 	}
 
 	return results, nil
+}
+
+// GetHelmChartManifestsFromConfig discovers HelmChart manifests from config
+// This is a convenience wrapper around DiscoverHelmChartManifests that takes a Config object
+// and returns the discovered manifests. Manifests are required for both preflight linting
+// and image extraction.
+func GetHelmChartManifestsFromConfig(config *tools.Config) (map[string]*HelmChartManifest, error) {
+	return DiscoverHelmChartManifests(config.Manifests)
 }

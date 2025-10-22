@@ -78,72 +78,32 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_WithMatchingHelmChartMa
 }
 
 func TestExtractImagesFromConfig_ChartWithRequiredValues_NoHelmChartManifest(t *testing.T) {
-	// Test that charts with required values fail to render without builder values
+	// Test that extraction fails when manifests are not configured
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "chart-with-required-values-test", "chart"))
 
 	config := &tools.Config{
 		Charts: []tools.ChartConfig{
 			{Path: chartPath},
 		},
-		Manifests: []string{}, // No manifests = no builder values
+		Manifests: []string{}, // No manifests configured
 	}
 
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
-	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+	_, err := r.extractImagesFromConfig(ctx, config)
+
+	// Should fail because manifests are required
+	if err == nil {
+		t.Fatal("Expected error when manifests not configured, got nil")
 	}
 
-	// Should get 0 images because chart fails to render without builder values
-	if len(result.Images) != 0 {
-		t.Errorf("Expected 0 images (chart should fail to render), got %d: %+v", len(result.Images), result.Images)
-	}
-
-	// Should have a warning about the failure
-	if len(result.Warnings) == 0 {
-		t.Error("Expected at least one warning about failed extraction")
+	// Error should mention manifests configuration
+	if !strings.Contains(err.Error(), "no manifests configured") {
+		t.Errorf("Expected error about manifests configuration, got: %v", err)
 	}
 }
 
-func TestExtractImagesFromConfig_SimpleChart_NoBuilderValuesNeeded(t *testing.T) {
-	// Test backward compatibility - charts with default values work without HelmChart manifests
-	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "simple-chart-test", "chart"))
-
-	config := &tools.Config{
-		Charts: []tools.ChartConfig{
-			{Path: chartPath},
-		},
-		Manifests: []string{}, // No manifests needed
-	}
-
-	r := &runners{}
-	ctx := context.Background()
-
-	result, err := r.extractImagesFromConfig(ctx, config)
-	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
-	}
-
-	// Should extract the hardcoded nginx:1.21 image
-	if len(result.Images) == 0 {
-		t.Fatal("Expected images to be extracted even without HelmChart manifest")
-	}
-
-	// Check for nginx:1.21 image
-	foundNginx := false
-	for _, img := range result.Images {
-		if (img.Repository == "library/nginx" || img.Repository == "nginx") && img.Tag == "1.21" {
-			foundNginx = true
-			break
-		}
-	}
-
-	if !foundNginx {
-		t.Errorf("Expected to find nginx:1.21 image. Got images: %+v", result.Images)
-	}
-}
 
 func TestExtractImagesFromConfig_NonMatchingHelmChart_FailsToRender(t *testing.T) {
 	// Test that HelmChart manifest must match chart name:version exactly
@@ -255,43 +215,33 @@ func TestExtractImagesFromConfig_NoCharts_ReturnsError(t *testing.T) {
 	}
 }
 
-func TestExtractImagesFromConfig_NoManifestsConfigured_WorksForSimpleCharts(t *testing.T) {
-	// Test that manifests being empty doesn't break charts that don't need builder values
+func TestExtractImagesFromConfig_NoManifests_ReturnsError(t *testing.T) {
+	// Test that manifests are required for image extraction
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "simple-chart-test", "chart"))
 
 	config := &tools.Config{
 		Charts: []tools.ChartConfig{
 			{Path: chartPath},
 		},
-		Manifests: []string{}, // Explicitly empty
+		Manifests: []string{}, // No manifests configured
 	}
 
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
-	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+	_, err := r.extractImagesFromConfig(ctx, config)
+
+	// Should fail because manifests are required
+	if err == nil {
+		t.Fatal("Expected error when manifests not configured, got nil")
 	}
 
-	// Should still work for charts that don't need builder values
-	if len(result.Images) == 0 {
-		t.Error("Expected images to be extracted even with no manifests configured")
-	}
-
-	// Verify we got nginx
-	foundNginx := false
-	for _, img := range result.Images {
-		if img.Repository == "library/nginx" || img.Repository == "nginx" {
-			foundNginx = true
-			break
-		}
-	}
-
-	if !foundNginx {
-		t.Errorf("Expected nginx image in results. Got: %+v", result.Images)
+	// Error should mention manifests configuration
+	if !strings.Contains(err.Error(), "no manifests configured") {
+		t.Errorf("Expected error about manifests configuration, got: %v", err)
 	}
 }
+
 
 func TestExtractImagesFromConfig_EmptyBuilder_FailsToRender(t *testing.T) {
 	// Test that HelmChart manifest with empty builder section doesn't provide values
