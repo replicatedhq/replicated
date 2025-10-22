@@ -5,6 +5,7 @@ package lint2
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
@@ -743,44 +744,22 @@ func TestLintPreflight_Integration(t *testing.T) {
 	})
 
 	t.Run("manifests without HelmChart kind", func(t *testing.T) {
-		// This test verifies the error path when manifests are configured but don't contain any kind: HelmChart.
+		// This test verifies the fail-fast error path when manifests are configured but don't contain any kind: HelmChart.
 		// Scenario: User has Deployment, Service, ConfigMap manifests, but forgot the HelmChart custom resource.
-		// Expected:
-		// 1. DiscoverHelmChartManifests() returns empty map (no error)
-		// 2. LintPreflight() returns error with helpful message pointing to the issue
+		// Expected: DiscoverHelmChartManifests() fails immediately with helpful error (fail-fast behavior)
 
 		// Manifests directory contains Deployment, Service, ConfigMap - but NO HelmChart
-		helmChartManifests, err := DiscoverHelmChartManifests([]string{"testdata/preflights/no-helmchart-test/manifests/*.yaml"})
-		if err != nil {
-			t.Fatalf("DiscoverHelmChartManifests() should not error when no HelmChart found, got: %v", err)
-		}
+		_, err := DiscoverHelmChartManifests([]string{"testdata/preflights/no-helmchart-test/manifests/*.yaml"})
 
-		// Should return empty map, not error
-		if len(helmChartManifests) != 0 {
-			t.Errorf("Expected empty map when no HelmChart found, got %d manifests", len(helmChartManifests))
-		}
-
-		// Now try to lint a templated preflight with this empty map
-		_, err = LintPreflight(
-			ctx,
-			"testdata/preflights/no-helmchart-test/preflight-templated.yaml",
-			"testdata/preflights/no-helmchart-test/chart/values.yaml",
-			"test-app-no-helmchart",
-			"1.0.0",
-			helmChartManifests, // Empty map
-			tools.DefaultPreflightVersion,
-		)
-
-		// Should error with helpful message
+		// Should fail-fast during discovery (not delay error until linting)
 		if err == nil {
-			t.Fatal("Expected error when HelmChart not found in manifests, got nil")
+			t.Fatal("Expected error when no HelmChart found in manifests (fail-fast), got nil")
 		}
 
 		// Verify error message is helpful
 		expectedPhrases := []string{
-			"no HelmChart manifest found",
-			"test-app-no-helmchart:1.0.0",
-			"manifests paths",
+			"no HelmChart resources found",
+			"At least one HelmChart manifest is required",
 		}
 		for _, phrase := range expectedPhrases {
 			if !contains(err.Error(), phrase) {
@@ -788,6 +767,303 @@ func TestLintPreflight_Integration(t *testing.T) {
 			}
 		}
 
-		t.Logf("✓ Helpful error when manifests configured but no HelmChart found: %v", err)
+		t.Logf("✓ Fail-fast error when manifests configured but no HelmChart found: %v", err)
+	})
+
+	t.Run("advanced template features - Sprig functions", func(t *testing.T) {
+		// This test verifies that preflight template supports full Sprig function library
+		// Tests: default, quote, upper, pipeline operators
+		// Background: preflight template uses Helm internally, providing full Sprig support
+
+		// Create test data with Sprig functions
+		tmpDir := t.TempDir()
+
+		// Chart structure
+		if err := os.MkdirAll(tmpDir+"/chart", 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(tmpDir+"/manifests", 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		// Chart.yaml
+		chartYaml := `name: sprig-test
+version: 1.0.0`
+		if err := os.WriteFile(tmpDir+"/chart/Chart.yaml", []byte(chartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// values.yaml with some values missing (to test default function)
+		valuesYaml := `appName: myapp
+port: 8080`
+		if err := os.WriteFile(tmpDir+"/chart/values.yaml", []byte(valuesYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// HelmChart manifest
+		helmChartYaml := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+spec:
+  chart:
+    name: sprig-test
+    chartVersion: 1.0.0
+  builder: {}`
+		if err := os.WriteFile(tmpDir+"/manifests/helmchart.yaml", []byte(helmChartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Preflight spec using Sprig functions
+		preflightYaml := `apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: sprig-test
+spec:
+  collectors:
+    - clusterInfo:
+        collectorName: info
+  analyzers:
+    - textAnalyze:
+        checkName: test-default
+        fileName: cluster-info/cluster_version.json
+        regex: '.*'
+        outcomes:
+          - pass:
+              message: {{ .Values.missingValue | default "fallback-value" | quote }}
+    - textAnalyze:
+        checkName: test-upper
+        fileName: cluster-info/cluster_version.json
+        regex: '.*'
+        outcomes:
+          - pass:
+              message: {{ .Values.appName | upper | quote }}
+    - textAnalyze:
+        checkName: test-pipeline
+        fileName: cluster-info/cluster_version.json
+        regex: '.*'
+        outcomes:
+          - pass:
+              message: {{ .Values.port | int | add 1000 | quote }}`
+		if err := os.WriteFile(tmpDir+"/preflight.yaml", []byte(preflightYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Discover and lint
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{tmpDir + "/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			tmpDir+"/preflight.yaml",
+			tmpDir+"/chart/values.yaml",
+			"sprig-test",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for Sprig functions test, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		t.Logf("✓ Sprig functions work (default, quote, upper, int, add)")
+	})
+
+	t.Run("advanced template features - range loops", func(t *testing.T) {
+		// This test verifies that range loops work in preflight templates
+		// Tests: {{- range .Values.items }}...{{- end }}
+
+		tmpDir := t.TempDir()
+
+		// Chart structure
+		if err := os.MkdirAll(tmpDir+"/chart", 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(tmpDir+"/manifests", 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		// Chart.yaml
+		chartYaml := `name: range-test
+version: 1.0.0`
+		if err := os.WriteFile(tmpDir+"/chart/Chart.yaml", []byte(chartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// values.yaml with array
+		valuesYaml := `checks:
+  - name: cpu
+    threshold: 80
+  - name: memory
+    threshold: 90
+  - name: disk
+    threshold: 75`
+		if err := os.WriteFile(tmpDir+"/chart/values.yaml", []byte(valuesYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// HelmChart manifest
+		helmChartYaml := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+spec:
+  chart:
+    name: range-test
+    chartVersion: 1.0.0
+  builder: {}`
+		if err := os.WriteFile(tmpDir+"/manifests/helmchart.yaml", []byte(helmChartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Preflight spec using range loop
+		preflightYaml := `apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: range-test
+spec:
+  collectors:
+    - clusterInfo:
+        collectorName: info
+  analyzers:
+{{- range .Values.checks }}
+    - textAnalyze:
+        checkName: test-{{ .name }}
+        fileName: cluster-info/cluster_version.json
+        regex: '.*'
+        outcomes:
+          - pass:
+              message: "{{ .name }} threshold: {{ .threshold }}"
+{{- end }}`
+		if err := os.WriteFile(tmpDir+"/preflight.yaml", []byte(preflightYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Discover and lint
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{tmpDir + "/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			tmpDir+"/preflight.yaml",
+			tmpDir+"/chart/values.yaml",
+			"range-test",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for range loop test, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		t.Logf("✓ Range loops work - generated 3 analyzers from array")
+	})
+
+	t.Run("advanced template features - named templates with include", func(t *testing.T) {
+		// This test verifies that named templates work with define and include
+		// Tests: {{- define "name" -}}...{{- end -}} and {{ include "name" . }}
+
+		tmpDir := t.TempDir()
+
+		// Chart structure
+		if err := os.MkdirAll(tmpDir+"/chart", 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(tmpDir+"/manifests", 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		// Chart.yaml
+		chartYaml := `name: named-test
+version: 1.0.0`
+		if err := os.WriteFile(tmpDir+"/chart/Chart.yaml", []byte(chartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// values.yaml
+		valuesYaml := `appName: myapp
+environment: production`
+		if err := os.WriteFile(tmpDir+"/chart/values.yaml", []byte(valuesYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// HelmChart manifest
+		helmChartYaml := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+spec:
+  chart:
+    name: named-test
+    chartVersion: 1.0.0
+  builder: {}`
+		if err := os.WriteFile(tmpDir+"/manifests/helmchart.yaml", []byte(helmChartYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Preflight spec using named templates
+		preflightYaml := `{{- define "app.fullname" -}}
+{{ .Values.appName }}-{{ .Values.environment }}
+{{- end -}}
+
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: named-test
+spec:
+  collectors:
+    - clusterInfo:
+        collectorName: info
+  analyzers:
+    - textAnalyze:
+        checkName: test-include
+        fileName: cluster-info/cluster_version.json
+        regex: '.*'
+        outcomes:
+          - pass:
+              message: {{ include "app.fullname" . | quote }}`
+		if err := os.WriteFile(tmpDir+"/preflight.yaml", []byte(preflightYaml), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		// Discover and lint
+		helmChartManifests, err := DiscoverHelmChartManifests([]string{tmpDir + "/manifests/*.yaml"})
+		if err != nil {
+			t.Fatalf("Failed to discover HelmChart manifests: %v", err)
+		}
+
+		result, err := LintPreflight(
+			ctx,
+			tmpDir+"/preflight.yaml",
+			tmpDir+"/chart/values.yaml",
+			"named-test",
+			"1.0.0",
+			helmChartManifests,
+			tools.DefaultPreflightVersion,
+		)
+		if err != nil {
+			t.Fatalf("LintPreflight() error = %v, want nil", err)
+		}
+
+		if !result.Success {
+			t.Errorf("Expected success=true for named templates test, got false")
+			for _, msg := range result.Messages {
+				t.Logf("Message: %s - %s", msg.Severity, msg.Message)
+			}
+		}
+
+		t.Logf("✓ Named templates work with define and include")
 	})
 }

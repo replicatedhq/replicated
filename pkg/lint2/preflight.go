@@ -32,9 +32,40 @@ type PreflightLintIssue struct {
 	Field   string `json:"field"`
 }
 
-// LintPreflight executes preflight lint with template rendering using builder values
-// Requires: valuesPath, chartName, chartVersion, and HelmChart manifest
-// All preflights must have an associated chart structure and HelmChart manifest
+// LintPreflight executes preflight lint with template rendering using builder values.
+//
+// Template Rendering:
+// The preflight tool uses Helm internally for template rendering, providing full support for:
+//   - All Sprig functions (default, quote, upper, lower, trim, sha256, etc.)
+//   - Helm template functions (include, required, tpl, toYaml, toJson, etc.)
+//   - Flow control (if, range, with, define, template, block)
+//   - Variables and complex pipelines
+//
+// Example advanced templates:
+//   {{- if .Values.database.enabled }}
+//   - postgres:
+//       uri: {{ .Values.database.uri | default "postgresql://localhost" | quote }}
+//   {{- end }}
+//
+//   {{- range .Values.services }}
+//   - http:
+//       get:
+//         url: {{ printf "http://%s:%d" .host (.port | int) | quote }}
+//   {{- end }}
+//
+//   {{- define "app.name" -}}{{ .Values.appName }}-{{ .Values.env }}{{- end -}}
+//   message: {{ include "app.name" . | quote }}
+//
+// Known Limitation:
+// Do not nest template actions inside quoted strings with escaped quotes.
+// This will fail: message: "Name: {{ template \"app.name\" . }}"
+// Use instead:   message: {{ include "app.name" . | quote }}
+//
+// Requirements:
+//   - valuesPath: Path to chart values.yaml file
+//   - chartName and chartVersion: Chart metadata for matching with HelmChart manifest
+//   - helmChartManifests: Map of discovered HelmChart manifests containing builder values
+//   - All preflights must have an associated chart structure and HelmChart manifest
 func LintPreflight(
 	ctx context.Context,
 	specPath string,
@@ -123,7 +154,17 @@ func LintPreflight(
 
 	templateCmd := exec.CommandContext(ctx, preflightPath, templateArgs...)
 	if output, err := templateCmd.CombinedOutput(); err != nil {
-		return nil, fmt.Errorf("failed to render preflight template:\nPreflight: %s\nValues: %s\nBuilder values: chart %q\n\nHint: Check for invalid template expressions ({{ ... }})\n\nTemplate error: %w\nOutput: %s",
+		return nil, fmt.Errorf("failed to render preflight template:\n"+
+			"Preflight: %s\n"+
+			"Values: %s\n"+
+			"Builder values: chart %q\n\n"+
+			"Hints:\n"+
+			"  - Check for invalid template expressions ({{ ... }})\n"+
+			"  - Avoid nesting templates in quoted strings: use {{ include \"name\" . | quote }} instead\n"+
+			"  - All Sprig and Helm functions are supported (default, quote, upper, include, etc.)\n"+
+			"  - Use 'helm template' locally to debug complex templates\n\n"+
+			"Template error: %w\n"+
+			"Output: %s",
 			specPath, valuesPath, key, err, string(output))
 	}
 
