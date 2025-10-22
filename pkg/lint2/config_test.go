@@ -1181,8 +1181,8 @@ spec:
 		t.Fatal("GetPreflightWithValuesFromConfig() should error when Chart.yaml is missing, got nil")
 	}
 
-	// Error should mention Chart.yaml not found
-	if !contains(err.Error(), "Chart.yaml not found") {
-		t.Errorf("Error should mention Chart.yaml not found, got: %v", err)
+	// Error should mention failed to read Chart.yaml or Chart.yml
+	if !contains(err.Error(), "failed to read Chart.yaml or Chart.yml") {
+		t.Errorf("Error should mention failed to read Chart.yaml or Chart.yml, got: %v", err)
 	}
 }

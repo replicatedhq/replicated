@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
@@ -323,8 +324,8 @@ func TestExtractImagesFromConfig_EmptyBuilder_FailsToRender(t *testing.T) {
 	}
 }
 
-func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsToRender(t *testing.T) {
-	// Test that manifests with other K8s resources but no HelmChart kind behave correctly
+func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsDiscovery(t *testing.T) {
+	// Test that manifests with other K8s resources but no HelmChart kind fail discovery
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "no-helmchart-test", "chart"))
 	manifestGlob := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "no-helmchart-test", "manifests")) + "/*.yaml"
 
@@ -338,18 +339,15 @@ func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsToRender(t *testing
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
-	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+	_, err := r.extractImagesFromConfig(ctx, config)
+
+	// Should fail because manifests are configured but contain no HelmCharts
+	if err == nil {
+		t.Fatal("Expected error when manifests configured but no HelmCharts found, got nil")
 	}
 
-	// Should get 0 images because no HelmChart found to provide builder values
-	if len(result.Images) != 0 {
-		t.Errorf("Expected 0 images (no HelmChart in manifests), got %d: %+v", len(result.Images), result.Images)
-	}
-
-	// Should have a warning about the failure
-	if len(result.Warnings) == 0 {
-		t.Error("Expected at least one warning about failed extraction")
+	// Error should mention no HelmChart resources found
+	if !strings.Contains(err.Error(), "no HelmChart resources found") {
+		t.Errorf("Expected error about no HelmCharts, got: %v", err)
 	}
 }

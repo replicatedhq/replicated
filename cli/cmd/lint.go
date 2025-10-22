@@ -533,9 +533,7 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 	if len(config.Manifests) > 0 {
 		helmChartManifests, err = lint2.DiscoverHelmChartManifests(config.Manifests)
 		if err != nil {
-			// Don't fail if HelmChart discovery fails - just log a warning
-			// This allows image extraction to work even without HelmChart manifests
-			helmChartManifests = make(map[string]*lint2.HelmChartManifest)
+			return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
 		}
 	} else {
 		helmChartManifests = make(map[string]*lint2.HelmChartManifest)
