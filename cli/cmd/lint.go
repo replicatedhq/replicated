@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
@@ -20,15 +18,28 @@ import (
 
 func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "lint",
-		Short:        "Lint Helm charts, Preflight specs, and Support Bundle specs",
-		Long:         `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file. If no .replicated config is found, this command automatically discovers and lints all resources in the current directory. Use --verbose to also display extracted container images.`,
+		Use:   "lint",
+		Short: "Lint Helm charts, Preflight specs, and Support Bundle specs",
+		Long: `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file.
+
+This command reads paths from the .replicated config and executes linting locally 
+on each resource. Use --verbose to also display extracted container images.`,
+		Example: `  # Lint with default table output
+  replicated lint
+
+  # Output JSON to stdout
+  replicated lint --output json
+
+  # Use in CI/CD pipelines
+  replicated lint --output json | jq '.summary.overall_success'
+
+  # Verbose mode with image extraction
+  replicated lint --verbose --output json`,
 		SilenceUsage: true,
 	}
 
 	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images")
-	cmd.Flags().StringVar(&r.outputFormat, "format", "table", "The output format to use. One of: json|table")
-	cmd.Flags().StringVarP(&r.args.lintOutputFile, "output", "o", "", "Write output to file at specified path")
+	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.runLint
 
@@ -49,7 +60,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
 
-	// Resolve all tool versions
+	// Resolve all tool versions (including "latest" to actual versions)
 	resolver := tools.NewResolver()
 
 	// Get Helm version from config and resolve if needed
@@ -248,15 +259,6 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Calculate overall summary
 	output.Summary = r.calculateOverallSummary(output)
 
-	// Check if output file already exists
-	if r.args.lintOutputFile != "" {
-		if _, err := os.Stat(r.args.lintOutputFile); err == nil {
-			return errors.Errorf("file already exists: %s. Please specify a different path or remove the existing file", r.args.lintOutputFile)
-		} else if !os.IsNotExist(err) {
-			return errors.Wrapf(err, "failed to check if file exists: %s", r.args.lintOutputFile)
-		}
-	}
-
 	// Output to stdout
 	if r.outputFormat == "json" {
 		if err := print.LintResults(r.outputFormat, r.w, output); err != nil {
@@ -267,13 +269,6 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		// Just flush the writer
 		if err := r.w.Flush(); err != nil {
 			return errors.Wrap(err, "failed to flush output")
-		}
-	}
-
-	// Output to file if specified
-	if r.args.lintOutputFile != "" {
-		if err := r.writeOutputToFile(output); err != nil {
-			return errors.Wrapf(err, "failed to write output to file: %s", r.args.lintOutputFile)
 		}
 	}
 
@@ -896,161 +891,4 @@ func findConfigFilePath(startPath string) string {
 		}
 		currentDir = parentDir
 	}
-}
-
-// writeOutputToFile writes lint output to a file
-func (r *runners) writeOutputToFile(output *JSONLintOutput) error {
-	// Create the file
-	file, err := os.Create(r.args.lintOutputFile)
-	if err != nil {
-		return errors.Wrap(err, "failed to create output file")
-	}
-	defer file.Close()
-
-	// For JSON format, write JSON directly
-	if r.outputFormat == "json" {
-		encoder := json.NewEncoder(file)
-		encoder.SetIndent("", "  ")
-		if err := encoder.Encode(output); err != nil {
-			return errors.Wrap(err, "failed to write JSON to file")
-		}
-		return nil
-	}
-
-	// For table format, we need to recreate the table output
-	// Create a tabwriter for the file
-	w := tabwriter.NewWriter(file, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
-
-	// Re-display helm results
-	if output.HelmResults != nil && output.HelmResults.Enabled {
-		for _, chart := range output.HelmResults.Charts {
-			fmt.Fprintf(w, "==> Linting chart: %s\n\n", chart.Path)
-
-			if len(chart.Messages) == 0 {
-				fmt.Fprintf(w, "No issues found\n")
-			} else {
-				for _, msg := range chart.Messages {
-					if msg.Path != "" {
-						fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-					} else {
-						fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
-					}
-				}
-			}
-
-			fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-				chart.Path, chart.Summary.ErrorCount, chart.Summary.WarningCount, chart.Summary.InfoCount)
-
-			if chart.Success {
-				fmt.Fprintf(w, "Status: Passed\n\n")
-			} else {
-				fmt.Fprintf(w, "Status: Failed\n\n")
-			}
-		}
-
-		// Print overall summary if multiple charts
-		if len(output.HelmResults.Charts) > 1 {
-			totalErrors := 0
-			totalWarnings := 0
-			totalInfo := 0
-			failedCharts := 0
-
-			for _, chart := range output.HelmResults.Charts {
-				totalErrors += chart.Summary.ErrorCount
-				totalWarnings += chart.Summary.WarningCount
-				totalInfo += chart.Summary.InfoCount
-				if !chart.Success {
-					failedCharts++
-				}
-			}
-
-			fmt.Fprintf(w, "==> Overall Summary\n")
-			fmt.Fprintf(w, "charts linted: %d\n", len(output.HelmResults.Charts))
-			fmt.Fprintf(w, "charts passed: %d\n", len(output.HelmResults.Charts)-failedCharts)
-			fmt.Fprintf(w, "charts failed: %d\n", failedCharts)
-			fmt.Fprintf(w, "Total errors: %d\n", totalErrors)
-			fmt.Fprintf(w, "Total warnings: %d\n", totalWarnings)
-			fmt.Fprintf(w, "Total info: %d\n", totalInfo)
-
-			if failedCharts > 0 {
-				fmt.Fprintf(w, "\nOverall Status: Failed\n")
-			} else {
-				fmt.Fprintf(w, "\nOverall Status: Passed\n")
-			}
-		}
-	}
-
-	// Display preflight results
-	if output.PreflightResults != nil && output.PreflightResults.Enabled {
-		for _, spec := range output.PreflightResults.Specs {
-			fmt.Fprintf(w, "==> Linting preflight spec: %s\n\n", spec.Path)
-
-			if len(spec.Messages) == 0 {
-				fmt.Fprintf(w, "No issues found\n")
-			} else {
-				for _, msg := range spec.Messages {
-					if msg.Path != "" {
-						fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-					} else {
-						fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
-					}
-				}
-			}
-
-			fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-				spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
-
-			if spec.Success {
-				fmt.Fprintf(w, "Status: Passed\n\n")
-			} else {
-				fmt.Fprintf(w, "Status: Failed\n\n")
-			}
-		}
-	}
-
-	// Display support bundle results
-	if output.SupportBundleResults != nil && output.SupportBundleResults.Enabled {
-		for _, spec := range output.SupportBundleResults.Specs {
-			fmt.Fprintf(w, "==> Linting support bundle spec: %s\n\n", spec.Path)
-
-			if len(spec.Messages) == 0 {
-				fmt.Fprintf(w, "No issues found\n")
-			} else {
-				for _, msg := range spec.Messages {
-					if msg.Path != "" {
-						fmt.Fprintf(w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-					} else {
-						fmt.Fprintf(w, "[%s] %s\n", msg.Severity, msg.Message)
-					}
-				}
-			}
-
-			fmt.Fprintf(w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-				spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
-
-			if spec.Success {
-				fmt.Fprintf(w, "Status: Passed\n\n")
-			} else {
-				fmt.Fprintf(w, "Status: Failed\n\n")
-			}
-		}
-	}
-
-	// Display disabled linters messages
-	if output.HelmResults != nil && !output.HelmResults.Enabled {
-		fmt.Fprintf(w, "Helm linting is disabled in .replicated config\n\n")
-	}
-	if output.PreflightResults != nil && !output.PreflightResults.Enabled {
-		fmt.Fprintf(w, "Preflight linting is disabled in .replicated config\n\n")
-	}
-	if output.SupportBundleResults != nil && !output.SupportBundleResults.Enabled {
-		fmt.Fprintf(w, "Support Bundle linting is disabled in .replicated config\n\n")
-	}
-
-	// Flush and close
-	if err := w.Flush(); err != nil {
-		return errors.Wrap(err, "failed to flush output to file")
-	}
-
-	return nil
 }

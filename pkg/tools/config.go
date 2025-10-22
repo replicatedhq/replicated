@@ -336,10 +336,11 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		return fmt.Errorf("invalid version %d: must be >= 0", config.ReplLint.Version)
 	}
 
-	// Validate tool versions (semantic versioning)
+	// Validate tool versions (semantic versioning or "latest")
 	for toolName, version := range config.ReplLint.Tools {
-		if !isValidSemver(version) {
-			return fmt.Errorf("invalid version %q for tool %q: must be semantic version (e.g., 1.2.3)", version, toolName)
+		// Allow "latest" as a special case
+		if version != "latest" && !isValidSemver(version) {
+			return fmt.Errorf("invalid version %q for tool %q: must be semantic version (e.g., 1.2.3) or 'latest'", version, toolName)
 		}
 	}
 
