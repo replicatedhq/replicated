@@ -318,13 +318,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			if profileNameFlag != "" {
 				// Command-line flag takes precedence
 				profileName = profileNameFlag
-				profileSource = "--profile flag"
 			} else {
 				// Fall back to default profile from ~/.replicated/config.yaml
 				defaultProfileName, err := credentials.GetDefaultProfile()
 				if err == nil && defaultProfileName != "" {
 					profileName = defaultProfileName
-					profileSource = "default profile"
 				}
 			}
 			// Get credentials with profile support
