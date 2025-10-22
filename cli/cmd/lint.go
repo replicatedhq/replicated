@@ -514,11 +514,6 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Config) (*ImageExtractResults, error) {
 	extractor := imageextract.NewExtractor()
 
-	opts := imageextract.Options{
-		IncludeDuplicates: false,
-		NoWarnings:        false,
-	}
-
 	// Get chart paths from config
 	chartPaths, err := lint2.GetChartPathsFromConfig(config)
 	if err != nil {
@@ -533,11 +528,47 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 		}, nil
 	}
 
+	// Discover HelmChart manifests from config to get builder values
+	var helmChartManifests map[string]*lint2.HelmChartManifest
+	if len(config.Manifests) > 0 {
+		helmChartManifests, err = lint2.DiscoverHelmChartManifests(config.Manifests)
+		if err != nil {
+			// Don't fail if HelmChart discovery fails - just log a warning
+			// This allows image extraction to work even without HelmChart manifests
+			helmChartManifests = make(map[string]*lint2.HelmChartManifest)
+		}
+	} else {
+		helmChartManifests = make(map[string]*lint2.HelmChartManifest)
+	}
+
 	// Collect all images from all charts
 	imageMap := make(map[string]imageextract.ImageRef) // For deduplication
 	var allWarnings []imageextract.Warning
 
 	for _, chartPath := range chartPaths {
+		// Get chart metadata to match with HelmChart manifest
+		chartMetadata, err := lint2.GetChartMetadata(chartPath)
+		if err != nil {
+			allWarnings = append(allWarnings, imageextract.Warning{
+				Image:   chartPath,
+				Message: fmt.Sprintf("Failed to read chart metadata: %v", err),
+			})
+			continue
+		}
+
+		// Create options for this chart
+		opts := imageextract.Options{
+			IncludeDuplicates: false,
+			NoWarnings:        false,
+		}
+
+		// Look for matching HelmChart manifest and apply builder values
+		chartKey := fmt.Sprintf("%s:%s", chartMetadata.Name, chartMetadata.Version)
+		if helmChartManifest, found := helmChartManifests[chartKey]; found {
+			// Apply builder values from HelmChart manifest
+			opts.HelmValues = helmChartManifest.BuilderValues
+		}
+
 		result, err := extractor.ExtractFromChart(ctx, chartPath, opts)
 		if err != nil {
 			allWarnings = append(allWarnings, imageextract.Warning{

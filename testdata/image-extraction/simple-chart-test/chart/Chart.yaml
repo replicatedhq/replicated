@@ -1,0 +1,7 @@
+apiVersion: v2
+name: simple-app
+version: 1.0.0
+description: Simple chart without required values
+type: application
+appVersion: "1.0.0"
+

@@ -1,0 +1,7 @@
+apiVersion: v2
+name: test-required-app
+version: 1.0.0
+description: Test chart with required image values
+type: application
+appVersion: "1.0.0"
+
