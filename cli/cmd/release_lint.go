@@ -46,6 +46,32 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 // the hosted version (lint.replicated.com). There are not changes and no auth required or sent.
 // This could be vendored in and run locally (respecting the size of the polcy files)
 func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
+	// If user provided old-style flags (--yaml-dir or --chart), use old remote API behavior
+	if r.args.lintReleaseYamlDir != "" || r.args.lintReleaseChart != "" {
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Fetch feature flags to determine which linting behavior to use
+	features, err := r.platformAPI.GetFeatures(cmd.Context())
+	if err != nil {
+		// If feature flag fetch fails, default to old release lint behavior (flag=0)
+		// This maintains backward compatibility when API is unavailable
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Check the release-validation-v2 feature flag
+	releaseValidationV2 := features.GetFeatureValue("release-validation-v2")
+	if releaseValidationV2 == "1" {
+		// New behavior: use local lint functionality
+		return r.runLint(cmd, args)
+	}
+
+	// Default behavior (flag=0 or not found): use old remote API lint functionality
+	return r.releaseLintV1(cmd, args)
+}
+
+// releaseLintV1 is the original release lint implementation (used when flag=0)
+func (r *runners) releaseLintV1(_ *cobra.Command, _ []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
