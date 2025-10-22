@@ -13,7 +13,6 @@ import (
 )
 
 func (r *runners) InitInitCommand(parent *cobra.Command) *cobra.Command {
-	var nonInteractive bool
 	var skipDetection bool
 
 	cmd := &cobra.Command{
@@ -28,31 +27,21 @@ It will also attempt to auto-detect Helm charts and preflight specs in your proj
 		Example: `# Initialize with interactive prompts
 replicated config init
 
-# Initialize with auto-detected resources only (no prompts)
-replicated config init --non-interactive
-
 # Initialize without auto-detection
 replicated config init --skip-detection`,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.initConfig(cmd, nonInteractive, skipDetection)
+			return r.initConfig(cmd, skipDetection)
 		},
 	}
 
-	cmd.Flags().BoolVar(&nonInteractive, "non-interactive", false, "Run without prompts, using defaults and auto-detected values")
 	cmd.Flags().BoolVar(&skipDetection, "skip-detection", false, "Skip auto-detection of resources")
 
 	parent.AddCommand(cmd)
 	return cmd
 }
 
-func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetection bool) error {
-	// Check if we're in a non-interactive environment
-	if !nonInteractive && tools.IsNonInteractive() {
-		nonInteractive = true
-		fmt.Fprintf(r.w, "Detected non-interactive environment, using defaults\n\n")
-	}
-
+func (r *runners) initConfig(cmd *cobra.Command, skipDetection bool) error {
 	// Check if config already exists
 	exists, existingPath, err := tools.ConfigExists(".")
 	if err != nil {
@@ -60,10 +49,6 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 	}
 
 	if exists {
-		if nonInteractive {
-			return fmt.Errorf("config file already exists at %s (use --force to overwrite)", existingPath)
-		}
-
 		// Ask if they want to overwrite
 		prompt := promptui.Select{
 			Label: fmt.Sprintf("Config file already exists at %s. What would you like to do?", existingPath),
@@ -94,7 +79,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 
 	// If API is available (profile flag used), offer to select from apps
 	var selectedAppSlug string
-	if r.kotsAPI != nil && !nonInteractive {
+	if r.kotsAPI != nil {
 		appSlug, err := r.promptForAppSelection(cmd.Context())
 		if err != nil {
 			// If error fetching apps, just continue without it
@@ -148,34 +133,33 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 	}
 
 	// Interactive prompts
-	if !nonInteractive {
-		// Use selected app from API if available, otherwise prompt
-		if selectedAppSlug != "" {
-			config.AppSlug = selectedAppSlug
-		} else {
-			// Prompt for app ID or slug
-			appPrompt := promptui.Prompt{
-				Label:   "App ID or App Slug (optional, check vendor.replicated.com)",
-				Default: "",
+	// Use selected app from API if available, otherwise prompt
+	if selectedAppSlug != "" {
+		config.AppSlug = selectedAppSlug
+	} else {
+		// Prompt for app ID or slug
+		appPrompt := promptui.Prompt{
+			Label:   "App ID or App Slug (optional, check vendor.replicated.com)",
+			Default: "",
+		}
+		appValue, err := appPrompt.Run()
+		if err != nil {
+			if err == promptui.ErrInterrupt {
+				fmt.Fprintf(r.w, "\nCancelled\n")
+				return nil
 			}
-			appValue, err := appPrompt.Run()
-			if err != nil {
-				if err == promptui.ErrInterrupt {
-					fmt.Fprintf(r.w, "\nCancelled\n")
-					return nil
-				}
-				return errors.Wrap(err, "failed to read app value")
-			}
-
-			// Store in AppSlug by default since that's more commonly used
-			// The API accepts both, and commands will resolve it
-			if appValue != "" {
-				config.AppSlug = appValue
-			}
+			return errors.Wrap(err, "failed to read app value")
 		}
 
-		// Prompt for charts
-		if len(detected.Charts) > 0 {
+		// Store in AppSlug by default since that's more commonly used
+		// The API accepts both, and commands will resolve it
+		if appValue != "" {
+			config.AppSlug = appValue
+		}
+	}
+
+	// Prompt for charts
+	if len(detected.Charts) > 0 {
 			useDetectedCharts := promptui.Select{
 				Label: fmt.Sprintf("Use detected Helm charts? (%d found)", len(detected.Charts)),
 				Items: []string{"Yes", "No", "Let me specify custom paths"},
@@ -415,55 +399,6 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				config.ReplLint = lintConfig
 			}
 		}
-	} else {
-		// Non-interactive mode: use detected resources
-		if detected != nil {
-			for _, chartPath := range detected.Charts {
-				if !strings.HasPrefix(chartPath, ".") {
-					chartPath = "./" + chartPath
-				}
-				config.Charts = append(config.Charts, tools.ChartConfig{
-					Path: chartPath,
-				})
-			}
-
-			// For preflights, check if any are v1beta3 and auto-assign first values file if available
-			var autoValuesPath string
-			if len(detected.ValuesFiles) > 0 {
-				autoValuesPath = detected.ValuesFiles[0]
-				if !strings.HasPrefix(autoValuesPath, ".") {
-					autoValuesPath = "./" + autoValuesPath
-				}
-			}
-
-			for _, preflightPath := range detected.Preflights {
-				if !strings.HasPrefix(preflightPath, ".") {
-					preflightPath = "./" + preflightPath
-				}
-
-				preflight := tools.PreflightConfig{Path: preflightPath}
-
-				// Check if this is v1beta3 and assign values file
-				apiVersion, err := tools.GetYAMLAPIVersion(preflightPath)
-				if err == nil && strings.Contains(apiVersion, "v1beta3") && autoValuesPath != "" {
-					preflight.ValuesPath = autoValuesPath
-				}
-
-				config.Preflights = append(config.Preflights, preflight)
-			}
-
-			// Use detected manifest patterns
-			config.Manifests = detected.Manifests
-
-			// Add detected support bundles to manifests
-			for _, sbPath := range detected.SupportBundles {
-				if !strings.HasPrefix(sbPath, ".") {
-					sbPath = "./" + sbPath
-				}
-				config.Manifests = append(config.Manifests, sbPath)
-			}
-		}
-	}
 
 	// Apply defaults
 	parser := tools.NewConfigParser()
