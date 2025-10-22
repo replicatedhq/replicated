@@ -54,10 +54,33 @@ spec:
 		t.Fatal(err)
 	}
 
+	// Create manifests directory with HelmChart
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChartManifest := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-chart
+spec:
+  chart:
+    name: test-chart
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartManifest, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
 	// Create .replicated config
 	configPath := filepath.Join(tmpDir, ".replicated")
 	configContent := `charts:
   - path: ` + chartDir + `
+manifests:
+  - ` + manifestsDir + `/*.yaml
 repl-lint:
   linters:
     helm: {}
@@ -308,11 +331,49 @@ spec:
 		t.Fatal(err)
 	}
 
+	// Create manifests directory with HelmChart manifests for both charts
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChart1 := filepath.Join(manifestsDir, "chart1-helmchart.yaml")
+	helmChart1Content := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: chart1
+spec:
+  chart:
+    name: chart1
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChart1, []byte(helmChart1Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChart2 := filepath.Join(manifestsDir, "chart2-helmchart.yaml")
+	helmChart2Content := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: chart2
+spec:
+  chart:
+    name: chart2
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChart2, []byte(helmChart2Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
 	// Create .replicated config with both charts
 	configPath := filepath.Join(tmpDir, ".replicated")
 	configContent := `charts:
   - path: ` + chart1Dir + `
   - path: ` + chart2Dir + `
+manifests:
+  - ` + manifestsDir + `/*.yaml
 repl-lint:
   linters:
     helm: {}
