@@ -32,8 +32,9 @@ type PreflightLintIssue struct {
 	Field   string `json:"field"`
 }
 
-// LintPreflight executes preflight lint on the given spec, with optional template rendering
-// If valuesPath is provided, the spec is rendered with chart values and builder values before linting
+// LintPreflight executes preflight lint with template rendering using builder values
+// Requires: valuesPath, chartName, chartVersion, and HelmChart manifest
+// All preflights must have an associated chart structure and HelmChart manifest
 func LintPreflight(
 	ctx context.Context,
 	specPath string,
@@ -43,78 +44,19 @@ func LintPreflight(
 	helmChartManifests map[string]*HelmChartManifest,
 	preflightVersion string,
 ) (*LintResult, error) {
-	// If no valuesPath, lint directly (no templating needed)
+	// Validation: ensure required parameters
 	if valuesPath == "" {
-		return lintPreflightDirect(ctx, specPath, preflightVersion)
+		return nil, fmt.Errorf("valuesPath is required for preflight linting")
+	}
+	if chartName == "" || chartVersion == "" {
+		return nil, fmt.Errorf("chartName and chartVersion are required for preflight linting")
 	}
 
-	// Templated preflight - render with builder values first
-	return lintPreflightWithTemplating(ctx, specPath, valuesPath, chartName, chartVersion, helmChartManifests, preflightVersion)
-}
-
-// lintPreflightDirect lints a preflight spec without template rendering (current behavior)
-func lintPreflightDirect(ctx context.Context, specPath string, preflightVersion string) (*LintResult, error) {
-	// Use resolver to get preflight binary
-	resolver := tools.NewResolver()
-	preflightPath, err := resolver.Resolve(ctx, tools.ToolPreflight, preflightVersion)
-	if err != nil {
-		return nil, fmt.Errorf("resolving preflight: %w", err)
-	}
-
-	// Defensive check: validate spec path exists
-	// Note: specs are validated during config parsing, but we check again here
-	// since LintPreflight is a public function that could be called directly
-	if _, err := os.Stat(specPath); err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("preflight spec path does not exist: %s", specPath)
-		}
-		return nil, fmt.Errorf("failed to access preflight spec path: %w", err)
-	}
-
-	// Execute preflight lint with JSON output for easier parsing
-	cmd := exec.CommandContext(ctx, preflightPath, "lint", "--format", "json", specPath)
-	output, err := cmd.CombinedOutput()
-
-	// preflight lint returns exit code 2 if there are errors,
-	// but we still want to parse and display the output
-	outputStr := string(output)
-
-	// Parse the JSON output
-	messages, parseErr := ParsePreflightOutput(outputStr)
-	if parseErr != nil {
-		// If we can't parse the output, return both the parse error and original error
-		if err != nil {
-			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
-		}
-		return nil, fmt.Errorf("failed to parse preflight lint output: %w\nOutput: %s", parseErr, outputStr)
-	}
-
-	// Determine success based on exit code
-	// Exit code 0 = no errors, exit code 2 = validation errors
-	success := err == nil
-
-	return &LintResult{
-		Success:  success,
-		Messages: messages,
-	}, nil
-}
-
-// lintPreflightWithTemplating renders a templated preflight spec with builder values, then lints it
-func lintPreflightWithTemplating(
-	ctx context.Context,
-	specPath string,
-	valuesPath string,
-	chartName string,
-	chartVersion string,
-	helmChartManifests map[string]*HelmChartManifest,
-	preflightVersion string,
-) (*LintResult, error) {
 	// Look up builder values from HelmChart manifest
 	key := fmt.Sprintf("%s:%s", chartName, chartVersion)
 	helmChart, found := helmChartManifests[key]
 	if !found {
-		return nil, fmt.Errorf("no HelmChart manifest found for chart %q (required for templated preflights)\n"+
-			"Check that your manifests paths include the HelmChart definition", key)
+		return nil, fmt.Errorf("no HelmChart manifest found for chart %q\nCheck that your manifests paths include the HelmChart definition", key)
 	}
 
 	// Use resolver to get preflight binary
@@ -186,7 +128,32 @@ func lintPreflightWithTemplating(
 	}
 
 	// Lint the rendered spec
-	return lintPreflightDirect(ctx, renderedPath, preflightVersion)
+	// Execute preflight lint with JSON output for easier parsing
+	cmd := exec.CommandContext(ctx, preflightPath, "lint", "--format", "json", renderedPath)
+	output, err := cmd.CombinedOutput()
+
+	// preflight lint returns exit code 2 if there are errors,
+	// but we still want to parse and display the output
+	outputStr := string(output)
+
+	// Parse the JSON output
+	messages, parseErr := ParsePreflightOutput(outputStr)
+	if parseErr != nil {
+		// If we can't parse the output, return both the parse error and original error
+		if err != nil {
+			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
+		}
+		return nil, fmt.Errorf("failed to parse preflight lint output: %w\nOutput: %s", parseErr, outputStr)
+	}
+
+	// Determine success based on exit code
+	// Exit code 0 = no errors, exit code 2 = validation errors
+	success := err == nil
+
+	return &LintResult{
+		Success:  success,
+		Messages: messages,
+	}, nil
 }
 
 // ParsePreflightOutput parses preflight lint JSON output into structured messages.

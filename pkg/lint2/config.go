@@ -155,11 +155,12 @@ func validatePreflightPath(path string) error {
 }
 
 // PreflightWithValues contains preflight spec path and associated chart/values information
+// All fields are required - every preflight must have an associated chart structure
 type PreflightWithValues struct {
 	SpecPath     string // Path to the preflight spec file
-	ValuesPath   string // Path to values.yaml (empty if no templating)
-	ChartName    string // Chart name from Chart.yaml (empty if no templating)
-	ChartVersion string // Chart version from Chart.yaml (empty if no templating)
+	ValuesPath   string // Path to values.yaml for template rendering (required)
+	ChartName    string // Chart name from Chart.yaml (required)
+	ChartVersion string // Chart version from Chart.yaml (required)
 }
 
 // ChartMetadata represents the minimal Chart.yaml structure needed for matching
@@ -219,37 +220,39 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 
 		// Create PreflightWithValues for each discovered spec
 		for _, specPath := range specPaths {
+			// valuesPath is REQUIRED - error if missing
+			if preflightConfig.ValuesPath == "" {
+				return nil, fmt.Errorf("preflight (%s) missing required field 'valuesPath'\n"+
+					"All preflights must specify a valuesPath pointing to chart values.yaml", specPath)
+			}
+
 			result := PreflightWithValues{
-				SpecPath: specPath,
+				SpecPath:   specPath,
+				ValuesPath: preflightConfig.ValuesPath,
 			}
 
-			// If valuesPath is set, extract chart metadata
-			if preflightConfig.ValuesPath != "" {
-				result.ValuesPath = preflightConfig.ValuesPath
+			// Extract chart metadata (always required)
+			valuesDir := filepath.Dir(preflightConfig.ValuesPath)
+			chartYamlPath := filepath.Join(valuesDir, "Chart.yaml")
 
-				// Find adjacent Chart.yaml (in same directory as values file)
-				valuesDir := filepath.Dir(preflightConfig.ValuesPath)
-				chartYamlPath := filepath.Join(valuesDir, "Chart.yaml")
-
-				// Try Chart.yml as fallback
-				if _, err := os.Stat(chartYamlPath); err != nil {
-					chartYmlPath := filepath.Join(valuesDir, "Chart.yml")
-					if _, err := os.Stat(chartYmlPath); err == nil {
-						chartYamlPath = chartYmlPath
-					} else {
-						return nil, fmt.Errorf("Chart.yaml not found for preflight with valuesPath\nExpected at: %s\nPreflight: %s", chartYamlPath, specPath)
-					}
+			// Try Chart.yml as fallback
+			if _, err := os.Stat(chartYamlPath); err != nil {
+				chartYmlPath := filepath.Join(valuesDir, "Chart.yml")
+				if _, err := os.Stat(chartYmlPath); err == nil {
+					chartYamlPath = chartYmlPath
+				} else {
+					return nil, fmt.Errorf("Chart.yaml not found for preflight\nExpected at: %s\nPreflight: %s", chartYamlPath, specPath)
 				}
-
-				// Parse Chart.yaml to get name and version
-				chart, err := parseChartYaml(chartYamlPath)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse Chart.yaml for preflight %s: %w", specPath, err)
-				}
-
-				result.ChartName = chart.Name
-				result.ChartVersion = chart.Version
 			}
+
+			// Parse Chart.yaml to get name and version
+			chart, err := parseChartYaml(chartYamlPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse Chart.yaml for preflight %s: %w", specPath, err)
+			}
+
+			result.ChartName = chart.Name
+			result.ChartVersion = chart.Version
 
 			results = append(results, result)
 		}
