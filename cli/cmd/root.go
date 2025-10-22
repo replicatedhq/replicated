@@ -296,6 +296,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	profileCmd := runCmds.InitProfileCommand(runCmds.rootCmd)
 	runCmds.InitProfileAddCommand(profileCmd)
+	runCmds.InitProfileEditCommand(profileCmd)
 	runCmds.InitProfileLsCommand(profileCmd)
 	runCmds.InitProfileRmCommand(profileCmd)
 	runCmds.InitProfileSetDefaultCommand(profileCmd)
@@ -310,31 +311,20 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	cobra.AddTemplateFunc("indent", sprig.FuncMap()["indent"])
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
-	// Add top-level lint command
-	runCmds.InitLint(runCmds.rootCmd)
-
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
 			// Try to load profile from --profile flag, then default profile
 			var profileName string
-			var profileSource string
 			if profileNameFlag != "" {
 				// Command-line flag takes precedence
 				profileName = profileNameFlag
-				profileSource = "--profile flag"
 			} else {
 				// Fall back to default profile from ~/.replicated/config.yaml
 				defaultProfileName, err := credentials.GetDefaultProfile()
 				if err == nil && defaultProfileName != "" {
 					profileName = defaultProfileName
-					profileSource = "default profile"
 				}
 			}
-
-			if debugFlag && profileName != "" {
-				fmt.Fprintf(os.Stderr, "[DEBUG] Using profile '%s' (from %s)\n", profileName, profileSource)
-			}
-
 			// Get credentials with profile support
 			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {
@@ -355,36 +345,38 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				if len(maskedToken) > 8 {
 					maskedToken = maskedToken[:4] + "..." + maskedToken[len(maskedToken)-4:]
 				}
-				fmt.Fprintf(os.Stderr, "[DEBUG] API Token: %s\n", maskedToken)
 			}
 
-			// If using a profile, check if it has custom origins
+			// If using a profile, resolve origins (namespace-based or explicit)
 			if creds.IsProfile && profileName != "" {
-				apiOrigin, registryOrigin, err := credentials.GetProfileOrigins(profileName)
+				origins, err := credentials.ResolveOriginsFromProfileName(profileName)
 				if err == nil {
-					if apiOrigin != "" {
-						// Strip trailing slashes to avoid double-slash in URL construction
-						platformOrigin = strings.TrimRight(apiOrigin, "/")
-						if debugFlag {
-							if apiOrigin != platformOrigin {
-								fmt.Fprintf(os.Stderr, "[DEBUG] Normalized API origin (removed trailing slash): %s -> %s\n", apiOrigin, platformOrigin)
-							} else {
-								fmt.Fprintf(os.Stderr, "[DEBUG] Using custom API origin from profile: %s\n", platformOrigin)
-							}
-						}
-					}
-					if registryOrigin != "" {
-						// Store registry origin for later use (if needed by commands)
-						// Also strip trailing slashes from registry origin
-						normalizedRegistryOrigin := strings.TrimRight(registryOrigin, "/")
+					// Use resolved vendor API origin
+					platformOrigin = strings.TrimRight(origins.VendorAPI, "/")
+
+					// Set registry origin env var
+					if origins.Registry != "" {
+						normalizedRegistryOrigin := strings.TrimRight(origins.Registry, "/")
 						os.Setenv("REPLICATED_REGISTRY_ORIGIN", normalizedRegistryOrigin)
-						if debugFlag {
-							if registryOrigin != normalizedRegistryOrigin {
-								fmt.Fprintf(os.Stderr, "[DEBUG] Normalized registry origin (removed trailing slash): %s -> %s\n", registryOrigin, normalizedRegistryOrigin)
-							} else {
-								fmt.Fprintf(os.Stderr, "[DEBUG] Using custom registry origin from profile: %s\n", normalizedRegistryOrigin)
-							}
+					}
+
+					// Set linter origin env var
+					if origins.Linter != "" {
+						os.Setenv("LINTER_API_ORIGIN", origins.Linter)
+					}
+
+					// Set kurl origin env var
+					if origins.KurlSH != "" {
+						kurlDotSHOrigin = origins.KurlSH
+					}
+
+					if debugFlag {
+						if origins.UsingNamespace {
+							fmt.Fprintf(os.Stderr, "[DEBUG] Using namespace-based origins\n")
 						}
+						fmt.Fprintf(os.Stderr, "[DEBUG] Vendor API origin: %s\n", platformOrigin)
+						fmt.Fprintf(os.Stderr, "[DEBUG] Registry origin: %s\n", origins.Registry)
+						fmt.Fprintf(os.Stderr, "[DEBUG] Linter origin: %s\n", origins.Linter)
 					}
 				}
 			}

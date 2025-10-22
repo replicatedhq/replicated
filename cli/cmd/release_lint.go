@@ -26,15 +26,22 @@ var (
 func (r *runners) InitReleaseLint(parent *cobra.Command) {
 	cmd := &cobra.Command{
 		Use:          "lint",
-		Short:        "Lint a directory of KOTS manifests",
-		Long:         "Lint a directory of KOTS manifests",
+		Short:        "Lint a directory of KOTS manifests or local resources",
+		Long:         "Lint a directory of KOTS manifests or local resources. Behavior depends on the release-validation-v2 feature flag.",
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.lintReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release.  Cannot be used with the `yaml` flag.")
+	// Old flags (for remote API lint - when flag=0 or --yaml-dir/--chart provided)
+	cmd.Flags().StringVar(&r.args.lintReleaseYamlDir, "yaml-dir", "", "The directory containing multiple yamls for a Kots release. Cannot be used with the `yaml` flag.")
 	cmd.Flags().StringVar(&r.args.lintReleaseChart, "chart", "", "Helm chart to lint from. Cannot be used with the --yaml, --yaml-file, or --yaml-dir flags.")
 	cmd.Flags().StringVar(&r.args.lintReleaseFailOn, "fail-on", "error", "The minimum severity to cause the command to exit with a non-zero exit code. Supported values are [info, warn, error, none].")
+
+	// New flags (for local lint - when flag=1)
+	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images (local lint only)")
+	cmd.Flags().StringVarP(&r.args.lintOutputFile, "output-file", "", "", "Write output to file at specified path (local lint only)")
+
+	// Output format flag works for both old and new lint
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.Flags().MarkHidden("chart")
@@ -46,6 +53,40 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 // the hosted version (lint.replicated.com). There are not changes and no auth required or sent.
 // This could be vendored in and run locally (respecting the size of the polcy files)
 func (r *runners) releaseLint(cmd *cobra.Command, args []string) error {
+	// If user provided old-style flags (--yaml-dir or --chart), use old remote API behavior
+	if r.args.lintReleaseYamlDir != "" || r.args.lintReleaseChart != "" {
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Check for environment variable override for testing
+	if envOverride := os.Getenv("REPLICATED_RELEASE_VALIDATION_V2"); envOverride != "" {
+		if envOverride == "1" {
+			return r.runLint(cmd, args)
+		}
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Fetch feature flags from vendor-api
+	features, err := r.platformAPI.GetFeatures(cmd.Context())
+	if err != nil {
+		// If feature flag fetch fails, default to old release lint behavior (flag=0)
+		// This maintains backward compatibility when API is unavailable
+		return r.releaseLintV1(cmd, args)
+	}
+
+	// Check the release-validation-v2 feature flag
+	releaseValidationV2 := features.GetFeatureValue("release-validation-v2")
+	if releaseValidationV2 == "1" {
+		// New behavior: use local lint functionality
+		return r.runLint(cmd, args)
+	}
+
+	// Default behavior (flag=0 or not found): use old remote API lint functionality
+	return r.releaseLintV1(cmd, args)
+}
+
+// releaseLintV1 is the original release lint implementation (used when flag=0)
+func (r *runners) releaseLintV1(_ *cobra.Command, _ []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}

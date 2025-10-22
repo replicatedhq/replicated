@@ -16,41 +16,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func (r *runners) InitLint(parent *cobra.Command) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "lint",
-		Short: "Lint Helm charts, Preflight specs, and Support Bundle specs",
-		Long: `Lint Helm charts, Preflight specs, and Support Bundle specs defined in .replicated config file.
-
-This command reads paths from the .replicated config and executes linting locally 
-on each resource. Use --verbose to also display extracted container images.`,
-		Example: `  # Lint with default table output
-  replicated lint
-
-  # Output JSON to stdout
-  replicated lint --output json
-
-  # Use in CI/CD pipelines
-  replicated lint --output json | jq '.summary.overall_success'
-
-  # Verbose mode with image extraction
-  replicated lint --verbose --output json`,
-		SilenceUsage: true,
-	}
-
-	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
-	cmd.RunE = r.runLint
-
-	parent.AddCommand(cmd)
-	return cmd
-}
+// InitLint is removed - the standalone "replicated lint" command has been removed.
+// The linting functionality is now available via "replicated release lint" with the
+// release-validation-v2 feature flag. The runLint function below is still used
+// internally by the release lint command.
 
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
-	// Validate format
+	// Validate output format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
-		return errors.Errorf("invalid format: %s. Supported formats: json, table", r.outputFormat)
+		return errors.Errorf("invalid output: %s. Supported output formats: json, table", r.outputFormat)
 	}
 
 	// Load .replicated config using tools parser (supports monorepos)
