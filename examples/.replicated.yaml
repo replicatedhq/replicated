@@ -27,6 +27,6 @@ repl-lint:
     support-bundle:
       disabled: false
   tools:
-    helm: "3.19.0"
-    preflight: "0.123.9"
-    support-bundle: "0.123.9"
+    helm: "latest"
+    preflight: "latest"
+    support-bundle: "latest"
