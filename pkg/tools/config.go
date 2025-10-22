@@ -79,12 +79,13 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		currentDir = parentDir
 	}
 
-	// No config files found
+	// No config files found - return default config for auto-discovery mode
 	if len(configPaths) == 0 {
-		return nil, fmt.Errorf("no .replicated config file found (tried .replicated, .replicated.yaml)")
+		defaultConfig := p.DefaultConfig()
+		return defaultConfig, nil
 	}
 
-	// If only one config, parse and apply defaults
+	// If only one config, parse it and apply defaults
 	if len(configPaths) == 1 {
 		config, err := p.ParseConfigFile(configPaths[0])
 		if err != nil {
