@@ -48,7 +48,7 @@ for test_dir in $test_dirs; do
     # Run lint command and capture output and exit code
     cd "$test_dir"
     set +e
-    output=$("$OLDPWD/$BINARY" lint 2>&1)
+    output=$(REPLICATED_RELEASE_VALIDATION_V2=1 "$OLDPWD/$BINARY" release lint 2>&1)
     exit_code=$?
     set -e
     cd "$OLDPWD"
