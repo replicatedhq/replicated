@@ -1,0 +1,26 @@
+{{- if not .Values.service.image.repository }}
+{{- fail "service.image.repository is required but not set" }}
+{{- end }}
+{{- if not .Values.service.image.tag }}
+{{- fail "service.image.tag is required but not set" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: service
+  template:
+    metadata:
+      labels:
+        app: service
+    spec:
+      containers:
+      - name: app
+        image: "{{ .Values.service.image.repository }}:{{ .Values.service.image.tag }}"
+        ports:
+        - containerPort: 8080
+

@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: init-db
+        image: postgres:14
+      containers:
+      - name: frontend
+        image: gcr.io/myproject/frontend:v2.1.0
+      - name: backend
+        image: gcr.io/myproject/backend:v2.1.0
+

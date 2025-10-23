@@ -1,0 +1,15 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: different-app-chart
+spec:
+  chart:
+    # This name doesn't match the chart name above (app-requiring-values)
+    name: different-app
+    chartVersion: 1.0.0
+  builder:
+    app:
+      image:
+        repository: "node"
+        tag: "18"
+

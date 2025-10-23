@@ -1,0 +1,16 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: valid-support-bundle-spec
+spec:
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.19.0"
+              message: Kubernetes version 1.19.0 or later is required
+          - pass:
+              message: Kubernetes version is supported

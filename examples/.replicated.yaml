@@ -1,0 +1,32 @@
+appId: ""
+appSlug: "" 
+promoteToChannelIds: []
+promoteToChannelNames: []
+charts: [
+  {
+    path: "./helm-chart",
+    chartVersion: "",
+    appVersion: "",
+  },
+]
+preflights: [
+  {
+      path: "./preflights/**",
+      valuesPath: "./helm-chart", # directory to corresponding helm chart
+  }
+]
+releaseLabel: ""  ## some sort of semver pattern?
+manifests: ["./support-bundles/**"]
+repl-lint:
+  version: 1
+  linters:
+    helm:
+      disabled: false
+    preflight:
+      disabled: false
+    support-bundle:
+      disabled: false
+  tools:
+    helm: "latest"
+    preflight: "latest"
+    support-bundle: "latest"

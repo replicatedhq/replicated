@@ -1,0 +1,23 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: frontend-preflight
+spec:
+  collectors:
+  {{- if .Values.service.enabled }}
+    - http:
+        collectorName: frontend-service
+        get:
+          url: http://localhost:{{ .Values.service.port }}/health
+  {{- end }}
+  analyzers:
+  {{- if .Values.service.enabled }}
+    - textAnalyze:
+        checkName: frontend-health
+        collectorName: frontend-service
+        fileName: health.txt
+        outcomes:
+          - pass:
+              when: "true"
+              message: Frontend service on port {{ .Values.service.port }} is configured
+  {{- end }}

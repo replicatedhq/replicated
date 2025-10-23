@@ -1,0 +1,21 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: no-helmchart-test
+spec:
+  collectors:
+  {{- if .Values.app.enabled }}
+    - clusterInfo:
+        collectorName: cluster-info
+  {{- end }}
+  analyzers:
+  {{- if .Values.app.enabled }}
+    - clusterVersion:
+        checkName: cluster-version
+        outcomes:
+          - pass:
+              when: ">= 1.19.0"
+              message: Cluster version is supported
+          - fail:
+              message: Cluster version must be at least 1.19.0
+  {{- end }}

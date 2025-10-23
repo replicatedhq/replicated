@@ -1,0 +1,7 @@
+apiVersion: v2
+name: no-helmchart-app
+version: 1.0.0
+description: Chart with required values but manifests contain no HelmChart
+type: application
+appVersion: "1.0.0"
+

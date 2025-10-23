@@ -31,6 +31,7 @@ const (
 var (
 	appSlugOrID     string
 	apiToken        string
+	profileNameFlag string
 	platformOrigin  = "https://api.replicated.com/vendor"
 	kurlDotSHOrigin = "https://kurl.sh"
 	cache           *replicatedcache.Cache
@@ -65,6 +66,7 @@ func GetRootCmd() *cobra.Command {
 	}
 	rootCmd.PersistentFlags().StringVar(&appSlugOrID, "app", "", "The app slug or app id to use in all calls")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "token", "", "The API token to use to access your app in the Vendor API")
+	rootCmd.PersistentFlags().StringVar(&profileNameFlag, "profile", "", "The authentication profile to use for this command")
 	rootCmd.PersistentFlags().BoolVar(&debugFlag, "debug", false, "Enable debug output")
 
 	return rootCmd
@@ -292,6 +294,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitLoginCommand(runCmds.rootCmd)
 	runCmds.InitLogoutCommand(runCmds.rootCmd)
 
+	profileCmd := runCmds.InitProfileCommand(runCmds.rootCmd)
+	runCmds.InitProfileAddCommand(profileCmd)
+	runCmds.InitProfileEditCommand(profileCmd)
+	runCmds.InitProfileLsCommand(profileCmd)
+	runCmds.InitProfileRmCommand(profileCmd)
+	runCmds.InitProfileSetDefaultCommand(profileCmd)
+	runCmds.InitProfileUseCommand(profileCmd)
+
 	apiCmd := runCmds.InitAPICommand(runCmds.rootCmd)
 	runCmds.InitAPIGet(apiCmd)
 	runCmds.InitAPIPost(apiCmd)
@@ -303,15 +313,77 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
 		if apiToken == "" {
-			creds, err := credentials.GetCurrentCredentials()
+			// Try to load profile from --profile flag, then default profile
+			var profileName string
+			if profileNameFlag != "" {
+				// Command-line flag takes precedence
+				profileName = profileNameFlag
+			} else {
+				// Fall back to default profile from ~/.replicated/config.yaml
+				defaultProfileName, err := credentials.GetDefaultProfile()
+				if err == nil && defaultProfileName != "" {
+					profileName = defaultProfileName
+				}
+			}
+			// Get credentials with profile support
+			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {
-				if err == credentials.ErrCredentialsNotFound {
-					return errors.New("Please provide your API token or log in with `replicated login`")
+				if err == credentials.ErrCredentialsNotFound || err == credentials.ErrProfileNotFound {
+					msg := "Please provide your API token or log in with `replicated login`"
+					if profileName != "" {
+						msg = fmt.Sprintf("%s (profile '%s' not found; run `replicated profile add %s --token=<your-token>`)", msg, profileName, profileName)
+					}
+					return errors.New(msg)
 				}
 				return errors.Wrap(err, "get current credentials")
 			}
 
 			apiToken = creds.APIToken
+
+			if debugFlag {
+				maskedToken := apiToken
+				if len(maskedToken) > 8 {
+					maskedToken = maskedToken[:4] + "..." + maskedToken[len(maskedToken)-4:]
+				}
+			}
+
+			// If using a profile, resolve origins (namespace-based or explicit)
+			if creds.IsProfile && profileName != "" {
+				origins, err := credentials.ResolveOriginsFromProfileName(profileName)
+				if err == nil {
+					// Use resolved vendor API origin
+					platformOrigin = strings.TrimRight(origins.VendorAPI, "/")
+
+					// Set registry origin env var
+					if origins.Registry != "" {
+						normalizedRegistryOrigin := strings.TrimRight(origins.Registry, "/")
+						os.Setenv("REPLICATED_REGISTRY_ORIGIN", normalizedRegistryOrigin)
+					}
+
+					// Set linter origin env var
+					if origins.Linter != "" {
+						os.Setenv("LINTER_API_ORIGIN", origins.Linter)
+					}
+
+					// Set kurl origin env var
+					if origins.KurlSH != "" {
+						kurlDotSHOrigin = origins.KurlSH
+					}
+
+					if debugFlag {
+						if origins.UsingNamespace {
+							fmt.Fprintf(os.Stderr, "[DEBUG] Using namespace-based origins\n")
+						}
+						fmt.Fprintf(os.Stderr, "[DEBUG] Vendor API origin: %s\n", platformOrigin)
+						fmt.Fprintf(os.Stderr, "[DEBUG] Registry origin: %s\n", origins.Registry)
+						fmt.Fprintf(os.Stderr, "[DEBUG] Linter origin: %s\n", origins.Linter)
+					}
+				}
+			}
+
+			if debugFlag {
+				fmt.Fprintf(os.Stderr, "[DEBUG] Platform API origin: %s\n", platformOrigin)
+			}
 		}
 
 		// allow override
@@ -411,6 +483,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
 
+	// Add config command with init subcommand
+	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)
+	runCmds.InitInitCommand(configCmd)
+	configCmd.PersistentPreRunE = preRunSetupAPIs
+
 	runCmds.rootCmd.AddCommand(Version())
 
 	return runCmds.rootCmd.Execute()
@@ -425,9 +502,9 @@ func printIfError(cmd *cobra.Command, err error) {
 
 	switch err := errors.Cause(err).(type) {
 	case platformclient.APIError:
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ERROR: %d", err.StatusCode))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("METHOD: %s", err.Method))
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("ENDPOINT: %s", err.Endpoint))
+		fmt.Fprintf(os.Stderr, "ERROR: %d\n", err.StatusCode)
+		fmt.Fprintf(os.Stderr, "METHOD: %s\n", err.Method)
+		fmt.Fprintf(os.Stderr, "ENDPOINT: %s\n", err.Endpoint)
 		fmt.Fprintln(os.Stderr, err.Message) // note that this can have multiple lines
 	case ClusterTimeoutError:
 		fmt.Fprintf(os.Stderr, "Error: Wait timeout exceeded for cluster %s\n", err.Cluster.ID)

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: test-app-valid
+version: 1.0.0
+description: Test chart for valid preflight spec

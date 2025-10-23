@@ -1,0 +1,14 @@
+apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: test-chart-arrays
+spec:
+  chart:
+    name: test-app-arrays
+    chartVersion: 1.0.0
+  builder:
+    ingress:
+      hosts:
+        - app1.example.com
+        - app2.example.com
+        - app3.example.com

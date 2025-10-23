@@ -1,0 +1,21 @@
+{{- if not .Values.app.image.repository }}
+{{- fail "app.image.repository is required but not set" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: app
+        image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+

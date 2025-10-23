@@ -1,0 +1,55 @@
+# Example .replicated configuration for preflight linting
+#
+# This file demonstrates how to configure preflight spec linting
+# in the replicated CLI. Copy to .replicated in your project root.
+
+repl-lint:
+  # Config version (currently only version 1 is supported)
+  version: 1
+
+  # Linter configuration
+  linters:
+    # Helm chart linting (optional)
+    helm:
+      disabled: false  # Set to true to disable helm linting
+
+    # Preflight spec linting
+    preflight:
+      disabled: false  # Set to true to disable preflight linting
+
+    # Other linters...
+    support-bundle:
+      disabled: true
+    embedded-cluster:
+      disabled: true
+    kots:
+      disabled: true
+
+  # Tool versions (optional - defaults will be used if not specified)
+  tools:
+    helm: "3.14.4"
+    preflight: "0.123.9"
+    support-bundle: "0.123.9"
+
+# Charts to lint (optional)
+charts:
+  - path: "./charts/my-chart"
+  - path: "./charts/*"  # Glob patterns are supported
+
+# Preflight specs to lint (valuesPath is required for all preflights)
+preflights:
+  # Single file with chart values
+  - path: "./preflight.yaml"
+    valuesPath: "./chart/values.yaml"
+
+  # Glob pattern to match multiple files
+  - path: "./preflights/*.yaml"
+    valuesPath: "./chart/values.yaml"
+
+  # Absolute paths also work
+  - path: "/absolute/path/to/preflight.yaml"
+    valuesPath: "/absolute/path/to/chart/values.yaml"
+
+# Manifests to lint (optional, for future support)
+manifests:
+  - "./manifests/*.yaml"

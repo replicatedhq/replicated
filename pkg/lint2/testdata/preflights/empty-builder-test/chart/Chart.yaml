@@ -1,0 +1,5 @@
+apiVersion: v2
+name: test-app-empty-builder
+description: Test chart for empty builder values
+version: 1.0.0
+appVersion: "1.0"

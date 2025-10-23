@@ -8,3 +8,4 @@ vendor/
 .idea
 .vscode
 do-not-commit/
+pkg/tools/embedded/

@@ -1,0 +1,18 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-required-app-chart
+spec:
+  chart:
+    name: test-required-app
+    chartVersion: 1.0.0
+  builder:
+    database:
+      image:
+        repository: "postgres"
+        tag: "15-alpine"
+    cache:
+      image:
+        repository: "redis"
+        tag: "7-alpine"
+

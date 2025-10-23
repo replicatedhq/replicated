@@ -65,6 +65,7 @@ type runnerArgs struct {
 	lintReleaseYamlDir    string
 	lintReleaseChart      string
 	lintReleaseFailOn     string
+	lintVerbose           bool
 	releaseOptional       bool
 	releaseRequired       bool
 	releaseNotes          string
@@ -276,4 +277,14 @@ type runnerArgs struct {
 	demoteChannelSequence   int64
 	unDemoteReleaseSequence int64
 	unDemoteChannelSequence int64
+
+	// Profile management
+	profileAddToken           string
+	profileAddAPIOrigin       string
+	profileAddRegistryOrigin  string
+	profileAddNamespace       string
+	profileEditToken          string
+	profileEditAPIOrigin      string
+	profileEditRegistryOrigin string
+	profileEditNamespace      string
 }

@@ -1,0 +1,52 @@
+{{- if not .Values.database.image.repository }}
+{{- fail "database.image.repository is required but not set" }}
+{{- end }}
+{{- if not .Values.database.image.tag }}
+{{- fail "database.image.tag is required but not set" }}
+{{- end }}
+{{- if not .Values.cache.image.repository }}
+{{- fail "cache.image.repository is required but not set" }}
+{{- end }}
+{{- if not .Values.cache.image.tag }}
+{{- fail "cache.image.tag is required but not set" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+  template:
+    metadata:
+      labels:
+        app: database
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
+        ports:
+        - containerPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cache
+  template:
+    metadata:
+      labels:
+        app: cache
+    spec:
+      containers:
+      - name: redis
+        image: "{{ .Values.cache.image.repository }}:{{ .Values.cache.image.tag }}"
+        ports:
+        - containerPort: 6379
+

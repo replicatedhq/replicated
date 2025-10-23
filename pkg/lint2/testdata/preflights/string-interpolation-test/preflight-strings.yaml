@@ -1,0 +1,19 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: string-interpolation-test
+spec:
+  collectors:
+    - postgres:
+        collectorName: database
+        uri: 'postgresql://{{ .Values.database.user }}:password@{{ .Values.database.host }}:{{ .Values.database.port }}/{{ .Values.database.name }}'
+  analyzers:
+    - postgres:
+        checkName: database-connection
+        collectorName: database
+        outcomes:
+          - fail:
+              when: "connected == false"
+              message: Cannot connect to {{ .Values.database.name }} at {{ .Values.database.host }}
+          - pass:
+              message: Successfully connected to {{ .Values.database.name }}

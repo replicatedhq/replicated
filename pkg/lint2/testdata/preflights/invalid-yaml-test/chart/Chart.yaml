@@ -1,0 +1,4 @@
+apiVersion: v2
+name: test-app-invalid-yaml
+version: 1.0.0
+description: Test chart for invalid YAML preflight spec

@@ -1,0 +1,6 @@
+appId: "test-app"
+repl-lint:
+  enabled: true
+  linters:
+    helm:
+      disabled: false
