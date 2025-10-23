@@ -153,8 +153,8 @@ repl-lint:
 
 			if tt.expectImageOutput {
 				// Should contain image extraction output
-				if !strings.Contains(output, "Extracting images") {
-					t.Error("expected 'Extracting images' message in verbose output")
+				if !strings.Contains(output, "IMAGE EXTRACTION") {
+					t.Error("expected 'IMAGE EXTRACTION' section header in verbose output")
 				}
 				if !strings.Contains(output, "nginx") {
 					t.Error("expected to find nginx image in output")
