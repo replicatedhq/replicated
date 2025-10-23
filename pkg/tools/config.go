@@ -19,10 +19,27 @@ func NewConfigParser() *ConfigParser {
 	return &ConfigParser{}
 }
 
+// ConfigResult holds both the parsed config and the paths of discovered config files
+type ConfigResult struct {
+	Config      *Config
+	ConfigPaths []string // Paths to all discovered config files (ordered from child to parent)
+}
+
 // FindAndParseConfig searches for a .replicated config file starting from the given path
 // and walking up the directory tree. If path is empty, starts from current directory.
 // Returns the parsed config or a default config if not found.
 func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
+	result, err := p.FindAndParseConfigWithPaths(startPath)
+	if err != nil {
+		return nil, err
+	}
+	return result.Config, nil
+}
+
+// FindAndParseConfigWithPaths is like FindAndParseConfig but also returns the paths
+// of all discovered config files. This is useful for verbose output to show users
+// which config files are being used.
+func (p *ConfigParser) FindAndParseConfigWithPaths(startPath string) (*ConfigResult, error) {
 	if startPath == "" {
 		var err error
 		startPath, err = os.Getwd()
@@ -46,7 +63,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		}
 		// Apply defaults for single-file case
 		p.ApplyDefaults(config)
-		return config, nil
+		return &ConfigResult{
+			Config:      config,
+			ConfigPaths: []string{absPath},
+		}, nil
 	}
 
 	// Collect all config files from current dir to root
@@ -82,7 +102,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	// No config files found - return default config for auto-discovery mode
 	if len(configPaths) == 0 {
 		defaultConfig := p.DefaultConfig()
-		return defaultConfig, nil
+		return &ConfigResult{
+			Config:      defaultConfig,
+			ConfigPaths: []string{},
+		}, nil
 	}
 
 	// If only one config, parse it and apply defaults
@@ -93,7 +116,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 		}
 		// Apply defaults to single config
 		p.ApplyDefaults(config)
-		return config, nil
+		return &ConfigResult{
+			Config:      config,
+			ConfigPaths: configPaths,
+		}, nil
 	}
 
 	// Multiple configs found - parse and merge them
@@ -116,7 +142,10 @@ func (p *ConfigParser) FindAndParseConfig(startPath string) (*Config, error) {
 	// Deduplicate resources (charts, preflights, manifests)
 	p.deduplicateResources(merged)
 
-	return merged, nil
+	return &ConfigResult{
+		Config:      merged,
+		ConfigPaths: configPaths,
+	}, nil
 }
 
 // mergeConfigs merges multiple configs with later configs taking precedence

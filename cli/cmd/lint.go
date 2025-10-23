@@ -29,10 +29,22 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Load .replicated config using tools parser (supports monorepos)
 	parser := tools.NewConfigParser()
-	config, err := parser.FindAndParseConfig(".")
+	configResult, err := parser.FindAndParseConfigWithPaths(".")
 
 	if err != nil {
 		return errors.Wrap(err, "failed to load .replicated config")
+	}
+
+	config := configResult.Config
+
+	// Display discovered config files in verbose mode
+	if r.args.lintVerbose && len(configResult.ConfigPaths) > 0 {
+		fmt.Fprintln(r.w, "Discovered config files:")
+		for _, configPath := range configResult.ConfigPaths {
+			fmt.Fprintf(r.w, "  - %s\n", configPath)
+		}
+		fmt.Fprintln(r.w)
+		r.w.Flush()
 	}
 
 	// Initialize JSON output structure
@@ -97,7 +109,11 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
 
 	if autoDiscoveryMode {
-		fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
+		if len(configResult.ConfigPaths) > 0 {
+			fmt.Fprintf(r.w, "No resources configured in .replicated. Auto-discovering lintable resources in current directory...\n\n")
+		} else {
+			fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
+		}
 		r.w.Flush()
 
 		// Auto-discover Helm charts
