@@ -41,7 +41,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	if r.args.lintVerbose && len(configResult.ConfigPaths) > 0 {
 		fmt.Fprintln(r.w, "Discovered config files:")
 		for _, configPath := range configResult.ConfigPaths {
-			fmt.Fprintf(r.w, "  - %s\n", configPath)
+			fmt.Fprintf(r.w, "  - Path: %s\n", configPath)
 		}
 		fmt.Fprintln(r.w)
 		r.w.Flush()
@@ -702,7 +702,7 @@ func (r *runners) displayHelmResults(results *HelmLintResults) error {
 	fmt.Fprintln(r.w)
 
 	for _, chart := range results.Charts {
-		fmt.Fprintf(r.w, "==> Linting chart: %s\n\n", chart.Path)
+		fmt.Fprintf(r.w, "==> Linting chart\nPath: %s\n\n", chart.Path)
 
 		if len(chart.Messages) == 0 {
 			fmt.Fprintf(r.w, "No issues found\n")
@@ -716,8 +716,10 @@ func (r *runners) displayHelmResults(results *HelmLintResults) error {
 			}
 		}
 
-		fmt.Fprintf(r.w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-			chart.Path, chart.Summary.ErrorCount, chart.Summary.WarningCount, chart.Summary.InfoCount)
+		fmt.Fprintf(r.w, "\nSummary:\n")
+		fmt.Fprintf(r.w, "  Path: %s\n", chart.Path)
+		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
+			chart.Summary.ErrorCount, chart.Summary.WarningCount, chart.Summary.InfoCount)
 
 		if chart.Success {
 			fmt.Fprintf(r.w, "Status: Passed\n\n")
@@ -773,7 +775,7 @@ func (r *runners) displayPreflightResults(results *PreflightLintResults) error {
 	fmt.Fprintln(r.w)
 
 	for _, spec := range results.Specs {
-		fmt.Fprintf(r.w, "==> Linting preflight spec: %s\n\n", spec.Path)
+		fmt.Fprintf(r.w, "==> Linting preflight spec\nPath: %s\n\n", spec.Path)
 
 		if len(spec.Messages) == 0 {
 			fmt.Fprintf(r.w, "No issues found\n")
@@ -787,8 +789,10 @@ func (r *runners) displayPreflightResults(results *PreflightLintResults) error {
 			}
 		}
 
-		fmt.Fprintf(r.w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-			spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
+		fmt.Fprintf(r.w, "\nSummary:\n")
+		fmt.Fprintf(r.w, "  Path: %s\n", spec.Path)
+		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
+			spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
 
 		if spec.Success {
 			fmt.Fprintf(r.w, "Status: Passed\n\n")
@@ -844,7 +848,7 @@ func (r *runners) displaySupportBundleResults(results *SupportBundleLintResults)
 	fmt.Fprintln(r.w)
 
 	for _, spec := range results.Specs {
-		fmt.Fprintf(r.w, "==> Linting support bundle spec: %s\n\n", spec.Path)
+		fmt.Fprintf(r.w, "==> Linting support bundle spec\nPath: %s\n\n", spec.Path)
 
 		if len(spec.Messages) == 0 {
 			fmt.Fprintf(r.w, "No issues found\n")
@@ -858,8 +862,10 @@ func (r *runners) displaySupportBundleResults(results *SupportBundleLintResults)
 			}
 		}
 
-		fmt.Fprintf(r.w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
-			spec.Path, spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
+		fmt.Fprintf(r.w, "\nSummary:\n")
+		fmt.Fprintf(r.w, "  Path: %s\n", spec.Path)
+		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
+			spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
 
 		if spec.Success {
 			fmt.Fprintf(r.w, "Status: Passed\n\n")
