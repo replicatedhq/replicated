@@ -563,14 +563,14 @@ metadata:
 			}
 			defer os.Remove(tmpFile)
 
-			got, err := isSupportBundleSpec(tmpFile)
+			got, err := hasKind(tmpFile, "SupportBundle")
 			if err != nil && tt.want {
-				t.Errorf("isSupportBundleSpec() unexpected error: %v", err)
+				t.Errorf("hasKind() unexpected error: %v", err)
 				return
 			}
 
 			if got != tt.want {
-				t.Errorf("isSupportBundleSpec() = %v, want %v", got, tt.want)
+				t.Errorf("hasKind() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -755,9 +755,9 @@ func TestDiscoverChartPaths_TrailingDoublestar(t *testing.T) {
 	baseCommonDir := createTestChart(t, filepath.Join(chartsDir, "base"), "common")
 
 	pattern := filepath.Join(chartsDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{appDir, apiDir, baseCommonDir}
@@ -774,9 +774,9 @@ func TestDiscoverChartPaths_ExplicitChartYaml(t *testing.T) {
 	baseCommonDir := createTestChart(t, filepath.Join(chartsDir, "base"), "common")
 
 	pattern := filepath.Join(chartsDir, "**", "Chart.yaml")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{appDir, apiDir, baseCommonDir}
@@ -792,9 +792,9 @@ func TestDiscoverChartPaths_ExplicitChartYml(t *testing.T) {
 	apiDir := createTestChartWithExtension(t, chartsDir, "api", "yml")
 
 	pattern := filepath.Join(chartsDir, "**", "Chart.yml")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{appDir, apiDir}
@@ -820,9 +820,9 @@ func TestDiscoverChartPaths_SingleLevelWildcard(t *testing.T) {
 	}
 
 	pattern := filepath.Join(chartsDir, "*")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{appDir, apiDir}
@@ -845,9 +845,9 @@ func TestDiscoverChartPaths_BraceExpansionWithDoublestar(t *testing.T) {
 	createTestChart(t, filepath.Join(chartsDir, "staging"), "db")
 
 	pattern := filepath.Join(chartsDir, "{dev,prod}", "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{devAppDir, devApiDir, prodWebDir}
@@ -871,9 +871,9 @@ func TestDiscoverChartPaths_NoahExample(t *testing.T) {
 	helmChartDir := createTestChart(t, testdataDir, "helm-chart")
 
 	pattern := filepath.Join(pkgDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v (should not error on intermediate dirs)", err)
+		t.Fatalf("DiscoverChartPaths() error = %v (should not error on intermediate dirs)", err)
 	}
 
 	want := []string{helmChartDir}
@@ -890,9 +890,9 @@ func TestDiscoverChartPaths_RootLevelDoublestar(t *testing.T) {
 	deepDir := createTestChart(t, filepath.Join(tmpDir, "level1", "level2", "level3"), "deep")
 
 	pattern := filepath.Join(tmpDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{shallowDir, mediumDir, deepDir}
@@ -917,9 +917,9 @@ func TestDiscoverChartPaths_MixedValidInvalid(t *testing.T) {
 	}
 
 	pattern := filepath.Join(chartsDir, "*")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	want := []string{validDir, anotherValidDir}
@@ -945,9 +945,9 @@ func TestDiscoverChartPaths_BothYamlAndYml(t *testing.T) {
 	}
 
 	pattern := filepath.Join(chartsDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	// Should return app directory only once
@@ -971,9 +971,9 @@ func TestDiscoverChartPaths_HiddenPathFiltering(t *testing.T) {
 	appDir := createTestChart(t, chartsDir, "app")
 
 	pattern := filepath.Join(tmpDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	// Should only find the normal chart, hidden ones filtered
@@ -995,14 +995,14 @@ func TestDiscoverChartPaths_EmptyResult(t *testing.T) {
 	}
 
 	pattern := filepath.Join(chartsDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 
 	// Should return empty slice
 	if len(paths) != 0 {
-		t.Errorf("discoverChartPaths() returned %d paths, want 0 (empty result)", len(paths))
+		t.Errorf("DiscoverChartPaths() returned %d paths, want 0 (empty result)", len(paths))
 	}
 }
 
@@ -1022,16 +1022,16 @@ func TestDiscoverChartPaths_IntermediateDirectoriesOnly(t *testing.T) {
 	appDir := createTestChart(t, level2, "app")
 
 	pattern := filepath.Join(chartsDir, "**")
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v (should not error on intermediate dirs)", err)
+		t.Fatalf("DiscoverChartPaths() error = %v (should not error on intermediate dirs)", err)
 	}
 
 	want := []string{appDir}
 	assertPathsEqual(t, paths, want)
 }
 
-// Phase 3 Tests: Preflight Discovery - isPreflightSpec Unit Tests
+// Phase 3 Tests: Preflight Discovery - hasKind Unit Tests
 
 func TestIsPreflightSpec_ValidPreflight(t *testing.T) {
 	// Valid Preflight spec should return true
@@ -1039,12 +1039,12 @@ func TestIsPreflightSpec_ValidPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "preflight.yaml")
 	createTestPreflight(t, path)
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Errorf("isPreflightSpec() = false, want true for valid Preflight")
+		t.Errorf("hasKind() = false, want true for valid Preflight")
 	}
 }
 
@@ -1054,12 +1054,12 @@ func TestIsPreflightSpec_K8sDeployment(t *testing.T) {
 	path := filepath.Join(tmpDir, "deployment.yaml")
 	createTestK8sResource(t, path, "Deployment")
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Errorf("isPreflightSpec() = true, want false for Deployment")
+		t.Errorf("hasKind() = true, want false for Deployment")
 	}
 }
 
@@ -1069,12 +1069,12 @@ func TestIsPreflightSpec_SupportBundle(t *testing.T) {
 	path := filepath.Join(tmpDir, "bundle.yaml")
 	createTestSupportBundle(t, path)
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Errorf("isPreflightSpec() = true, want false for SupportBundle")
+		t.Errorf("hasKind() = true, want false for SupportBundle")
 	}
 }
 
@@ -1088,12 +1088,12 @@ func TestIsPreflightSpec_MultipleK8sResources(t *testing.T) {
 			path := filepath.Join(tmpDir, kind+".yaml")
 			createTestK8sResource(t, path, kind)
 
-			got, err := isPreflightSpec(path)
+			got, err := hasKind(path, "Preflight")
 			if err != nil {
-				t.Fatalf("isPreflightSpec() error = %v", err)
+				t.Fatalf("hasKind() error = %v", err)
 			}
 			if got {
-				t.Errorf("isPreflightSpec() = true, want false for %s", kind)
+				t.Errorf("hasKind() = true, want false for %s", kind)
 			}
 		})
 	}
@@ -1105,12 +1105,12 @@ func TestIsPreflightSpec_MultiDocumentWithPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "Preflight", "Service"})
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Errorf("isPreflightSpec() = false, want true for multi-doc with Preflight")
+		t.Errorf("hasKind() = false, want true for multi-doc with Preflight")
 	}
 }
 
@@ -1120,12 +1120,12 @@ func TestIsPreflightSpec_MultiDocumentWithoutPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "Service", "ConfigMap"})
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Errorf("isPreflightSpec() = true, want false for multi-doc without Preflight")
+		t.Errorf("hasKind() = true, want false for multi-doc without Preflight")
 	}
 }
 
@@ -1135,12 +1135,12 @@ func TestIsPreflightSpec_MultiDocumentMultiplePreflights(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Preflight", "Preflight"})
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Errorf("isPreflightSpec() = false, want true for multi-doc with multiple Preflights")
+		t.Errorf("hasKind() = false, want true for multi-doc with multiple Preflights")
 	}
 }
 
@@ -1153,12 +1153,12 @@ func TestIsPreflightSpec_MissingKind(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Errorf("isPreflightSpec() = true, want false for YAML without kind")
+		t.Errorf("hasKind() = true, want false for YAML without kind")
 	}
 }
 
@@ -1183,9 +1183,9 @@ func TestDiscoverPreflightPaths_TrailingDoublestar(t *testing.T) {
 	}
 
 	pattern := filepath.Join(preflightsDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{check1Path, check2Path}
@@ -1204,9 +1204,9 @@ func TestDiscoverPreflightPaths_ExplicitYaml(t *testing.T) {
 	createTestPreflight(t, check2Path)
 
 	pattern := filepath.Join(preflightsDir, "**", "*.yaml")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{check1Path, check2Path}
@@ -1236,9 +1236,9 @@ spec:
 	}
 
 	pattern := filepath.Join(preflightsDir, "**", "*.yml")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{checkPath}
@@ -1258,9 +1258,9 @@ func TestDiscoverPreflightPaths_SingleLevel(t *testing.T) {
 	createTestPreflight(t, filepath.Join(preflightsDir, "subdir", "check2.yaml"))
 
 	pattern := filepath.Join(preflightsDir, "*")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{checkPath}
@@ -1283,9 +1283,9 @@ func TestDiscoverPreflightPaths_BraceExpansion(t *testing.T) {
 	createTestPreflight(t, filepath.Join(preflightsDir, "staging", "check.yaml"))
 
 	pattern := filepath.Join(preflightsDir, "{dev,prod}", "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{devPath, prodPath}
@@ -1306,9 +1306,9 @@ func TestDiscoverPreflightPaths_MixedDirectory(t *testing.T) {
 	createTestK8sResource(t, filepath.Join(k8sDir, "service.yaml"), "Service")
 
 	pattern := filepath.Join(k8sDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{preflightPath}
@@ -1338,9 +1338,9 @@ func TestDiscoverPreflightPaths_NonYamlFilesFiltered(t *testing.T) {
 	}
 
 	pattern := filepath.Join(preflightsDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{checkPath}
@@ -1362,14 +1362,14 @@ func TestDiscoverPreflightPaths_EmptyYaml(t *testing.T) {
 	}
 
 	pattern := filepath.Join(preflightsDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	// Should be empty (empty file filtered)
 	if len(paths) != 0 {
-		t.Errorf("discoverPreflightPaths() returned %d paths, want 0 (empty file should be filtered)", len(paths))
+		t.Errorf("DiscoverPreflightPaths() returned %d paths, want 0 (empty file should be filtered)", len(paths))
 	}
 }
 
@@ -1389,9 +1389,9 @@ func TestDiscoverPreflightPaths_InvalidYaml(t *testing.T) {
 	}
 
 	pattern := filepath.Join(preflightsDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	// Should only find valid Preflight, broken one filtered
@@ -1426,9 +1426,9 @@ spec:
 	}
 
 	pattern := filepath.Join(preflightsDir, "**")
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	want := []string{yamlPath, ymlPath}
@@ -1582,12 +1582,12 @@ func TestIsSupportBundleSpec_VariousK8sResources(t *testing.T) {
 			path := filepath.Join(tmpDir, kind+".yaml")
 			createTestK8sResource(t, path, kind)
 
-			got, err := isSupportBundleSpec(path)
+			got, err := hasKind(path, "SupportBundle")
 			if err != nil {
-				t.Fatalf("isSupportBundleSpec() error = %v", err)
+				t.Fatalf("hasKind() error = %v", err)
 			}
 			if got {
-				t.Errorf("isSupportBundleSpec() = true, want false for %s", kind)
+				t.Errorf("hasKind() = true, want false for %s", kind)
 			}
 		})
 	}
@@ -1599,12 +1599,12 @@ func TestIsSupportBundleSpec_PreflightResource(t *testing.T) {
 	path := filepath.Join(tmpDir, "preflight.yaml")
 	createTestPreflight(t, path)
 
-	got, err := isSupportBundleSpec(path)
+	got, err := hasKind(path, "SupportBundle")
 	if err != nil {
-		t.Fatalf("isSupportBundleSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Errorf("isSupportBundleSpec() = true, want false for Preflight")
+		t.Errorf("hasKind() = true, want false for Preflight")
 	}
 }
 
@@ -1614,12 +1614,12 @@ func TestIsSupportBundleSpec_MultiDocumentWithBundle(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "SupportBundle", "Service"})
 
-	got, err := isSupportBundleSpec(path)
+	got, err := hasKind(path, "SupportBundle")
 	if err != nil {
-		t.Fatalf("isSupportBundleSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Errorf("isSupportBundleSpec() = false, want true for multi-doc with SupportBundle")
+		t.Errorf("hasKind() = false, want true for multi-doc with SupportBundle")
 	}
 }
 
@@ -1629,12 +1629,12 @@ func TestIsSupportBundleSpec_MultiDocumentMultipleBundles(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"SupportBundle", "SupportBundle"})
 
-	got, err := isSupportBundleSpec(path)
+	got, err := hasKind(path, "SupportBundle")
 	if err != nil {
-		t.Fatalf("isSupportBundleSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Errorf("isSupportBundleSpec() = false, want true for multi-doc with multiple SupportBundles")
+		t.Errorf("hasKind() = false, want true for multi-doc with multiple SupportBundles")
 	}
 }
 
@@ -1672,9 +1672,9 @@ func TestDiscoverChartPaths_GlobError(t *testing.T) {
 	// Patterns with unclosed brackets should cause glob to fail
 	pattern := "./charts/[invalid"
 
-	_, err := discoverChartPaths(pattern)
+	_, err := DiscoverChartPaths(pattern)
 	if err == nil {
-		t.Errorf("discoverChartPaths() expected error for malformed pattern %s, got nil", pattern)
+		t.Errorf("DiscoverChartPaths() expected error for malformed pattern %s, got nil", pattern)
 	}
 }
 
@@ -1683,9 +1683,9 @@ func TestDiscoverPreflightPaths_GlobError(t *testing.T) {
 	// Patterns with unclosed brackets should cause glob to fail
 	pattern := "./preflights/[invalid"
 
-	_, err := discoverPreflightPaths(pattern)
+	_, err := DiscoverPreflightPaths(pattern)
 	if err == nil {
-		t.Errorf("discoverPreflightPaths() expected error for malformed pattern %s, got nil", pattern)
+		t.Errorf("DiscoverPreflightPaths() expected error for malformed pattern %s, got nil", pattern)
 	}
 }
 
@@ -1711,9 +1711,9 @@ func TestIsPreflightSpec_FileReadError(t *testing.T) {
 	})
 
 	// Try to read - should get permission error
-	_, err := isPreflightSpec(path)
+	_, err := hasKind(path, "Preflight")
 	if err == nil {
-		t.Error("isPreflightSpec() expected error for unreadable file, got nil")
+		t.Error("hasKind() expected error for unreadable file, got nil")
 	}
 }
 
@@ -1755,18 +1755,20 @@ func TestIsChartDirectory_PermissionDenied(t *testing.T) {
 }
 
 func TestDiscoverPreflightPaths_InvalidPattern(t *testing.T) {
-	// Test that patterns without proper extension or wildcards return an error
+	// Test that explicit paths without proper extension return an error
+	// (After refactoring, explicit paths are validated differently from patterns)
 	tmpDir := t.TempDir()
 
-	// Pattern with no extension and no wildcard should error
+	// Explicit path (no wildcards) with no extension should error
 	pattern := filepath.Join(tmpDir, "preflights", "check")
 
-	_, err := discoverPreflightPaths(pattern)
+	_, err := DiscoverPreflightPaths(pattern)
 	if err == nil {
-		t.Error("discoverPreflightPaths() expected error for pattern without extension or wildcard")
+		t.Error("DiscoverPreflightPaths() expected error for explicit path without extension")
 	}
-	if err != nil && err.Error() != "pattern must end with .yaml, .yml, *, or **" {
-		t.Errorf("discoverPreflightPaths() error = %q, want error about pattern requirements", err.Error())
+	// After refactoring: explicit paths are validated with file-specific errors
+	if err != nil && err.Error() != "file must have .yaml or .yml extension" {
+		t.Errorf("DiscoverPreflightPaths() error = %q, want %q", err.Error(), "file must have .yaml or .yml extension")
 	}
 }
 
@@ -1783,26 +1785,26 @@ func TestDiscoverChartPaths_TrailingSlash(t *testing.T) {
 
 	// Pattern with ** and trailing slash should work (normalized to **)
 	pattern := filepath.Join(chartsDir, "**") + "/"
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v for pattern %q", err, pattern)
+		t.Fatalf("DiscoverChartPaths() error = %v for pattern %q", err, pattern)
 	}
 	assertPathsEqual(t, paths, want)
 
 	// Pattern without trailing slash should still work
 	pattern = filepath.Join(chartsDir, "**")
-	paths, err = discoverChartPaths(pattern)
+	paths, err = DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v for pattern %q", err, pattern)
+		t.Fatalf("DiscoverChartPaths() error = %v for pattern %q", err, pattern)
 	}
 	assertPathsEqual(t, paths, want)
 
 	// Pattern with single trailing slash on directory should work as literal check
 	// This will error because chartsDir itself is not a chart
 	pattern = chartsDir + "/"
-	_, err = discoverChartPaths(pattern)
+	_, err = DiscoverChartPaths(pattern)
 	if err == nil {
-		t.Errorf("discoverChartPaths() expected error for literal directory %q that is not a chart", pattern)
+		t.Errorf("DiscoverChartPaths() expected error for literal directory %q that is not a chart", pattern)
 	}
 }
 
@@ -1810,14 +1812,14 @@ func TestDiscoverChartPaths_EmptyPattern(t *testing.T) {
 	// Test that empty pattern is handled gracefully
 	pattern := ""
 
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 
 	// Empty pattern might error or return empty - either is acceptable
 	// This test documents the behavior
 	if err != nil {
-		t.Logf("discoverChartPaths(\"\") returned error: %v", err)
+		t.Logf("DiscoverChartPaths(\"\") returned error: %v", err)
 	} else {
-		t.Logf("discoverChartPaths(\"\") returned %d paths: %v", len(paths), paths)
+		t.Logf("DiscoverChartPaths(\"\") returned %d paths: %v", len(paths), paths)
 	}
 
 	// At minimum, should not crash
@@ -1838,9 +1840,9 @@ func TestDiscoverChartPaths_LiteralDirectory(t *testing.T) {
 	// Pattern is the literal chart directory path (no wildcards)
 	pattern := chartDir
 
-	paths, err := discoverChartPaths(pattern)
+	paths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v for literal directory", err)
+		t.Fatalf("DiscoverChartPaths() error = %v for literal directory", err)
 	}
 
 	want := []string{chartDir}
@@ -1852,9 +1854,9 @@ func TestDiscoverChartPaths_LiteralDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = discoverChartPaths(notChartDir)
+	_, err = DiscoverChartPaths(notChartDir)
 	if err == nil {
-		t.Error("discoverChartPaths() expected error for literal directory without Chart.yaml")
+		t.Error("DiscoverChartPaths() expected error for literal directory without Chart.yaml")
 	}
 }
 
@@ -1880,9 +1882,9 @@ func TestDiscoverPreflightPaths_NestedBraceExpansion(t *testing.T) {
 	// Pattern with nested brace expansion
 	pattern := filepath.Join(preflightsDir, "{dev,prod}", "{app,api}", "*.yaml")
 
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 
 	// Should find all 4 preflights, not the deployment
@@ -1903,25 +1905,25 @@ func TestDiscoverPreflightPaths_TrailingSlash(t *testing.T) {
 
 	// Pattern with ** and trailing slash should work (normalized to **)
 	pattern := filepath.Join(preflightsDir, "**") + "/"
-	paths, err := discoverPreflightPaths(pattern)
+	paths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+		t.Fatalf("DiscoverPreflightPaths() error = %v for pattern %q", err, pattern)
 	}
 	assertPathsEqual(t, paths, want)
 
 	// Pattern without trailing slash should still work
 	pattern = filepath.Join(preflightsDir, "**")
-	paths, err = discoverPreflightPaths(pattern)
+	paths, err = DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+		t.Fatalf("DiscoverPreflightPaths() error = %v for pattern %q", err, pattern)
 	}
 	assertPathsEqual(t, paths, want)
 
 	// Pattern with /* and trailing slash should work (normalized to /*)
 	pattern = filepath.Join(preflightsDir, "/*") + "/"
-	paths, err = discoverPreflightPaths(pattern)
+	paths, err = DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v for pattern %q", err, pattern)
+		t.Fatalf("DiscoverPreflightPaths() error = %v for pattern %q", err, pattern)
 	}
 	assertPathsEqual(t, paths, want)
 }
@@ -1951,12 +1953,12 @@ func TestIsPreflightSpec_CaseSensitive(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := isPreflightSpec(path)
+			got, err := hasKind(path, "Preflight")
 			if err != nil {
-				t.Fatalf("isPreflightSpec() error = %v", err)
+				t.Fatalf("hasKind() error = %v", err)
 			}
 			if got != tt.expected {
-				t.Errorf("isPreflightSpec() = %v for kind=%q, want %v", got, tt.kind, tt.expected)
+				t.Errorf("hasKind() = %v for kind=%q, want %v", got, tt.kind, tt.expected)
 			}
 		})
 	}
@@ -1980,12 +1982,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Error("isPreflightSpec() = true for kind in comment, want false")
+		t.Error("hasKind() = true for kind in comment, want false")
 	}
 }
 
@@ -2009,12 +2011,12 @@ func TestIsPreflightSpec_KindWrongType(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := isPreflightSpec(path)
+			got, err := hasKind(path, "Preflight")
 			if err != nil {
-				t.Fatalf("isPreflightSpec() error = %v", err)
+				t.Fatalf("hasKind() error = %v", err)
 			}
 			if got {
-				t.Errorf("isPreflightSpec() = true for %s, want false", tt.name)
+				t.Errorf("hasKind() = true for %s, want false", tt.name)
 			}
 		})
 	}
@@ -2040,12 +2042,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := isPreflightSpec(path)
+	got, err := hasKind(path, "Preflight")
 	if err != nil {
-		t.Fatalf("isPreflightSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if got {
-		t.Error("isPreflightSpec() = true for nested kind, want false (only top-level kind should match)")
+		t.Error("hasKind() = true for nested kind, want false (only top-level kind should match)")
 	}
 }
 
@@ -2064,9 +2066,9 @@ func TestDiscoverSupportBundlePaths_SmartPatternRecursive(t *testing.T) {
 	// User provides directory pattern without file extension
 	pattern := filepath.Join(manifestsDir, "**")
 
-	paths, err := discoverSupportBundlePaths(pattern)
+	paths, err := DiscoverSupportBundlePaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v", err)
 	}
 
 	// Should find the support bundle, filter out deployment
@@ -2090,9 +2092,9 @@ func TestDiscoverSupportBundlePaths_ExplicitPattern(t *testing.T) {
 	// User provides custom naming pattern
 	pattern := filepath.Join(manifestsDir, "bundle-*.yaml")
 
-	paths, err := discoverSupportBundlePaths(pattern)
+	paths, err := DiscoverSupportBundlePaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v", err)
 	}
 
 	// Should find only bundle-prod.yaml (custom pattern respected)
@@ -2111,9 +2113,9 @@ func TestDiscoverSupportBundlePaths_TrailingSlash(t *testing.T) {
 	// Pattern with trailing slash
 	pattern := filepath.Join(manifestsDir, "**") + "/"
 
-	paths, err := discoverSupportBundlePaths(pattern)
+	paths, err := DiscoverSupportBundlePaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverSupportBundlePaths() error = %v for pattern with trailing slash", err)
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v for pattern with trailing slash", err)
 	}
 
 	want := []string{bundlePath}
@@ -2124,12 +2126,12 @@ func TestDiscoverSupportBundlePaths_EmptyPattern(t *testing.T) {
 	// Test that empty patterns error
 	pattern := ""
 
-	_, err := discoverSupportBundlePaths(pattern)
+	_, err := DiscoverSupportBundlePaths(pattern)
 	if err == nil {
-		t.Error("discoverSupportBundlePaths() expected error for empty pattern, got nil")
+		t.Error("DiscoverSupportBundlePaths() expected error for empty pattern, got nil")
 	}
 	if err != nil && err.Error() != "pattern cannot be empty" {
-		t.Errorf("discoverSupportBundlePaths() error = %q, want %q", err.Error(), "pattern cannot be empty")
+		t.Errorf("DiscoverSupportBundlePaths() error = %q, want %q", err.Error(), "pattern cannot be empty")
 	}
 }
 
@@ -2149,9 +2151,9 @@ func TestDiscoverSupportBundlePaths_SingleLevel(t *testing.T) {
 	// Single-level wildcard
 	pattern := filepath.Join(manifestsDir, "/*")
 
-	paths, err := discoverSupportBundlePaths(pattern)
+	paths, err := DiscoverSupportBundlePaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverSupportBundlePaths() error = %v", err)
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v", err)
 	}
 
 	// Should find only root level
@@ -2165,14 +2167,14 @@ func TestDiscoverSupportBundlePaths_InvalidPattern(t *testing.T) {
 
 	pattern := filepath.Join(tmpDir, "manifests", "check")
 
-	_, err := discoverSupportBundlePaths(pattern)
+	_, err := DiscoverSupportBundlePaths(pattern)
 	if err == nil {
-		t.Error("discoverSupportBundlePaths() expected error for path without extension or wildcard")
+		t.Error("DiscoverSupportBundlePaths() expected error for path without extension or wildcard")
 	}
 	// Since this pattern has no wildcards, it's treated as an explicit path
 	// and must have .yaml or .yml extension
 	if err != nil && err.Error() != "file must have .yaml or .yml extension" {
-		t.Errorf("discoverSupportBundlePaths() error = %q, want error about file extension", err.Error())
+		t.Errorf("DiscoverSupportBundlePaths() error = %q, want error about file extension", err.Error())
 	}
 }
 
@@ -2215,12 +2217,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := isSupportBundleSpec(path)
+	got, err := hasKind(path, "SupportBundle")
 	if err != nil {
-		t.Fatalf("isSupportBundleSpec() error = %v", err)
+		t.Fatalf("hasKind() error = %v", err)
 	}
 	if !got {
-		t.Error("isSupportBundleSpec() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
+		t.Error("hasKind() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
 	}
 }
 
@@ -2270,12 +2272,12 @@ metadata:
 				t.Fatal(err)
 			}
 
-			got, err := isSupportBundleSpec(path)
+			got, err := hasKind(path, "SupportBundle")
 			if err != nil {
-				t.Fatalf("isSupportBundleSpec() error = %v", err)
+				t.Fatalf("hasKind() error = %v", err)
 			}
 			if got != tt.want {
-				t.Errorf("isSupportBundleSpec() = %v, want %v for content:\n%s", got, tt.want, tt.content)
+				t.Errorf("hasKind() = %v, want %v for content:\n%s", got, tt.want, tt.content)
 			}
 		})
 	}

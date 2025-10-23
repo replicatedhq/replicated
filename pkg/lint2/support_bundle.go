@@ -61,7 +61,7 @@ func LintSupportBundle(ctx context.Context, specPath string, sbVersion string) (
 	outputStr := string(output)
 
 	// Parse the JSON output
-	messages, parseErr := ParseSupportBundleOutput(outputStr)
+	messages, parseErr := parseSupportBundleOutput(outputStr)
 	if parseErr != nil {
 		// If we can't parse the output, return both the parse error and original error
 		if err != nil {
@@ -80,9 +80,9 @@ func LintSupportBundle(ctx context.Context, specPath string, sbVersion string) (
 	}, nil
 }
 
-// ParseSupportBundleOutput parses support-bundle lint JSON output into structured messages.
+// parseSupportBundleOutput parses support-bundle lint JSON output into structured messages.
 // Uses the common troubleshoot.sh JSON parsing infrastructure.
-func ParseSupportBundleOutput(output string) ([]LintMessage, error) {
+func parseSupportBundleOutput(output string) ([]LintMessage, error) {
 	result, err := parseTroubleshootJSON[SupportBundleLintIssue](output)
 	if err != nil {
 		return nil, err

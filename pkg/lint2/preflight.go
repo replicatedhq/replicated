@@ -178,7 +178,7 @@ func LintPreflight(
 	outputStr := string(output)
 
 	// Parse the JSON output
-	messages, parseErr := ParsePreflightOutput(outputStr)
+	messages, parseErr := parsePreflightOutput(outputStr)
 	if parseErr != nil {
 		// If we can't parse the output, return both the parse error and original error
 		if err != nil {
@@ -197,9 +197,9 @@ func LintPreflight(
 	}, nil
 }
 
-// ParsePreflightOutput parses preflight lint JSON output into structured messages.
+// parsePreflightOutput parses preflight lint JSON output into structured messages.
 // Uses the common troubleshoot.sh JSON parsing infrastructure.
-func ParsePreflightOutput(output string) ([]LintMessage, error) {
+func parsePreflightOutput(output string) ([]LintMessage, error) {
 	result, err := parseTroubleshootJSON[PreflightLintIssue](output)
 	if err != nil {
 		return nil, err

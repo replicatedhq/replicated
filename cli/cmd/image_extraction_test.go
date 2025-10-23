@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
 
@@ -47,9 +48,21 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_WithMatchingHelmChartMa
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
+	// Extract charts with metadata
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
 	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	// Extract HelmChart manifests
+	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+	}
+
+	result, err := r.extractImagesFromCharts(ctx, charts, helmChartManifests)
+	if err != nil {
+		t.Fatalf("extractImagesFromCharts failed: %v", err)
 	}
 
 	// Should successfully extract both postgres and redis images
@@ -88,10 +101,8 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_NoHelmChartManifest(t *
 		Manifests: []string{}, // No manifests configured
 	}
 
-	r := &runners{}
-	ctx := context.Background()
-
-	_, err := r.extractImagesFromConfig(ctx, config)
+	// Try to extract HelmChart manifests - should fail because manifests are required
+	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
 
 	// Should fail because manifests are required
 	if err == nil {
@@ -120,9 +131,21 @@ func TestExtractImagesFromConfig_NonMatchingHelmChart_FailsToRender(t *testing.T
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
+	// Extract charts with metadata
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
 	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	// Extract HelmChart manifests
+	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+	}
+
+	result, err := r.extractImagesFromCharts(ctx, charts, helmChartManifests)
+	if err != nil {
+		t.Fatalf("extractImagesFromCharts failed: %v", err)
 	}
 
 	// Should get 0 images because HelmChart doesn't match (different name)
@@ -153,9 +176,21 @@ func TestExtractImagesFromConfig_MultipleCharts_MixedScenario(t *testing.T) {
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
+	// Extract charts with metadata
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
 	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	// Extract HelmChart manifests
+	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+	}
+
+	result, err := r.extractImagesFromCharts(ctx, charts, helmChartManifests)
+	if err != nil {
+		t.Fatalf("extractImagesFromCharts failed: %v", err)
 	}
 
 	// Should extract images from both charts
@@ -193,25 +228,21 @@ func TestExtractImagesFromConfig_MultipleCharts_MixedScenario(t *testing.T) {
 }
 
 func TestExtractImagesFromConfig_NoCharts_ReturnsError(t *testing.T) {
-	// Test that empty chart configuration returns appropriate error
+	// Test that empty chart configuration returns error
 	config := &tools.Config{
 		Charts:    []tools.ChartConfig{},
 		Manifests: []string{},
 	}
 
-	r := &runners{}
-	ctx := context.Background()
+	// Extract charts with metadata - should error when no charts configured
+	_, err := lint2.GetChartsWithMetadataFromConfig(config)
 
-	result, err := r.extractImagesFromConfig(ctx, config)
-
-	// When there are no charts configured, GetChartPathsFromConfig returns an error
+	// Should get error about no charts
 	if err == nil {
-		t.Fatal("Expected error when no charts configured, got nil")
+		t.Fatal("expected error when no charts in config")
 	}
-
-	// Result should be nil when error occurs
-	if result != nil {
-		t.Errorf("Expected nil result when error occurs, got %+v", result)
+	if !strings.Contains(err.Error(), "no charts found") {
+		t.Errorf("expected 'no charts found' error, got: %v", err)
 	}
 }
 
@@ -226,10 +257,8 @@ func TestExtractImagesFromConfig_NoManifests_ReturnsError(t *testing.T) {
 		Manifests: []string{}, // No manifests configured
 	}
 
-	r := &runners{}
-	ctx := context.Background()
-
-	_, err := r.extractImagesFromConfig(ctx, config)
+	// Try to extract HelmChart manifests - should fail because manifests are required
+	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
 
 	// Should fail because manifests are required
 	if err == nil {
@@ -258,9 +287,21 @@ func TestExtractImagesFromConfig_EmptyBuilder_FailsToRender(t *testing.T) {
 	r := &runners{}
 	ctx := context.Background()
 
-	result, err := r.extractImagesFromConfig(ctx, config)
+	// Extract charts with metadata
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
 	if err != nil {
-		t.Fatalf("extractImagesFromConfig failed: %v", err)
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	// Extract HelmChart manifests
+	helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+	}
+
+	result, err := r.extractImagesFromCharts(ctx, charts, helmChartManifests)
+	if err != nil {
+		t.Fatalf("extractImagesFromCharts failed: %v", err)
 	}
 
 	// Should get 0 images because empty builder provides no values
@@ -286,10 +327,8 @@ func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsDiscovery(t *testin
 		Manifests: []string{manifestGlob},
 	}
 
-	r := &runners{}
-	ctx := context.Background()
-
-	_, err := r.extractImagesFromConfig(ctx, config)
+	// Try to extract HelmChart manifests - should fail because manifests don't contain HelmCharts
+	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
 
 	// Should fail because manifests are configured but contain no HelmCharts
 	if err == nil {

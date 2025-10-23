@@ -21,6 +21,115 @@ import (
 // release-validation-v2 feature flag. The runLint function below is still used
 // internally by the release lint command.
 
+// getToolVersion extracts a tool version from config, defaulting to "latest" if not found.
+func getToolVersion(config *tools.Config, tool string) string {
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools[tool]; ok {
+			return v
+		}
+	}
+	return "latest"
+}
+
+// resolveToolVersion extracts and resolves a tool version from config.
+// If the version is "latest" or empty, it resolves to an actual version using the resolver.
+// Falls back to the provided default version if resolution fails.
+func resolveToolVersion(ctx context.Context, config *tools.Config, resolver *tools.Resolver, toolName, defaultVersion string) string {
+	// Get version from config
+	version := "latest"
+	if config.ReplLint.Tools != nil {
+		if v, ok := config.ReplLint.Tools[toolName]; ok {
+			version = v
+		}
+	}
+
+	// Resolve "latest" to actual version
+	if version == "latest" || version == "" {
+		if resolved, err := resolver.ResolveLatestVersion(ctx, toolName); err == nil {
+			return resolved
+		}
+		return defaultVersion // Fallback
+	}
+
+	return version
+}
+
+// extractAllPathsAndMetadata extracts all paths and metadata needed for linting.
+// This function consolidates extraction logic across all linters to avoid duplication.
+// If verbose is true, it will also extract ChartsWithMetadata for image extraction.
+// Accepts already-resolved tool versions.
+func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion string) (*ExtractedPaths, error) {
+	result := &ExtractedPaths{
+		HelmVersion:      helmVersion,
+		PreflightVersion: preflightVersion,
+		SBVersion:        sbVersion,
+	}
+
+	// Extract chart paths (for Helm linting)
+	if len(config.Charts) > 0 {
+		chartPaths, err := lint2.GetChartPathsFromConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		result.ChartPaths = chartPaths
+	}
+
+	// Extract preflight paths with values
+	if len(config.Preflights) > 0 {
+		preflights, err := lint2.GetPreflightWithValuesFromConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		result.Preflights = preflights
+
+		// Get HelmChart manifests (required for preflights)
+		helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+		if err != nil {
+			return nil, err
+		}
+		result.HelmChartManifests = helmChartManifests
+	}
+
+	// Discover support bundles
+	if len(config.Manifests) > 0 {
+		sbPaths, err := lint2.DiscoverSupportBundlesFromManifests(config.Manifests)
+		if err != nil {
+			return nil, err
+		}
+		result.SupportBundles = sbPaths
+
+		// Get HelmChart manifests if not already extracted
+		if result.HelmChartManifests == nil {
+			helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+			if err != nil {
+				// Support bundles don't require HelmChart manifests - only error if manifests are explicitly configured
+				// but fail to parse. If no HelmChart manifests exist, that's fine (return empty map).
+				if len(config.Manifests) > 0 {
+					// Check if error is "no HelmChart resources found" - that's acceptable
+					if err != nil && !strings.Contains(err.Error(), "no HelmChart resources found") {
+						return nil, err
+					}
+				}
+				// Set empty map so we don't try to extract again
+				result.HelmChartManifests = make(map[string]*lint2.HelmChartManifest)
+			} else {
+				result.HelmChartManifests = helmChartManifests
+			}
+		}
+	}
+
+	// Extract charts with metadata (ONLY for verbose mode)
+	if verbose && len(config.Charts) > 0 {
+		chartsWithMetadata, err := lint2.GetChartsWithMetadataFromConfig(config)
+		if err != nil {
+			return nil, err
+		}
+		result.ChartsWithMetadata = chartsWithMetadata
+	}
+
+	return result, nil
+}
+
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Validate output format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
@@ -29,22 +138,10 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Load .replicated config using tools parser (supports monorepos)
 	parser := tools.NewConfigParser()
-	configResult, err := parser.FindAndParseConfigWithPaths(".")
+	config, err := parser.FindAndParseConfig(".")
 
 	if err != nil {
 		return errors.Wrap(err, "failed to load .replicated config")
-	}
-
-	config := configResult.Config
-
-	// Display discovered config files in verbose mode
-	if r.args.lintVerbose && len(configResult.ConfigPaths) > 0 {
-		fmt.Fprintln(r.w, "Discovered config files:")
-		for _, configPath := range configResult.ConfigPaths {
-			fmt.Fprintf(r.w, "  - Path: %s\n", configPath)
-		}
-		fmt.Fprintln(r.w)
-		r.w.Flush()
 	}
 
 	// Initialize JSON output structure
@@ -52,54 +149,9 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Resolve all tool versions (including "latest" to actual versions)
 	resolver := tools.NewResolver()
-
-	// Get Helm version from config and resolve if needed
-	helmVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
-			helmVersion = v
-		}
-	}
-	if helmVersion == "latest" || helmVersion == "" {
-		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolHelm)
-		if err == nil {
-			helmVersion = resolvedVersion
-		} else {
-			helmVersion = tools.DefaultHelmVersion // Fallback to default
-		}
-	}
-
-	// Get Preflight version from config and resolve if needed
-	preflightVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
-			preflightVersion = v
-		}
-	}
-	if preflightVersion == "latest" || preflightVersion == "" {
-		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolPreflight)
-		if err == nil {
-			preflightVersion = resolvedVersion
-		} else {
-			preflightVersion = tools.DefaultPreflightVersion // Fallback to default
-		}
-	}
-
-	// Get Support Bundle version from config and resolve if needed
-	supportBundleVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
-			supportBundleVersion = v
-		}
-	}
-	if supportBundleVersion == "latest" || supportBundleVersion == "" {
-		resolvedVersion, err := resolver.ResolveLatestVersion(cmd.Context(), tools.ToolSupportBundle)
-		if err == nil {
-			supportBundleVersion = resolvedVersion
-		} else {
-			supportBundleVersion = tools.DefaultSupportBundleVersion // Fallback to default
-		}
-	}
+	helmVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolHelm, tools.DefaultHelmVersion)
+	preflightVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolPreflight, tools.DefaultPreflightVersion)
+	supportBundleVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolSupportBundle, tools.DefaultSupportBundleVersion)
 
 	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
@@ -109,15 +161,11 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
 
 	if autoDiscoveryMode {
-		if len(configResult.ConfigPaths) > 0 {
-			fmt.Fprintf(r.w, "No resources configured in .replicated. Auto-discovering lintable resources in current directory...\n\n")
-		} else {
-			fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
-		}
+		fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
 		r.w.Flush()
 
 		// Auto-discover Helm charts
-		chartPaths, err := lint2.DiscoverHelmChartsInDirectory(".")
+		chartPaths, err := lint2.DiscoverChartPaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover helm charts")
 		}
@@ -126,7 +174,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 
 		// Auto-discover Preflight specs
-		preflightPaths, err := lint2.DiscoverPreflightsInDirectory(".")
+		preflightPaths, err := lint2.DiscoverPreflightPaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover preflight specs")
 		}
@@ -135,7 +183,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 
 		// Auto-discover Support Bundle specs
-		sbPaths, err := lint2.DiscoverSupportBundlesInDirectory(".")
+		sbPaths, err := lint2.DiscoverSupportBundlePaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover support bundle specs")
 		}
@@ -157,9 +205,28 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Extract and display images if verbose mode is enabled
+	// Display tool versions if verbose mode is enabled
 	if r.args.lintVerbose {
-		imageResults, err := r.extractImagesFromConfig(cmd.Context(), config)
+		fmt.Fprintln(r.w, "Tool versions:")
+
+		// Display already resolved versions
+		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
+		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
+		fmt.Fprintf(r.w, "  Support Bundle: %s\n", supportBundleVersion)
+
+		fmt.Fprintln(r.w)
+		r.w.Flush()
+	}
+
+	// Extract all paths and metadata once (consolidates extraction logic across linters)
+	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion)
+	if err != nil {
+		return errors.Wrap(err, "failed to extract paths and metadata")
+	}
+
+	// Extract and display images if verbose mode is enabled
+	if r.args.lintVerbose && len(extracted.ChartsWithMetadata) > 0 {
+		imageResults, err := r.extractImagesFromCharts(cmd.Context(), extracted.ChartsWithMetadata, extracted.HelmChartManifests)
 		if err != nil {
 			// Log warning but don't fail the lint command
 			if r.outputFormat == "table" {
@@ -181,28 +248,15 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Display tool versions if verbose mode is enabled
-	if r.args.lintVerbose {
-		fmt.Fprintln(r.w, "Tool versions:")
-
-		// Display already resolved versions
-		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
-		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
-		fmt.Fprintf(r.w, "  Support Bundle: %s\n", supportBundleVersion)
-
-		fmt.Fprintln(r.w)
-		r.w.Flush()
-	}
-
 	// Lint Helm charts if enabled
 	if config.ReplLint.Linters.Helm.IsEnabled() {
-		if len(config.Charts) == 0 {
+		if len(extracted.ChartPaths) == 0 {
 			output.HelmResults = &HelmLintResults{Enabled: true, Charts: []ChartLintResult{}}
 			if r.outputFormat == "table" {
 				fmt.Fprintf(r.w, "No Helm charts configured (skipping Helm linting)\n\n")
 			}
 		} else {
-			helmResults, err := r.lintHelmCharts(cmd, config)
+			helmResults, err := r.lintHelmCharts(cmd, extracted.ChartPaths, extracted.HelmVersion)
 			if err != nil {
 				return err
 			}
@@ -217,13 +271,13 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Lint Preflight specs if enabled
 	if config.ReplLint.Linters.Preflight.IsEnabled() {
-		if len(config.Preflights) == 0 {
+		if len(extracted.Preflights) == 0 {
 			output.PreflightResults = &PreflightLintResults{Enabled: true, Specs: []PreflightLintResult{}}
 			if r.outputFormat == "table" {
 				fmt.Fprintf(r.w, "No preflight specs configured (skipping preflight linting)\n\n")
 			}
 		} else {
-			preflightResults, err := r.lintPreflightSpecs(cmd, config)
+			preflightResults, err := r.lintPreflightSpecs(cmd, extracted.Preflights, extracted.HelmChartManifests, extracted.PreflightVersion)
 			if err != nil {
 				return err
 			}
@@ -238,7 +292,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Lint Support Bundle specs if enabled
 	if config.ReplLint.Linters.SupportBundle.IsEnabled() {
-		sbResults, err := r.lintSupportBundleSpecs(cmd, config)
+		sbResults, err := r.lintSupportBundleSpecs(cmd, extracted.SupportBundles, extracted.SBVersion)
 		if err != nil {
 			return err
 		}
@@ -274,21 +328,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (*HelmLintResults, error) {
-	// Get helm version from config, default to "latest" if not specified
-	helmVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolHelm]; ok {
-			helmVersion = v
-		}
-	}
-
-	// Check if there are any charts configured
-	chartPaths, err := lint2.GetChartPathsFromConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to expand chart paths")
-	}
-
+func (r *runners) lintHelmCharts(cmd *cobra.Command, chartPaths []string, helmVersion string) (*HelmLintResults, error) {
 	results := &HelmLintResults{
 		Enabled: true,
 		Charts:  make([]ChartLintResult, 0, len(chartPaths)),
@@ -313,7 +353,12 @@ func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (*Hel
 
 	// Display results in table format (only if table output)
 	if r.outputFormat == "table" {
-		if err := r.displayHelmResults(results); err != nil {
+		// Convert to []LintableResult for generic display
+		lintableResults := make([]LintableResult, len(results.Charts))
+		for i, chart := range results.Charts {
+			lintableResults[i] = chart
+		}
+		if err := r.displayLintResults("HELM CHARTS", "chart", "charts", lintableResults); err != nil {
 			return nil, errors.Wrap(err, "failed to display helm results")
 		}
 	}
@@ -321,27 +366,7 @@ func (r *runners) lintHelmCharts(cmd *cobra.Command, config *tools.Config) (*Hel
 	return results, nil
 }
 
-func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (*PreflightLintResults, error) {
-	// Get preflight version from config, default to "latest" if not specified
-	preflightVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolPreflight]; ok {
-			preflightVersion = v
-		}
-	}
-
-	// Discover HelmChart manifests once (needed for templated preflights)
-	helmChartManifests, err := lint2.GetHelmChartManifestsFromConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
-	}
-
-	// Get preflight paths with values information
-	preflights, err := lint2.GetPreflightWithValuesFromConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to expand preflight paths")
-	}
-
+func (r *runners) lintPreflightSpecs(cmd *cobra.Command, preflights []lint2.PreflightWithValues, helmChartManifests map[string]*lint2.HelmChartManifest, preflightVersion string) (*PreflightLintResults, error) {
 	results := &PreflightLintResults{
 		Enabled: true,
 		Specs:   make([]PreflightLintResult, 0, len(preflights)),
@@ -374,7 +399,12 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 
 	// Display results in table format (only if table output)
 	if r.outputFormat == "table" {
-		if err := r.displayPreflightResults(results); err != nil {
+		// Convert to []LintableResult for generic display
+		lintableResults := make([]LintableResult, len(results.Specs))
+		for i, spec := range results.Specs {
+			lintableResults[i] = spec
+		}
+		if err := r.displayLintResults("PREFLIGHT CHECKS", "preflight spec", "preflight specs", lintableResults); err != nil {
 			return nil, errors.Wrap(err, "failed to display preflight results")
 		}
 	}
@@ -382,23 +412,7 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, config *tools.Config) (
 	return results, nil
 }
 
-func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Config) (*SupportBundleLintResults, error) {
-	// Get support-bundle version from config, default to "latest" if not specified
-	sbVersion := "latest"
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tools.ToolSupportBundle]; ok {
-			sbVersion = v
-		}
-	}
-
-	// Discover support bundle specs from manifests
-	// Support bundles are co-located with other Kubernetes manifests,
-	// unlike preflights which are moving to a separate location
-	sbPaths, err := lint2.DiscoverSupportBundlesFromManifests(config.Manifests)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to discover support bundle specs from manifests")
-	}
-
+func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, sbVersion string) (*SupportBundleLintResults, error) {
 	results := &SupportBundleLintResults{
 		Enabled: true,
 		Specs:   make([]SupportBundleLintResult, 0, len(sbPaths)),
@@ -428,7 +442,12 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, config *tools.Confi
 
 	// Display results in table format (only if table output)
 	if r.outputFormat == "table" {
-		if err := r.displaySupportBundleResults(results); err != nil {
+		// Convert to []LintableResult for generic display
+		lintableResults := make([]LintableResult, len(results.Specs))
+		for i, spec := range results.Specs {
+			lintableResults[i] = spec
+		}
+		if err := r.displayLintResults("SUPPORT BUNDLES", "support bundle spec", "support bundle specs", lintableResults); err != nil {
 			return nil, errors.Wrap(err, "failed to display support bundle results")
 		}
 	}
@@ -526,15 +545,10 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 	return nil
 }
 
-// extractImagesFromConfig extracts images from charts and returns structured results
-func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Config) (*ImageExtractResults, error) {
+// extractImagesFromConfig extracts images from charts and returns structured results.
+// Accepts already-extracted ChartsWithMetadata and HelmChartManifests to avoid redundant extraction.
+func (r *runners) extractImagesFromCharts(ctx context.Context, charts []lint2.ChartWithMetadata, helmChartManifests map[string]*lint2.HelmChartManifest) (*ImageExtractResults, error) {
 	extractor := imageextract.NewExtractor()
-
-	// Get charts with metadata from config
-	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get chart paths from config")
-	}
 
 	if len(charts) == 0 {
 		return &ImageExtractResults{
@@ -542,13 +556,6 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 			Warnings: []imageextract.Warning{},
 			Summary:  ImageSummary{TotalImages: 0, UniqueImages: 0},
 		}, nil
-	}
-
-	// Discover HelmChart manifests from config to get builder values
-	// Manifests are required for both preflight linting and image extraction
-	helmChartManifests, err := lint2.GetHelmChartManifestsFromConfig(config)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
 	}
 
 	// Collect all images from all charts
@@ -635,53 +642,52 @@ func (r *runners) displayImages(results *ImageExtractResults) {
 	r.w.Flush()
 }
 
+// accumulateSummary adds results from a set of lintable resources to the summary.
+// Leverages the LintableResult interface to provide generic accumulation across all resource types.
+func accumulateSummary(summary *LintSummary, results []LintableResult) {
+	for _, result := range results {
+		summary.TotalResources++
+		if result.GetSuccess() {
+			summary.PassedResources++
+		} else {
+			summary.FailedResources++
+		}
+		s := result.GetSummary()
+		summary.TotalErrors += s.ErrorCount
+		summary.TotalWarnings += s.WarningCount
+		summary.TotalInfo += s.InfoCount
+	}
+}
+
 // calculateOverallSummary calculates the overall summary from all results
 func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 	summary := LintSummary{}
 
-	// Count from Helm results
+	// Accumulate from Helm results
 	if output.HelmResults != nil {
-		for _, chart := range output.HelmResults.Charts {
-			summary.TotalResources++
-			if chart.Success {
-				summary.PassedResources++
-			} else {
-				summary.FailedResources++
-			}
-			summary.TotalErrors += chart.Summary.ErrorCount
-			summary.TotalWarnings += chart.Summary.WarningCount
-			summary.TotalInfo += chart.Summary.InfoCount
+		results := make([]LintableResult, len(output.HelmResults.Charts))
+		for i, chart := range output.HelmResults.Charts {
+			results[i] = chart
 		}
+		accumulateSummary(&summary, results)
 	}
 
-	// Count from Preflight results
+	// Accumulate from Preflight results
 	if output.PreflightResults != nil {
-		for _, spec := range output.PreflightResults.Specs {
-			summary.TotalResources++
-			if spec.Success {
-				summary.PassedResources++
-			} else {
-				summary.FailedResources++
-			}
-			summary.TotalErrors += spec.Summary.ErrorCount
-			summary.TotalWarnings += spec.Summary.WarningCount
-			summary.TotalInfo += spec.Summary.InfoCount
+		results := make([]LintableResult, len(output.PreflightResults.Specs))
+		for i, spec := range output.PreflightResults.Specs {
+			results[i] = spec
 		}
+		accumulateSummary(&summary, results)
 	}
 
-	// Count from Support Bundle results
+	// Accumulate from Support Bundle results
 	if output.SupportBundleResults != nil {
-		for _, spec := range output.SupportBundleResults.Specs {
-			summary.TotalResources++
-			if spec.Success {
-				summary.PassedResources++
-			} else {
-				summary.FailedResources++
-			}
-			summary.TotalErrors += spec.Summary.ErrorCount
-			summary.TotalWarnings += spec.Summary.WarningCount
-			summary.TotalInfo += spec.Summary.InfoCount
+		results := make([]LintableResult, len(output.SupportBundleResults.Specs))
+		for i, spec := range output.SupportBundleResults.Specs {
+			results[i] = spec
 		}
+		accumulateSummary(&summary, results)
 	}
 
 	summary.OverallSuccess = summary.FailedResources == 0
@@ -689,25 +695,31 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 	return summary
 }
 
-// displayHelmResults displays Helm lint results in table format
-func (r *runners) displayHelmResults(results *HelmLintResults) error {
-	if results == nil || len(results.Charts) == 0 {
+// displayLintResults is a generic function to display lint results for any lintable resource.
+// This eliminates duplication across chart, preflight, and support bundle display functions.
+func (r *runners) displayLintResults(
+	sectionTitle string,
+	itemName string,     // e.g., "chart", "preflight spec", "support bundle spec"
+	pluralName string,   // e.g., "charts", "preflight specs", "support bundle specs"
+	results []LintableResult,
+) error {
+	if len(results) == 0 {
 		return nil
 	}
 
 	// Print section header
 	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
-	fmt.Fprintln(r.w, "HELM CHARTS")
+	fmt.Fprintln(r.w, sectionTitle)
 	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
 	fmt.Fprintln(r.w)
 
-	for _, chart := range results.Charts {
-		fmt.Fprintf(r.w, "==> Linting chart\nPath: %s\n\n", chart.Path)
+	for _, result := range results {
+		fmt.Fprintf(r.w, "==> Linting %s: %s\n\n", itemName, result.GetPath())
 
-		if len(chart.Messages) == 0 {
+		if len(result.GetMessages()) == 0 {
 			fmt.Fprintf(r.w, "No issues found\n")
 		} else {
-			for _, msg := range chart.Messages {
+			for _, msg := range result.GetMessages() {
 				if msg.Path != "" {
 					fmt.Fprintf(r.w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
 				} else {
@@ -716,189 +728,43 @@ func (r *runners) displayHelmResults(results *HelmLintResults) error {
 			}
 		}
 
-		fmt.Fprintf(r.w, "\nSummary:\n")
-		fmt.Fprintf(r.w, "  Path: %s\n", chart.Path)
-		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
-			chart.Summary.ErrorCount, chart.Summary.WarningCount, chart.Summary.InfoCount)
+		summary := result.GetSummary()
+		fmt.Fprintf(r.w, "\nSummary for %s: %d error(s), %d warning(s), %d info\n",
+			result.GetPath(), summary.ErrorCount, summary.WarningCount, summary.InfoCount)
 
-		if chart.Success {
+		if result.GetSuccess() {
 			fmt.Fprintf(r.w, "Status: Passed\n\n")
 		} else {
 			fmt.Fprintf(r.w, "Status: Failed\n\n")
 		}
 	}
 
-	// Print overall summary if multiple charts
-	if len(results.Charts) > 1 {
+	// Print overall summary if multiple resources
+	if len(results) > 1 {
 		totalErrors := 0
 		totalWarnings := 0
 		totalInfo := 0
-		failedCharts := 0
+		failedResources := 0
 
-		for _, chart := range results.Charts {
-			totalErrors += chart.Summary.ErrorCount
-			totalWarnings += chart.Summary.WarningCount
-			totalInfo += chart.Summary.InfoCount
-			if !chart.Success {
-				failedCharts++
+		for _, result := range results {
+			summary := result.GetSummary()
+			totalErrors += summary.ErrorCount
+			totalWarnings += summary.WarningCount
+			totalInfo += summary.InfoCount
+			if !result.GetSuccess() {
+				failedResources++
 			}
 		}
 
 		fmt.Fprintf(r.w, "==> Overall Summary\n")
-		fmt.Fprintf(r.w, "charts linted: %d\n", len(results.Charts))
-		fmt.Fprintf(r.w, "charts passed: %d\n", len(results.Charts)-failedCharts)
-		fmt.Fprintf(r.w, "charts failed: %d\n", failedCharts)
+		fmt.Fprintf(r.w, "%s linted: %d\n", pluralName, len(results))
+		fmt.Fprintf(r.w, "%s passed: %d\n", pluralName, len(results)-failedResources)
+		fmt.Fprintf(r.w, "%s failed: %d\n", pluralName, failedResources)
 		fmt.Fprintf(r.w, "Total errors: %d\n", totalErrors)
 		fmt.Fprintf(r.w, "Total warnings: %d\n", totalWarnings)
 		fmt.Fprintf(r.w, "Total info: %d\n", totalInfo)
 
-		if failedCharts > 0 {
-			fmt.Fprintf(r.w, "\nOverall Status: Failed\n")
-		} else {
-			fmt.Fprintf(r.w, "\nOverall Status: Passed\n")
-		}
-	}
-
-	return nil
-}
-
-// displayPreflightResults displays Preflight lint results in table format
-func (r *runners) displayPreflightResults(results *PreflightLintResults) error {
-	if results == nil || len(results.Specs) == 0 {
-		return nil
-	}
-
-	// Print section header
-	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
-	fmt.Fprintln(r.w, "PREFLIGHT CHECKS")
-	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
-	fmt.Fprintln(r.w)
-
-	for _, spec := range results.Specs {
-		fmt.Fprintf(r.w, "==> Linting preflight spec\nPath: %s\n\n", spec.Path)
-
-		if len(spec.Messages) == 0 {
-			fmt.Fprintf(r.w, "No issues found\n")
-		} else {
-			for _, msg := range spec.Messages {
-				if msg.Path != "" {
-					fmt.Fprintf(r.w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-				} else {
-					fmt.Fprintf(r.w, "[%s] %s\n", msg.Severity, msg.Message)
-				}
-			}
-		}
-
-		fmt.Fprintf(r.w, "\nSummary:\n")
-		fmt.Fprintf(r.w, "  Path: %s\n", spec.Path)
-		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
-			spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
-
-		if spec.Success {
-			fmt.Fprintf(r.w, "Status: Passed\n\n")
-		} else {
-			fmt.Fprintf(r.w, "Status: Failed\n\n")
-		}
-	}
-
-	// Print overall summary if multiple specs
-	if len(results.Specs) > 1 {
-		totalErrors := 0
-		totalWarnings := 0
-		totalInfo := 0
-		failedSpecs := 0
-
-		for _, spec := range results.Specs {
-			totalErrors += spec.Summary.ErrorCount
-			totalWarnings += spec.Summary.WarningCount
-			totalInfo += spec.Summary.InfoCount
-			if !spec.Success {
-				failedSpecs++
-			}
-		}
-
-		fmt.Fprintf(r.w, "==> Overall Summary\n")
-		fmt.Fprintf(r.w, "preflight specs linted: %d\n", len(results.Specs))
-		fmt.Fprintf(r.w, "preflight specs passed: %d\n", len(results.Specs)-failedSpecs)
-		fmt.Fprintf(r.w, "preflight specs failed: %d\n", failedSpecs)
-		fmt.Fprintf(r.w, "Total errors: %d\n", totalErrors)
-		fmt.Fprintf(r.w, "Total warnings: %d\n", totalWarnings)
-		fmt.Fprintf(r.w, "Total info: %d\n", totalInfo)
-
-		if failedSpecs > 0 {
-			fmt.Fprintf(r.w, "\nOverall Status: Failed\n")
-		} else {
-			fmt.Fprintf(r.w, "\nOverall Status: Passed\n")
-		}
-	}
-
-	return nil
-}
-
-// displaySupportBundleResults displays Support Bundle lint results in table format
-func (r *runners) displaySupportBundleResults(results *SupportBundleLintResults) error {
-	if results == nil || len(results.Specs) == 0 {
-		return nil
-	}
-
-	// Print section header
-	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
-	fmt.Fprintln(r.w, "SUPPORT BUNDLES")
-	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
-	fmt.Fprintln(r.w)
-
-	for _, spec := range results.Specs {
-		fmt.Fprintf(r.w, "==> Linting support bundle spec\nPath: %s\n\n", spec.Path)
-
-		if len(spec.Messages) == 0 {
-			fmt.Fprintf(r.w, "No issues found\n")
-		} else {
-			for _, msg := range spec.Messages {
-				if msg.Path != "" {
-					fmt.Fprintf(r.w, "[%s] %s: %s\n", msg.Severity, msg.Path, msg.Message)
-				} else {
-					fmt.Fprintf(r.w, "[%s] %s\n", msg.Severity, msg.Message)
-				}
-			}
-		}
-
-		fmt.Fprintf(r.w, "\nSummary:\n")
-		fmt.Fprintf(r.w, "  Path: %s\n", spec.Path)
-		fmt.Fprintf(r.w, "  Errors: %d, Warnings: %d, Info: %d\n",
-			spec.Summary.ErrorCount, spec.Summary.WarningCount, spec.Summary.InfoCount)
-
-		if spec.Success {
-			fmt.Fprintf(r.w, "Status: Passed\n\n")
-		} else {
-			fmt.Fprintf(r.w, "Status: Failed\n\n")
-		}
-	}
-
-	// Print overall summary if multiple specs
-	if len(results.Specs) > 1 {
-		totalErrors := 0
-		totalWarnings := 0
-		totalInfo := 0
-		failedSpecs := 0
-
-		for _, spec := range results.Specs {
-			totalErrors += spec.Summary.ErrorCount
-			totalWarnings += spec.Summary.WarningCount
-			totalInfo += spec.Summary.InfoCount
-			if !spec.Success {
-				failedSpecs++
-			}
-		}
-
-		fmt.Fprintf(r.w, "==> Overall Summary\n")
-		fmt.Fprintf(r.w, "support bundle specs linted: %d\n", len(results.Specs))
-		fmt.Fprintf(r.w, "support bundle specs passed: %d\n", len(results.Specs)-failedSpecs)
-		fmt.Fprintf(r.w, "support bundle specs failed: %d\n", failedSpecs)
-		fmt.Fprintf(r.w, "Total errors: %d\n", totalErrors)
-		fmt.Fprintf(r.w, "Total warnings: %d\n", totalWarnings)
-		fmt.Fprintf(r.w, "Total info: %d\n", totalInfo)
-
-		if failedSpecs > 0 {
+		if failedResources > 0 {
 			fmt.Fprintf(r.w, "\nOverall Status: Failed\n")
 		} else {
 			fmt.Fprintf(r.w, "\nOverall Status: Passed\n")

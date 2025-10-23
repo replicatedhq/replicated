@@ -35,9 +35,9 @@ func TestIntegration_MixedDirectoryAllThreeTypes(t *testing.T) {
 
 	// Test chart discovery
 	t.Run("charts", func(t *testing.T) {
-		chartPaths, err := discoverChartPaths(pattern)
+		chartPaths, err := DiscoverChartPaths(pattern)
 		if err != nil {
-			t.Fatalf("discoverChartPaths() error = %v", err)
+			t.Fatalf("DiscoverChartPaths() error = %v", err)
 		}
 
 		wantCharts := []string{appChartDir}
@@ -46,9 +46,9 @@ func TestIntegration_MixedDirectoryAllThreeTypes(t *testing.T) {
 
 	// Test preflight discovery
 	t.Run("preflights", func(t *testing.T) {
-		preflightPaths, err := discoverPreflightPaths(pattern)
+		preflightPaths, err := DiscoverPreflightPaths(pattern)
 		if err != nil {
-			t.Fatalf("discoverPreflightPaths() error = %v", err)
+			t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 		}
 
 		wantPreflights := []string{preflightPath}
@@ -87,17 +87,17 @@ func TestIntegration_SamePatternMultipleLinters(t *testing.T) {
 	pattern := filepath.Join(resourcesDir, "**")
 
 	// All three linters should find only their resources
-	chartPaths, err := discoverChartPaths(pattern)
+	chartPaths, err := DiscoverChartPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverChartPaths() error = %v", err)
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
 	}
 	if len(chartPaths) != 1 || chartPaths[0] != chartDir {
 		t.Errorf("Charts: expected [%s], got %v", chartDir, chartPaths)
 	}
 
-	preflightPaths, err := discoverPreflightPaths(pattern)
+	preflightPaths, err := DiscoverPreflightPaths(pattern)
 	if err != nil {
-		t.Fatalf("discoverPreflightPaths() error = %v", err)
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 	}
 	if len(preflightPaths) != 1 || preflightPaths[0] != preflightPath {
 		t.Errorf("Preflights: expected [%s], got %v", preflightPath, preflightPaths)
@@ -140,18 +140,18 @@ func TestIntegration_HiddenPathsFilteredAcrossAllLinters(t *testing.T) {
 
 	// All linters should filter out hidden directories
 	t.Run("charts_filter_hidden", func(t *testing.T) {
-		chartPaths, err := discoverChartPaths(pattern)
+		chartPaths, err := DiscoverChartPaths(pattern)
 		if err != nil {
-			t.Fatalf("discoverChartPaths() error = %v", err)
+			t.Fatalf("DiscoverChartPaths() error = %v", err)
 		}
 		want := []string{validChartDir}
 		assertPathsEqual(t, chartPaths, want)
 	})
 
 	t.Run("preflights_filter_hidden", func(t *testing.T) {
-		preflightPaths, err := discoverPreflightPaths(pattern)
+		preflightPaths, err := DiscoverPreflightPaths(pattern)
 		if err != nil {
-			t.Fatalf("discoverPreflightPaths() error = %v", err)
+			t.Fatalf("DiscoverPreflightPaths() error = %v", err)
 		}
 		want := []string{validPreflightPath}
 		assertPathsEqual(t, preflightPaths, want)

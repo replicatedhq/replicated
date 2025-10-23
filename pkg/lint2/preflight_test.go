@@ -240,22 +240,22 @@ func TestParsePreflightOutput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParsePreflightOutput(tt.output)
+			result, err := parsePreflightOutput(tt.output)
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("ParsePreflightOutput() expected error, got nil")
+					t.Errorf("parsePreflightOutput() expected error, got nil")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("ParsePreflightOutput() unexpected error: %v", err)
+				t.Errorf("parsePreflightOutput() unexpected error: %v", err)
 				return
 			}
 
 			if len(result) != len(tt.expected) {
-				t.Errorf("ParsePreflightOutput() returned %d messages, want %d", len(result), len(tt.expected))
+				t.Errorf("parsePreflightOutput() returned %d messages, want %d", len(result), len(tt.expected))
 				return
 			}
 

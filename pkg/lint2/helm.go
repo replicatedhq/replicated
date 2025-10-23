@@ -41,7 +41,7 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 	outputStr := string(output)
 
 	// Parse the output
-	messages := ParseHelmOutput(outputStr)
+	messages := parseHelmOutput(outputStr)
 
 	// Determine success based on exit code
 	// We trust helm's exit code: 0 = success, non-zero = failure
@@ -60,8 +60,8 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 	}, nil
 }
 
-// ParseHelmOutput parses helm lint output into structured messages
-func ParseHelmOutput(output string) []LintMessage {
+// parseHelmOutput parses helm lint output into structured messages
+func parseHelmOutput(output string) []LintMessage {
 	var messages []LintMessage
 
 	// Pattern to match: [SEVERITY] path: message
