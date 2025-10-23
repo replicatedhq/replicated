@@ -39,7 +39,6 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 
 	// New flags (for local lint - when flag=1)
 	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images (local lint only)")
-	cmd.Flags().StringVarP(&r.args.lintOutputFile, "output-file", "", "", "Write output to file at specified path (local lint only)")
 
 	// Output format flag works for both old and new lint
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
