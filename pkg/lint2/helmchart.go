@@ -122,11 +122,14 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 		}
 	}
 
-	// Return helmCharts map (may be empty)
-	// HelmChart manifests are optional - they're only needed if:
-	// 1. Preflights use HelmChart builder values for templating
-	// 2. Image extraction needs builder values from HelmChart manifests
-	// In auto-discovery mode, manifests may only contain SupportBundle specs
+	// Fail-fast if no HelmCharts found
+	// Both preflight linting and image extraction require HelmCharts when manifests are configured
+	if len(helmCharts) == 0 {
+		return nil, fmt.Errorf("no HelmChart resources found in manifests\n"+
+			"At least one HelmChart manifest is required when manifests are configured.\n"+
+			"Checked patterns: %v", manifestGlobs)
+	}
+
 	return helmCharts, nil
 }
 
