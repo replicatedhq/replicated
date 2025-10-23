@@ -197,6 +197,49 @@ func LintPreflight(
 	}, nil
 }
 
+// LintPreflightSimple executes preflight lint without template rendering.
+// This is suitable for non-templated preflights or when chart context is unavailable.
+// The preflight CLI tool will validate YAML syntax, required fields, and structure.
+func LintPreflightSimple(
+	ctx context.Context,
+	specPath string,
+	preflightVersion string,
+) (*LintResult, error) {
+	// Use resolver to get preflight binary
+	resolver := tools.NewResolver()
+	preflightPath, err := resolver.Resolve(ctx, tools.ToolPreflight, preflightVersion)
+	if err != nil {
+		return nil, fmt.Errorf("resolving preflight: %w", err)
+	}
+
+	// Execute preflight lint with JSON output for easier parsing
+	cmd := exec.CommandContext(ctx, preflightPath, "lint", "--format", "json", specPath)
+	output, err := cmd.CombinedOutput()
+
+	// preflight lint returns exit code 2 if there are errors,
+	// but we still want to parse and display the output
+	outputStr := string(output)
+
+	// Parse the JSON output
+	messages, parseErr := ParsePreflightOutput(outputStr)
+	if parseErr != nil {
+		// If we can't parse the output, return both the parse error and original error
+		if err != nil {
+			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
+		}
+		return nil, fmt.Errorf("failed to parse preflight lint output: %w\nOutput: %s", parseErr, outputStr)
+	}
+
+	// Determine success based on exit code
+	// Exit code 0 = no errors, exit code 2 = validation errors
+	success := err == nil
+
+	return &LintResult{
+		Success:  success,
+		Messages: messages,
+	}, nil
+}
+
 // ParsePreflightOutput parses preflight lint JSON output into structured messages.
 // Uses the common troubleshoot.sh JSON parsing infrastructure.
 func ParsePreflightOutput(output string) ([]LintMessage, error) {
