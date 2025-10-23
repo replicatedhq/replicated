@@ -597,7 +597,10 @@ func (r *runners) displayImages(results *ImageExtractResults) {
 		return
 	}
 
-	fmt.Fprintln(r.w, "Extracting images from Helm charts...")
+	// Print section header
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w, "IMAGE EXTRACTION")
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
 	fmt.Fprintln(r.w)
 	r.w.Flush()
 
@@ -676,6 +679,12 @@ func (r *runners) displayHelmResults(results *HelmLintResults) error {
 		return nil
 	}
 
+	// Print section header
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w, "HELM CHARTS")
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w)
+
 	for _, chart := range results.Charts {
 		fmt.Fprintf(r.w, "==> Linting chart: %s\n\n", chart.Path)
 
@@ -741,6 +750,12 @@ func (r *runners) displayPreflightResults(results *PreflightLintResults) error {
 		return nil
 	}
 
+	// Print section header
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w, "PREFLIGHT CHECKS")
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w)
+
 	for _, spec := range results.Specs {
 		fmt.Fprintf(r.w, "==> Linting preflight spec: %s\n\n", spec.Path)
 
@@ -805,6 +820,12 @@ func (r *runners) displaySupportBundleResults(results *SupportBundleLintResults)
 	if results == nil || len(results.Specs) == 0 {
 		return nil
 	}
+
+	// Print section header
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w, "SUPPORT BUNDLES")
+	fmt.Fprintln(r.w, "════════════════════════════════════════════════════════════════════════════")
+	fmt.Fprintln(r.w)
 
 	for _, spec := range results.Specs {
 		fmt.Fprintf(r.w, "==> Linting support bundle spec: %s\n\n", spec.Path)
