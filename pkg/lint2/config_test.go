@@ -133,7 +133,7 @@ func TestGetChartPathsFromConfig_GlobExpansion(t *testing.T) {
 				},
 			},
 			wantErr: true,
-			errMsg:  "no charts found matching pattern",
+			errMsg:  "no charts found matching",
 		},
 		{
 			name: "glob pattern in current directory",
@@ -334,20 +334,26 @@ func TestValidateChartPath(t *testing.T) {
 			name:    "directory without Chart.yaml",
 			path:    invalidChartDir,
 			wantErr: true,
-			errMsg:  "Chart.yaml or Chart.yml not found",
+			errMsg:  "not a valid Helm chart",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateChartPath(tt.path)
+			paths, err := DiscoverChartPaths(tt.path)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("validateChartPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DiscoverChartPaths() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr && tt.errMsg != "" {
 				if err == nil || !contains(err.Error(), tt.errMsg) {
-					t.Errorf("validateChartPath() error = %v, want error containing %q", err, tt.errMsg)
+					t.Errorf("DiscoverChartPaths() error = %v, want error containing %q", err, tt.errMsg)
+				}
+			}
+			if !tt.wantErr {
+				// Success case - should return the path
+				if len(paths) != 1 || paths[0] != tt.path {
+					t.Errorf("DiscoverChartPaths() returned %v, want [%s]", paths, tt.path)
 				}
 			}
 		})
@@ -367,9 +373,12 @@ func TestValidateChartPath_WithChartYml(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := validateChartPath(chartDir)
+	paths, err := DiscoverChartPaths(chartDir)
 	if err != nil {
-		t.Errorf("validateChartPath() with Chart.yml should succeed, got error: %v", err)
+		t.Errorf("DiscoverChartPaths() with Chart.yml should succeed, got error: %v", err)
+	}
+	if len(paths) != 1 || paths[0] != chartDir {
+		t.Errorf("DiscoverChartPaths() returned %v, want [%s]", paths, chartDir)
 	}
 }
 
@@ -507,7 +516,7 @@ spec:
 				},
 			},
 			wantErr: true,
-			errMsg:  "no preflight specs found matching pattern",
+			errMsg:  "no preflight specs found matching",
 		},
 		{
 			name: "glob pattern with prefix",
@@ -701,20 +710,26 @@ spec:
 			name:    "path is a directory",
 			path:    notAFile,
 			wantErr: true,
-			errMsg:  "is a directory",
+			errMsg:  "file must have .yaml or .yml extension",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validatePreflightPath(tt.path)
+			paths, err := DiscoverPreflightPaths(tt.path)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("validatePreflightPath() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("DiscoverPreflightPaths() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if tt.wantErr && tt.errMsg != "" {
 				if err == nil || !contains(err.Error(), tt.errMsg) {
-					t.Errorf("validatePreflightPath() error = %v, want error containing %q", err, tt.errMsg)
+					t.Errorf("DiscoverPreflightPaths() error = %v, want error containing %q", err, tt.errMsg)
+				}
+			}
+			if !tt.wantErr {
+				// Success case - should return the path
+				if len(paths) != 1 || paths[0] != tt.path {
+					t.Errorf("DiscoverPreflightPaths() returned %v, want [%s]", paths, tt.path)
 				}
 			}
 		})

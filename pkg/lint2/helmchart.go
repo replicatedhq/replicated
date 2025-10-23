@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"regexp"
 
 	"gopkg.in/yaml.v3"
 )
@@ -91,7 +90,7 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 			seenFiles[path] = true
 
 			// Check if this file contains a HelmChart resource
-			isHelmChart, err := isHelmChartManifest(path)
+			isHelmChart, err := hasKind(path, "HelmChart")
 			if err != nil {
 				// Skip files we can't read or parse
 				continue
@@ -134,46 +133,9 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 }
 
 // isHelmChartManifest checks if a YAML file contains a HelmChart kind.
-// Handles multi-document YAML files properly using yaml.NewDecoder.
-// Falls back to regex matching if the file has parse errors.
+// This is a thin wrapper around hasKind for backward compatibility.
 func isHelmChartManifest(path string) (bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false, err
-	}
-
-	// Use yaml.Decoder for proper multi-document YAML parsing
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
-
-	// Iterate through all documents in the file
-	for {
-		var kindDoc struct {
-			Kind string `yaml:"kind"`
-		}
-
-		err := decoder.Decode(&kindDoc)
-		if err != nil {
-			if err == io.EOF {
-				// Reached end of file - no more documents
-				break
-			}
-			// Parse error - file is malformed
-			// Fall back to regex matching to detect if this looks like a HelmChart
-			// This allows invalid YAML files to still be discovered (consistent with preflight/support bundle discovery)
-			matched, _ := regexp.Match(`(?m)^kind:\s+HelmChart\s*$`, data)
-			if matched {
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// Check if this document is a HelmChart
-		if kindDoc.Kind == "HelmChart" {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return hasKind(path, "HelmChart")
 }
 
 // parseHelmChartManifest parses a HelmChart manifest and extracts the fields needed for preflight rendering.

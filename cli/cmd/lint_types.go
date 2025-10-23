@@ -107,6 +107,60 @@ type ImageSummary struct {
 	UniqueImages int `json:"unique_images"`
 }
 
+// ExtractedPaths contains all paths and metadata needed for linting.
+// This struct consolidates extraction logic across all linters to avoid duplication.
+type ExtractedPaths struct {
+	// Helm: simple paths (Chart.yaml validation delegated to helm tool)
+	ChartPaths []string
+
+	// Preflight: paths with chart metadata for template rendering
+	Preflights []lint2.PreflightWithValues
+
+	// Support bundles: simple paths
+	SupportBundles []string
+
+	// Shared: HelmChart manifests (used by preflight + image extraction)
+	HelmChartManifests map[string]*lint2.HelmChartManifest
+
+	// Image extraction: charts with metadata (only if verbose)
+	ChartsWithMetadata []lint2.ChartWithMetadata
+
+	// Tool versions
+	HelmVersion      string
+	PreflightVersion string
+	SBVersion        string
+
+	// Metadata
+	ConfigPath string
+}
+
+// LintableResult is an interface for types that contain lint results.
+// This allows generic handling of chart, preflight, and support bundle results.
+type LintableResult interface {
+	GetPath() string
+	GetSuccess() bool
+	GetMessages() []LintMessage
+	GetSummary() ResourceSummary
+}
+
+// Implement LintableResult interface for ChartLintResult
+func (c ChartLintResult) GetPath() string            { return c.Path }
+func (c ChartLintResult) GetSuccess() bool           { return c.Success }
+func (c ChartLintResult) GetMessages() []LintMessage { return c.Messages }
+func (c ChartLintResult) GetSummary() ResourceSummary { return c.Summary }
+
+// Implement LintableResult interface for PreflightLintResult
+func (p PreflightLintResult) GetPath() string            { return p.Path }
+func (p PreflightLintResult) GetSuccess() bool           { return p.Success }
+func (p PreflightLintResult) GetMessages() []LintMessage { return p.Messages }
+func (p PreflightLintResult) GetSummary() ResourceSummary { return p.Summary }
+
+// Implement LintableResult interface for SupportBundleLintResult
+func (s SupportBundleLintResult) GetPath() string            { return s.Path }
+func (s SupportBundleLintResult) GetSuccess() bool           { return s.Success }
+func (s SupportBundleLintResult) GetMessages() []LintMessage { return s.Messages }
+func (s SupportBundleLintResult) GetSummary() ResourceSummary { return s.Summary }
+
 // Helper functions to convert between types
 
 // convertLint2Messages converts lint2.LintMessage slice to LintMessage slice

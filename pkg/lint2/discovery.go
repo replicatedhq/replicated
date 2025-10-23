@@ -12,30 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// DiscoverHelmChartsInDirectory recursively searches for Helm charts in the given directory.
-// A directory is considered a Helm chart if it contains a Chart.yaml or Chart.yml file.
-func DiscoverHelmChartsInDirectory(rootDir string) ([]string, error) {
-	// Use glob-based discovery for simplicity and performance
-	pattern := filepath.Join(rootDir, "**")
-	return discoverChartPaths(pattern)
-}
-
-// DiscoverPreflightsInDirectory recursively searches for Preflight specs in the given directory.
-// A file is considered a Preflight spec if it has kind: Preflight.
-func DiscoverPreflightsInDirectory(rootDir string) ([]string, error) {
-	// Use glob-based discovery to find YAMLs, then filter by kind
-	pattern := filepath.Join(rootDir, "**")
-	return discoverPreflightPaths(pattern)
-}
-
-// DiscoverSupportBundlesInDirectory recursively searches for SupportBundle specs in the given directory.
-// A file is considered a SupportBundle spec if it has kind: SupportBundle.
-func DiscoverSupportBundlesInDirectory(rootDir string) ([]string, error) {
-	// Use glob-based discovery to find YAMLs, then filter by kind
-	pattern := filepath.Join(rootDir, "**")
-	return discoverSupportBundlePaths(pattern)
-}
-
 // DiscoverSupportBundlesFromManifests discovers support bundle spec files from manifest glob patterns.
 // It expands the glob patterns, reads each YAML file, and identifies files containing kind: SupportBundle.
 // This allows support bundles to be co-located with other Kubernetes manifests without explicit configuration.
@@ -50,7 +26,7 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 
 	for _, pattern := range manifestGlobs {
 		// Use smart pattern discovery
-		paths, err := discoverSupportBundlePaths(pattern)
+		paths, err := DiscoverSupportBundlePaths(pattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to discover support bundles from pattern %s: %w", pattern, err)
 		}
@@ -100,15 +76,207 @@ func isChartDirectory(dirPath string) (bool, error) {
 }
 
 // discoverChartPaths discovers Helm chart directories from a glob pattern.
-// It finds all Chart.yaml or Chart.yml files matching the pattern, then returns
-// their parent directories (the actual chart directories).
+// This is a thin wrapper around discoverDirsByMarkerFile for backward compatibility.
 //
 // Supports patterns like:
 //   - "./charts/**"              (finds all charts recursively)
 //   - "./charts/{app,api}/**"    (finds charts in specific subdirectories)
 //   - "./pkg/**/Chart.yaml"      (explicit Chart.yaml pattern)
-func discoverChartPaths(pattern string) ([]string, error) {
-	// Validate: reject empty patterns
+//   - "./my-chart"               (explicit directory path - validated strictly)
+func DiscoverChartPaths(pattern string) ([]string, error) {
+	return discoverDirsByMarkerFile(pattern, []string{"Chart.yaml", "Chart.yml"}, "Helm chart")
+}
+
+// hasKind checks if a YAML file contains a specific kind.
+// Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
+// handles document separators (---) even when they appear inside strings or block scalars.
+// For files with syntax errors, falls back to simple regex matching to detect the kind.
+//
+// Pass the kind name (e.g., "Preflight", "SupportBundle", "HelmChart") to check for.
+func hasKind(path string, kind string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	// Use yaml.Decoder for proper multi-document YAML parsing
+	// This correctly handles --- separators according to the YAML spec
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+
+	// Iterate through all documents in the file
+	for {
+		// Parse just the kind field (lightweight)
+		var kindDoc struct {
+			Kind string `yaml:"kind"`
+		}
+
+		err := decoder.Decode(&kindDoc)
+		if err != nil {
+			if err == io.EOF {
+				// Reached end of file - no more documents
+				break
+			}
+			// Parse error - file is malformed
+			// Fall back to regex matching to detect if this looks like the target kind
+			// This allows invalid YAML files to still be discovered and linted
+			// Use regex to match "kind: <kind>" as a complete line (not in comments/strings)
+			pattern := fmt.Sprintf(`(?m)^kind:\s+%s\s*$`, regexp.QuoteMeta(kind))
+			matched, _ := regexp.Match(pattern, data)
+			return matched, nil
+		}
+
+		// Check if this document matches the target kind
+		if kindDoc.Kind == kind {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// discoverPreflightPaths discovers Preflight spec files from a glob pattern.
+// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
+//
+// Supports patterns like:
+//   - "./preflights/**"           (finds all Preflight specs recursively)
+//   - "./preflights/**/*.yaml"    (explicit YAML extension)
+//   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
+//   - "./preflight.yaml"          (explicit file path - validated strictly)
+func DiscoverPreflightPaths(pattern string) ([]string, error) {
+	return discoverYAMLsByKind(pattern, "Preflight", "preflight spec")
+}
+
+// (duplicate isPreflightSpec removed)
+// (duplicate isSupportBundleSpec removed)
+
+// ==============================================================================
+// Generic Discovery Functions
+// ==============================================================================
+//
+// The functions below provide generic, reusable discovery logic for both
+// YAML files (by kind) and directories (by marker files). They eliminate
+// duplication across chart, preflight, and support bundle discovery.
+
+// buildYAMLPatterns classifies a pattern and builds search patterns for YAML files.
+// Handles: explicit .yaml/.yml, /*, /**, brace expansion, etc.
+func buildYAMLPatterns(pattern string) ([]string, error) {
+	if strings.HasSuffix(pattern, ".yaml") || strings.HasSuffix(pattern, ".yml") {
+		return []string{pattern}, nil
+	}
+
+	if strings.HasSuffix(pattern, "/*") {
+		basePattern := strings.TrimSuffix(pattern, "/*")
+		return []string{
+			filepath.Join(basePattern, "*.yaml"),
+			filepath.Join(basePattern, "*.yml"),
+		}, nil
+	}
+
+	if strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
+		return []string{
+			filepath.Join(pattern, "*.yaml"),
+			filepath.Join(pattern, "*.yml"),
+		}, nil
+	}
+
+	// Check if it's a literal file path
+	ext := filepath.Ext(pattern)
+	if ext == ".yaml" || ext == ".yml" {
+		return []string{pattern}, nil
+	}
+
+	return nil, fmt.Errorf("pattern must end with .yaml, .yml, *, or **")
+}
+
+// validateExplicitYAMLFile validates a single YAML file path and checks its kind.
+// Returns the path in a slice for consistency with discovery functions.
+// Returns error if file doesn't exist, isn't a file, has wrong extension, or doesn't contain the kind.
+func validateExplicitYAMLFile(path, kind, resourceName string) ([]string, error) {
+	// Check extension
+	ext := filepath.Ext(path)
+	if ext != ".yaml" && ext != ".yml" {
+		return nil, fmt.Errorf("file must have .yaml or .yml extension")
+	}
+
+	// Check exists and is file
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("path does not exist")
+		}
+		return nil, fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	if info.IsDir() {
+		return nil, fmt.Errorf("path is a directory, expected a file")
+	}
+
+	// Check kind
+	hasTargetKind, err := hasKind(path, kind)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+	if !hasTargetKind {
+		return nil, fmt.Errorf("file does not contain kind: %s (not a valid %s)", kind, resourceName)
+	}
+
+	return []string{path}, nil
+}
+
+// filterYAMLFilesByKind expands glob patterns and filters to files with matching kind.
+// Silently skips files that can't be read or don't have the target kind.
+func filterYAMLFilesByKind(patterns []string, originalPattern, kind string) ([]string, error) {
+	var resultPaths []string
+	seenPaths := make(map[string]bool)
+
+	for _, p := range patterns {
+		matches, err := GlobFiles(p)
+		if err != nil {
+			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
+		}
+
+		for _, path := range matches {
+			// Skip hidden paths
+			if isHiddenPath(path) {
+				continue
+			}
+
+			// Skip duplicates
+			if seenPaths[path] {
+				continue
+			}
+			seenPaths[path] = true
+
+			// Check kind
+			hasTargetKind, err := hasKind(path, kind)
+			if err != nil {
+				// Skip files we can't read
+				continue
+			}
+
+			if hasTargetKind {
+				resultPaths = append(resultPaths, path)
+			}
+		}
+	}
+
+	return resultPaths, nil
+}
+
+// discoverYAMLsByKind discovers YAML files containing a specific kind from a pattern.
+// Handles both explicit file paths (strict validation) and glob patterns (lenient filtering).
+//
+// For explicit paths:
+//   - Validates file exists, is a file, has .yaml/.yml extension
+//   - Checks if file contains the specified kind
+//   - Returns error if any validation fails (fail loudly)
+//
+// For glob patterns:
+//   - Expands pattern to find all YAML files
+//   - Filters to only files containing the specified kind
+//   - Silently skips files that don't match (allows mixed directories)
+func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
+	// Validate empty pattern
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern cannot be empty")
 	}
@@ -116,54 +284,74 @@ func discoverChartPaths(pattern string) ([]string, error) {
 	// Preserve original for error messages
 	originalPattern := pattern
 
-	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
-	// This allows "./charts/**/" to work the same as "./charts/**"
+	// Normalize path
 	pattern = filepath.Clean(pattern)
 
-	var chartDirs []string
-	seenDirs := make(map[string]bool) // Deduplication
+	// Check if explicit path vs glob
+	isExplicitPath := !ContainsGlob(pattern)
 
-	// Build patterns for both Chart.yaml and Chart.yml
-	var patterns []string
-
-	// If pattern already specifies Chart.yaml/Chart.yml, use it directly
-	if strings.HasSuffix(pattern, "Chart.yaml") || strings.HasSuffix(pattern, "Chart.yml") {
-		patterns = []string{pattern}
-	} else if strings.HasSuffix(pattern, "*") || strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
-		// Pattern ends with wildcard or contains brace expansion - append Chart.yaml and Chart.yml
-		patterns = []string{
-			filepath.Join(pattern, "Chart.yaml"),
-			filepath.Join(pattern, "Chart.yml"),
-		}
-	} else {
-		// Pattern is a literal directory path - check if it's a chart
-		isChart, err := isChartDirectory(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("checking if %s is chart directory: %w", pattern, err)
-		}
-		if isChart {
-			return []string{pattern}, nil
-		}
-		return nil, fmt.Errorf("directory %s is not a valid Helm chart (no Chart.yaml or Chart.yml found)", pattern)
+	if isExplicitPath {
+		// Strict validation
+		return validateExplicitYAMLFile(pattern, kind, resourceName)
 	}
 
-	// Expand patterns to find Chart.yaml files
+	// Glob pattern - build search patterns
+	patterns, err := buildYAMLPatterns(pattern)
+	if err != nil {
+		return nil, err
+	}
+
+	// Lenient filtering
+	return filterYAMLFilesByKind(patterns, originalPattern, kind)
+}
+
+// validateExplicitChartDir validates an explicit directory path for chart discovery.
+// Returns the path in a slice for consistency with discovery functions.
+func validateExplicitChartDir(path string) ([]string, error) {
+	// Check exists and is directory
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("path does not exist")
+		}
+		return nil, fmt.Errorf("failed to stat path: %w", err)
+	}
+
+	if !info.IsDir() {
+		return nil, fmt.Errorf("path is not a directory")
+	}
+
+	// Check has Chart.yaml or Chart.yml
+	isChart, err := isChartDirectory(path)
+	if err != nil {
+		return nil, fmt.Errorf("checking if %s is chart directory: %w", path, err)
+	}
+	if !isChart {
+		return nil, fmt.Errorf("directory %s is not a valid Helm chart (no Chart.yaml or Chart.yml found)", path)
+	}
+
+	return []string{path}, nil
+}
+
+// filterDirsByMarkerFile expands glob patterns to find marker files and returns their parent directories.
+// Silently skips hidden paths and deduplicates results.
+func filterDirsByMarkerFile(patterns []string, originalPattern string) ([]string, error) {
+	var chartDirs []string
+	seenDirs := make(map[string]bool)
+
 	for _, p := range patterns {
 		matches, err := GlobFiles(p)
 		if err != nil {
 			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
 		}
 
-		// Extract parent directories (the chart directories)
-		for _, chartFile := range matches {
-			chartDir := filepath.Dir(chartFile)
+		for _, markerPath := range matches {
+			chartDir := filepath.Dir(markerPath)
 
-			// Skip hidden directories (.git, .github, etc.)
 			if isHiddenPath(chartDir) {
 				continue
 			}
 
-			// Deduplicate (in case both Chart.yaml and Chart.yml exist)
 			if seenDirs[chartDir] {
 				continue
 			}
@@ -176,312 +364,59 @@ func discoverChartPaths(pattern string) ([]string, error) {
 	return chartDirs, nil
 }
 
-// isPreflightSpec checks if a YAML file contains a Preflight kind.
-// Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
-// handles document separators (---) even when they appear inside strings or block scalars.
-// For files with syntax errors, falls back to simple string matching to detect the kind.
-func isPreflightSpec(path string) (bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false, err
-	}
-
-	// Use yaml.Decoder for proper multi-document YAML parsing
-	// This correctly handles --- separators according to the YAML spec
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
-
-	// Iterate through all documents in the file
-	for {
-		// Parse just the kind field (lightweight)
-		var kindDoc struct {
-			Kind string `yaml:"kind"`
-		}
-
-		err := decoder.Decode(&kindDoc)
-		if err != nil {
-			if err == io.EOF {
-				// Reached end of file - no more documents
-				break
-			}
-			// Parse error - file is malformed
-			// Fall back to regex matching to detect if this looks like a Preflight
-			// This allows invalid YAML files to still be discovered and linted
-			// Use regex to match "kind: Preflight" as a complete line (not in comments/strings)
-			matched, _ := regexp.Match(`(?m)^kind:\s+Preflight\s*$`, data)
-			if matched {
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// Check if this document is a Preflight
-		if kindDoc.Kind == "Preflight" {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// discoverPreflightPaths discovers Preflight spec files from a glob pattern.
-// It finds all YAML files matching the pattern, then filters to only those
-// containing kind: Preflight.
+// discoverDirsByMarkerFile discovers directories containing specific marker files.
+// Handles both explicit directory paths (strict validation) and glob patterns (lenient filtering).
 //
-// Supports patterns like:
-//   - "./preflights/**"           (finds all Preflight specs recursively)
-//   - "./preflights/**/*.yaml"    (explicit YAML extension)
-//   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
-func discoverPreflightPaths(pattern string) ([]string, error) {
-	// Validate: reject empty patterns
+// For explicit paths:
+//   - Validates path exists and is a directory
+//   - Checks if directory contains any of the marker files
+//   - Returns error if validation fails
+//
+// For glob patterns:
+//   - Expands pattern to find marker files
+//   - Returns parent directories of found markers
+//   - Silently skips paths that don't match
+func discoverDirsByMarkerFile(pattern string, markerFiles []string, resourceName string) ([]string, error) {
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern cannot be empty")
 	}
 
-	// Preserve original for error messages
 	originalPattern := pattern
-
-	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
-	// This allows "./preflights/**/" to work the same as "./preflights/**"
 	pattern = filepath.Clean(pattern)
 
-	var preflightPaths []string
-	seenPaths := make(map[string]bool) // Deduplication
+	// Check if explicit path vs glob
+	isExplicitPath := !ContainsGlob(pattern)
 
-	// Build patterns to find YAML files
+	if isExplicitPath {
+		// Strict validation
+		return validateExplicitChartDir(pattern)
+	}
+
+	// Build patterns for marker files
 	var patterns []string
-	if strings.HasSuffix(pattern, ".yaml") || strings.HasSuffix(pattern, ".yml") {
-		// Pattern already specifies extension
+	if strings.HasSuffix(pattern, markerFiles[0]) || (len(markerFiles) > 1 && strings.HasSuffix(pattern, markerFiles[1])) {
 		patterns = []string{pattern}
-	} else if strings.HasSuffix(pattern, "/*") {
-		// Single-level wildcard: replace /* with /*.yaml and /*.yml
-		basePattern := strings.TrimSuffix(pattern, "/*")
-		patterns = []string{
-			filepath.Join(basePattern, "*.yaml"),
-			filepath.Join(basePattern, "*.yml"),
-		}
-	} else if strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
-		// Recursive wildcard or brace expansion - append file patterns
-		patterns = []string{
-			filepath.Join(pattern, "*.yaml"),
-			filepath.Join(pattern, "*.yml"),
+	} else if strings.HasSuffix(pattern, "*") || strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
+		for _, marker := range markerFiles {
+			patterns = append(patterns, filepath.Join(pattern, marker))
 		}
 	} else {
-		// Pattern might be a single file
-		ext := filepath.Ext(pattern)
-		if ext == ".yaml" || ext == ".yml" {
-			patterns = []string{pattern}
-		} else {
-			return nil, fmt.Errorf("pattern must end with .yaml, .yml, *, or **")
-		}
+		// Literal directory - handled by explicit path check above
+		return nil, fmt.Errorf("internal error: literal directory not caught")
 	}
 
-	// Expand patterns to find YAML files
-	for _, p := range patterns {
-		matches, err := GlobFiles(p)
-		if err != nil {
-			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
-		}
-
-		// Filter to only Preflight specs
-		for _, path := range matches {
-			// Skip hidden paths (.git, .github, etc.)
-			if isHiddenPath(path) {
-				continue
-			}
-
-			// Skip if already processed
-			if seenPaths[path] {
-				continue
-			}
-			seenPaths[path] = true
-
-			// Check if it's a Preflight spec
-			isPreflight, err := isPreflightSpec(path)
-			if err != nil {
-				// Skip files we can't read or parse
-				continue
-			}
-
-			if isPreflight {
-				preflightPaths = append(preflightPaths, path)
-			}
-		}
-	}
-
-	return preflightPaths, nil
-}
-
-// (duplicate isPreflightSpec removed)
-
-// isSupportBundleSpec checks if a YAML file contains a SupportBundle kind.
-// Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
-// handles document separators (---) even when they appear inside strings or block scalars.
-// For files with syntax errors, falls back to simple string matching to detect the kind.
-func isSupportBundleSpec(path string) (bool, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return false, err
-	}
-
-	// Use yaml.Decoder for proper multi-document YAML parsing
-	// This correctly handles --- separators according to the YAML spec
-	decoder := yaml.NewDecoder(bytes.NewReader(data))
-
-	// Iterate through all documents in the file
-	for {
-		// Parse just the kind field (lightweight)
-		var kindDoc struct {
-			Kind string `yaml:"kind"`
-		}
-
-		err := decoder.Decode(&kindDoc)
-		if err != nil {
-			if err == io.EOF {
-				// Reached end of file - no more documents
-				break
-			}
-			// Parse error - file is malformed
-			// Fall back to regex matching to detect if this looks like a SupportBundle
-			// This allows invalid YAML files to still be discovered and linted (consistent with preflights)
-			// Use regex to match "kind: SupportBundle" as a complete line (not in comments/strings)
-			matched, _ := regexp.Match(`(?m)^kind:\s+SupportBundle\s*$`, data)
-			if matched {
-				return true, nil
-			}
-			return false, nil
-		}
-
-		// Check if this document is a SupportBundle
-		if kindDoc.Kind == "SupportBundle" {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	// Filter to directories containing marker files
+	return filterDirsByMarkerFile(patterns, originalPattern)
 }
 
 // discoverSupportBundlePaths discovers Support Bundle spec files from a glob pattern.
-// It finds all YAML files matching the pattern, then filters to only those
-// containing kind: SupportBundle.
+// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
 //
 // Supports patterns like:
 //   - "./manifests/**"             (finds all Support Bundle specs recursively)
 //   - "./manifests/**/*.yaml"      (explicit YAML extension)
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
-func discoverSupportBundlePaths(pattern string) ([]string, error) {
-	// Validate: reject empty patterns
-	if pattern == "" {
-		return nil, fmt.Errorf("pattern cannot be empty")
-	}
-
-	// Preserve original for error messages
-	originalPattern := pattern
-
-	// Normalize pattern: clean path to handle //, /./, /../, and trailing slashes
-	// This allows "./manifests/**/" to work the same as "./manifests/**"
-	pattern = filepath.Clean(pattern)
-
-	// Check if this is an explicit path (no glob wildcards) vs a pattern
-	isExplicitPath := !ContainsGlob(pattern)
-
-	// For explicit paths: validate strictly (fail loudly if not a support bundle)
-	// For glob patterns: filter silently (allow mixed content directories)
-	if isExplicitPath {
-		// Check file extension
-		ext := filepath.Ext(pattern)
-		if ext != ".yaml" && ext != ".yml" {
-			return nil, fmt.Errorf("file must have .yaml or .yml extension")
-		}
-
-		// Check if file exists
-		info, err := os.Stat(pattern)
-		if err != nil {
-			if os.IsNotExist(err) {
-				return nil, fmt.Errorf("path does not exist")
-			}
-			return nil, fmt.Errorf("failed to stat path: %w", err)
-		}
-
-		if info.IsDir() {
-			return nil, fmt.Errorf("path is a directory, expected a file")
-		}
-
-		// Check if file contains kind: SupportBundle
-		isSupportBundle, err := isSupportBundleSpec(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read file: %w", err)
-		}
-		if !isSupportBundle {
-			return nil, fmt.Errorf("file does not contain kind: SupportBundle (not a valid Support Bundle spec)")
-		}
-
-		return []string{pattern}, nil
-	}
-
-	// Pattern contains wildcards - use content-aware filtering
-	var supportBundlePaths []string
-	seenPaths := make(map[string]bool) // Deduplication
-
-	// Build patterns to find YAML files
-	var patterns []string
-	if strings.HasSuffix(pattern, ".yaml") || strings.HasSuffix(pattern, ".yml") {
-		// Pattern already specifies extension
-		patterns = []string{pattern}
-	} else if strings.HasSuffix(pattern, "/*") {
-		// Single-level wildcard: replace /* with /*.yaml and /*.yml
-		basePattern := strings.TrimSuffix(pattern, "/*")
-		patterns = []string{
-			filepath.Join(basePattern, "*.yaml"),
-			filepath.Join(basePattern, "*.yml"),
-		}
-	} else if strings.HasSuffix(pattern, "**") || strings.Contains(pattern, "{") {
-		// Recursive wildcard or brace expansion - append file patterns
-		patterns = []string{
-			filepath.Join(pattern, "*.yaml"),
-			filepath.Join(pattern, "*.yml"),
-		}
-	} else {
-		// Pattern might be a single file
-		ext := filepath.Ext(pattern)
-		if ext == ".yaml" || ext == ".yml" {
-			patterns = []string{pattern}
-		} else {
-			return nil, fmt.Errorf("pattern must end with .yaml, .yml, *, or **")
-		}
-	}
-
-	// Expand patterns to find YAML files
-	for _, p := range patterns {
-		matches, err := GlobFiles(p)
-		if err != nil {
-			return nil, fmt.Errorf("expanding pattern %s: %w (from user pattern: %s)", p, err, originalPattern)
-		}
-
-		// Filter to only Support Bundle specs
-		for _, path := range matches {
-			// Skip hidden paths (.git, .github, etc.)
-			if isHiddenPath(path) {
-				continue
-			}
-
-			// Skip if already processed
-			if seenPaths[path] {
-				continue
-			}
-			seenPaths[path] = true
-
-			// Check if it's a Support Bundle spec
-			isSupportBundle, err := isSupportBundleSpec(path)
-			if err != nil {
-				// Skip files we can't read or parse
-				continue
-			}
-
-			if isSupportBundle {
-				supportBundlePaths = append(supportBundlePaths, path)
-			}
-		}
-	}
-
-	return supportBundlePaths, nil
+//   - "./support-bundle.yaml"      (explicit file path - validated strictly)
+func DiscoverSupportBundlePaths(pattern string) ([]string, error) {
+	return discoverYAMLsByKind(pattern, "SupportBundle", "support bundle spec")
 }

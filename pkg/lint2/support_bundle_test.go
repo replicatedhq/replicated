@@ -240,22 +240,22 @@ func TestParseSupportBundleOutput(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := ParseSupportBundleOutput(tt.output)
+			result, err := parseSupportBundleOutput(tt.output)
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("ParseSupportBundleOutput() expected error, got nil")
+					t.Errorf("parseSupportBundleOutput() expected error, got nil")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("ParseSupportBundleOutput() unexpected error: %v", err)
+				t.Errorf("parseSupportBundleOutput() unexpected error: %v", err)
 				return
 			}
 
 			if len(result) != len(tt.expected) {
-				t.Errorf("ParseSupportBundleOutput() returned %d messages, want %d", len(result), len(tt.expected))
+				t.Errorf("parseSupportBundleOutput() returned %d messages, want %d", len(result), len(tt.expected))
 				return
 			}
 

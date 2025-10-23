@@ -10,6 +10,7 @@ import (
 	"testing"
 	"text/tabwriter"
 
+	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
 )
@@ -137,8 +138,26 @@ repl-lint:
 				t.Fatalf("failed to load config: %v", err)
 			}
 
-			// Test extractImagesFromConfig
-			imageResults, err := r.extractImagesFromConfig(context.Background(), config)
+			// Test extractImagesFromCharts
+			// Extract charts with metadata
+			charts, err := lint2.GetChartsWithMetadataFromConfig(config)
+			if err != nil {
+				t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+			}
+
+			// Extract HelmChart manifests (if manifests configured)
+			var helmChartManifests map[string]*lint2.HelmChartManifest
+			if len(config.Manifests) > 0 {
+				helmChartManifests, err = lint2.DiscoverHelmChartManifests(config.Manifests)
+				if err != nil {
+					// Only fail if error is not "no HelmChart resources found"
+					if !strings.Contains(err.Error(), "no HelmChart resources found") {
+						t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+					}
+				}
+			}
+
+			imageResults, err := r.extractImagesFromCharts(context.Background(), charts, helmChartManifests)
 
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
@@ -190,16 +209,6 @@ func TestExtractAndDisplayImagesFromConfig_NoCharts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	buf := new(bytes.Buffer)
-	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
-
-	r := &runners{
-		w: w,
-		args: runnerArgs{
-			lintVerbose: true,
-		},
-	}
-
 	// Load config
 	parser := tools.NewConfigParser()
 	config, err := parser.FindAndParseConfig(".")
@@ -207,13 +216,8 @@ func TestExtractAndDisplayImagesFromConfig_NoCharts(t *testing.T) {
 		t.Fatalf("failed to load config: %v", err)
 	}
 
-	// Should handle no charts gracefully
-	imageResults, err := r.extractImagesFromConfig(context.Background(), config)
-	if err == nil && imageResults != nil {
-		r.displayImages(imageResults)
-	}
-
 	// Should get error about no charts
+	_, err = lint2.GetChartsWithMetadataFromConfig(config)
 	if err == nil {
 		t.Error("expected error when no charts in config")
 	}
@@ -247,16 +251,6 @@ repl-lint:
 		t.Fatal(err)
 	}
 
-	buf := new(bytes.Buffer)
-	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
-
-	r := &runners{
-		w: w,
-		args: runnerArgs{
-			lintVerbose: true,
-		},
-	}
-
 	// Load config
 	parser := tools.NewConfigParser()
 	config, err := parser.FindAndParseConfig(".")
@@ -264,8 +258,8 @@ repl-lint:
 		t.Fatalf("failed to load config: %v", err)
 	}
 
-	// Should get an error for non-existent chart path (validated by GetChartPathsFromConfig)
-	_, err = r.extractImagesFromConfig(context.Background(), config)
+	// Should get an error for non-existent chart path (validated by GetChartsWithMetadataFromConfig)
+	_, err = lint2.GetChartsWithMetadataFromConfig(config)
 
 	// We expect an error because the chart path doesn't exist
 	if err == nil {
@@ -412,12 +406,30 @@ repl-lint:
 	}
 
 	// Extract images
-	imageResults, err := r.extractImagesFromConfig(context.Background(), config)
-	if err == nil && imageResults != nil {
-		r.displayImages(imageResults)
+	// Extract charts with metadata
+	charts, err := lint2.GetChartsWithMetadataFromConfig(config)
+	if err != nil {
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
 	}
+
+	// Extract HelmChart manifests (if manifests configured)
+	var helmChartManifests map[string]*lint2.HelmChartManifest
+	if len(config.Manifests) > 0 {
+		helmChartManifests, err = lint2.DiscoverHelmChartManifests(config.Manifests)
+		if err != nil {
+			// Only fail if error is not "no HelmChart resources found"
+			if !strings.Contains(err.Error(), "no HelmChart resources found") {
+				t.Fatalf("GetHelmChartManifestsFromConfig failed: %v", err)
+			}
+		}
+	}
+
+	imageResults, err := r.extractImagesFromCharts(context.Background(), charts, helmChartManifests)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
+	}
+	if imageResults != nil {
+		r.displayImages(imageResults)
 	}
 
 	w.Flush()
