@@ -571,6 +571,13 @@ func (r *runners) extractImagesFromConfig(ctx context.Context, config *tools.Con
 		return nil, errors.Wrap(err, "failed to discover HelmChart manifests")
 	}
 
+	// If manifests were configured but no HelmCharts were found, return an error
+	// This typically means the manifests directory exists but contains no HelmChart resources,
+	// which is problematic when extracting images from charts that may need builder values
+	if len(config.Manifests) > 0 && len(helmChartManifests) == 0 {
+		return nil, errors.New("no HelmChart resources found in configured manifests")
+	}
+
 	// Collect all images from all charts
 	imageMap := make(map[string]imageextract.ImageRef) // For deduplication
 	var allWarnings []imageextract.Warning
