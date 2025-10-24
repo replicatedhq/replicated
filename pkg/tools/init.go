@@ -191,9 +191,8 @@ func WriteConfigFile(config *Config, path string) error {
 		for _, preflight := range config.Preflights {
 			sb.WriteString("  {\n")
 			sb.WriteString(fmt.Sprintf("    path: %q,\n", preflight.Path))
-			if preflight.ValuesPath != "" {
-				sb.WriteString(fmt.Sprintf("    valuesPath: %q,\n", preflight.ValuesPath))
-			}
+			sb.WriteString(fmt.Sprintf("    chartName: %q,\n", preflight.ChartName))
+			sb.WriteString(fmt.Sprintf("    chartVersion: %q,\n", preflight.ChartVersion))
 			sb.WriteString("  },\n")
 		}
 		sb.WriteString("]\n")

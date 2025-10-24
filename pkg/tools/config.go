@@ -312,6 +312,14 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		if preflight.Path == "" {
 			return fmt.Errorf("preflight[%d]: path is required", i)
 		}
+
+		// chartName and chartVersion are optional, but must be provided together
+		if preflight.ChartName != "" && preflight.ChartVersion == "" {
+			return fmt.Errorf("preflight[%d]: chartVersion is required when chartName is specified", i)
+		}
+		if preflight.ChartVersion != "" && preflight.ChartName == "" {
+			return fmt.Errorf("preflight[%d]: chartName is required when chartVersion is specified", i)
+		}
 	}
 
 	// Validate manifest paths
@@ -424,10 +432,7 @@ func (p *ConfigParser) resolvePaths(config *Config, configFilePath string) {
 		if config.Preflights[i].Path != "" && !filepath.IsAbs(config.Preflights[i].Path) {
 			config.Preflights[i].Path = filepath.Join(configDir, config.Preflights[i].Path)
 		}
-		// Resolve valuesPath
-		if config.Preflights[i].ValuesPath != "" && !filepath.IsAbs(config.Preflights[i].ValuesPath) {
-			config.Preflights[i].ValuesPath = filepath.Join(configDir, config.Preflights[i].ValuesPath)
-		}
+		// Note: chartName and chartVersion are not paths - don't resolve them
 	}
 
 	// Resolve manifest paths (glob patterns)

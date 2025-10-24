@@ -8,6 +8,7 @@ import (
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
 )
@@ -328,36 +329,28 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 
 			switch preflightChoice {
 			case "Yes":
-				// Check if any preflights are v1beta3 (need values file)
-				needsValues := false
-				for _, preflightPath := range detected.Preflights {
-					apiVersion, err := tools.GetYAMLAPIVersion(preflightPath)
-					if err == nil && strings.Contains(apiVersion, "v1beta3") {
-						needsValues = true
-						break
-					}
-				}
-
-				// If any preflight needs values, prompt once for the values file to use
-				var sharedValuesPath string
-				if needsValues {
-					valuesPath, err := r.promptForSharedValuesFile(detected.ValuesFiles)
+				// Prompt user to select chart for preflights (if charts are available)
+				var selectedChartName, selectedChartVersion string
+				if len(config.Charts) > 0 {
+					chartName, chartVersion, err := r.promptForChart(config.Charts)
 					if err != nil {
 						return err
 					}
-					sharedValuesPath = valuesPath
+					selectedChartName = chartName
+					selectedChartVersion = chartVersion
 				}
 
-				// Add all detected preflights with the shared values path if applicable
+				// Add all detected preflights with the selected chart
 				for _, preflightPath := range detected.Preflights {
 					// Convert to relative path with ./ prefix
 					if !strings.HasPrefix(preflightPath, ".") {
 						preflightPath = "./" + preflightPath
 					}
 
-					preflight := tools.PreflightConfig{Path: preflightPath}
-					if sharedValuesPath != "" {
-						preflight.ValuesPath = sharedValuesPath
+					preflight := tools.PreflightConfig{
+						Path:         preflightPath,
+						ChartName:    selectedChartName,
+						ChartVersion: selectedChartVersion,
 					}
 
 					config.Preflights = append(config.Preflights, preflight)
@@ -427,26 +420,27 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				})
 			}
 
-			// For preflights, check if any are v1beta3 and auto-assign first values file if available
-			var autoValuesPath string
-			if len(detected.ValuesFiles) > 0 {
-				autoValuesPath = detected.ValuesFiles[0]
-				if !strings.HasPrefix(autoValuesPath, ".") {
-					autoValuesPath = "./" + autoValuesPath
+			// Auto-assign first detected chart to preflights (if available)
+			var autoChartName, autoChartVersion string
+			if len(config.Charts) > 0 {
+				// Get metadata from first chart
+				metadata, err := lint2.GetChartMetadata(config.Charts[0].Path)
+				if err == nil {
+					autoChartName = metadata.Name
+					autoChartVersion = metadata.Version
 				}
 			}
 
+			// Add detected preflights with auto-assigned chart (if available)
 			for _, preflightPath := range detected.Preflights {
 				if !strings.HasPrefix(preflightPath, ".") {
 					preflightPath = "./" + preflightPath
 				}
 
-				preflight := tools.PreflightConfig{Path: preflightPath}
-
-				// Check if this is v1beta3 and assign values file
-				apiVersion, err := tools.GetYAMLAPIVersion(preflightPath)
-				if err == nil && strings.Contains(apiVersion, "v1beta3") && autoValuesPath != "" {
-					preflight.ValuesPath = autoValuesPath
+				preflight := tools.PreflightConfig{
+					Path:         preflightPath,
+					ChartName:    autoChartName,    // Auto-assigned from first chart
+					ChartVersion: autoChartVersion, // Auto-assigned from first chart
 				}
 
 				config.Preflights = append(config.Preflights, preflight)
@@ -500,8 +494,8 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 	if len(config.Preflights) > 0 {
 		fmt.Fprintf(r.w, "  Preflights: %d configured\n", len(config.Preflights))
 		for _, preflight := range config.Preflights {
-			if preflight.ValuesPath != "" {
-				fmt.Fprintf(r.w, "    - %s (values: %s)\n", preflight.Path, preflight.ValuesPath)
+			if preflight.ChartName != "" && preflight.ChartVersion != "" {
+				fmt.Fprintf(r.w, "    - %s (chart: %s:%s)\n", preflight.Path, preflight.ChartName, preflight.ChartVersion)
 			} else {
 				fmt.Fprintf(r.w, "    - %s\n", preflight.Path)
 			}
@@ -608,57 +602,69 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 	return charts, nil
 }
 
-func (r *runners) promptForSharedValuesFile(detectedValuesFiles []string) (string, error) {
-	// Build options list
-	options := []string{"None"}
-	for _, vf := range detectedValuesFiles {
-		if !strings.HasPrefix(vf, ".") {
-			vf = "./" + vf
-		}
-		options = append(options, vf)
+// promptForChart prompts the user to select a chart for preflight configuration.
+// Returns chart name and version to be stored in the config.
+// Displays charts as "name:version (from path)" for clarity.
+func (r *runners) promptForChart(charts []tools.ChartConfig) (string, string, error) {
+	if len(charts) == 0 {
+		return "", "", errors.New("no charts available to select from")
 	}
-	options = append(options, "Custom path")
+
+	// Build chart selection list with metadata
+	type chartOption struct {
+		displayName string // For UI: "myapp:1.0.0 (from ./charts/myapp)"
+		name        string // For config
+		version     string // For config
+		path        string // For context
+	}
+
+	var options []chartOption
+	for _, chart := range charts {
+		// Get chart metadata to extract name and version
+		metadata, err := lint2.GetChartMetadata(chart.Path)
+		if err != nil {
+			// Skip charts we can't read
+			continue
+		}
+		options = append(options, chartOption{
+			displayName: fmt.Sprintf("%s:%s (from %s)", metadata.Name, metadata.Version, chart.Path),
+			name:        metadata.Name,
+			version:     metadata.Version,
+			path:        chart.Path,
+		})
+	}
+
+	if len(options) == 0 {
+		return "", "", errors.New("no valid charts found (could not read Chart.yaml from any chart)")
+	}
+
+	// Extract just display names for prompt
+	displayNames := make([]string, len(options))
+	for i, opt := range options {
+		displayNames[i] = opt.displayName
+	}
 
 	prompt := promptui.Select{
-		Label: "Which values file should be used with the preflights?",
-		Items: options,
+		Label: "Select chart for preflight checks",
+		Items: displayNames,
 	}
 
-	_, result, err := prompt.Run()
+	idx, _, err := prompt.Run()
 	if err != nil {
 		if err == promptui.ErrInterrupt {
-			return "", errors.New("cancelled")
+			return "", "", errors.New("cancelled")
 		}
-		return "", errors.Wrap(err, "failed to read values file choice")
+		return "", "", errors.Wrap(err, "failed to select chart")
 	}
 
-	if result == "None" {
-		return "", nil
-	}
-
-	if result == "Custom path" {
-		pathPrompt := promptui.Prompt{
-			Label:   "Values file path",
-			Default: "",
-		}
-		path, err := pathPrompt.Run()
-		if err != nil {
-			if err == promptui.ErrInterrupt {
-				return "", errors.New("cancelled")
-			}
-			return "", errors.Wrap(err, "failed to read values path")
-		}
-		return path, nil
-	}
-
-	// Return the selected values file
-	return result, nil
+	selected := options[idx]
+	return selected.name, selected.version, nil
 }
 
 func (r *runners) promptForPreflightPathsWithCharts(charts []tools.ChartConfig, detectedValuesFiles []string) ([]tools.PreflightConfig, error) {
 	var preflights []tools.PreflightConfig
-	var sharedValuesPath string
-	var checkedForValues bool
+	var sharedChartName, sharedChartVersion string
+	var checkedForChart bool
 
 	for {
 		pathPrompt := promptui.Prompt{
@@ -678,23 +684,20 @@ func (r *runners) promptForPreflightPathsWithCharts(charts []tools.ChartConfig, 
 
 		preflight := tools.PreflightConfig{Path: path}
 
-		// Check if this preflight is v1beta3 (needs values file)
-		apiVersion, err := tools.GetYAMLAPIVersion(path)
-		needsValues := err == nil && strings.Contains(apiVersion, "v1beta3")
-
-		// If this preflight needs values and we haven't prompted yet, prompt now
-		if needsValues && !checkedForValues {
-			sharedValuesPath, err = r.promptForSharedValuesFile(detectedValuesFiles)
+		// If we haven't prompted for chart yet and charts are available, prompt now
+		if !checkedForChart && len(charts) > 0 {
+			chartName, chartVersion, err := r.promptForChart(charts)
 			if err != nil {
 				return nil, err
 			}
-			checkedForValues = true
+			sharedChartName = chartName
+			sharedChartVersion = chartVersion
+			checkedForChart = true
 		}
 
-		// Apply shared values path if needed
-		if needsValues && sharedValuesPath != "" {
-			preflight.ValuesPath = sharedValuesPath
-		}
+		// Apply shared chart selection
+		preflight.ChartName = sharedChartName
+		preflight.ChartVersion = sharedChartVersion
 
 		preflights = append(preflights, preflight)
 

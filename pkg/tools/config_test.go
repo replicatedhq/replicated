@@ -493,8 +493,11 @@ charts:
   - path: ./charts/chart2
 preflights:
   - path: ./preflights/check1
-    valuesPath: ./charts/chart1
+    chartName: "chart1"
+    chartVersion: "1.0.0"
   - path: ./preflights/check2
+    chartName: "chart2"
+    chartVersion: "1.0.0"
 releaseLabel: "v{{.Version}}"
 manifests:
   - "replicated/**/*.yaml"
@@ -628,9 +631,11 @@ repl-lint:
 
 		configData := []byte(`preflights:
   - path: ./preflights/check1
-    valuesPath: ./charts/chart1
+    chartName: chart1
+    chartVersion: "1.0.0"
   - path: preflights/check2
-    valuesPath: ../parent-charts/chart2
+    chartName: chart2
+    chartVersion: "2.0.0"
 repl-lint:
 `)
 		if err := os.WriteFile(configPath, configData, 0644); err != nil {
@@ -646,14 +651,16 @@ repl-lint:
 			t.Fatalf("expected 2 preflights, got %d", len(config.Preflights))
 		}
 
-		// Check first preflight
+		// Check first preflight - path is resolved, chartName/Version are not
 		expectedPath := filepath.Join(tmpDir, "preflights/check1")
 		if config.Preflights[0].Path != expectedPath {
 			t.Errorf("preflights[0].Path = %q, want %q", config.Preflights[0].Path, expectedPath)
 		}
-		expectedValuesPath := filepath.Join(tmpDir, "charts/chart1")
-		if config.Preflights[0].ValuesPath != expectedValuesPath {
-			t.Errorf("preflights[0].ValuesPath = %q, want %q", config.Preflights[0].ValuesPath, expectedValuesPath)
+		if config.Preflights[0].ChartName != "chart1" {
+			t.Errorf("preflights[0].ChartName = %q, want %q", config.Preflights[0].ChartName, "chart1")
+		}
+		if config.Preflights[0].ChartVersion != "1.0.0" {
+			t.Errorf("preflights[0].ChartVersion = %q, want %q", config.Preflights[0].ChartVersion, "1.0.0")
 		}
 
 		// Check second preflight
@@ -661,9 +668,11 @@ repl-lint:
 		if config.Preflights[1].Path != expectedPath2 {
 			t.Errorf("preflights[1].Path = %q, want %q", config.Preflights[1].Path, expectedPath2)
 		}
-		expectedValuesPath2 := filepath.Join(tmpDir, "../parent-charts/chart2")
-		if config.Preflights[1].ValuesPath != expectedValuesPath2 {
-			t.Errorf("preflights[1].ValuesPath = %q, want %q", config.Preflights[1].ValuesPath, expectedValuesPath2)
+		if config.Preflights[1].ChartName != "chart2" {
+			t.Errorf("preflights[1].ChartName = %q, want %q", config.Preflights[1].ChartName, "chart2")
+		}
+		if config.Preflights[1].ChartVersion != "2.0.0" {
+			t.Errorf("preflights[1].ChartVersion = %q, want %q", config.Preflights[1].ChartVersion, "2.0.0")
 		}
 	})
 
@@ -965,6 +974,50 @@ repl-lint:
 		}
 	})
 
+	t.Run("missing preflight chartName rejected", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`preflights:
+  - path: "./preflight.yaml"
+    chartVersion: "1.0.0"
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for missing chartName, got nil")
+		}
+		if !strings.Contains(err.Error(), "preflight[0]: chartName is required") {
+			t.Errorf("Expected 'preflight[0]: chartName is required' error, got: %v", err)
+		}
+	})
+
+	t.Run("missing preflight chartVersion rejected", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ".replicated")
+
+		configData := []byte(`preflights:
+  - path: "./preflight.yaml"
+    chartName: "my-chart"
+repl-lint:
+`)
+		if err := os.WriteFile(configPath, configData, 0644); err != nil {
+			t.Fatalf("writing test config: %v", err)
+		}
+
+		_, err := parser.ParseConfigFile(configPath)
+		if err == nil {
+			t.Error("ParseConfigFile() expected error for missing chartVersion, got nil")
+		}
+		if !strings.Contains(err.Error(), "preflight[0]: chartVersion is required") {
+			t.Errorf("Expected 'preflight[0]: chartVersion is required' error, got: %v", err)
+		}
+	})
+
 	t.Run("empty manifest path rejected", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		configPath := filepath.Join(tmpDir, ".replicated")
@@ -1072,6 +1125,8 @@ repl-lint:
 		rootConfigPath := filepath.Join(rootDir, ".replicated")
 		rootConfigData := []byte(`preflights:
   - path: ./checks/preflight1
+    chartName: "test-chart"
+    chartVersion: "1.0.0"
 repl-lint:
 `)
 		if err := os.WriteFile(rootConfigPath, rootConfigData, 0644); err != nil {
@@ -1081,6 +1136,8 @@ repl-lint:
 		appConfigPath := filepath.Join(appDir, ".replicated")
 		appConfigData := []byte(`preflights:
   - path: ../checks/preflight1
+    chartName: "test-chart"
+    chartVersion: "1.0.0"
 repl-lint:
 `)
 		if err := os.WriteFile(appConfigPath, appConfigData, 0644); err != nil {
@@ -1213,6 +1270,8 @@ charts:
 			configYAML: `
 preflights:
   - path: "./preflights/{unclosed"
+    chartName: "test"
+    chartVersion: "1.0.0"
 `,
 			wantErrMsg: "invalid glob pattern in preflights[0].path",
 		},
@@ -1232,6 +1291,8 @@ charts:
   - path: "./charts/[bad"
 preflights:
   - path: "./preflights/{invalid"
+    chartName: "test"
+    chartVersion: "1.0.0"
 `,
 			wantErrMsg: "invalid glob pattern in charts[1].path",
 		},
@@ -1242,6 +1303,8 @@ charts:
   - path: "./charts/**"
 preflights:
   - path: "./preflights/{dev,prod}/*.yaml"
+    chartName: "test"
+    chartVersion: "1.0.0"
 manifests:
   - "./manifests/**/*.yaml"
 `,
@@ -1383,5 +1446,26 @@ func TestFindAndParseConfigWithMinimalConfig(t *testing.T) {
 	}
 	if v, ok := config.ReplLint.Tools[ToolSupportBundle]; !ok || v != "latest" {
 		t.Errorf("Expected SupportBundle to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+}
+
+// TestValidateConfig_PreflightWithoutChart tests that preflights without chart references are valid
+func TestValidateConfig_PreflightWithoutChart(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, ".replicated")
+
+	// Config with preflight but NO chart reference (Branch 2: linter decides)
+	configData := []byte(`preflights:
+  - path: "./preflight.yaml"
+repl-lint:
+`)
+	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+		t.Fatalf("writing test config: %v", err)
+	}
+
+	parser := NewConfigParser()
+	_, err := parser.ParseConfigFile(configPath)
+	if err != nil {
+		t.Errorf("ParseConfigFile() unexpected error for preflight without chart reference: %v", err)
 	}
 }

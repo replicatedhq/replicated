@@ -143,17 +143,28 @@ func LintPreflight(
 }
 
 // isPreflightV1Beta3 checks if a preflight spec is apiVersion v1beta3
-// Uses string matching to handle specs with Helm template syntax that aren't valid YAML yet
+// Tries YAML parsing first for accurate detection, falls back to string matching for templated specs
 func isPreflightV1Beta3(specPath string) (bool, error) {
 	data, err := os.ReadFile(specPath)
 	if err != nil {
 		return false, fmt.Errorf("failed to read spec file: %w", err)
 	}
 
-	content := string(data)
+	// Strategy 1: Try YAML parsing for accurate detection
+	var doc struct {
+		APIVersion string `yaml:"apiVersion"`
+		Kind       string `yaml:"kind"`
+	}
+	if err := yaml.Unmarshal(data, &doc); err == nil {
+		// Successfully parsed as YAML - use accurate field matching
+		isPreflightKind := doc.Kind == "Preflight"
+		hasV1Beta3 := strings.Contains(doc.APIVersion, "v1beta3")
+		return isPreflightKind && hasV1Beta3, nil
+	}
 
-	// Check for kind: Preflight and apiVersion containing v1beta3
-	// Use simple string matching to handle templated specs that aren't valid YAML
+	// Strategy 2: Fall back to string matching for templated specs (with {{ }} syntax)
+	// This handles specs that contain Helm template expressions and aren't valid YAML yet
+	content := string(data)
 	hasPreflightKind := strings.Contains(content, "kind: Preflight") || strings.Contains(content, "kind:Preflight")
 	hasV1Beta3 := strings.Contains(content, "v1beta3")
 

@@ -236,9 +236,9 @@ func TestLintPreflight_Integration(t *testing.T) {
 			t.Fatal("Expected error for missing HelmChart manifest, got nil")
 		}
 
-		// Error should mention missing HelmChart
-		if !contains(err.Error(), "no HelmChart manifest found") {
-			t.Errorf("Error should mention missing HelmChart, got: %v", err)
+		// Error should mention v1beta3 requires HelmChart manifests
+		if !contains(err.Error(), "v1beta3 preflight spec requires HelmChart manifests") {
+			t.Errorf("Error should mention v1beta3 requires HelmChart manifests, got: %v", err)
 		}
 	})
 
@@ -369,10 +369,14 @@ func TestLintPreflight_Integration(t *testing.T) {
 
 		// Create a config structure that mimics a .replicated config file
 		config := &tools.Config{
+			Charts: []tools.ChartConfig{
+				{Path: "testdata/preflights/templated-test/chart"},
+			},
 			Preflights: []tools.PreflightConfig{
 				{
-					Path:       "testdata/preflights/templated-test/preflight-templated.yaml",
-					ValuesPath: "testdata/preflights/templated-test/chart/values.yaml",
+					Path:         "testdata/preflights/templated-test/preflight-templated.yaml",
+					ChartName:    "test-app",
+					ChartVersion: "1.0.0",
 				},
 			},
 			Manifests: []string{"testdata/preflights/templated-test/manifests/*.yaml"},

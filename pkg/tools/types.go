@@ -21,10 +21,11 @@ type ChartConfig struct {
 }
 
 // PreflightConfig represents a preflight entry in the config
-// Both Path and ValuesPath are required for all preflight specs
+// Path is required. ChartName and ChartVersion are optional but must be provided together.
 type PreflightConfig struct {
-	Path       string `yaml:"path"`
-	ValuesPath string `yaml:"valuesPath"` // Required: path to chart values.yaml for template rendering
+	Path         string `yaml:"path"`
+	ChartName    string `yaml:"chartName,omitempty"`    // Optional: explicit chart reference (must provide chartVersion if set)
+	ChartVersion string `yaml:"chartVersion,omitempty"` // Optional: explicit chart version (must provide chartName if set)
 }
 
 // ReplLintConfig is the lint configuration section
@@ -57,9 +58,9 @@ func (c LinterConfig) IsEnabled() bool {
 // Default tool versions - kept for backward compatibility in tests
 // In production, "latest" is used to fetch the most recent stable version from GitHub
 const (
-	DefaultHelmVersion          = "3.14.4"  // Deprecated: Use "latest" instead
-	DefaultPreflightVersion     = "0.123.9" // Deprecated: Use "latest" instead
-	DefaultSupportBundleVersion = "0.123.9" // Deprecated: Use "latest" instead
+	DefaultHelmVersion          = "3.14.4" // Deprecated: Use "latest" instead
+	DefaultPreflightVersion     = "latest"
+	DefaultSupportBundleVersion = "latest"
 )
 
 // Supported tool names
