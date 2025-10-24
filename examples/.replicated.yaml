@@ -12,7 +12,8 @@ charts: [
 preflights: [
   {
       path: "./preflights/**",
-      valuesPath: "./helm-chart/values.yaml", # path to values.yaml file
+      chartName: "helm-chart",
+      chartVersion: "1.0.0",
   }
 ]
 releaseLabel: ""  ## some sort of semver pattern?

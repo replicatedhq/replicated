@@ -21,10 +21,11 @@ type ChartConfig struct {
 }
 
 // PreflightConfig represents a preflight entry in the config
-// Both Path and ValuesPath are required for all preflight specs
+// Path, ChartName, and ChartVersion are all required for preflight specs
 type PreflightConfig struct {
-	Path       string `yaml:"path"`
-	ValuesPath string `yaml:"valuesPath"` // Required: path to chart values.yaml for template rendering
+	Path         string `yaml:"path"`
+	ChartName    string `yaml:"chartName"`    // Required: name of chart to use for template rendering
+	ChartVersion string `yaml:"chartVersion"` // Required: version of chart to use
 }
 
 // ReplLintConfig is the lint configuration section

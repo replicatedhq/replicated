@@ -1,6 +1,7 @@
 package lint2
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -1151,9 +1152,9 @@ spec:
 	}
 }
 
-func TestGetPreflightWithValuesFromConfig_MissingChartYaml(t *testing.T) {
-	// Test that GetPreflightWithValuesFromConfig errors for v1beta3 when Chart.yaml is missing
-	// v1beta3 requires Chart.yaml to extract chart name/version for HelmChart manifest lookup
+func TestGetPreflightWithValuesFromConfig_ChartNotFound(t *testing.T) {
+	// Test that GetPreflightWithValuesFromConfig errors when chart reference doesn't exist for v1beta3
+	// For v1beta3, chart must be found. For v1beta2, it's lenient and continues with empty values.
 	tmpDir := t.TempDir()
 
 	// Create a v1beta3 preflight spec (v1beta3 requires Chart.yaml for builder values)
@@ -1169,36 +1170,332 @@ spec:
 		t.Fatal(err)
 	}
 
-	// Create a values.yaml file WITHOUT adjacent Chart.yaml
-	valuesDir := filepath.Join(tmpDir, "chart")
-	if err := os.MkdirAll(valuesDir, 0755); err != nil {
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "available-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
 		t.Fatal(err)
 	}
-	valuesPath := filepath.Join(valuesDir, "values.yaml")
-	valuesContent := `database:
-  enabled: true
-`
-	if err := os.WriteFile(valuesPath, []byte(valuesContent), 0644); err != nil {
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	if err := os.WriteFile(chartYaml, []byte("name: available\nversion: 1.0.0\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	// Config with valuesPath but no Chart.yaml
+	// Config references a chart that doesn't exist in Charts section
 	config := &tools.Config{
+		Charts: []tools.ChartConfig{
+			{Path: chartDir},
+		},
 		Preflights: []tools.PreflightConfig{
 			{
-				Path:       preflightPath,
-				ValuesPath: valuesPath,
+				Path:         preflightPath,
+				ChartName:    "missing-chart",
+				ChartVersion: "1.0.0",
 			},
 		},
 	}
 
 	_, err := GetPreflightWithValuesFromConfig(config)
 	if err == nil {
-		t.Fatal("GetPreflightWithValuesFromConfig() should error when Chart.yaml is missing, got nil")
+		t.Fatal("GetPreflightWithValuesFromConfig() should error when chart not found, got nil")
 	}
 
-	// Error should mention failed to read Chart.yaml or Chart.yml
-	if !contains(err.Error(), "failed to read Chart.yaml or Chart.yml") {
-		t.Errorf("Error should mention failed to read Chart.yaml or Chart.yml, got: %v", err)
+	// Should be a ChartNotFoundError
+	var notFoundErr *ChartNotFoundError
+	if !errors.As(err, &notFoundErr) {
+		t.Errorf("Expected ChartNotFoundError, got %T: %v", err, err)
+	}
+
+	// Error should mention the requested chart
+	if !contains(err.Error(), "missing-chart:1.0.0") {
+		t.Errorf("Error should mention requested chart 'missing-chart:1.0.0', got: %v", err)
+	}
+}
+
+// ==============================================================================
+// Tests for Phase 0 Utility Functions
+// ==============================================================================
+
+func TestBuildChartLookup_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create two charts with different names/versions
+	chart1Dir := filepath.Join(tmpDir, "chart1")
+	if err := os.MkdirAll(chart1Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chart1Yaml := filepath.Join(chart1Dir, "Chart.yaml")
+	if err := os.WriteFile(chart1Yaml, []byte("name: app1\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	chart2Dir := filepath.Join(tmpDir, "chart2")
+	if err := os.MkdirAll(chart2Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chart2Yaml := filepath.Join(chart2Dir, "Chart.yaml")
+	if err := os.WriteFile(chart2Yaml, []byte("name: app2\nversion: 2.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	config := &tools.Config{
+		Charts: []tools.ChartConfig{
+			{Path: chart1Dir},
+			{Path: chart2Dir},
+		},
+	}
+
+	lookup, err := BuildChartLookup(config)
+	if err != nil {
+		t.Fatalf("BuildChartLookup() unexpected error: %v", err)
+	}
+
+	if len(lookup) != 2 {
+		t.Errorf("Expected 2 charts in lookup, got %d", len(lookup))
+	}
+
+	// Verify app1:1.0.0 is in lookup
+	chart1 := lookup["app1:1.0.0"]
+	if chart1 == nil {
+		t.Error("app1:1.0.0 not found in lookup")
+	} else {
+		if chart1.Path != chart1Dir {
+			t.Errorf("app1:1.0.0 path = %s, want %s", chart1.Path, chart1Dir)
+		}
+		if chart1.Name != "app1" {
+			t.Errorf("app1:1.0.0 name = %s, want app1", chart1.Name)
+		}
+		if chart1.Version != "1.0.0" {
+			t.Errorf("app1:1.0.0 version = %s, want 1.0.0", chart1.Version)
+		}
+	}
+
+	// Verify app2:2.0.0 is in lookup
+	chart2 := lookup["app2:2.0.0"]
+	if chart2 == nil {
+		t.Error("app2:2.0.0 not found in lookup")
+	} else {
+		if chart2.Path != chart2Dir {
+			t.Errorf("app2:2.0.0 path = %s, want %s", chart2.Path, chart2Dir)
+		}
+	}
+}
+
+func TestBuildChartLookup_DuplicateError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create two charts with SAME name:version
+	chart1Dir := filepath.Join(tmpDir, "chart1")
+	if err := os.MkdirAll(chart1Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chart1Yaml := filepath.Join(chart1Dir, "Chart.yaml")
+	if err := os.WriteFile(chart1Yaml, []byte("name: myapp\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	chart2Dir := filepath.Join(tmpDir, "chart2")
+	if err := os.MkdirAll(chart2Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chart2Yaml := filepath.Join(chart2Dir, "Chart.yaml")
+	if err := os.WriteFile(chart2Yaml, []byte("name: myapp\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	config := &tools.Config{
+		Charts: []tools.ChartConfig{
+			{Path: chart1Dir},
+			{Path: chart2Dir},
+		},
+	}
+
+	_, err := BuildChartLookup(config)
+	if err == nil {
+		t.Fatal("BuildChartLookup() should return error for duplicate charts, got nil")
+	}
+
+	// Verify it's a DuplicateChartError
+	dupErr, ok := err.(*DuplicateChartError)
+	if !ok {
+		t.Fatalf("Expected *DuplicateChartError, got %T: %v", err, err)
+	}
+
+	if dupErr.ChartKey != "myapp:1.0.0" {
+		t.Errorf("DuplicateChartError.ChartKey = %s, want myapp:1.0.0", dupErr.ChartKey)
+	}
+	if dupErr.FirstPath != chart1Dir {
+		t.Errorf("DuplicateChartError.FirstPath = %s, want %s", dupErr.FirstPath, chart1Dir)
+	}
+	if dupErr.SecondPath != chart2Dir {
+		t.Errorf("DuplicateChartError.SecondPath = %s, want %s", dupErr.SecondPath, chart2Dir)
+	}
+}
+
+func TestBuildChartLookup_NoCharts(t *testing.T) {
+	config := &tools.Config{
+		Charts: []tools.ChartConfig{},
+	}
+
+	_, err := BuildChartLookup(config)
+	if err == nil {
+		t.Fatal("BuildChartLookup() should error when no charts, got nil")
+	}
+	if !contains(err.Error(), "no charts found") {
+		t.Errorf("Error should mention 'no charts found', got: %v", err)
+	}
+}
+
+func TestFindValuesFile_Yaml(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create values.yaml
+	valuesPath := filepath.Join(tmpDir, "values.yaml")
+	if err := os.WriteFile(valuesPath, []byte("key: value\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := findValuesFile(tmpDir)
+	if err != nil {
+		t.Fatalf("findValuesFile() unexpected error: %v", err)
+	}
+	if found != valuesPath {
+		t.Errorf("findValuesFile() = %s, want %s", found, valuesPath)
+	}
+}
+
+func TestFindValuesFile_Yml(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create values.yml (not .yaml)
+	valuesPath := filepath.Join(tmpDir, "values.yml")
+	if err := os.WriteFile(valuesPath, []byte("key: value\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	found, err := findValuesFile(tmpDir)
+	if err != nil {
+		t.Fatalf("findValuesFile() unexpected error: %v", err)
+	}
+	if found != valuesPath {
+		t.Errorf("findValuesFile() = %s, want %s", found, valuesPath)
+	}
+}
+
+func TestFindValuesFile_PreferYaml(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create BOTH values.yaml and values.yml
+	valuesYamlPath := filepath.Join(tmpDir, "values.yaml")
+	if err := os.WriteFile(valuesYamlPath, []byte("yaml: true\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	valuesYmlPath := filepath.Join(tmpDir, "values.yml")
+	if err := os.WriteFile(valuesYmlPath, []byte("yml: true\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should prefer .yaml over .yml
+	found, err := findValuesFile(tmpDir)
+	if err != nil {
+		t.Fatalf("findValuesFile() unexpected error: %v", err)
+	}
+	if found != valuesYamlPath {
+		t.Errorf("findValuesFile() = %s, want %s (should prefer .yaml)", found, valuesYamlPath)
+	}
+}
+
+func TestFindValuesFile_Missing(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// No values file at all
+	_, err := findValuesFile(tmpDir)
+	if err == nil {
+		t.Fatal("findValuesFile() should error when no values file exists, got nil")
+	}
+	if !contains(err.Error(), "no values.yaml or values.yml") {
+		t.Errorf("Error should mention 'no values.yaml or values.yml', got: %v", err)
+	}
+	if !contains(err.Error(), tmpDir) {
+		t.Errorf("Error should mention the chart directory path, got: %v", err)
+	}
+}
+
+func TestChartNotFoundError_Message(t *testing.T) {
+	err := &ChartNotFoundError{
+		RequestedChart:  "myapp:1.0.0",
+		AvailableCharts: []string{"otherapp:2.0.0", "thirdapp:3.0.0"},
+	}
+
+	msg := err.Error()
+
+	// Verify error message contains key information
+	if !contains(msg, "myapp:1.0.0") {
+		t.Error("Error message should contain requested chart name")
+	}
+	if !contains(msg, "otherapp:2.0.0") {
+		t.Error("Error message should list available charts")
+	}
+	if !contains(msg, "thirdapp:3.0.0") {
+		t.Error("Error message should list all available charts")
+	}
+	if !contains(msg, "charts:") {
+		t.Error("Error message should include example config snippet")
+	}
+	if !contains(msg, "path:") {
+		t.Error("Error message should show example path in config")
+	}
+}
+
+func TestDuplicateChartError_Message(t *testing.T) {
+	err := &DuplicateChartError{
+		ChartKey:   "myapp:1.0.0",
+		FirstPath:  "/path/to/chart1",
+		SecondPath: "/path/to/chart2",
+	}
+
+	msg := err.Error()
+
+	// Verify error message contains key information
+	if !contains(msg, "myapp:1.0.0") {
+		t.Error("Error message should contain chart key")
+	}
+	if !contains(msg, "/path/to/chart1") {
+		t.Error("Error message should contain first chart path")
+	}
+	if !contains(msg, "/path/to/chart2") {
+		t.Error("Error message should contain second chart path")
+	}
+	if !contains(msg, "duplicate") {
+		t.Error("Error message should mention 'duplicate'")
+	}
+	if !contains(msg, "Renaming") || !contains(msg, "version") {
+		t.Error("Error message should provide helpful suggestions")
+	}
+}
+
+func TestGetChartKeys(t *testing.T) {
+	lookup := map[string]*ChartWithMetadata{
+		"app1:1.0.0": {Path: "/chart1", Name: "app1", Version: "1.0.0"},
+		"app2:2.0.0": {Path: "/chart2", Name: "app2", Version: "2.0.0"},
+		"app3:3.0.0": {Path: "/chart3", Name: "app3", Version: "3.0.0"},
+	}
+
+	keys := getChartKeys(lookup)
+
+	if len(keys) != 3 {
+		t.Errorf("getChartKeys() returned %d keys, want 3", len(keys))
+	}
+
+	// Verify all keys are present (order doesn't matter)
+	keyMap := make(map[string]bool)
+	for _, k := range keys {
+		keyMap[k] = true
+	}
+
+	expectedKeys := []string{"app1:1.0.0", "app2:2.0.0", "app3:3.0.0"}
+	for _, expected := range expectedKeys {
+		if !keyMap[expected] {
+			t.Errorf("Expected key %s not found in result", expected)
+		}
 	}
 }

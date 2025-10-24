@@ -369,10 +369,14 @@ func TestLintPreflight_Integration(t *testing.T) {
 
 		// Create a config structure that mimics a .replicated config file
 		config := &tools.Config{
+			Charts: []tools.ChartConfig{
+				{Path: "testdata/preflights/templated-test/chart"},
+			},
 			Preflights: []tools.PreflightConfig{
 				{
-					Path:       "testdata/preflights/templated-test/preflight-templated.yaml",
-					ValuesPath: "testdata/preflights/templated-test/chart/values.yaml",
+					Path:         "testdata/preflights/templated-test/preflight-templated.yaml",
+					ChartName:    "test-app",
+					ChartVersion: "1.0.0",
 				},
 			},
 			Manifests: []string{"testdata/preflights/templated-test/manifests/*.yaml"},

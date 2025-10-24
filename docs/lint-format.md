@@ -49,7 +49,8 @@ Notes:
   preflights: [
     {
         path: "./preflights/stuff",
-        valuesPath: "./chart/something", # directory to corresponding helm chart
+        chartName: "something",
+        chartVersion: "1.0.0",
     }
   ]
   releaseLabel: ""  ## some sort of semver pattern?
@@ -154,3 +155,41 @@ data:
 ```yaml
 # repl-lint-ignore-file
 ```
+
+## Preflight Configuration
+
+Preflight specs require a chart reference for template rendering. Configure preflights by specifying the chart name and version to use:
+
+```yaml
+charts:
+  - path: "./chart"
+
+preflights:
+  - path: "./preflight.yaml"
+    chartName: "my-chart"      # Must match chart name in Chart.yaml
+    chartVersion: "1.0.0"       # Must match chart version in Chart.yaml
+```
+
+**Requirements:**
+- Both `chartName` and `chartVersion` are required for each preflight
+- The chart name/version must match the values in the chart's `Chart.yaml` file
+- The chart must be listed in the `charts` section of your `.replicated` config
+
+### Values File Location
+
+Preflight template rendering requires a chart's values file. The CLI automatically locates this file using these rules:
+
+1. **Checks for `values.yaml` in the chart root directory** (most common)
+2. **Falls back to `values.yml`** if `values.yaml` doesn't exist
+3. **Returns an error** if neither exists
+
+**Expected Chart Structure:**
+```
+my-chart/
+  ├── Chart.yaml        # Required: defines chart name and version
+  ├── values.yaml       # Required: default values for templates
+  ├── templates/        # Chart templates
+  └── ...
+```
+
+**Note:** Custom values file paths are not currently supported. Values files must be named `values.yaml` or `values.yml` and located in the chart root directory.
