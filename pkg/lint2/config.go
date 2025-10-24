@@ -2,6 +2,7 @@ package lint2
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -88,8 +89,8 @@ func GetPreflightPathsFromConfig(config *tools.Config) ([]string, error) {
 type PreflightWithValues struct {
 	SpecPath     string // Path to the preflight spec file
 	ValuesPath   string // Path to values.yaml (optional - passed to preflight lint if provided)
-	ChartName    string // Deprecated: no longer used
-	ChartVersion string // Deprecated: no longer used
+	ChartName    string // Chart name from Chart.yaml (used to look up HelmChart manifest for builder values)
+	ChartVersion string // Chart version from Chart.yaml (used to look up HelmChart manifest for builder values)
 }
 
 // GetPreflightWithValuesFromConfig extracts preflight paths with associated chart/values information
@@ -115,6 +116,24 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 			result := PreflightWithValues{
 				SpecPath:   specPath,
 				ValuesPath: preflightConfig.ValuesPath, // Optional - can be empty
+			}
+
+			// Extract chart metadata if valuesPath is provided
+			// This is needed to look up the matching HelmChart manifest for builder values
+			if preflightConfig.ValuesPath != "" {
+				// Get the chart directory from the values path
+				// valuesPath is expected to be like "./helm-chart/values.yaml"
+				chartDir := filepath.Dir(preflightConfig.ValuesPath)
+
+				chartMetadata, err := GetChartMetadata(chartDir)
+				if err != nil {
+					// If we can't read Chart.yaml, it's OK - builder values just won't be applied
+					// This allows preflights without associated charts to work
+					// Don't fail the whole operation, just skip this preflight's metadata
+				} else {
+					result.ChartName = chartMetadata.Name
+					result.ChartVersion = chartMetadata.Version
+				}
 			}
 
 			results = append(results, result)

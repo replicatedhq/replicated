@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"gopkg.in/yaml.v3"
 )
 
 // PreflightLintResult represents the JSON output from preflight lint
@@ -34,11 +35,13 @@ type PreflightLintIssue struct {
 
 // LintPreflight executes preflight lint on the given spec path and returns structured results.
 // The preflight CLI tool handles template rendering and validation internally.
-// For v1beta3 specs, we validate that HelmChart manifests exist before linting.
+// For v1beta3 specs, we validate that HelmChart manifests exist and extract builder values.
 func LintPreflight(
 	ctx context.Context,
 	specPath string,
 	valuesPath string,
+	chartName string,
+	chartVersion string,
 	helmChartManifests map[string]*HelmChartManifest,
 	preflightVersion string,
 ) (*LintResult, error) {
@@ -72,9 +75,41 @@ func LintPreflight(
 	// Build command arguments
 	args := []string{"lint", "--format", "json"}
 
-	// Add values file if provided
+	// Add chart values file if provided from config
 	if valuesPath != "" {
 		args = append(args, "--values", valuesPath)
+	}
+
+	// Extract and add builder values if HelmChart manifest exists
+	var builderValuesPath string
+	if chartName != "" && chartVersion != "" {
+		key := fmt.Sprintf("%s:%s", chartName, chartVersion)
+		if helmChart, found := helmChartManifests[key]; found && helmChart.BuilderValues != nil {
+			// Create temp file for builder values
+			builderFile, err := os.CreateTemp("", "replicated-builder-*.yaml")
+			if err != nil {
+				return nil, fmt.Errorf("failed to create temp file for builder values: %w", err)
+			}
+			builderValuesPath = builderFile.Name()
+			defer func() {
+				if err := os.Remove(builderValuesPath); err != nil && !os.IsNotExist(err) {
+					fmt.Fprintf(os.Stderr, "Warning: failed to cleanup builder values temp file %s: %v\n", builderValuesPath, err)
+				}
+			}()
+
+			// Write builder values as YAML
+			builderYAML, err := yaml.Marshal(helmChart.BuilderValues)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal builder values: %w", err)
+			}
+			if _, err := builderFile.Write(builderYAML); err != nil {
+				return nil, fmt.Errorf("failed to write builder values: %w", err)
+			}
+			builderFile.Close()
+
+			// Add builder values to command
+			args = append(args, "--values", builderValuesPath)
+		}
 	}
 
 	args = append(args, specPath)

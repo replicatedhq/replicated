@@ -385,6 +385,8 @@ func (r *runners) lintPreflightSpecs(cmd *cobra.Command, preflights []lint2.Pref
 			cmd.Context(),
 			pf.SpecPath,
 			pf.ValuesPath,
+			pf.ChartName,
+			pf.ChartVersion,
 			helmChartManifests,
 			preflightVersion,
 		)

@@ -6,5 +6,12 @@ spec:
   chart:
     name: sample-app
     chartVersion: 1.0.0
-  # Optional builder values that can be used by v1beta3 preflights
-  builder: {}
+  # Builder values override chart values for v1beta3 preflights
+  builder:
+    testMode: true
+    environment: production
+    replicas: 3
+    database:
+      enabled: true
+      host: db.example.com
+      port: 5432
