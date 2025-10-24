@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -981,6 +982,73 @@ func TestDiscoverChartPaths_HiddenPathFiltering(t *testing.T) {
 	assertPathsEqual(t, paths, want)
 }
 
+func TestDiscoverChartPaths_GitDirectoryAlwaysSkipped(t *testing.T) {
+	// Verify that .git directory is ALWAYS skipped, even with broad patterns
+	// This is the blocker test case from the PR review
+	tmpDir := t.TempDir()
+
+	// Create a chart inside .git/hooks/ (should NEVER be discovered)
+	gitHooksChart := filepath.Join(tmpDir, ".git", "hooks", "test-chart")
+	if err := os.MkdirAll(gitHooksChart, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chartYaml := filepath.Join(gitHooksChart, "Chart.yaml")
+	content := "apiVersion: v2\nname: hook-chart\nversion: 1.0.0\n"
+	if err := os.WriteFile(chartYaml, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a valid chart in a normal directory (should be found)
+	chartsDir := filepath.Join(tmpDir, "charts")
+	validChart := createTestChart(t, chartsDir, "myapp")
+
+	// Test with broad pattern ./**
+	pattern := filepath.Join(tmpDir, "**")
+	paths, err := DiscoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
+	}
+
+	// Should only find the valid chart, NOT the one in .git/
+	want := []string{validChart}
+	assertPathsEqual(t, paths, want)
+
+	// Verify no .git paths in results
+	for _, path := range paths {
+		if strings.Contains(path, ".git") {
+			t.Errorf("Found chart in .git directory which should always be skipped: %s", path)
+		}
+	}
+}
+
+func TestDiscoverChartPaths_ExplicitGitPatternAllowed(t *testing.T) {
+	// Verify that explicitly specifying .git in pattern ALLOWS bypass of hidden filter
+	// This is consistent with gitignore bypass behavior
+	tmpDir := t.TempDir()
+
+	// Create a chart inside .git directory
+	gitChart := filepath.Join(tmpDir, ".git", "test-chart")
+	if err := os.MkdirAll(gitChart, 0755); err != nil {
+		t.Fatal(err)
+	}
+	chartYaml := filepath.Join(gitChart, "Chart.yaml")
+	content := "apiVersion: v2\nname: git-chart\nversion: 1.0.0\n"
+	if err := os.WriteFile(chartYaml, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Explicitly try to discover charts in .git/ - should allow bypass
+	pattern := filepath.Join(tmpDir, ".git", "**")
+	paths, err := DiscoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverChartPaths() error = %v", err)
+	}
+
+	// Should find the chart because pattern explicitly targets .git
+	want := []string{gitChart}
+	assertPathsEqual(t, paths, want)
+}
+
 func TestDiscoverChartPaths_EmptyResult(t *testing.T) {
 	// Pattern matches directory but no Chart.yaml files exist
 	tmpDir := t.TempDir()
@@ -1435,6 +1503,62 @@ spec:
 	assertPathsEqual(t, paths, want)
 }
 
+func TestDiscoverPreflightPaths_HiddenPathsSkipped(t *testing.T) {
+	// Verify that hidden directories are always skipped
+	tmpDir := t.TempDir()
+
+	// Create preflight in .vscode directory (should be skipped)
+	vscodePath := filepath.Join(tmpDir, ".vscode", "preflight.yaml")
+	createTestPreflight(t, vscodePath)
+
+	// Create preflight in .github directory (should be skipped)
+	githubPath := filepath.Join(tmpDir, ".github", "preflight.yaml")
+	createTestPreflight(t, githubPath)
+
+	// Create preflight in normal directory (should be found)
+	specsDir := filepath.Join(tmpDir, "specs")
+	validPath := filepath.Join(specsDir, "preflight.yaml")
+	createTestPreflight(t, validPath)
+
+	// Test with broad pattern
+	pattern := filepath.Join(tmpDir, "**")
+	paths, err := DiscoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
+	}
+
+	// Should only find the valid preflight, not the ones in hidden directories
+	want := []string{validPath}
+	assertPathsEqual(t, paths, want)
+
+	// Verify no hidden paths in results
+	for _, path := range paths {
+		if isHiddenPath(path) {
+			t.Errorf("Found preflight in hidden directory which should be skipped: %s", path)
+		}
+	}
+}
+
+func TestDiscoverPreflightPaths_ExplicitHiddenPatternAllowed(t *testing.T) {
+	// Verify that explicitly specifying hidden directory in pattern ALLOWS bypass
+	tmpDir := t.TempDir()
+
+	// Create preflight in .github directory
+	githubPath := filepath.Join(tmpDir, ".github", "workflows", "preflight.yaml")
+	createTestPreflight(t, githubPath)
+
+	// Explicitly try to discover in .github/ - should allow bypass
+	pattern := filepath.Join(tmpDir, ".github", "**")
+	paths, err := DiscoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverPreflightPaths() error = %v", err)
+	}
+
+	// Should find the preflight because pattern explicitly targets .github
+	want := []string{githubPath}
+	assertPathsEqual(t, paths, want)
+}
+
 // Phase 4 Tests: Support Bundle Discovery - Additional Pattern Tests
 
 func TestDiscoverSupportBundlesFromManifests_TrailingDoublestarPattern(t *testing.T) {
@@ -1547,8 +1671,8 @@ func TestDiscoverSupportBundlesFromManifests_OverlappingPatternsDeduplication(t 
 
 	// Use overlapping patterns that both match the same file
 	patterns := []string{
-		filepath.Join(manifestsDir, "**", "*.yaml"),     // Matches all
-		filepath.Join(manifestsDir, "prod", "*.yaml"),   // Matches prod only
+		filepath.Join(manifestsDir, "**", "*.yaml"),   // Matches all
+		filepath.Join(manifestsDir, "prod", "*.yaml"), // Matches prod only
 	}
 	paths, err := DiscoverSupportBundlesFromManifests(patterns)
 	if err != nil {
@@ -1662,6 +1786,63 @@ func TestDiscoverSupportBundlesFromManifests_NonYamlFilesIgnored(t *testing.T) {
 	}
 
 	want := []string{bundlePath}
+	assertPathsEqual(t, paths, want)
+}
+
+func TestDiscoverSupportBundlePaths_HiddenPathsSkipped(t *testing.T) {
+	// Verify that hidden directories are always skipped
+	tmpDir := t.TempDir()
+
+	// Create support bundle in .git directory (should be skipped)
+	gitPath := filepath.Join(tmpDir, ".git", "support-bundle.yaml")
+	createTestSupportBundle(t, gitPath)
+
+	// Create support bundle in .DS_Store-like hidden file pattern (should be skipped)
+	// Note: Can't create .DS_Store file in test, but can create another hidden file
+	hiddenPath := filepath.Join(tmpDir, ".hidden", "support-bundle.yaml")
+	createTestSupportBundle(t, hiddenPath)
+
+	// Create support bundle in normal directory (should be found)
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	validPath := filepath.Join(manifestsDir, "support-bundle.yaml")
+	createTestSupportBundle(t, validPath)
+
+	// Test with broad pattern
+	pattern := filepath.Join(tmpDir, "**")
+	paths, err := DiscoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v", err)
+	}
+
+	// Should only find the valid bundle, not the ones in hidden directories
+	want := []string{validPath}
+	assertPathsEqual(t, paths, want)
+
+	// Verify no hidden paths in results
+	for _, path := range paths {
+		if isHiddenPath(path) {
+			t.Errorf("Found support bundle in hidden directory which should be skipped: %s", path)
+		}
+	}
+}
+
+func TestDiscoverSupportBundlePaths_ExplicitHiddenPatternAllowed(t *testing.T) {
+	// Verify that explicitly specifying hidden directory in pattern ALLOWS bypass
+	tmpDir := t.TempDir()
+
+	// Create support bundle in .vscode directory
+	vscodePath := filepath.Join(tmpDir, ".vscode", "support-bundle.yaml")
+	createTestSupportBundle(t, vscodePath)
+
+	// Explicitly try to discover in .vscode/ - should allow bypass
+	pattern := filepath.Join(tmpDir, ".vscode", "**")
+	paths, err := DiscoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlePaths() error = %v", err)
+	}
+
+	// Should find the support bundle because pattern explicitly targets .vscode
+	want := []string{vscodePath}
 	assertPathsEqual(t, paths, want)
 }
 
@@ -1822,10 +2003,7 @@ func TestDiscoverChartPaths_EmptyPattern(t *testing.T) {
 		t.Logf("DiscoverChartPaths(\"\") returned %d paths: %v", len(paths), paths)
 	}
 
-	// At minimum, should not crash
-	if paths == nil {
-		paths = []string{}
-	}
+	// At minimum, should not crash (test passes if we get here)
 }
 
 func TestDiscoverChartPaths_LiteralDirectory(t *testing.T) {
@@ -2280,5 +2458,221 @@ metadata:
 				t.Errorf("hasKind() = %v, want %v for content:\n%s", got, tt.want, tt.content)
 			}
 		})
+	}
+}
+
+// Gitignore integration tests
+
+func TestDiscoverChartPaths_RespectsGitignore(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create .git directory
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "vendor/\nnode_modules/\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create charts in different directories
+	chartsDir := filepath.Join(tmpDir, "charts")
+	vendorDir := filepath.Join(tmpDir, "vendor")
+	nodeModulesDir := filepath.Join(tmpDir, "node_modules")
+
+	for _, dir := range []string{chartsDir, vendorDir, nodeModulesDir} {
+		if err := os.MkdirAll(filepath.Join(dir, "mychart"), 0755); err != nil {
+			t.Fatalf("Failed to create directory: %v", err)
+		}
+		chartYaml := filepath.Join(dir, "mychart", "Chart.yaml")
+		if err := os.WriteFile(chartYaml, []byte("name: mychart\nversion: 1.0.0\n"), 0644); err != nil {
+			t.Fatalf("Failed to create Chart.yaml: %v", err)
+		}
+	}
+
+	// Change to tmpDir for discovery
+	oldDir, _ := os.Getwd()
+	defer os.Chdir(oldDir)
+	os.Chdir(tmpDir)
+
+	// Discover charts - should skip vendor/ and node_modules/
+	pattern := "./**"
+	charts, err := DiscoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverChartPaths() failed: %v", err)
+	}
+
+	// Should only find chart in charts/, not vendor/ or node_modules/
+	if len(charts) != 1 {
+		t.Errorf("Expected 1 chart, got %d: %v", len(charts), charts)
+	}
+	if len(charts) > 0 && !strings.Contains(charts[0], "charts") {
+		t.Errorf("Expected chart in charts/ directory, got: %s", charts[0])
+	}
+	for _, chart := range charts {
+		if strings.Contains(chart, "vendor") || strings.Contains(chart, "node_modules") {
+			t.Errorf("Should not discover charts in gitignored directories: %s", chart)
+		}
+	}
+}
+
+func TestDiscoverChartPaths_ExplicitBypass(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create .git directory
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "vendor/\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create chart in vendor directory
+	vendorChartDir := filepath.Join(tmpDir, "vendor", "third-party-chart")
+	if err := os.MkdirAll(vendorChartDir, 0755); err != nil {
+		t.Fatalf("Failed to create vendor chart dir: %v", err)
+	}
+	chartYaml := filepath.Join(vendorChartDir, "Chart.yaml")
+	if err := os.WriteFile(chartYaml, []byte("name: third-party\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatalf("Failed to create Chart.yaml: %v", err)
+	}
+
+	// Change to tmpDir for discovery
+	oldDir, _ := os.Getwd()
+	defer os.Chdir(oldDir)
+	os.Chdir(tmpDir)
+
+	// Explicitly discover in vendor/ - should bypass gitignore
+	pattern := "./vendor/**"
+	charts, err := DiscoverChartPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverChartPaths() failed: %v", err)
+	}
+
+	// Should find the chart because pattern explicitly includes vendor/
+	if len(charts) != 1 {
+		t.Errorf("Expected 1 chart when explicitly specifying vendor/, got %d", len(charts))
+	}
+	if len(charts) > 0 && !strings.Contains(charts[0], "vendor") {
+		t.Errorf("Expected chart in vendor/, got: %s", charts[0])
+	}
+}
+
+func TestDiscoverPreflightPaths_RespectsGitignore(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create .git directory
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "build/\n*.tmp\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create preflight specs
+	specsDir := filepath.Join(tmpDir, "specs")
+	buildDir := filepath.Join(tmpDir, "build")
+
+	for _, dir := range []string{specsDir, buildDir} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatalf("Failed to create directory: %v", err)
+		}
+	}
+
+	preflightContent := "apiVersion: troubleshoot.sh/v1beta2\nkind: Preflight\nmetadata:\n  name: test\n"
+
+	// Create preflight in specs/
+	if err := os.WriteFile(filepath.Join(specsDir, "preflight.yaml"), []byte(preflightContent), 0644); err != nil {
+		t.Fatalf("Failed to create preflight: %v", err)
+	}
+
+	// Create preflight in build/ (gitignored)
+	if err := os.WriteFile(filepath.Join(buildDir, "preflight.yaml"), []byte(preflightContent), 0644); err != nil {
+		t.Fatalf("Failed to create preflight: %v", err)
+	}
+
+	// Create .tmp preflight (gitignored)
+	if err := os.WriteFile(filepath.Join(specsDir, "temp.tmp"), []byte(preflightContent), 0644); err != nil {
+		t.Fatalf("Failed to create temp preflight: %v", err)
+	}
+
+	// Change to tmpDir for discovery
+	oldDir, _ := os.Getwd()
+	defer os.Chdir(oldDir)
+	os.Chdir(tmpDir)
+
+	// Discover preflights
+	pattern := "./**"
+	preflights, err := DiscoverPreflightPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverPreflightPaths() failed: %v", err)
+	}
+
+	// Should only find preflight in specs/, not build/ or *.tmp
+	if len(preflights) != 1 {
+		t.Errorf("Expected 1 preflight, got %d: %v", len(preflights), preflights)
+	}
+	for _, pf := range preflights {
+		if strings.Contains(pf, "build") || strings.Contains(pf, ".tmp") {
+			t.Errorf("Should not discover preflights in gitignored paths: %s", pf)
+		}
+	}
+}
+
+func TestDiscoverSupportBundlePaths_ExplicitBypass(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create .git directory
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "dist/\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create support bundle in dist/
+	distDir := filepath.Join(tmpDir, "dist")
+	if err := os.MkdirAll(distDir, 0755); err != nil {
+		t.Fatalf("Failed to create dist dir: %v", err)
+	}
+
+	sbContent := "apiVersion: troubleshoot.sh/v1beta2\nkind: SupportBundle\nmetadata:\n  name: test\n"
+	if err := os.WriteFile(filepath.Join(distDir, "support-bundle.yaml"), []byte(sbContent), 0644); err != nil {
+		t.Fatalf("Failed to create support bundle: %v", err)
+	}
+
+	// Change to tmpDir for discovery
+	oldDir, _ := os.Getwd()
+	defer os.Chdir(oldDir)
+	os.Chdir(tmpDir)
+
+	// Explicitly discover in dist/ - should bypass gitignore
+	pattern := "./dist/**"
+	bundles, err := DiscoverSupportBundlePaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverSupportBundlePaths() failed: %v", err)
+	}
+
+	// Should find the bundle because pattern explicitly includes dist/
+	if len(bundles) != 1 {
+		t.Errorf("Expected 1 bundle when explicitly specifying dist/, got %d", len(bundles))
+	}
+	if len(bundles) > 0 && !strings.Contains(bundles[0], "dist") {
+		t.Errorf("Expected bundle in dist/, got: %s", bundles[0])
 	}
 }

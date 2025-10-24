@@ -8,6 +8,21 @@ import (
 	"github.com/bmatcuk/doublestar/v4"
 )
 
+// GlobOptions contains options for glob operations.
+type GlobOptions struct {
+	GitignoreChecker *GitignoreChecker
+}
+
+// GlobOption is a functional option for configuring glob operations.
+type GlobOption func(*GlobOptions)
+
+// WithGitignoreChecker returns a GlobOption that enables gitignore filtering.
+func WithGitignoreChecker(checker *GitignoreChecker) GlobOption {
+	return func(opts *GlobOptions) {
+		opts.GitignoreChecker = checker
+	}
+}
+
 // Glob expands glob patterns using doublestar library, which supports:
 // - * : matches any sequence of non-separator characters
 // - ** : matches zero or more directories (recursive)
@@ -19,10 +34,8 @@ import (
 // - Drop-in replacement for filepath.Glob
 // - Recursive ** globbing (unlike stdlib filepath.Glob)
 // - Brace expansion {a,b,c}
-func Glob(pattern string) ([]string, error) {
-	// Defensive check: validate pattern syntax
-	// Note: patterns are validated during config parsing, but we check again here
-	// since Glob is a public function that could be called directly
+// - Optional gitignore filtering via WithGitignoreChecker option
+func Glob(pattern string, opts ...GlobOption) ([]string, error) {
 	if err := ValidateGlobPattern(pattern); err != nil {
 		return nil, fmt.Errorf("invalid glob pattern %s: %w", pattern, err)
 	}
@@ -31,6 +44,18 @@ func Glob(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("expanding glob pattern %s: %w", pattern, err)
 	}
+
+	// Apply options
+	var options GlobOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	// Filter by gitignore if checker provided
+	if options.GitignoreChecker != nil {
+		matches = filterIgnored(matches, options.GitignoreChecker)
+	}
+
 	return matches, nil
 }
 
@@ -38,10 +63,8 @@ func Glob(pattern string) ([]string, error) {
 // Uses WithFilesOnly() option for efficient library-level filtering.
 // This is useful for preflight specs and manifest discovery where only
 // files should be processed.
-func GlobFiles(pattern string) ([]string, error) {
-	// Defensive check: validate pattern syntax
-	// Note: patterns are validated during config parsing, but we check again here
-	// since GlobFiles is a public function that could be called directly
+// Supports optional gitignore filtering via WithGitignoreChecker option.
+func GlobFiles(pattern string, opts ...GlobOption) ([]string, error) {
 	if err := ValidateGlobPattern(pattern); err != nil {
 		return nil, fmt.Errorf("invalid glob pattern %s: %w", pattern, err)
 	}
@@ -50,7 +73,36 @@ func GlobFiles(pattern string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("expanding glob pattern %s: %w", pattern, err)
 	}
+
+	// Apply options
+	var options GlobOptions
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	// Filter by gitignore if checker provided
+	if options.GitignoreChecker != nil {
+		matches = filterIgnored(matches, options.GitignoreChecker)
+	}
+
 	return matches, nil
+}
+
+// filterIgnored filters out paths based on gitignore rules if a checker is provided.
+// Note: Hidden path filtering is handled at the discovery layer to allow explicit bypass.
+func filterIgnored(paths []string, checker *GitignoreChecker) []string {
+	if len(paths) == 0 || checker == nil {
+		return paths
+	}
+
+	filtered := make([]string, 0, len(paths))
+	for _, path := range paths {
+		// Skip gitignored paths if checker is provided
+		if !checker.ShouldIgnore(path) {
+			filtered = append(filtered, path)
+		}
+	}
+	return filtered
 }
 
 // ValidateGlobPattern checks if a pattern is valid doublestar glob syntax and
