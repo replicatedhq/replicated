@@ -3,7 +3,6 @@ package lint2
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -70,15 +69,12 @@ func NewGitignoreChecker(baseDir string) (*GitignoreChecker, error) {
 		allPatterns = append(allPatterns, excludePatterns...)
 	}
 
-	// Load global gitignore
-	globalMatcher, globalPatterns, err := loadGlobalGitignoreMatcher()
-	if err != nil {
-		// Log but don't fail
-		_ = err
-	} else if globalMatcher != nil {
-		matchers = append(matchers, globalMatcher)
-		allPatterns = append(allPatterns, globalPatterns...)
-	}
+	// NOTE: Global gitignore support disabled for security concerns
+	// The loadGlobalGitignoreMatcher() function had critical security issues:
+	//   - Arbitrary command execution (exec.Command with git)
+	//   - Path traversal vulnerabilities (tilde expansion without validation)
+	// Will re-enable in future PR with proper security measures.
+	// See: https://github.com/replicatedhq/replicated/pull/634
 
 	// If no matchers found, return nil (no gitignore checking needed)
 	if len(matchers) == 0 {
@@ -180,45 +176,15 @@ func loadGitInfoExcludeMatcher(repoRoot string) (gitignore.IgnoreMatcher, []stri
 }
 
 // loadGlobalGitignoreMatcher loads matcher from the global gitignore file
+// DISABLED: Security concerns with exec.Command - command execution and path traversal risks
+// TODO: Re-enable with proper security in future PR:
+//   - Parse ~/.gitconfig directly (no command execution)
+//   - Validate paths to prevent traversal attacks
+//   - Add comprehensive input validation
+// See: https://github.com/replicatedhq/replicated/pull/634
 func loadGlobalGitignoreMatcher() (gitignore.IgnoreMatcher, []string, error) {
-	// Get global gitignore path from git config
-	cmd := exec.Command("git", "config", "--global", "core.excludesFile")
-	output, err := cmd.Output()
-	if err != nil {
-		// No global gitignore configured
-		return nil, nil, nil
-	}
-
-	globalPath := strings.TrimSpace(string(output))
-	if globalPath == "" {
-		return nil, nil, nil
-	}
-
-	// Expand ~ to home directory if present
-	if strings.HasPrefix(globalPath, "~/") {
-		home, err := os.UserHomeDir()
-		if err != nil {
-			return nil, nil, err
-		}
-		globalPath = filepath.Join(home, globalPath[2:])
-	}
-
-	if _, err := os.Stat(globalPath); err != nil {
-		// File doesn't exist
-		return nil, nil, nil
-	}
-
-	matcher, err := gitignore.NewGitIgnore(globalPath)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	patterns, err := readGitignoreFile(globalPath)
-	if err != nil {
-		return matcher, nil, nil
-	}
-
-	return matcher, patterns, nil
+	// Disabled for security - will re-enable with proper validation in future PR
+	return nil, nil, nil
 }
 
 // readGitignoreFile reads and parses a gitignore file
