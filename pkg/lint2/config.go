@@ -121,15 +121,23 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 			// Extract chart metadata if valuesPath is provided
 			// This is needed to look up the matching HelmChart manifest for builder values
 			if preflightConfig.ValuesPath != "" {
+				// Check if this is v1beta3 (requires Chart.yaml for builder values)
+				isV1Beta3, err := isPreflightV1Beta3(specPath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to check preflight version for %s: %w", specPath, err)
+				}
+
 				// Get the chart directory from the values path
 				// valuesPath is expected to be like "./helm-chart/values.yaml"
 				chartDir := filepath.Dir(preflightConfig.ValuesPath)
 
 				chartMetadata, err := GetChartMetadata(chartDir)
 				if err != nil {
-					// If we can't read Chart.yaml, it's OK - builder values just won't be applied
-					// This allows preflights without associated charts to work
-					// Don't fail the whole operation, just skip this preflight's metadata
+					if isV1Beta3 {
+						// v1beta3 requires Chart.yaml to get chart name/version for HelmChart manifest lookup
+						return nil, fmt.Errorf("failed to read chart metadata for preflight %s: %w", specPath, err)
+					}
+					// v1beta2 doesn't need Chart.yaml - skip metadata extraction
 				} else {
 					result.ChartName = chartMetadata.Name
 					result.ChartVersion = chartMetadata.Version

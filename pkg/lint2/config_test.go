@@ -1152,12 +1152,13 @@ spec:
 }
 
 func TestGetPreflightWithValuesFromConfig_MissingChartYaml(t *testing.T) {
-	// Test that GetPreflightWithValuesFromConfig errors when valuesPath is set but Chart.yaml is missing
+	// Test that GetPreflightWithValuesFromConfig errors for v1beta3 when Chart.yaml is missing
+	// v1beta3 requires Chart.yaml to extract chart name/version for HelmChart manifest lookup
 	tmpDir := t.TempDir()
 
-	// Create a preflight spec
+	// Create a v1beta3 preflight spec (v1beta3 requires Chart.yaml for builder values)
 	preflightPath := filepath.Join(tmpDir, "preflight.yaml")
-	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta3
 kind: Preflight
 metadata:
   name: test
