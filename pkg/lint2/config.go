@@ -85,13 +85,12 @@ func GetPreflightPathsFromConfig(config *tools.Config) ([]string, error) {
 	return expandPaths(config.Preflights, func(p tools.PreflightConfig) string { return p.Path }, DiscoverPreflightPaths, "preflight specs")
 }
 
-// PreflightWithValues contains preflight spec path and associated chart/values information
-// All fields are required - every preflight must have an associated chart structure
+// PreflightWithValues contains preflight spec path and optional values file
 type PreflightWithValues struct {
 	SpecPath     string // Path to the preflight spec file
-	ValuesPath   string // Path to values.yaml for template rendering (required)
-	ChartName    string // Chart name from Chart.yaml (required)
-	ChartVersion string // Chart version from Chart.yaml (required)
+	ValuesPath   string // Path to values.yaml (optional - passed to preflight lint if provided)
+	ChartName    string // Chart name from Chart.yaml (used to look up HelmChart manifest for builder values)
+	ChartVersion string // Chart version from Chart.yaml (used to look up HelmChart manifest for builder values)
 }
 
 // GetPreflightWithValuesFromConfig extracts preflight paths with associated chart/values information
@@ -114,26 +113,36 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 
 		// Create PreflightWithValues for each discovered spec
 		for _, specPath := range specPaths {
-			// valuesPath is REQUIRED - error if missing
-			if preflightConfig.ValuesPath == "" {
-				return nil, fmt.Errorf("preflight (%s) missing required field 'valuesPath'\n"+
-					"All preflights must specify a valuesPath pointing to chart values.yaml", specPath)
-			}
-
 			result := PreflightWithValues{
 				SpecPath:   specPath,
-				ValuesPath: preflightConfig.ValuesPath,
+				ValuesPath: preflightConfig.ValuesPath, // Optional - can be empty
 			}
 
-			// Extract chart metadata (always required)
-			valuesDir := filepath.Dir(preflightConfig.ValuesPath)
-			chartMetadata, err := GetChartMetadata(valuesDir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read chart metadata for preflight %s: %w", specPath, err)
-			}
+			// Extract chart metadata if valuesPath is provided
+			// This is needed to look up the matching HelmChart manifest for builder values
+			if preflightConfig.ValuesPath != "" {
+				// Check if this is v1beta3 (requires Chart.yaml for builder values)
+				isV1Beta3, err := isPreflightV1Beta3(specPath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to check preflight version for %s: %w", specPath, err)
+				}
 
-			result.ChartName = chartMetadata.Name
-			result.ChartVersion = chartMetadata.Version
+				// Get the chart directory from the values path
+				// valuesPath is expected to be like "./helm-chart/values.yaml"
+				chartDir := filepath.Dir(preflightConfig.ValuesPath)
+
+				chartMetadata, err := GetChartMetadata(chartDir)
+				if err != nil {
+					if isV1Beta3 {
+						// v1beta3 requires Chart.yaml to get chart name/version for HelmChart manifest lookup
+						return nil, fmt.Errorf("failed to read chart metadata for preflight %s: %w", specPath, err)
+					}
+					// v1beta2 doesn't need Chart.yaml - skip metadata extraction
+				} else {
+					result.ChartName = chartMetadata.Name
+					result.ChartVersion = chartMetadata.Version
+				}
+			}
 
 			results = append(results, result)
 		}

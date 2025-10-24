@@ -82,12 +82,19 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 		}
 		result.Preflights = preflights
 
-		// Get HelmChart manifests (required for preflights)
+		// Get HelmChart manifests (used for v1beta3 preflight validation)
+		// HelmChart manifests are optional - only required for v1beta3 preflights
 		helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
 		if err != nil {
-			return nil, err
+			// Only error if it's not a "no manifests found" error
+			if !strings.Contains(err.Error(), "no HelmChart resources found") {
+				return nil, err
+			}
+			// No manifests found is OK - set empty map
+			result.HelmChartManifests = make(map[string]*lint2.HelmChartManifest)
+		} else {
+			result.HelmChartManifests = helmChartManifests
 		}
-		result.HelmChartManifests = helmChartManifests
 	}
 
 	// Discover support bundles

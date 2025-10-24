@@ -23,7 +23,7 @@ spec:
             key: value
     - data:
         name: files/example.json
-        data: '{"foo": {"bar": "baz"}}'
+        data: 'foo: bar'
 
     # Database connection collectors (postgres, mssql, mysql, redis)
     - postgres:
