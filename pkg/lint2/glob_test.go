@@ -554,9 +554,9 @@ func TestGlobFiles_RecursiveMixedContent(t *testing.T) {
 
 func TestValidateGlobPattern(t *testing.T) {
 	tests := []struct {
-		name       string
-		pattern    string
-		wantErr    bool
+		name        string
+		pattern     string
+		wantErr     bool
 		errContains string // Expected substring in error message
 	}{
 		{"valid star pattern", "./charts/*", false, ""},
@@ -665,4 +665,257 @@ func TestGlob_DefensiveValidation_ValidPattern(t *testing.T) {
 
 	// No error means validation passed - we're testing validation, not matching
 	// (doublestar may return nil or empty slice for no matches, both are fine)
+}
+
+// Tests for gitignore functionality
+
+func TestGlob_WithoutGitignoreChecker(t *testing.T) {
+	// Test backward compatibility - no options should work as before
+	tmpDir := t.TempDir()
+
+	// Create some files
+	if err := os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "file2.log"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+
+	pattern := filepath.Join(tmpDir, "*")
+	matches, err := Glob(pattern)
+	if err != nil {
+		t.Fatalf("Glob() failed: %v", err)
+	}
+	if len(matches) != 2 {
+		t.Errorf("Expected 2 matches, got %d", len(matches))
+	}
+}
+
+func TestGlob_WithGitignoreChecker(t *testing.T) {
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git dir: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "*.log\nvendor/\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create files
+	if err := os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "file2.log"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "file3.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+
+	// Create gitignore checker
+	checker, err := NewGitignoreChecker(tmpDir)
+	if err != nil {
+		t.Fatalf("NewGitignoreChecker() failed: %v", err)
+	}
+	if checker == nil {
+		t.Fatal("Expected non-nil checker")
+	}
+
+	// Glob with gitignore filtering
+	pattern := filepath.Join(tmpDir, "*")
+	matches, err := Glob(pattern, WithGitignoreChecker(checker))
+	if err != nil {
+		t.Fatalf("Glob() failed: %v", err)
+	}
+
+	// Should only get .txt files, not .log files (hidden files are also filtered)
+	if len(matches) != 2 {
+		t.Errorf("Expected 2 matches (only .txt files), got %d", len(matches))
+	}
+	for _, match := range matches {
+		if !strings.HasSuffix(match, ".txt") {
+			t.Errorf("Expected only .txt files, got: %s", match)
+		}
+	}
+}
+
+func TestGlob_WithGitignoreChecker_Directory(t *testing.T) {
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git dir: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "node_modules/\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create directories
+	chartsDir := filepath.Join(tmpDir, "charts")
+	nodeModulesDir := filepath.Join(tmpDir, "node_modules")
+	if err := os.Mkdir(chartsDir, 0755); err != nil {
+		t.Fatalf("Failed to create charts dir: %v", err)
+	}
+	if err := os.Mkdir(nodeModulesDir, 0755); err != nil {
+		t.Fatalf("Failed to create node_modules dir: %v", err)
+	}
+
+	// Create files in both directories
+	if err := os.WriteFile(filepath.Join(chartsDir, "Chart.yaml"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create Chart.yaml in charts: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(nodeModulesDir, "Chart.yaml"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create Chart.yaml in node_modules: %v", err)
+	}
+
+	// Create gitignore checker
+	checker, err := NewGitignoreChecker(tmpDir)
+	if err != nil {
+		t.Fatalf("NewGitignoreChecker() failed: %v", err)
+	}
+	if checker == nil {
+		t.Fatal("Expected non-nil checker")
+	}
+
+	// Glob with gitignore filtering
+	pattern := filepath.Join(tmpDir, "**", "Chart.yaml")
+	matches, err := Glob(pattern, WithGitignoreChecker(checker))
+	if err != nil {
+		t.Fatalf("Glob() failed: %v", err)
+	}
+
+	// Should only find Chart.yaml in charts/, not in node_modules/
+	if len(matches) != 1 {
+		t.Errorf("Expected 1 match, got %d", len(matches))
+	}
+	if len(matches) > 0 {
+		if !strings.Contains(matches[0], "charts") {
+			t.Errorf("Expected match in charts/, got: %s", matches[0])
+		}
+		if strings.Contains(matches[0], "node_modules") {
+			t.Errorf("Should not find Chart.yaml in node_modules/, got: %s", matches[0])
+		}
+	}
+}
+
+func TestGlobFiles_WithoutGitignoreChecker(t *testing.T) {
+	// Test backward compatibility
+	tmpDir := t.TempDir()
+
+	// Create some files and a directory
+	if err := os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(tmpDir, "subdir"), 0755); err != nil {
+		t.Fatalf("Failed to create subdir: %v", err)
+	}
+
+	pattern := filepath.Join(tmpDir, "*")
+	matches, err := GlobFiles(pattern)
+	if err != nil {
+		t.Fatalf("GlobFiles() failed: %v", err)
+	}
+
+	// Should only get files, not directories (existing behavior)
+	if len(matches) != 1 {
+		t.Errorf("Expected 1 match (file only), got %d", len(matches))
+	}
+	if len(matches) > 0 && !strings.HasSuffix(matches[0], "file1.txt") {
+		t.Errorf("Expected file1.txt, got: %s", matches[0])
+	}
+}
+
+func TestGlobFiles_WithGitignoreChecker(t *testing.T) {
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git dir: %v", err)
+	}
+
+	// Create .gitignore
+	gitignoreContent := "*.log\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	// Create files
+	if err := os.WriteFile(filepath.Join(tmpDir, "file1.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "file2.log"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "file3.txt"), []byte("data"), 0644); err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+
+	// Create gitignore checker
+	checker, err := NewGitignoreChecker(tmpDir)
+	if err != nil {
+		t.Fatalf("NewGitignoreChecker() failed: %v", err)
+	}
+	if checker == nil {
+		t.Fatal("Expected non-nil checker")
+	}
+
+	// GlobFiles with gitignore filtering
+	pattern := filepath.Join(tmpDir, "*")
+	matches, err := GlobFiles(pattern, WithGitignoreChecker(checker))
+	if err != nil {
+		t.Fatalf("GlobFiles() failed: %v", err)
+	}
+
+	// Should only get non-ignored files (hidden files are also filtered)
+	if len(matches) != 2 {
+		t.Errorf("Expected 2 matches (only .txt files), got %d", len(matches))
+	}
+	for _, match := range matches {
+		if !strings.HasSuffix(match, ".txt") {
+			t.Errorf("Expected only .txt files, got: %s", match)
+		}
+	}
+}
+
+func TestFilterIgnored_NilChecker(t *testing.T) {
+	// filterIgnored should still filter hidden paths even with nil checker
+	paths := []string{"/path/to/file1", "/path/to/file2", "/path/to/.hidden"}
+	filtered := filterIgnored(paths, nil)
+
+	// Should filter out .hidden even with nil checker
+	if len(filtered) != 2 {
+		t.Errorf("Expected 2 paths (hidden filtered), got %d", len(filtered))
+	}
+	for _, path := range filtered {
+		if strings.Contains(path, ".hidden") {
+			t.Errorf("Hidden path should be filtered: %s", path)
+		}
+	}
+}
+
+func TestFilterIgnored_EmptyPaths(t *testing.T) {
+	tmpDir := t.TempDir()
+	gitDir := filepath.Join(tmpDir, ".git")
+	if err := os.Mkdir(gitDir, 0755); err != nil {
+		t.Fatalf("Failed to create .git dir: %v", err)
+	}
+
+	gitignoreContent := "*.log\n"
+	if err := os.WriteFile(filepath.Join(tmpDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		t.Fatalf("Failed to create .gitignore: %v", err)
+	}
+
+	checker, err := NewGitignoreChecker(tmpDir)
+	if err != nil {
+		t.Fatalf("NewGitignoreChecker() failed: %v", err)
+	}
+
+	filtered := filterIgnored([]string{}, checker)
+	if len(filtered) != 0 {
+		t.Errorf("Expected empty result for empty input, got %d items", len(filtered))
+	}
 }
