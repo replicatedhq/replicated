@@ -1,4 +1,4 @@
-apiVersion: troubleshoot.sh/v1beta3
+apiVersion: troubleshoot.sh/v1beta2
 kind: SupportBundle
 metadata:
   name: no-collectors

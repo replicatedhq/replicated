@@ -1,0 +1,10 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: sample-app
+spec:
+  chart:
+    name: sample-app
+    chartVersion: 1.0.0
+  # Optional builder values that can be used by v1beta3 preflights
+  builder: {}

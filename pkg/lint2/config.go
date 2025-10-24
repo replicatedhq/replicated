@@ -2,7 +2,6 @@ package lint2
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -85,13 +84,12 @@ func GetPreflightPathsFromConfig(config *tools.Config) ([]string, error) {
 	return expandPaths(config.Preflights, func(p tools.PreflightConfig) string { return p.Path }, DiscoverPreflightPaths, "preflight specs")
 }
 
-// PreflightWithValues contains preflight spec path and associated chart/values information
-// All fields are required - every preflight must have an associated chart structure
+// PreflightWithValues contains preflight spec path and optional values file
 type PreflightWithValues struct {
 	SpecPath     string // Path to the preflight spec file
-	ValuesPath   string // Path to values.yaml for template rendering (required)
-	ChartName    string // Chart name from Chart.yaml (required)
-	ChartVersion string // Chart version from Chart.yaml (required)
+	ValuesPath   string // Path to values.yaml (optional - passed to preflight lint if provided)
+	ChartName    string // Deprecated: no longer used
+	ChartVersion string // Deprecated: no longer used
 }
 
 // GetPreflightWithValuesFromConfig extracts preflight paths with associated chart/values information
@@ -114,26 +112,10 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 
 		// Create PreflightWithValues for each discovered spec
 		for _, specPath := range specPaths {
-			// valuesPath is REQUIRED - error if missing
-			if preflightConfig.ValuesPath == "" {
-				return nil, fmt.Errorf("preflight (%s) missing required field 'valuesPath'\n"+
-					"All preflights must specify a valuesPath pointing to chart values.yaml", specPath)
-			}
-
 			result := PreflightWithValues{
 				SpecPath:   specPath,
-				ValuesPath: preflightConfig.ValuesPath,
+				ValuesPath: preflightConfig.ValuesPath, // Optional - can be empty
 			}
-
-			// Extract chart metadata (always required)
-			valuesDir := filepath.Dir(preflightConfig.ValuesPath)
-			chartMetadata, err := GetChartMetadata(valuesDir)
-			if err != nil {
-				return nil, fmt.Errorf("failed to read chart metadata for preflight %s: %w", specPath, err)
-			}
-
-			result.ChartName = chartMetadata.Name
-			result.ChartVersion = chartMetadata.Version
 
 			results = append(results, result)
 		}
