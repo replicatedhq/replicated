@@ -88,26 +88,19 @@ func GlobFiles(pattern string, opts ...GlobOption) ([]string, error) {
 	return matches, nil
 }
 
-// filterIgnored filters out paths that should be ignored by gitignore.
-// Also filters out hidden paths (starting with .) to match existing discovery behavior.
+// filterIgnored filters out paths based on gitignore rules if a checker is provided.
+// Note: Hidden path filtering is handled at the discovery layer to allow explicit bypass.
 func filterIgnored(paths []string, checker *GitignoreChecker) []string {
-	if len(paths) == 0 {
+	if len(paths) == 0 || checker == nil {
 		return paths
 	}
 
 	filtered := make([]string, 0, len(paths))
 	for _, path := range paths {
-		// Skip hidden paths (existing behavior from discovery.go)
-		if isHiddenPath(path) {
-			continue
-		}
-
 		// Skip gitignored paths if checker is provided
-		if checker != nil && checker.ShouldIgnore(path) {
-			continue
+		if !checker.ShouldIgnore(path) {
+			filtered = append(filtered, path)
 		}
-
-		filtered = append(filtered, path)
 	}
 	return filtered
 }

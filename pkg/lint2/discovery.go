@@ -56,6 +56,46 @@ func isHiddenPath(path string) bool {
 	return false
 }
 
+// patternTargetsHiddenPath checks if a user pattern explicitly targets a hidden path.
+// Returns true if the pattern starts with or contains a hidden directory component.
+// Examples:
+//   - "./.git/**" -> true (explicitly targets .git)
+//   - "/tmp/test/.git/**" -> true (explicitly targets .git)
+//   - "./.github/workflows/**" -> true (explicitly targets .github)
+//   - "./**" -> false (broad pattern, not targeting hidden)
+//   - "./charts/**" -> false (normal path)
+func patternTargetsHiddenPath(pattern string) bool {
+	// Clean and normalize the pattern
+	cleanPattern := filepath.Clean(pattern)
+	cleanPattern = filepath.ToSlash(cleanPattern)
+
+	// Remove leading "./" for easier parsing (handles relative paths)
+	cleanPattern = strings.TrimPrefix(cleanPattern, "./")
+
+	// Split into parts
+	parts := strings.Split(cleanPattern, "/")
+
+	// Check if any non-wildcard part is a hidden directory
+	for _, part := range parts {
+		// Skip wildcards
+		if part == "*" || part == "**" {
+			continue
+		}
+
+		// Skip empty parts (from double slashes or leading slash)
+		if part == "" {
+			continue
+		}
+
+		// Check if this part is a hidden directory
+		if strings.HasPrefix(part, ".") && part != "." && part != ".." {
+			return true
+		}
+	}
+
+	return false
+}
+
 // isChartDirectory checks if a directory contains a Chart.yaml or Chart.yml file.
 // Returns true if the directory is a valid Helm chart directory.
 func isChartDirectory(dirPath string) (bool, error) {
@@ -226,7 +266,8 @@ func validateExplicitYAMLFile(path, kind, resourceName string) ([]string, error)
 // filterYAMLFilesByKind expands glob patterns and filters to files with matching kind.
 // Silently skips files that can't be read or don't have the target kind.
 // Optionally filters by gitignore if checker is provided.
-func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, gitignoreChecker *GitignoreChecker) ([]string, error) {
+// Optionally skips hidden paths unless skipHidden is false (explicit bypass).
+func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, gitignoreChecker *GitignoreChecker, skipHidden bool) ([]string, error) {
 	var resultPaths []string
 	seenPaths := make(map[string]bool)
 
@@ -244,6 +285,12 @@ func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, giti
 		}
 
 		for _, path := range matches {
+			// Skip hidden paths (.git, .github, .vscode, etc.) by default
+			// But allow bypass if user explicitly specified a hidden path pattern
+			if skipHidden && isHiddenPath(path) {
+				continue
+			}
+
 			// Skip duplicates
 			if seenPaths[path] {
 				continue
@@ -313,6 +360,10 @@ func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
 		checkerToUse = gitignoreChecker
 	}
 
+	// Check if pattern explicitly targets hidden paths
+	// If yes, allow bypass of hidden path filtering (like gitignore bypass)
+	skipHidden := !patternTargetsHiddenPath(pattern)
+
 	// Glob pattern - build search patterns
 	patterns, err := buildYAMLPatterns(pattern)
 	if err != nil {
@@ -320,7 +371,7 @@ func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
 	}
 
 	// Lenient filtering
-	return filterYAMLFilesByKind(patterns, originalPattern, kind, checkerToUse)
+	return filterYAMLFilesByKind(patterns, originalPattern, kind, checkerToUse, skipHidden)
 }
 
 // validateExplicitChartDir validates an explicit directory path for chart discovery.
@@ -354,7 +405,8 @@ func validateExplicitChartDir(path string) ([]string, error) {
 // filterDirsByMarkerFile expands glob patterns to find marker files and returns their parent directories.
 // Silently skips hidden paths and deduplicates results.
 // Optionally filters by gitignore if checker is provided.
-func filterDirsByMarkerFile(patterns []string, originalPattern string, gitignoreChecker *GitignoreChecker) ([]string, error) {
+// Optionally skips hidden paths unless skipHidden is false (explicit bypass).
+func filterDirsByMarkerFile(patterns []string, originalPattern string, gitignoreChecker *GitignoreChecker, skipHidden bool) ([]string, error) {
 	var chartDirs []string
 	seenDirs := make(map[string]bool)
 
@@ -372,6 +424,12 @@ func filterDirsByMarkerFile(patterns []string, originalPattern string, gitignore
 		}
 
 		for _, markerPath := range matches {
+			// Skip hidden paths (.git, .github, .vscode, etc.) by default
+			// But allow bypass if user explicitly specified a hidden path pattern
+			if skipHidden && isHiddenPath(markerPath) {
+				continue
+			}
+
 			chartDir := filepath.Dir(markerPath)
 
 			if seenDirs[chartDir] {
@@ -429,6 +487,10 @@ func discoverDirsByMarkerFile(pattern string, markerFiles []string, resourceName
 		checkerToUse = gitignoreChecker
 	}
 
+	// Check if pattern explicitly targets hidden paths
+	// If yes, allow bypass of hidden path filtering (like gitignore bypass)
+	skipHidden := !patternTargetsHiddenPath(pattern)
+
 	// Build patterns for marker files
 	var patterns []string
 	if strings.HasSuffix(pattern, markerFiles[0]) || (len(markerFiles) > 1 && strings.HasSuffix(pattern, markerFiles[1])) {
@@ -443,7 +505,7 @@ func discoverDirsByMarkerFile(pattern string, markerFiles []string, resourceName
 	}
 
 	// Filter to directories containing marker files
-	return filterDirsByMarkerFile(patterns, originalPattern, checkerToUse)
+	return filterDirsByMarkerFile(patterns, originalPattern, checkerToUse, skipHidden)
 }
 
 // discoverSupportBundlePaths discovers Support Bundle spec files from a glob pattern.

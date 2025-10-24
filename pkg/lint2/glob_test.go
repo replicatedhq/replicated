@@ -731,13 +731,16 @@ func TestGlob_WithGitignoreChecker(t *testing.T) {
 		t.Fatalf("Glob() failed: %v", err)
 	}
 
-	// Should only get .txt files, not .log files (hidden files are also filtered)
-	if len(matches) != 2 {
-		t.Errorf("Expected 2 matches (only .txt files), got %d", len(matches))
+	// Should get .txt files and hidden files (.git, .gitignore), but not .log files
+	// Hidden file filtering now happens at the discovery layer, not glob layer
+	if len(matches) < 2 {
+		t.Errorf("Expected at least 2 matches, got %d", len(matches))
 	}
+
+	// Verify .log files are filtered (gitignored)
 	for _, match := range matches {
-		if !strings.HasSuffix(match, ".txt") {
-			t.Errorf("Expected only .txt files, got: %s", match)
+		if strings.HasSuffix(match, ".log") {
+			t.Errorf("Gitignored .log files should be filtered, got: %s", match)
 		}
 	}
 }
@@ -870,29 +873,42 @@ func TestGlobFiles_WithGitignoreChecker(t *testing.T) {
 		t.Fatalf("GlobFiles() failed: %v", err)
 	}
 
-	// Should only get non-ignored files (hidden files are also filtered)
-	if len(matches) != 2 {
-		t.Errorf("Expected 2 matches (only .txt files), got %d", len(matches))
+	// Should get .txt files and hidden files (.gitignore), but not .log files or directories
+	// Hidden file filtering now happens at the discovery layer
+	if len(matches) < 2 {
+		t.Errorf("Expected at least 2 matches, got %d", len(matches))
 	}
+
+	// Verify .log files are filtered (gitignored)
 	for _, match := range matches {
-		if !strings.HasSuffix(match, ".txt") {
-			t.Errorf("Expected only .txt files, got: %s", match)
+		if strings.HasSuffix(match, ".log") {
+			t.Errorf("Gitignored .log files should be filtered, got: %s", match)
 		}
 	}
 }
 
 func TestFilterIgnored_NilChecker(t *testing.T) {
-	// filterIgnored should still filter hidden paths even with nil checker
+	// filterIgnored with nil checker should return all paths unchanged
+	// Hidden path filtering is now done at the discovery layer
 	paths := []string{"/path/to/file1", "/path/to/file2", "/path/to/.hidden"}
 	filtered := filterIgnored(paths, nil)
 
-	// Should filter out .hidden even with nil checker
-	if len(filtered) != 2 {
-		t.Errorf("Expected 2 paths (hidden filtered), got %d", len(filtered))
+	// Should return all paths unchanged when checker is nil
+	if len(filtered) != 3 {
+		t.Errorf("Expected 3 paths (no filtering), got %d", len(filtered))
 	}
-	for _, path := range filtered {
-		if strings.Contains(path, ".hidden") {
-			t.Errorf("Hidden path should be filtered: %s", path)
+
+	// Verify all paths are returned
+	for _, expectedPath := range paths {
+		found := false
+		for _, filteredPath := range filtered {
+			if filteredPath == expectedPath {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("Expected path not found: %s", expectedPath)
 		}
 	}
 }
