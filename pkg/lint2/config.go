@@ -201,6 +201,96 @@ type PreflightWithValues struct {
 	ChartVersion string // Chart version from Chart.yaml (used to look up HelmChart manifest for builder values)
 }
 
+// resolvePreflightWithChart resolves a single preflight spec with an explicit chart reference.
+// Uses v1beta3 detection to determine strict (error on failures) vs lenient (continue with empty values) behavior.
+//
+// Parameters:
+//   - specPath: path to the preflight spec file
+//   - chartName: explicit chart name reference
+//   - chartVersion: explicit chart version reference
+//   - chartLookup: pre-built name:version lookup map (or nil if chartLookupErr is set)
+//   - chartLookupErr: error from BuildChartLookup (or nil if chartLookup is valid)
+//
+// Returns:
+//   - PreflightWithValues with resolved chart/values information
+//   - error if strict validation fails (v1beta3) or if critical errors occur
+//
+// Behavior:
+//   - v1beta3 specs: errors if chart lookup fails, chart not found, or values file missing (strict)
+//   - v1beta2 specs: continues with empty values if lookups fail (lenient)
+func resolvePreflightWithChart(
+	specPath string,
+	chartName string,
+	chartVersion string,
+	chartLookup map[string]*ChartWithMetadata,
+	chartLookupErr error,
+) (PreflightWithValues, error) {
+	// Check if this is v1beta3 (determines strict vs lenient behavior)
+	isV1Beta3, err := isPreflightV1Beta3(specPath)
+	if err != nil {
+		return PreflightWithValues{}, fmt.Errorf("failed to check preflight version for %s: %w", specPath, err)
+	}
+
+	// Handle chart lookup failure
+	if chartLookupErr != nil {
+		if isV1Beta3 {
+			// v1beta3 requires charts to be configured
+			return PreflightWithValues{}, fmt.Errorf("v1beta3 preflight %s requires charts configuration: %w", specPath, chartLookupErr)
+		}
+		// v1beta2 can continue without charts (lenient)
+		return PreflightWithValues{
+			SpecPath:     specPath,
+			ValuesPath:   "",
+			ChartName:    "",
+			ChartVersion: "",
+		}, nil
+	}
+
+	// Look up chart by name:version
+	key := fmt.Sprintf("%s:%s", chartName, chartVersion)
+	chart, found := chartLookup[key]
+	if !found {
+		if isV1Beta3 {
+			// v1beta3 requires the chart to exist (strict)
+			return PreflightWithValues{}, &ChartNotFoundError{
+				RequestedChart:  key,
+				AvailableCharts: getChartKeys(chartLookup),
+			}
+		}
+		// v1beta2 can continue without the specific chart (lenient)
+		return PreflightWithValues{
+			SpecPath:     specPath,
+			ValuesPath:   "",
+			ChartName:    chartName,
+			ChartVersion: chartVersion,
+		}, nil
+	}
+
+	// Find values file
+	valuesPath, err := findValuesFile(chart.Path)
+	if err != nil {
+		if isV1Beta3 {
+			// v1beta3 requires values file to exist (strict)
+			return PreflightWithValues{}, fmt.Errorf("chart %q: %w\nEnsure the chart directory contains values.yaml or values.yml", key, err)
+		}
+		// v1beta2 can continue without values file (lenient)
+		return PreflightWithValues{
+			SpecPath:     specPath,
+			ValuesPath:   "",
+			ChartName:    chart.Name,
+			ChartVersion: chart.Version,
+		}, nil
+	}
+
+	// Success: all lookups worked
+	return PreflightWithValues{
+		SpecPath:     specPath,
+		ValuesPath:   valuesPath,
+		ChartName:    chart.Name,
+		ChartVersion: chart.Version,
+	}, nil
+}
+
 // GetPreflightWithValuesFromConfig extracts preflight paths with optional chart/values information.
 // If chartName/chartVersion are provided, uses explicit chart references.
 // If not provided, returns empty values and lets the linter decide requirements.
@@ -208,6 +298,12 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 	if len(config.Preflights) == 0 {
 		return nil, fmt.Errorf("no preflights found in .replicated config")
 	}
+
+	// Build chart lookup once (lazy initialization - only when first needed)
+	// This is shared across all preflights to avoid redundant rebuilding
+	var chartLookup map[string]*ChartWithMetadata
+	var chartLookupErr error
+	var chartLookupBuilt bool
 
 	var results []PreflightWithValues
 
@@ -228,76 +324,25 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 				return nil, fmt.Errorf("preflight %s: chartVersion required when chartName is specified", preflightConfig.Path)
 			}
 
-			// Process each discovered spec
+			// Build chart lookup on first use (lazy initialization for performance)
+			if !chartLookupBuilt {
+				chartLookup, chartLookupErr = BuildChartLookup(config)
+				chartLookupBuilt = true
+			}
+
+			// Process each discovered spec using helper function
 			for _, specPath := range specPaths {
-				// Check if v1beta3 (from PR #633)
-				isV1Beta3, err := isPreflightV1Beta3(specPath)
+				result, err := resolvePreflightWithChart(
+					specPath,
+					preflightConfig.ChartName,
+					preflightConfig.ChartVersion,
+					chartLookup,
+					chartLookupErr,
+				)
 				if err != nil {
-					return nil, fmt.Errorf("failed to check preflight version for %s: %w", specPath, err)
+					return nil, err
 				}
-
-				// Build chart lookup (from local branch)
-				chartLookup, err := BuildChartLookup(config)
-				if err != nil {
-					if isV1Beta3 {
-						// v1beta3 requires charts to be configured
-						return nil, fmt.Errorf("v1beta3 preflight %s requires charts configuration: %w", specPath, err)
-					}
-					// v1beta2 can continue without charts
-					results = append(results, PreflightWithValues{
-						SpecPath:     specPath,
-						ValuesPath:   "",
-						ChartName:    "",
-						ChartVersion: "",
-					})
-					continue
-				}
-
-				// Look up chart by name:version (from local branch)
-				key := fmt.Sprintf("%s:%s", preflightConfig.ChartName, preflightConfig.ChartVersion)
-				chart, found := chartLookup[key]
-				if !found {
-					if isV1Beta3 {
-						// v1beta3 requires the chart to exist
-						return nil, &ChartNotFoundError{
-							RequestedChart:  key,
-							AvailableCharts: getChartKeys(chartLookup),
-						}
-					}
-					// v1beta2 can continue without the specific chart
-					results = append(results, PreflightWithValues{
-						SpecPath:     specPath,
-						ValuesPath:   "",
-						ChartName:    preflightConfig.ChartName,
-						ChartVersion: preflightConfig.ChartVersion,
-					})
-					continue
-				}
-
-				// Find values file (from local branch)
-				valuesPath, err := findValuesFile(chart.Path)
-				if err != nil {
-					if isV1Beta3 {
-						// v1beta3 requires values file to exist
-						return nil, fmt.Errorf("chart %q: %w\nEnsure the chart directory contains values.yaml or values.yml", key, err)
-					}
-					// v1beta2 can continue without values file
-					results = append(results, PreflightWithValues{
-						SpecPath:     specPath,
-						ValuesPath:   "",
-						ChartName:    chart.Name,
-						ChartVersion: chart.Version,
-					})
-					continue
-				}
-
-				// Success: all lookups worked
-				results = append(results, PreflightWithValues{
-					SpecPath:     specPath,
-					ValuesPath:   valuesPath,
-					ChartName:    chart.Name,
-					ChartVersion: chart.Version,
-				})
+				results = append(results, result)
 			}
 		} else {
 			// BRANCH 2: No chart reference provided (linter decides)
