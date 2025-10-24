@@ -1034,8 +1034,8 @@ repl-lint:
 		if err == nil {
 			t.Error("ParseConfigFile() expected error for empty manifest path, got nil")
 		}
-		if !strings.Contains(err.Error(), "manifest[0]: path is required") {
-			t.Errorf("Expected 'manifest[0]: path is required' error, got: %v", err)
+		if !strings.Contains(err.Error(), "manifest[0]: path cannot be empty string") {
+			t.Errorf("Expected 'manifest[0]: path cannot be empty string' error, got: %v", err)
 		}
 	})
 
