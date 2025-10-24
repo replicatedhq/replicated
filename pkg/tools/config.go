@@ -312,11 +312,13 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		if preflight.Path == "" {
 			return fmt.Errorf("preflight[%d]: path is required", i)
 		}
-		if preflight.ChartName == "" {
-			return fmt.Errorf("preflight[%d]: chartName is required", i)
+
+		// chartName and chartVersion are optional, but must be provided together
+		if preflight.ChartName != "" && preflight.ChartVersion == "" {
+			return fmt.Errorf("preflight[%d]: chartVersion is required when chartName is specified", i)
 		}
-		if preflight.ChartVersion == "" {
-			return fmt.Errorf("preflight[%d]: chartVersion is required", i)
+		if preflight.ChartVersion != "" && preflight.ChartName == "" {
+			return fmt.Errorf("preflight[%d]: chartName is required when chartVersion is specified", i)
 		}
 	}
 

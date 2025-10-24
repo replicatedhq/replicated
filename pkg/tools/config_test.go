@@ -1448,3 +1448,24 @@ func TestFindAndParseConfigWithMinimalConfig(t *testing.T) {
 		t.Errorf("Expected SupportBundle to default to 'latest', got '%s' (exists: %v)", v, ok)
 	}
 }
+
+// TestValidateConfig_PreflightWithoutChart tests that preflights without chart references are valid
+func TestValidateConfig_PreflightWithoutChart(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, ".replicated")
+
+	// Config with preflight but NO chart reference (Branch 2: linter decides)
+	configData := []byte(`preflights:
+  - path: "./preflight.yaml"
+repl-lint:
+`)
+	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+		t.Fatalf("writing test config: %v", err)
+	}
+
+	parser := NewConfigParser()
+	_, err := parser.ParseConfigFile(configPath)
+	if err != nil {
+		t.Errorf("ParseConfigFile() unexpected error for preflight without chart reference: %v", err)
+	}
+}

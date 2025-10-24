@@ -21,11 +21,11 @@ type ChartConfig struct {
 }
 
 // PreflightConfig represents a preflight entry in the config
-// Path, ChartName, and ChartVersion are all required for preflight specs
+// Path is required. ChartName and ChartVersion are optional but must be provided together.
 type PreflightConfig struct {
 	Path         string `yaml:"path"`
-	ChartName    string `yaml:"chartName"`    // Required: name of chart to use for template rendering
-	ChartVersion string `yaml:"chartVersion"` // Required: version of chart to use
+	ChartName    string `yaml:"chartName,omitempty"`    // Optional: explicit chart reference (must provide chartVersion if set)
+	ChartVersion string `yaml:"chartVersion,omitempty"` // Optional: explicit chart version (must provide chartName if set)
 }
 
 // ReplLintConfig is the lint configuration section
