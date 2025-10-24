@@ -58,9 +58,9 @@ func (c LinterConfig) IsEnabled() bool {
 // Default tool versions - kept for backward compatibility in tests
 // In production, "latest" is used to fetch the most recent stable version from GitHub
 const (
-	DefaultHelmVersion          = "3.14.4"  // Deprecated: Use "latest" instead
-	DefaultPreflightVersion     = "0.123.9" // Deprecated: Use "latest" instead
-	DefaultSupportBundleVersion = "0.123.9" // Deprecated: Use "latest" instead
+	DefaultHelmVersion          = "3.14.4" // Deprecated: Use "latest" instead
+	DefaultPreflightVersion     = "latest"
+	DefaultSupportBundleVersion = "latest"
 )
 
 // Supported tool names

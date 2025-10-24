@@ -236,9 +236,9 @@ func TestLintPreflight_Integration(t *testing.T) {
 			t.Fatal("Expected error for missing HelmChart manifest, got nil")
 		}
 
-		// Error should mention missing HelmChart
-		if !contains(err.Error(), "no HelmChart manifest found") {
-			t.Errorf("Error should mention missing HelmChart, got: %v", err)
+		// Error should mention v1beta3 requires HelmChart manifests
+		if !contains(err.Error(), "v1beta3 preflight spec requires HelmChart manifests") {
+			t.Errorf("Error should mention v1beta3 requires HelmChart manifests, got: %v", err)
 		}
 	})
 
