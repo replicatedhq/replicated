@@ -81,20 +81,18 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 			return nil, err
 		}
 		result.Preflights = preflights
+	}
 
-		// Get HelmChart manifests (used for v1beta3 preflight validation)
-		// HelmChart manifests are optional - only required for v1beta3 preflights
+	// Discover HelmChart manifests ONCE (used by preflight rendering, support bundle analysis, image extraction, validation)
+	if len(config.Manifests) > 0 {
 		helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
 		if err != nil {
-			// Only error if it's not a "no manifests found" error
-			if !strings.Contains(err.Error(), "no HelmChart resources found") {
-				return nil, err
-			}
-			// No manifests found is OK - set empty map
-			result.HelmChartManifests = make(map[string]*lint2.HelmChartManifest)
-		} else {
-			result.HelmChartManifests = helmChartManifests
+			return nil, fmt.Errorf("failed to discover HelmChart manifests: %w", err)
 		}
+		result.HelmChartManifests = helmChartManifests
+	} else {
+		// No manifests configured - return empty map (validation will check if needed)
+		result.HelmChartManifests = make(map[string]*lint2.HelmChartManifest)
 	}
 
 	// Discover support bundles
@@ -104,29 +102,10 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 			return nil, err
 		}
 		result.SupportBundles = sbPaths
-
-		// Get HelmChart manifests if not already extracted
-		if result.HelmChartManifests == nil {
-			helmChartManifests, err := lint2.DiscoverHelmChartManifests(config.Manifests)
-			if err != nil {
-				// Support bundles don't require HelmChart manifests - only error if manifests are explicitly configured
-				// but fail to parse. If no HelmChart manifests exist, that's fine (return empty map).
-				if len(config.Manifests) > 0 {
-					// Check if error is "no HelmChart resources found" - that's acceptable
-					if err != nil && !strings.Contains(err.Error(), "no HelmChart resources found") {
-						return nil, err
-					}
-				}
-				// Set empty map so we don't try to extract again
-				result.HelmChartManifests = make(map[string]*lint2.HelmChartManifest)
-			} else {
-				result.HelmChartManifests = helmChartManifests
-			}
-		}
 	}
 
-	// Extract charts with metadata (ONLY for verbose mode)
-	if verbose && len(config.Charts) > 0 {
+	// Extract charts with metadata (needed for validation and image extraction)
+	if len(config.Charts) > 0 {
 		chartsWithMetadata, err := lint2.GetChartsWithMetadataFromConfig(config)
 		if err != nil {
 			return nil, err
@@ -197,11 +176,19 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		// Convert to manifests glob patterns for compatibility
 		config.Manifests = append(config.Manifests, sbPaths...)
 
+		// Auto-discover HelmChart manifests (needed for chart validation)
+		helmChartPaths, err := lint2.DiscoverHelmChartPaths(filepath.Join(".", "**"))
+		if err != nil {
+			return errors.Wrap(err, "failed to discover HelmChart manifests")
+		}
+		config.Manifests = append(config.Manifests, helmChartPaths...)
+
 		// Print what was discovered
 		fmt.Fprintf(r.w, "Discovered resources:\n")
 		fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
 		fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
-		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n\n", len(sbPaths))
+		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n", len(sbPaths))
+		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
 		r.w.Flush()
 
 		// If nothing was found, exit early
@@ -229,6 +216,37 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract paths and metadata")
+	}
+
+	// Validate chart-to-HelmChart mapping if charts are configured
+	if len(config.Charts) > 0 {
+		// Charts configured but no manifests - error early
+		if len(config.Manifests) == 0 {
+			return errors.New("charts are configured but no manifests paths provided\n\n" +
+				"HelmChart manifests (kind: HelmChart) are required for each chart.\n" +
+				"Add manifest paths to your .replicated config:\n\n" +
+				"manifests:\n" +
+				"  - \"./manifests/**/*.yaml\"")
+		}
+
+		// Validate mapping using already-extracted metadata
+		validationResult, err := lint2.ValidateChartToHelmChartMapping(
+			extracted.ChartsWithMetadata, // Already populated in extraction
+			extracted.HelmChartManifests,
+		)
+		if err != nil {
+			// Hard error - stop before linting
+			return errors.Wrap(err, "chart validation failed")
+		}
+
+		// Display warnings (orphaned HelmChart manifests)
+		if r.outputFormat == "table" && len(validationResult.Warnings) > 0 {
+			for _, warning := range validationResult.Warnings {
+				fmt.Fprintf(r.w, "Warning: %s\n", warning)
+			}
+			fmt.Fprintln(r.w)
+			r.w.Flush()
+		}
 	}
 
 	// Extract and display images if verbose mode is enabled

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: current-app
+version: 1.0.0
+description: Current active chart

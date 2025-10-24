@@ -322,10 +322,10 @@ func (p *ConfigParser) validateConfig(config *Config) error {
 		}
 	}
 
-	// Validate manifest paths
+	// Validate manifest paths (array can be empty, but elements cannot be empty strings)
 	for i, manifest := range config.Manifests {
 		if manifest == "" {
-			return fmt.Errorf("manifest[%d]: path is required", i)
+			return fmt.Errorf("manifest[%d]: path cannot be empty string", i)
 		}
 	}
 

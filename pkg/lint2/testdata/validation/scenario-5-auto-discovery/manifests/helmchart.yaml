@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: auto-discovered-app
+spec:
+  chart:
+    name: auto-discovered-app
+    chartVersion: 1.0.0
+  builder: {}

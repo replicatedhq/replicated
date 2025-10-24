@@ -1,0 +1,3 @@
+charts:
+  - path: ./chart
+# manifests section missing - should error

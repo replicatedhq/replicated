@@ -1,0 +1,4 @@
+apiVersion: v2
+name: success-app
+version: 1.0.0
+description: Test chart for validation success scenario

@@ -193,3 +193,107 @@ my-chart/
 ```
 
 **Note:** Custom values file paths are not currently supported. Values files must be named `values.yaml` or `values.yml` and located in the chart root directory.
+
+## HelmChart Manifest Requirements
+
+Every Helm chart configured in your `.replicated` file requires a corresponding `HelmChart` manifest (custom resource with `kind: HelmChart`). This manifest is essential for:
+
+- **Preflight template rendering**: Charts are rendered with builder values before running preflight checks
+- **Image extraction**: Images are extracted from chart templates for air gap bundle creation
+- **Air gap bundle building**: Charts are packaged with specific values for offline installations
+
+### Configuration
+
+When charts are configured, you must also specify where to find their HelmChart manifests:
+
+```yaml
+charts:
+  - path: "./charts/my-app"
+  - path: "./charts/my-api"
+
+manifests:
+  - "./manifests/**/*.yaml"    # HelmChart manifests must be in these paths
+```
+
+**Important:** The `manifests` section is required whenever `charts` are configured. If you configure charts but omit manifests, linting will fail with a clear error message.
+
+### HelmChart Manifest Structure
+
+Each HelmChart manifest must specify the chart name and version that match the corresponding chart's `Chart.yaml`:
+
+```yaml
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-app
+spec:
+  chart:
+    name: my-app           # Must match Chart.yaml name
+    chartVersion: 1.0.0    # Must match Chart.yaml version
+  builder: {}               # Values for rendering (can be empty)
+```
+
+The `spec.chart.name` and `spec.chart.chartVersion` fields must exactly match the `name` and `version` in your Helm chart's `Chart.yaml` file.
+
+### Validation Behavior
+
+The linter validates chart-to-HelmChart mapping before running other checks:
+
+- **✅ Success**: All charts have matching HelmChart manifests
+- **❌ Error**: One or more charts are missing HelmChart manifests (batch reports all missing)
+- **⚠️ Warning**: HelmChart manifest exists but no corresponding chart is configured (orphaned manifest)
+
+#### Error Example
+
+```
+Error: chart validation failed: Chart validation failed - 2 charts missing HelmChart manifests:
+  - ./charts/frontend (frontend:1.0.0)
+  - ./charts/database (database:1.5.0)
+
+Each Helm chart requires a corresponding HelmChart manifest (kind: HelmChart).
+Ensure the manifests are in paths specified in the 'manifests' section of .replicated config.
+```
+
+#### Warning Example
+
+```
+Warning: HelmChart manifest at "./manifests/old-app.yaml" (old-app:1.0.0) has no corresponding chart configured
+```
+
+### Auto-Discovery
+
+When no `.replicated` config file exists, the linter automatically discovers all resources including:
+- Helm charts (by finding `Chart.yaml` files)
+- HelmChart manifests (by finding `kind: HelmChart` in YAML files)
+- Preflights and Support Bundles
+
+Auto-discovery validates that all discovered charts have corresponding HelmChart manifests.
+
+### Troubleshooting
+
+**Problem:** "charts are configured but no manifests paths provided"
+
+**Solution:** Add a `manifests` section to your `.replicated` config:
+```yaml
+manifests:
+  - "./manifests/**/*.yaml"
+```
+
+**Problem:** "Missing HelmChart manifest for chart"
+
+**Solution:** Create a HelmChart manifest with matching name and version:
+```yaml
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: <your-chart-name>
+spec:
+  chart:
+    name: <your-chart-name>
+    chartVersion: <your-chart-version>
+  builder: {}
+```
+
+**Problem:** Warning about orphaned HelmChart manifest
+
+**Solution:** Either add the corresponding chart to your configuration or remove the unused HelmChart manifest. Warnings are informational and won't cause linting to fail.

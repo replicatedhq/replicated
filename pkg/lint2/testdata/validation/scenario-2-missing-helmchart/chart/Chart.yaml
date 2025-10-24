@@ -1,0 +1,4 @@
+apiVersion: v2
+name: missing-manifest-app
+version: 2.0.0
+description: Test chart with no HelmChart manifest

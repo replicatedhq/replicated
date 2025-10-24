@@ -784,3 +784,293 @@ func isValidSemVer(version string) bool {
 
 	return true
 }
+
+// TestLint_ChartValidationError tests that lint fails when a chart is missing its HelmChart manifest
+func TestLint_ChartValidationError(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-app
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create empty manifests directory (no HelmChart manifest)
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create config with chart but no matching HelmChart manifest
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+manifests:
+  - ` + manifestsDir + `/*.yaml
+repl-lint:
+  linters:
+    helm:
+      disabled: true
+    preflight:
+      disabled: true
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command - should fail
+	err = r.runLint(cmd, []string{})
+	if err == nil {
+		t.Fatal("expected validation error, got nil")
+	}
+
+	// Error should mention the missing HelmChart manifest
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "chart validation failed") {
+		t.Errorf("error should mention 'chart validation failed': %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "test-app") {
+		t.Errorf("error should contain chart name 'test-app': %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "1.0.0") {
+		t.Errorf("error should contain version '1.0.0': %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "HelmChart manifest") {
+		t.Errorf("error should mention HelmChart manifest: %s", errMsg)
+	}
+}
+
+// TestLint_ChartValidationWarning tests that lint succeeds but shows warning for orphaned HelmChart manifest
+func TestLint_ChartValidationWarning(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: current-app
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create manifests directory with matching HelmChart + orphaned one
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Matching HelmChart manifest
+	currentHelmChart := filepath.Join(manifestsDir, "current-app.yaml")
+	currentContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: current-app
+spec:
+  chart:
+    name: current-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(currentHelmChart, []byte(currentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Orphaned HelmChart manifest
+	oldHelmChart := filepath.Join(manifestsDir, "old-app.yaml")
+	oldContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: old-app
+spec:
+  chart:
+    name: old-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(oldHelmChart, []byte(oldContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create config
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+manifests:
+  - ` + manifestsDir + `/*.yaml
+repl-lint:
+  linters:
+    helm:
+      disabled: true
+    preflight:
+      disabled: true
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command - should succeed
+	err = r.runLint(cmd, []string{})
+	// Note: err might be non-nil due to disabled linters not running
+	// We care about the output showing the warning
+
+	w.Flush()
+	output := buf.String()
+
+	// Output should contain warning about orphaned manifest
+	if !strings.Contains(output, "Warning") {
+		t.Error("expected warning message in output")
+	}
+	if !strings.Contains(output, "old-app") {
+		t.Errorf("warning should mention orphaned chart 'old-app': %s", output)
+	}
+	if !strings.Contains(output, "no corresponding chart") {
+		t.Errorf("warning should explain the issue: %s", output)
+	}
+}
+
+// TestLint_NoManifestsConfig tests error when charts configured but manifests section missing
+func TestLint_NoManifestsConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "test-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-app
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create config WITHOUT manifests section
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chartDir + `
+repl-lint:
+  linters:
+    helm:
+      disabled: true
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command - should fail early
+	err = r.runLint(cmd, []string{})
+	if err == nil {
+		t.Fatal("expected error when charts configured but no manifests, got nil")
+	}
+
+	// Error should explain the problem clearly
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "charts are configured") {
+		t.Errorf("error should mention charts are configured: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "no manifests") {
+		t.Errorf("error should mention missing manifests: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "HelmChart manifest") {
+		t.Errorf("error should mention HelmChart manifest requirement: %s", errMsg)
+	}
+	if !strings.Contains(errMsg, ".replicated") || !strings.Contains(errMsg, "manifests:") {
+		t.Errorf("error should provide actionable guidance: %s", errMsg)
+	}
+}

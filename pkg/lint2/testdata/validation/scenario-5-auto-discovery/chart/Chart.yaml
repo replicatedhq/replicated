@@ -1,0 +1,4 @@
+apiVersion: v2
+name: auto-discovered-app
+version: 1.0.0
+description: Chart for auto-discovery testing
