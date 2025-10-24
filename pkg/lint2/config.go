@@ -193,6 +193,20 @@ func GetPreflightPathsFromConfig(config *tools.Config) ([]string, error) {
 	return expandPaths(config.Preflights, func(p tools.PreflightConfig) string { return p.Path }, DiscoverPreflightPaths, "preflight specs")
 }
 
+// discoverPreflightSpecs discovers and validates preflight spec paths from a path pattern.
+// Wraps DiscoverPreflightPaths with validation that at least one spec was found.
+// This helper eliminates duplication in GetPreflightWithValuesFromConfig.
+func discoverPreflightSpecs(path string) ([]string, error) {
+	specs, err := DiscoverPreflightPaths(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to discover preflights from %s: %w", path, err)
+	}
+	if len(specs) == 0 {
+		return nil, fmt.Errorf("no preflight specs found matching: %s", path)
+	}
+	return specs, nil
+}
+
 // PreflightWithValues contains preflight spec path and optional values file
 type PreflightWithValues struct {
 	SpecPath     string // Path to the preflight spec file
@@ -299,22 +313,17 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 		return nil, fmt.Errorf("no preflights found in .replicated config")
 	}
 
-	// Build chart lookup once (lazy initialization - only when first needed)
-	// This is shared across all preflights to avoid redundant rebuilding
-	var chartLookup map[string]*ChartWithMetadata
-	var chartLookupErr error
-	var chartLookupBuilt bool
+	// Build chart lookup upfront (simpler than lazy init)
+	// Helper function handles chartLookupErr appropriately based on v1beta3 vs v1beta2
+	chartLookup, chartLookupErr := BuildChartLookup(config)
 
 	var results []PreflightWithValues
 
 	for _, preflightConfig := range config.Preflights {
 		// Discover preflight spec paths (handles globs)
-		specPaths, err := DiscoverPreflightPaths(preflightConfig.Path)
+		specPaths, err := discoverPreflightSpecs(preflightConfig.Path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to discover preflights from %s: %w", preflightConfig.Path, err)
-		}
-		if len(specPaths) == 0 {
-			return nil, fmt.Errorf("no preflight specs found matching: %s", preflightConfig.Path)
+			return nil, err
 		}
 
 		// BRANCH 1: Chart reference provided (explicit reference pattern)
@@ -322,12 +331,6 @@ func GetPreflightWithValuesFromConfig(config *tools.Config) ([]PreflightWithValu
 			// Validate chartVersion also provided
 			if preflightConfig.ChartVersion == "" {
 				return nil, fmt.Errorf("preflight %s: chartVersion required when chartName is specified", preflightConfig.Path)
-			}
-
-			// Build chart lookup on first use (lazy initialization for performance)
-			if !chartLookupBuilt {
-				chartLookup, chartLookupErr = BuildChartLookup(config)
-				chartLookupBuilt = true
 			}
 
 			// Process each discovered spec using helper function
