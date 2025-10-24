@@ -63,8 +63,8 @@ func (e *DuplicateHelmChartError) Error() string {
 //   - Hidden directories (.git, .github, etc.)
 func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartManifest, error) {
 	if len(manifestGlobs) == 0 {
-		// Error when no manifest patterns provided - caller needs at least one pattern to search
-		return nil, fmt.Errorf("no manifests configured - cannot discover HelmChart resources")
+		// Return empty map - validation layer will handle this
+		return make(map[string]*HelmChartManifest), nil
 	}
 
 	helmCharts := make(map[string]*HelmChartManifest)
@@ -121,12 +121,10 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 		}
 	}
 
-	// Fail-fast if no HelmCharts found
-	// Both preflight linting and image extraction require HelmCharts when manifests are configured
+	// Return empty map if no HelmCharts found - validation layer will check if charts need HelmCharts
+	// Discovery is lenient - validation happens later in the flow
 	if len(helmCharts) == 0 {
-		return nil, fmt.Errorf("no HelmChart resources found in manifests\n"+
-			"At least one HelmChart manifest is required when manifests are configured.\n"+
-			"Checked patterns: %v", manifestGlobs)
+		return make(map[string]*HelmChartManifest), nil
 	}
 
 	return helmCharts, nil

@@ -7,13 +7,16 @@ import (
 )
 
 func TestDiscoverHelmChartManifests(t *testing.T) {
-	t.Run("empty manifests list returns error", func(t *testing.T) {
-		_, err := DiscoverHelmChartManifests([]string{})
-		if err == nil {
-			t.Fatal("expected error for empty manifests list, got nil")
+	t.Run("empty manifests list returns empty map", func(t *testing.T) {
+		manifests, err := DiscoverHelmChartManifests([]string{})
+		if err != nil {
+			t.Fatalf("unexpected error for empty manifests list: %v", err)
 		}
-		if err.Error() != "no manifests configured - cannot discover HelmChart resources" {
-			t.Errorf("unexpected error message: %v", err)
+		if manifests == nil {
+			t.Fatal("expected non-nil map, got nil")
+		}
+		if len(manifests) != 0 {
+			t.Errorf("expected empty map, got %d manifests", len(manifests))
 		}
 	})
 
@@ -314,17 +317,13 @@ spec:
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
 
-		// With fail-fast validation, we expect an error when no valid HelmCharts found
-		if err == nil {
-			t.Fatal("expected error when all HelmCharts are invalid (fail-fast), got nil")
+		// Discovery is now lenient - returns empty map when no valid HelmCharts found
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if !contains(err.Error(), "no HelmChart resources found") {
-			t.Errorf("expected error about no HelmCharts found, got: %v", err)
-		}
-
-		if manifests != nil {
-			t.Errorf("expected nil manifests on error, got %d manifests", len(manifests))
+		if len(manifests) != 0 {
+			t.Errorf("expected empty map (invalid HelmCharts skipped), got %d manifests", len(manifests))
 		}
 	})
 
@@ -345,17 +344,13 @@ spec:
 		pattern := filepath.Join(tmpDir, "*.yaml")
 		manifests, err := DiscoverHelmChartManifests([]string{pattern})
 
-		// With fail-fast validation, we expect an error when no valid HelmCharts found
-		if err == nil {
-			t.Fatal("expected error when all files are invalid (fail-fast), got nil")
+		// Discovery is now lenient - returns empty map when no valid HelmCharts found
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if !contains(err.Error(), "no HelmChart resources found") {
-			t.Errorf("expected error about no HelmCharts found, got: %v", err)
-		}
-
-		if manifests != nil {
-			t.Errorf("expected nil manifests on error, got %d manifests", len(manifests))
+		if len(manifests) != 0 {
+			t.Errorf("expected empty map (invalid YAML skipped), got %d manifests", len(manifests))
 		}
 	})
 

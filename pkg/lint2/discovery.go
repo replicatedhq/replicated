@@ -146,6 +146,18 @@ func DiscoverPreflightPaths(pattern string) ([]string, error) {
 	return discoverYAMLsByKind(pattern, "Preflight", "preflight spec")
 }
 
+// DiscoverHelmChartPaths discovers HelmChart manifest files from a glob pattern.
+// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
+//
+// Supports patterns like:
+//   - "./manifests/**"           (finds all HelmChart manifests recursively)
+//   - "./manifests/**/*.yaml"    (explicit YAML extension)
+//   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
+//   - "./helmchart.yaml"         (explicit file path - validated strictly)
+func DiscoverHelmChartPaths(pattern string) ([]string, error) {
+	return discoverYAMLsByKind(pattern, "HelmChart", "HelmChart manifest")
+}
+
 // (duplicate isPreflightSpec removed)
 // (duplicate isSupportBundleSpec removed)
 
