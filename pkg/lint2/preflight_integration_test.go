@@ -748,30 +748,26 @@ func TestLintPreflight_Integration(t *testing.T) {
 	})
 
 	t.Run("manifests without HelmChart kind", func(t *testing.T) {
-		// This test verifies the fail-fast error path when manifests are configured but don't contain any kind: HelmChart.
+		// This test verifies the lenient discovery behavior when manifests are configured but don't contain any kind: HelmChart.
 		// Scenario: User has Deployment, Service, ConfigMap manifests, but forgot the HelmChart custom resource.
-		// Expected: DiscoverHelmChartManifests() fails immediately with helpful error (fail-fast behavior)
+		// Expected: DiscoverHelmChartManifests() returns empty map (lenient discovery)
+		// Validation: Error happens at validation layer (in lint command), not discovery layer
 
 		// Manifests directory contains Deployment, Service, ConfigMap - but NO HelmChart
-		_, err := DiscoverHelmChartManifests([]string{"testdata/preflights/no-helmchart-test/manifests/*.yaml"})
+		helmCharts, err := DiscoverHelmChartManifests([]string{"testdata/preflights/no-helmchart-test/manifests/*.yaml"})
 
-		// Should fail-fast during discovery (not delay error until linting)
-		if err == nil {
-			t.Fatal("Expected error when no HelmChart found in manifests (fail-fast), got nil")
+		// Discovery is lenient - returns empty map instead of error
+		if err != nil {
+			t.Fatalf("DiscoverHelmChartManifests should not error when no HelmCharts found: %v", err)
 		}
 
-		// Verify error message is helpful
-		expectedPhrases := []string{
-			"no HelmChart resources found",
-			"At least one HelmChart manifest is required",
-		}
-		for _, phrase := range expectedPhrases {
-			if !contains(err.Error(), phrase) {
-				t.Errorf("Error message should contain %q, got: %v", phrase, err)
-			}
+		// Should return empty map (lenient discovery)
+		if len(helmCharts) != 0 {
+			t.Errorf("Expected empty map when no HelmCharts in manifests, got %d", len(helmCharts))
 		}
 
-		t.Logf("✓ Fail-fast error when manifests configured but no HelmChart found: %v", err)
+		t.Logf("✓ Discovery is lenient: returns empty map when manifests configured but no HelmChart found")
+		t.Logf("  (Validation that charts need HelmChart manifests happens in ValidateChartToHelmChartMapping)")
 	})
 
 	t.Run("advanced template features - Sprig functions", func(t *testing.T) {

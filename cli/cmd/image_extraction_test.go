@@ -91,7 +91,8 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_WithMatchingHelmChartMa
 }
 
 func TestExtractImagesFromConfig_ChartWithRequiredValues_NoHelmChartManifest(t *testing.T) {
-	// Test that extraction fails when manifests are not configured
+	// Test that discovery returns empty map when manifests are not configured (lenient)
+	// Validation happens at a higher level (in lint command)
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "chart-with-required-values-test", "chart"))
 
 	config := &tools.Config{
@@ -101,18 +102,19 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_NoHelmChartManifest(t *
 		Manifests: []string{}, // No manifests configured
 	}
 
-	// Try to extract HelmChart manifests - should fail because manifests are required
-	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
-
-	// Should fail because manifests are required
-	if err == nil {
-		t.Fatal("Expected error when manifests not configured, got nil")
+	// Discovery is lenient - returns empty map instead of error
+	helmCharts, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("DiscoverHelmChartManifests should not error on empty manifests: %v", err)
 	}
 
-	// Error should mention manifests configuration
-	if !strings.Contains(err.Error(), "no manifests configured") {
-		t.Errorf("Expected error about manifests configuration, got: %v", err)
+	// Should return empty map (lenient discovery)
+	if len(helmCharts) != 0 {
+		t.Errorf("Expected empty map, got %d HelmCharts", len(helmCharts))
 	}
+
+	// Note: Validation that charts need manifests happens in the lint command
+	// This tests only the discovery layer behavior
 }
 
 
@@ -247,7 +249,8 @@ func TestExtractImagesFromConfig_NoCharts_ReturnsError(t *testing.T) {
 }
 
 func TestExtractImagesFromConfig_NoManifests_ReturnsError(t *testing.T) {
-	// Test that manifests are required for image extraction
+	// Test that discovery is lenient when manifests array is empty
+	// Validation happens at lint command level
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "simple-chart-test", "chart"))
 
 	config := &tools.Config{
@@ -257,18 +260,19 @@ func TestExtractImagesFromConfig_NoManifests_ReturnsError(t *testing.T) {
 		Manifests: []string{}, // No manifests configured
 	}
 
-	// Try to extract HelmChart manifests - should fail because manifests are required
-	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
-
-	// Should fail because manifests are required
-	if err == nil {
-		t.Fatal("Expected error when manifests not configured, got nil")
+	// Discovery is lenient - returns empty map instead of error
+	helmCharts, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("DiscoverHelmChartManifests should not error on empty manifests: %v", err)
 	}
 
-	// Error should mention manifests configuration
-	if !strings.Contains(err.Error(), "no manifests configured") {
-		t.Errorf("Expected error about manifests configuration, got: %v", err)
+	// Should return empty map (lenient discovery)
+	if len(helmCharts) != 0 {
+		t.Errorf("Expected empty map, got %d HelmCharts", len(helmCharts))
 	}
+
+	// Note: Validation that charts require manifests happens in runLint()
+	// This tests only the discovery layer behavior (which is now lenient)
 }
 
 
@@ -316,7 +320,8 @@ func TestExtractImagesFromConfig_EmptyBuilder_FailsToRender(t *testing.T) {
 }
 
 func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsDiscovery(t *testing.T) {
-	// Test that manifests with other K8s resources but no HelmChart kind fail discovery
+	// Test that discovery is lenient when manifests contain no HelmCharts
+	// Validation happens at lint command level
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "no-helmchart-test", "chart"))
 	manifestGlob := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "no-helmchart-test", "manifests")) + "/*.yaml"
 
@@ -327,16 +332,17 @@ func TestExtractImagesFromConfig_NoHelmChartInManifests_FailsDiscovery(t *testin
 		Manifests: []string{manifestGlob},
 	}
 
-	// Try to extract HelmChart manifests - should fail because manifests don't contain HelmCharts
-	_, err := lint2.DiscoverHelmChartManifests(config.Manifests)
-
-	// Should fail because manifests are configured but contain no HelmCharts
-	if err == nil {
-		t.Fatal("Expected error when manifests configured but no HelmCharts found, got nil")
+	// Discovery is lenient - returns empty map when no HelmCharts found
+	helmCharts, err := lint2.DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("DiscoverHelmChartManifests should not error when no HelmCharts found: %v", err)
 	}
 
-	// Error should mention no HelmChart resources found
-	if !strings.Contains(err.Error(), "no HelmChart resources found") {
-		t.Errorf("Expected error about no HelmCharts, got: %v", err)
+	// Should return empty map (lenient discovery)
+	if len(helmCharts) != 0 {
+		t.Errorf("Expected empty map when no HelmCharts in manifests, got %d", len(helmCharts))
 	}
+
+	// Note: Validation that charts need HelmChart manifests happens in ValidateChartToHelmChartMapping()
+	// Discovery layer is lenient and allows mixed directories
 }

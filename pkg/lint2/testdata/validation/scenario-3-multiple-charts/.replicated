@@ -1,0 +1,6 @@
+charts:
+  - path: ./chart1
+  - path: ./chart2
+  - path: ./chart3
+manifests:
+  - ./manifests/*.yaml
