@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -1228,4 +1229,492 @@ spec:
 	}
 
 	t.Log("SUCCESS: Autodiscovery correctly handled mixed HelmChart, Support Bundle, and Preflight manifests")
+}
+
+// TestLint_AutodiscoveryEmptyProject tests that autodiscovery handles empty directories gracefully
+func TestLint_AutodiscoveryEmptyProject(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Empty directory - no resources
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+
+	// Should succeed with message about no resources
+	if err != nil {
+		t.Fatalf("expected success with empty project, got error: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "No lintable resources found") {
+		t.Error("expected 'No lintable resources found' message in output")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly handled empty project")
+}
+
+// TestLint_AutodiscoveryChartWithoutHelmChart tests that autodiscovery fails
+// when a chart is discovered but no corresponding HelmChart manifest exists
+func TestLint_AutodiscoveryChartWithoutHelmChart(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "charts", "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: missing-helmchart
+version: 1.0.0
+description: Chart without HelmChart manifest
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chartDir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create manifests directory with a Support Bundle (but no HelmChart for the chart)
+	// This ensures config.Manifests gets populated, triggering validation
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Add a Support Bundle so manifests discovery happens
+	sbFile := filepath.Join(manifestsDir, "support-bundle.yaml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: some-bundle
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(sbFile, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// NO .replicated config - trigger autodiscovery
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command - should fail validation
+	err = r.runLint(cmd, []string{})
+	if err == nil {
+		t.Fatal("expected validation error for chart without HelmChart manifest, got nil")
+	}
+
+	// Error should mention validation failure
+	errMsg := err.Error()
+	if !strings.Contains(errMsg, "chart validation failed") {
+		t.Errorf("error should mention 'chart validation failed': %s", errMsg)
+	}
+	if !strings.Contains(errMsg, "missing-helmchart") {
+		t.Errorf("error should contain chart name: %s", errMsg)
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly detected missing HelmChart manifest")
+}
+
+// TestLint_AutodiscoveryMultipleCharts tests autodiscovery with multiple charts
+func TestLint_AutodiscoveryMultipleCharts(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create three charts
+	for i := 1; i <= 3; i++ {
+		chartDir := filepath.Join(tmpDir, "charts", fmt.Sprintf("chart%d", i))
+		if err := os.MkdirAll(chartDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		chartYaml := filepath.Join(chartDir, "Chart.yaml")
+		chartContent := fmt.Sprintf(`apiVersion: v2
+name: app%d
+version: 1.0.0
+description: Chart %d
+`, i, i)
+		if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		valuesYaml := filepath.Join(chartDir, "values.yaml")
+		if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Create manifests with HelmCharts for all three
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 1; i <= 3; i++ {
+		helmChartFile := filepath.Join(manifestsDir, fmt.Sprintf("helmchart%d.yaml", i))
+		helmChartContent := fmt.Sprintf(`apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: app%d-chart
+spec:
+  chart:
+    name: app%d
+    chartVersion: 1.0.0
+  builder: {}
+`, i, i)
+		if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// NO .replicated config - trigger autodiscovery
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error with multiple charts: %v", err)
+	}
+
+	// Verify all charts were discovered
+	output := buf.String()
+	if !strings.Contains(output, "3 Helm chart(s)") {
+		t.Error("expected to discover 3 charts")
+	}
+	if !strings.Contains(output, "3 HelmChart manifest(s)") {
+		t.Error("expected to discover 3 HelmChart manifests")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly handled multiple charts")
+}
+
+// TestLint_AutodiscoveryHiddenDirectories tests that hidden directories (.git, .github) are ignored
+func TestLint_AutodiscoveryHiddenDirectories(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a real chart
+	chartDir := filepath.Join(tmpDir, "charts", "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: real-app
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chartDir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create fake charts in hidden directories (should be ignored)
+	gitDir := filepath.Join(tmpDir, ".git", "charts")
+	if err := os.MkdirAll(gitDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	gitChartYaml := filepath.Join(gitDir, "Chart.yaml")
+	if err := os.WriteFile(gitChartYaml, []byte("apiVersion: v2\nname: fake\nversion: 1.0.0\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	githubDir := filepath.Join(tmpDir, ".github", "manifests")
+	if err := os.MkdirAll(githubDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	githubSB := filepath.Join(githubDir, "support-bundle.yaml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: fake-sb
+spec:
+  collectors: []
+`
+	if err := os.WriteFile(githubSB, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create real manifests
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChartFile := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: real-app-chart
+spec:
+  chart:
+    name: real-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// NO .replicated config - trigger autodiscovery
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify only 1 chart discovered (hidden dirs ignored)
+	output := buf.String()
+	if !strings.Contains(output, "1 Helm chart(s)") {
+		t.Error("expected to discover exactly 1 chart (hidden dirs should be ignored)")
+	}
+	if !strings.Contains(output, "1 HelmChart manifest(s)") {
+		t.Error("expected to discover exactly 1 HelmChart manifest")
+	}
+	if strings.Contains(output, "2 ") {
+		t.Error("should not discover resources from hidden directories")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly ignored hidden directories")
+}
+
+// TestLint_AutodiscoveryBothYamlExtensions tests that both .yaml and .yml files are discovered
+func TestLint_AutodiscoveryBothYamlExtensions(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "charts", "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Helm requires Chart.yaml specifically (not .yml)
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: my-app
+version: 1.0.0
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chartDir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create manifests with mixed extensions
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// HelmChart with .yaml
+	helmChartFile := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-app-chart
+spec:
+  chart:
+    name: my-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Support Bundle with .yml
+	sbFile := filepath.Join(manifestsDir, "support-bundle.yml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: my-support-bundle
+spec:
+  collectors:
+    - logs:
+        selector:
+          - app=my-app
+`
+	if err := os.WriteFile(sbFile, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Preflight with .yaml
+	preflightFile := filepath.Join(manifestsDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-preflight
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - pass:
+              message: Valid
+`
+	if err := os.WriteFile(preflightFile, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// NO .replicated config - trigger autodiscovery
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify all resources discovered with different extensions
+	output := buf.String()
+	if !strings.Contains(output, "1 Helm chart(s)") {
+		t.Error("expected to discover chart")
+	}
+	if !strings.Contains(output, "1 Preflight spec(s)") {
+		t.Error("expected to discover preflight (.yaml)")
+	}
+	if !strings.Contains(output, "1 Support Bundle spec(s)") {
+		t.Error("expected to discover support bundle (.yml)")
+	}
+	if !strings.Contains(output, "1 HelmChart manifest(s)") {
+		t.Error("expected to discover HelmChart (.yaml)")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly handled both .yaml and .yml extensions for manifests")
 }
