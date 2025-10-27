@@ -180,13 +180,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 			config.Charts = []tools.ChartConfig{{Path: "./**"}}
 		}
 		if len(preflightPaths) > 0 {
-			// Use recursive wildcard pattern
 			config.Preflights = []tools.PreflightConfig{
 				{Path: "./**"},
 			}
 		}
+		// Both Support Bundles and HelmChart manifests go into config.Manifests
 		if len(sbPaths) > 0 || len(helmChartPaths) > 0 {
-			// Use recursive wildcard pattern
 			config.Manifests = []string{"./**"}
 		}
 
