@@ -1074,3 +1074,158 @@ repl-lint:
 		t.Errorf("error should provide actionable guidance: %s", errMsg)
 	}
 }
+
+// TestLint_AutodiscoveryWithMixedManifests tests that autodiscovery works
+// when manifests directory contains BOTH HelmChart manifests and Support Bundle specs,
+// and also includes Preflight specs.
+// This is the bug we're fixing - autodiscovery currently stores explicit paths which
+// causes strict validation to fail when processing mixed resource types.
+func TestLint_AutodiscoveryWithMixedManifests(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create a chart
+	chartDir := filepath.Join(tmpDir, "charts", "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: my-app
+version: 1.0.0
+description: Test chart for autodiscovery
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chartDir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create manifests directory with HelmChart, Support Bundle, and Preflight
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// HelmChart manifest
+	helmChartFile := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: my-app-chart
+spec:
+  chart:
+    name: my-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Support Bundle spec
+	sbFile := filepath.Join(manifestsDir, "support-bundle.yaml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: my-support-bundle
+spec:
+  collectors:
+    - logs:
+        selector:
+          - app=my-app
+`
+	if err := os.WriteFile(sbFile, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Preflight spec
+	preflightFile := filepath.Join(manifestsDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-preflight
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - pass:
+              message: Kubernetes version is valid
+`
+	if err := os.WriteFile(preflightFile, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// NO .replicated config - trigger autodiscovery
+
+	// Change to temp directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+
+	// EXPECTED (after fix): Should succeed
+	// ACTUAL (before fix): Fails with "file does not contain kind: SupportBundle"
+	if err != nil {
+		errMsg := err.Error()
+		// Check if it's the expected bug
+		if strings.Contains(errMsg, "file does not contain kind: SupportBundle") {
+			t.Fatalf("BUG REPRODUCED: autodiscovery fails with mixed manifests: %v\n\n"+
+				"This is the bug we're fixing. Autodiscovery stores explicit paths which triggers\n"+
+				"strict validation that fails on mixed resource types.", err)
+		}
+		if strings.Contains(errMsg, "file does not contain kind: Preflight") {
+			t.Fatalf("BUG REPRODUCED: autodiscovery fails when preflight in manifests dir: %v\n\n"+
+				"This is the bug we're fixing. Autodiscovery stores explicit paths which triggers\n"+
+				"strict validation that fails on mixed resource types.", err)
+		}
+		// If it's a different error, report it
+		t.Fatalf("unexpected error (not the bug we're testing): %v", err)
+	}
+
+	// Verify autodiscovery found resources
+	output := buf.String()
+	if !strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("expected autodiscovery message in output")
+	}
+	if !strings.Contains(output, "1 Helm chart(s)") {
+		t.Error("expected to discover 1 chart")
+	}
+	if !strings.Contains(output, "1 Preflight spec(s)") {
+		t.Error("expected to discover 1 preflight spec")
+	}
+	if !strings.Contains(output, "1 Support Bundle spec(s)") {
+		t.Error("expected to discover 1 support bundle")
+	}
+	if !strings.Contains(output, "1 HelmChart manifest(s)") {
+		t.Error("expected to discover 1 HelmChart manifest")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly handled mixed HelmChart, Support Bundle, and Preflight manifests")
+}

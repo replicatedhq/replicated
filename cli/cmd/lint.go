@@ -150,38 +150,45 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
 		r.w.Flush()
 
-		// Auto-discover Helm charts
+		// Auto-discover Helm charts (for counting and display)
 		chartPaths, err := lint2.DiscoverChartPaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover helm charts")
 		}
-		for _, chartPath := range chartPaths {
-			config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
-		}
 
-		// Auto-discover Preflight specs
+		// Auto-discover Preflight specs (for counting and display)
 		preflightPaths, err := lint2.DiscoverPreflightPaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover preflight specs")
 		}
-		for _, preflightPath := range preflightPaths {
-			config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
-		}
 
-		// Auto-discover Support Bundle specs
+		// Auto-discover Support Bundle specs (for counting and display)
 		sbPaths, err := lint2.DiscoverSupportBundlePaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover support bundle specs")
 		}
-		// Convert to manifests glob patterns for compatibility
-		config.Manifests = append(config.Manifests, sbPaths...)
 
-		// Auto-discover HelmChart manifests (needed for chart validation)
+		// Auto-discover HelmChart manifests (for counting and display)
 		helmChartPaths, err := lint2.DiscoverHelmChartPaths(filepath.Join(".", "**"))
 		if err != nil {
 			return errors.Wrap(err, "failed to discover HelmChart manifests")
 		}
-		config.Manifests = append(config.Manifests, helmChartPaths...)
+
+		// Store glob patterns (not explicit paths) for extraction phase
+		// This matches non-autodiscovery behavior and uses lenient filtering
+		if len(chartPaths) > 0 {
+			config.Charts = []tools.ChartConfig{{Path: "./**"}}
+		}
+		if len(preflightPaths) > 0 {
+			// Use recursive wildcard pattern
+			config.Preflights = []tools.PreflightConfig{
+				{Path: "./**"},
+			}
+		}
+		if len(sbPaths) > 0 || len(helmChartPaths) > 0 {
+			// Use recursive wildcard pattern
+			config.Manifests = []string{"./**"}
+		}
 
 		// Print what was discovered
 		fmt.Fprintf(r.w, "Discovered resources:\n")
