@@ -564,14 +564,14 @@ metadata:
 			}
 			defer os.Remove(tmpFile)
 
-			got, err := hasKind(tmpFile, "SupportBundle")
+			got, err := hasGVK(tmpFile, "", "", "SupportBundle")
 			if err != nil && tt.want {
-				t.Errorf("hasKind() unexpected error: %v", err)
+				t.Errorf("hasGVK() unexpected error: %v", err)
 				return
 			}
 
 			if got != tt.want {
-				t.Errorf("hasKind() = %v, want %v", got, tt.want)
+				t.Errorf("hasGVK() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1107,12 +1107,12 @@ func TestIsPreflightSpec_ValidPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "preflight.yaml")
 	createTestPreflight(t, path)
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Errorf("hasKind() = false, want true for valid Preflight")
+		t.Errorf("hasGVK() = false, want true for valid Preflight")
 	}
 }
 
@@ -1122,12 +1122,12 @@ func TestIsPreflightSpec_K8sDeployment(t *testing.T) {
 	path := filepath.Join(tmpDir, "deployment.yaml")
 	createTestK8sResource(t, path, "Deployment")
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Errorf("hasKind() = true, want false for Deployment")
+		t.Errorf("hasGVK() = true, want false for Deployment")
 	}
 }
 
@@ -1137,12 +1137,12 @@ func TestIsPreflightSpec_SupportBundle(t *testing.T) {
 	path := filepath.Join(tmpDir, "bundle.yaml")
 	createTestSupportBundle(t, path)
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Errorf("hasKind() = true, want false for SupportBundle")
+		t.Errorf("hasGVK() = true, want false for SupportBundle")
 	}
 }
 
@@ -1156,12 +1156,12 @@ func TestIsPreflightSpec_MultipleK8sResources(t *testing.T) {
 			path := filepath.Join(tmpDir, kind+".yaml")
 			createTestK8sResource(t, path, kind)
 
-			got, err := hasKind(path, "Preflight")
+			got, err := hasGVK(path, "", "", "Preflight")
 			if err != nil {
-				t.Fatalf("hasKind() error = %v", err)
+				t.Fatalf("hasGVK() error = %v", err)
 			}
 			if got {
-				t.Errorf("hasKind() = true, want false for %s", kind)
+				t.Errorf("hasGVK() = true, want false for %s", kind)
 			}
 		})
 	}
@@ -1173,12 +1173,12 @@ func TestIsPreflightSpec_MultiDocumentWithPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "Preflight", "Service"})
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Errorf("hasKind() = false, want true for multi-doc with Preflight")
+		t.Errorf("hasGVK() = false, want true for multi-doc with Preflight")
 	}
 }
 
@@ -1188,12 +1188,12 @@ func TestIsPreflightSpec_MultiDocumentWithoutPreflight(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "Service", "ConfigMap"})
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Errorf("hasKind() = true, want false for multi-doc without Preflight")
+		t.Errorf("hasGVK() = true, want false for multi-doc without Preflight")
 	}
 }
 
@@ -1203,12 +1203,12 @@ func TestIsPreflightSpec_MultiDocumentMultiplePreflights(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Preflight", "Preflight"})
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Errorf("hasKind() = false, want true for multi-doc with multiple Preflights")
+		t.Errorf("hasGVK() = false, want true for multi-doc with multiple Preflights")
 	}
 }
 
@@ -1221,12 +1221,12 @@ func TestIsPreflightSpec_MissingKind(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Errorf("hasKind() = true, want false for YAML without kind")
+		t.Errorf("hasGVK() = true, want false for YAML without kind")
 	}
 }
 
@@ -1706,12 +1706,12 @@ func TestIsSupportBundleSpec_VariousK8sResources(t *testing.T) {
 			path := filepath.Join(tmpDir, kind+".yaml")
 			createTestK8sResource(t, path, kind)
 
-			got, err := hasKind(path, "SupportBundle")
+			got, err := hasGVK(path, "", "", "SupportBundle")
 			if err != nil {
-				t.Fatalf("hasKind() error = %v", err)
+				t.Fatalf("hasGVK() error = %v", err)
 			}
 			if got {
-				t.Errorf("hasKind() = true, want false for %s", kind)
+				t.Errorf("hasGVK() = true, want false for %s", kind)
 			}
 		})
 	}
@@ -1723,12 +1723,12 @@ func TestIsSupportBundleSpec_PreflightResource(t *testing.T) {
 	path := filepath.Join(tmpDir, "preflight.yaml")
 	createTestPreflight(t, path)
 
-	got, err := hasKind(path, "SupportBundle")
+	got, err := hasGVK(path, "", "", "SupportBundle")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Errorf("hasKind() = true, want false for Preflight")
+		t.Errorf("hasGVK() = true, want false for Preflight")
 	}
 }
 
@@ -1738,12 +1738,12 @@ func TestIsSupportBundleSpec_MultiDocumentWithBundle(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"Deployment", "SupportBundle", "Service"})
 
-	got, err := hasKind(path, "SupportBundle")
+	got, err := hasGVK(path, "", "", "SupportBundle")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Errorf("hasKind() = false, want true for multi-doc with SupportBundle")
+		t.Errorf("hasGVK() = false, want true for multi-doc with SupportBundle")
 	}
 }
 
@@ -1753,12 +1753,12 @@ func TestIsSupportBundleSpec_MultiDocumentMultipleBundles(t *testing.T) {
 	path := filepath.Join(tmpDir, "multi.yaml")
 	createMultiDocYAML(t, path, []string{"SupportBundle", "SupportBundle"})
 
-	got, err := hasKind(path, "SupportBundle")
+	got, err := hasGVK(path, "", "", "SupportBundle")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Errorf("hasKind() = false, want true for multi-doc with multiple SupportBundles")
+		t.Errorf("hasGVK() = false, want true for multi-doc with multiple SupportBundles")
 	}
 }
 
@@ -1892,9 +1892,9 @@ func TestIsPreflightSpec_FileReadError(t *testing.T) {
 	})
 
 	// Try to read - should get permission error
-	_, err := hasKind(path, "Preflight")
+	_, err := hasGVK(path, "", "", "Preflight")
 	if err == nil {
-		t.Error("hasKind() expected error for unreadable file, got nil")
+		t.Error("hasGVK() expected error for unreadable file, got nil")
 	}
 }
 
@@ -2131,12 +2131,12 @@ func TestIsPreflightSpec_CaseSensitive(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := hasKind(path, "Preflight")
+			got, err := hasGVK(path, "", "", "Preflight")
 			if err != nil {
-				t.Fatalf("hasKind() error = %v", err)
+				t.Fatalf("hasGVK() error = %v", err)
 			}
 			if got != tt.expected {
-				t.Errorf("hasKind() = %v for kind=%q, want %v", got, tt.kind, tt.expected)
+				t.Errorf("hasGVK() = %v for kind=%q, want %v", got, tt.kind, tt.expected)
 			}
 		})
 	}
@@ -2160,12 +2160,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Error("hasKind() = true for kind in comment, want false")
+		t.Error("hasGVK() = true for kind in comment, want false")
 	}
 }
 
@@ -2189,12 +2189,12 @@ func TestIsPreflightSpec_KindWrongType(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := hasKind(path, "Preflight")
+			got, err := hasGVK(path, "", "", "Preflight")
 			if err != nil {
-				t.Fatalf("hasKind() error = %v", err)
+				t.Fatalf("hasGVK() error = %v", err)
 			}
 			if got {
-				t.Errorf("hasKind() = true for %s, want false", tt.name)
+				t.Errorf("hasGVK() = true for %s, want false", tt.name)
 			}
 		})
 	}
@@ -2220,12 +2220,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := hasKind(path, "Preflight")
+	got, err := hasGVK(path, "", "", "Preflight")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if got {
-		t.Error("hasKind() = true for nested kind, want false (only top-level kind should match)")
+		t.Error("hasGVK() = true for nested kind, want false (only top-level kind should match)")
 	}
 }
 
@@ -2395,12 +2395,12 @@ spec:
 		t.Fatal(err)
 	}
 
-	got, err := hasKind(path, "SupportBundle")
+	got, err := hasGVK(path, "", "", "SupportBundle")
 	if err != nil {
-		t.Fatalf("hasKind() error = %v", err)
+		t.Fatalf("hasGVK() error = %v", err)
 	}
 	if !got {
-		t.Error("hasKind() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
+		t.Error("hasGVK() = false for malformed YAML with kind: SupportBundle, want true (fallback should match)")
 	}
 }
 
@@ -2450,12 +2450,12 @@ metadata:
 				t.Fatal(err)
 			}
 
-			got, err := hasKind(path, "SupportBundle")
+			got, err := hasGVK(path, "", "", "SupportBundle")
 			if err != nil {
-				t.Fatalf("hasKind() error = %v", err)
+				t.Fatalf("hasGVK() error = %v", err)
 			}
 			if got != tt.want {
-				t.Errorf("hasKind() = %v, want %v for content:\n%s", got, tt.want, tt.content)
+				t.Errorf("hasGVK() = %v, want %v for content:\n%s", got, tt.want, tt.content)
 			}
 		})
 	}

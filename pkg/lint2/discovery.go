@@ -127,55 +127,90 @@ func DiscoverChartPaths(pattern string) ([]string, error) {
 	return discoverDirsByMarkerFile(pattern, []string{"Chart.yaml", "Chart.yml"}, "Helm chart")
 }
 
-// hasKind checks if a YAML file contains a specific kind.
-// Handles multi-document YAML files properly using yaml.NewDecoder, which correctly
-// handles document separators (---) even when they appear inside strings or block scalars.
-// For files with syntax errors, falls back to simple regex matching to detect the kind.
+// hasGVK checks if a YAML file contains a resource matching the specified GroupVersionKind (GVK).
+// Handles multi-document YAML files properly using yaml.NewDecoder.
+// For files with syntax errors, falls back to simple regex matching.
 //
-// Pass the kind name (e.g., "Preflight", "SupportBundle", "HelmChart") to check for.
-func hasKind(path string, kind string) (bool, error) {
+// Parameters:
+//   - path: Path to the YAML file
+//   - group: API group (e.g., "embeddedcluster.replicated.com"). Empty string matches any group.
+//   - version: API version (e.g., "v1beta1"). Empty string matches any version.
+//   - kind: Resource kind (e.g., "Config", "Preflight"). Required, cannot be empty.
+//
+// The apiVersion field is parsed as "<group>/<version>" or just "<version>" (if no group).
+// Empty group or version parameters act as wildcards (match any).
+func hasGVK(path string, group string, version string, kind string) (bool, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return false, err
 	}
 
 	// Use yaml.Decoder for proper multi-document YAML parsing
-	// This correctly handles --- separators according to the YAML spec
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 
 	// Iterate through all documents in the file
 	for {
-		// Parse just the kind field (lightweight)
-		var kindDoc struct {
-			Kind string `yaml:"kind"`
+		// Parse apiVersion and kind fields
+		var doc struct {
+			APIVersion string `yaml:"apiVersion"`
+			Kind       string `yaml:"kind"`
 		}
 
-		err := decoder.Decode(&kindDoc)
+		err := decoder.Decode(&doc)
 		if err != nil {
 			if err == io.EOF {
 				// Reached end of file - no more documents
 				break
 			}
 			// Parse error - file is malformed
-			// Fall back to regex matching to detect if this looks like the target kind
-			// This allows invalid YAML files to still be discovered and linted
-			// Use regex to match "kind: <kind>" as a complete line (not in comments/strings)
-			pattern := fmt.Sprintf(`(?m)^kind:\s+%s\s*$`, regexp.QuoteMeta(kind))
-			matched, _ := regexp.Match(pattern, data)
-			return matched, nil
+			// Fall back to regex matching for kind only (can't easily regex match apiVersion)
+			if group == "" && version == "" {
+				// Only kind matching - use regex fallback
+				pattern := fmt.Sprintf(`(?m)^kind:\s+%s\s*$`, regexp.QuoteMeta(kind))
+				matched, _ := regexp.Match(pattern, data)
+				return matched, nil
+			}
+			// Can't match group/version with malformed YAML - skip
+			return false, nil
 		}
 
-		// Check if this document matches the target kind
-		if kindDoc.Kind == kind {
-			return true, nil
+		// Check if kind matches
+		if doc.Kind != kind {
+			continue
 		}
+
+		// Kind matches - now check group and version
+		// Parse apiVersion into group and version components
+		var docGroup, docVersion string
+		if strings.Contains(doc.APIVersion, "/") {
+			// Format: "group/version" (e.g., "embeddedcluster.replicated.com/v1beta1")
+			parts := strings.SplitN(doc.APIVersion, "/", 2)
+			docGroup = parts[0]
+			docVersion = parts[1]
+		} else {
+			// Format: "version" only (e.g., "v1" for core Kubernetes resources)
+			docGroup = ""
+			docVersion = doc.APIVersion
+		}
+
+		// Check group match (empty = match any)
+		if group != "" && docGroup != group {
+			continue
+		}
+
+		// Check version match (empty = match any)
+		if version != "" && docVersion != version {
+			continue
+		}
+
+		// All criteria matched
+		return true, nil
 	}
 
 	return false, nil
 }
 
-// discoverPreflightPaths discovers Preflight spec files from a glob pattern.
-// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
+// DiscoverPreflightPaths discovers Preflight spec files from a glob pattern.
 //
 // Supports patterns like:
 //   - "./preflights/**"           (finds all Preflight specs recursively)
@@ -183,11 +218,10 @@ func hasKind(path string, kind string) (bool, error) {
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
 //   - "./preflight.yaml"          (explicit file path - validated strictly)
 func DiscoverPreflightPaths(pattern string) ([]string, error) {
-	return discoverYAMLsByKind(pattern, "Preflight", "preflight spec")
+	return discoverYAMLsByGVK(pattern, "", "", "Preflight", "preflight spec")
 }
 
 // DiscoverHelmChartPaths discovers HelmChart manifest files from a glob pattern.
-// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
 //
 // Supports patterns like:
 //   - "./manifests/**"           (finds all HelmChart manifests recursively)
@@ -195,7 +229,25 @@ func DiscoverPreflightPaths(pattern string) ([]string, error) {
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
 //   - "./helmchart.yaml"         (explicit file path - validated strictly)
 func DiscoverHelmChartPaths(pattern string) ([]string, error) {
-	return discoverYAMLsByKind(pattern, "HelmChart", "HelmChart manifest")
+	return discoverYAMLsByGVK(pattern, "", "", "HelmChart", "HelmChart manifest")
+}
+
+// DiscoverEmbeddedClusterPaths discovers Embedded Cluster config files from a glob pattern.
+// Filters by both kind and group to distinguish from KOTS Config (which also uses kind: Config).
+//
+// Matches:
+//   - kind: Config
+//   - group: embeddedcluster.replicated.com (any version: v1beta1, v1beta2, v1, etc.)
+//
+// Supports patterns like:
+//   - "./manifests/**"           (finds all EC configs recursively)
+//   - "./manifests/**/*.yaml"    (explicit YAML extension)
+//   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
+//   - "./ec-config.yaml"         (explicit file path - validated strictly)
+func DiscoverEmbeddedClusterPaths(pattern string) ([]string, error) {
+	// Filter by group to distinguish from KOTS Config (kots.io/v1beta1)
+	// Match any version within the embeddedcluster.replicated.com group
+	return discoverYAMLsByGVK(pattern, "embeddedcluster.replicated.com", "", "Config", "embedded cluster config")
 }
 
 // (duplicate isPreflightSpec removed)
@@ -240,10 +292,10 @@ func buildYAMLPatterns(pattern string) ([]string, error) {
 	return nil, fmt.Errorf("pattern must end with .yaml, .yml, *, or **")
 }
 
-// validateExplicitYAMLFile validates a single YAML file path and checks its kind.
+// validateExplicitYAMLFile validates a single YAML file path and checks its GVK.
 // Returns the path in a slice for consistency with discovery functions.
-// Returns error if file doesn't exist, isn't a file, has wrong extension, or doesn't contain the kind.
-func validateExplicitYAMLFile(path, kind, resourceName string) ([]string, error) {
+// Returns error if file doesn't exist, isn't a file, has wrong extension, or doesn't contain matching GVK.
+func validateExplicitYAMLFile(path, group, version, kind, resourceName string) ([]string, error) {
 	// Check extension
 	ext := filepath.Ext(path)
 	if ext != ".yaml" && ext != ".yml" {
@@ -263,23 +315,23 @@ func validateExplicitYAMLFile(path, kind, resourceName string) ([]string, error)
 		return nil, fmt.Errorf("path is a directory, expected a file")
 	}
 
-	// Check kind
-	hasTargetKind, err := hasKind(path, kind)
+	// Check GVK
+	hasTargetGVK, err := hasGVK(path, group, version, kind)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-	if !hasTargetKind {
+	if !hasTargetGVK {
 		return nil, fmt.Errorf("file does not contain kind: %s (not a valid %s)", kind, resourceName)
 	}
 
 	return []string{path}, nil
 }
 
-// filterYAMLFilesByKind expands glob patterns and filters to files with matching kind.
-// Silently skips files that can't be read or don't have the target kind.
+// filterYAMLFilesByGVK expands glob patterns and filters to files with matching GVK.
+// Silently skips files that can't be read or don't have the target GVK.
 // Optionally filters by gitignore if checker is provided.
 // Optionally skips hidden paths unless skipHidden is false (explicit bypass).
-func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, gitignoreChecker *GitignoreChecker, skipHidden bool) ([]string, error) {
+func filterYAMLFilesByGVK(patterns []string, originalPattern, group, version, kind string, gitignoreChecker *GitignoreChecker, skipHidden bool) ([]string, error) {
 	var resultPaths []string
 	seenPaths := make(map[string]bool)
 
@@ -309,14 +361,14 @@ func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, giti
 			}
 			seenPaths[path] = true
 
-			// Check kind
-			hasTargetKind, err := hasKind(path, kind)
+			// Check GVK
+			hasTargetGVK, err := hasGVK(path, group, version, kind)
 			if err != nil {
 				// Skip files we can't read
 				continue
 			}
 
-			if hasTargetKind {
+			if hasTargetGVK {
 				resultPaths = append(resultPaths, path)
 			}
 		}
@@ -325,21 +377,28 @@ func filterYAMLFilesByKind(patterns []string, originalPattern, kind string, giti
 	return resultPaths, nil
 }
 
-// discoverYAMLsByKind discovers YAML files containing a specific kind from a pattern.
+// discoverYAMLsByGVK discovers YAML files containing resources matching a GroupVersionKind (GVK) from a pattern.
 // Handles both explicit file paths (strict validation) and glob patterns (lenient filtering).
 // Respects gitignore unless the pattern explicitly references a gitignored path.
 //
+// Parameters:
+//   - pattern: Glob pattern or explicit file path
+//   - group: API group (empty = match any)
+//   - version: API version (empty = match any)
+//   - kind: Resource kind (required)
+//   - resourceName: Descriptive name for error messages
+//
 // For explicit paths:
 //   - Validates file exists, is a file, has .yaml/.yml extension
-//   - Checks if file contains the specified kind
+//   - Checks if file contains the specified GVK
 //   - Returns error if any validation fails (fail loudly)
 //
 // For glob patterns:
 //   - Expands pattern to find all YAML files
-//   - Filters to only files containing the specified kind
+//   - Filters to only files containing the specified GVK
 //   - Silently skips files that don't match (allows mixed directories)
 //   - Respects gitignore unless pattern explicitly includes gitignored path
-func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
+func discoverYAMLsByGVK(pattern, group, version, kind, resourceName string) ([]string, error) {
 	// Validate empty pattern
 	if pattern == "" {
 		return nil, fmt.Errorf("pattern cannot be empty")
@@ -356,7 +415,7 @@ func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
 
 	if isExplicitPath {
 		// Strict validation
-		return validateExplicitYAMLFile(pattern, kind, resourceName)
+		return validateExplicitYAMLFile(pattern, group, version, kind, resourceName)
 	}
 
 	// Create gitignore checker (returns nil if not in git repo or no gitignore)
@@ -383,7 +442,7 @@ func discoverYAMLsByKind(pattern, kind, resourceName string) ([]string, error) {
 	}
 
 	// Lenient filtering
-	return filterYAMLFilesByKind(patterns, originalPattern, kind, checkerToUse, skipHidden)
+	return filterYAMLFilesByGVK(patterns, originalPattern, group, version, kind, checkerToUse, skipHidden)
 }
 
 // validateExplicitChartDir validates an explicit directory path for chart discovery.
@@ -520,8 +579,7 @@ func discoverDirsByMarkerFile(pattern string, markerFiles []string, resourceName
 	return filterDirsByMarkerFile(patterns, originalPattern, checkerToUse, skipHidden)
 }
 
-// discoverSupportBundlePaths discovers Support Bundle spec files from a glob pattern.
-// This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
+// DiscoverSupportBundlePaths discovers Support Bundle spec files from a glob pattern.
 //
 // Supports patterns like:
 //   - "./manifests/**"             (finds all Support Bundle specs recursively)
@@ -529,5 +587,5 @@ func discoverDirsByMarkerFile(pattern string, markerFiles []string, resourceName
 //   - "./k8s/{dev,prod}/**/*.yaml" (environment-specific)
 //   - "./support-bundle.yaml"      (explicit file path - validated strictly)
 func DiscoverSupportBundlePaths(pattern string) ([]string, error) {
-	return discoverYAMLsByKind(pattern, "SupportBundle", "support bundle spec")
+	return discoverYAMLsByGVK(pattern, "", "", "SupportBundle", "support bundle spec")
 }

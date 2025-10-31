@@ -58,11 +58,12 @@ func resolveToolVersion(ctx context.Context, config *tools.Config, resolver *too
 // This function consolidates extraction logic across all linters to avoid duplication.
 // If verbose is true, it will also extract ChartsWithMetadata for image extraction.
 // Accepts already-resolved tool versions.
-func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion string) (*ExtractedPaths, error) {
+func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion, ecVersion string) (*ExtractedPaths, error) {
 	result := &ExtractedPaths{
 		HelmVersion:      helmVersion,
 		PreflightVersion: preflightVersion,
 		SBVersion:        sbVersion,
+		ECVersion:        ecVersion,
 	}
 
 	// Extract chart paths (for Helm linting)
@@ -104,6 +105,24 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 		result.SupportBundles = sbPaths
 	}
 
+	// Discover embedded cluster configs
+	if len(config.Manifests) > 0 {
+		ecPaths := []string{}
+		for _, pattern := range config.Manifests {
+			paths, err := lint2.DiscoverEmbeddedClusterPaths(pattern)
+			if err != nil {
+				return nil, fmt.Errorf("failed to discover embedded cluster configs from pattern %s: %w", pattern, err)
+			}
+			ecPaths = append(ecPaths, paths...)
+		}
+		result.EmbeddedClusterPaths = ecPaths
+
+		// Validate: error if 2+ configs found (exactly 0 or 1 allowed)
+		if len(ecPaths) > 1 {
+			return nil, fmt.Errorf("multiple embedded cluster configs found (%d). Only 0 or 1 config per project is supported. Found configs:\n  - %s", len(ecPaths), strings.Join(ecPaths, "\n  - "))
+		}
+	}
+
 	// Extract charts with metadata (needed for validation and image extraction)
 	if len(config.Charts) > 0 {
 		chartsWithMetadata, err := lint2.GetChartsWithMetadataFromConfig(config)
@@ -138,10 +157,11 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	helmVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolHelm, tools.DefaultHelmVersion)
 	preflightVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolPreflight, tools.DefaultPreflightVersion)
 	supportBundleVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolSupportBundle, tools.DefaultSupportBundleVersion)
+	embeddedClusterVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolEmbeddedCluster, "latest")
 
 	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
-	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, "v0.90.0") // TODO: Get actual CLI version
+	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, "v0.90.0") // TODO: Get actual CLI version
 
 	// Check if we're in auto-discovery mode (no charts/preflights/manifests configured)
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
@@ -174,6 +194,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to discover HelmChart manifests")
 		}
 
+		// Auto-discover Embedded Cluster configs (for counting and display)
+		ecPaths, err := lint2.DiscoverEmbeddedClusterPaths(filepath.Join(".", "**"))
+		if err != nil {
+			return errors.Wrap(err, "failed to discover embedded cluster configs")
+		}
+
 		// Store glob patterns (not explicit paths) for extraction phase
 		// This matches non-autodiscovery behavior and uses lenient filtering
 		if len(chartPaths) > 0 {
@@ -184,8 +210,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 				{Path: "./**"},
 			}
 		}
-		// Both Support Bundles and HelmChart manifests go into config.Manifests
-		if len(sbPaths) > 0 || len(helmChartPaths) > 0 {
+		// Support Bundles, HelmChart manifests, and Embedded Cluster configs go into config.Manifests
+		if len(sbPaths) > 0 || len(helmChartPaths) > 0 || len(ecPaths) > 0 {
 			config.Manifests = []string{"./**"}
 		}
 
@@ -194,11 +220,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
 		fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
 		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n", len(sbPaths))
-		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
+		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n", len(helmChartPaths))
+		fmt.Fprintf(r.w, "  - %d Embedded Cluster config(s)\n\n", len(ecPaths))
 		r.w.Flush()
 
 		// If nothing was found, exit early
-		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 && len(ecPaths) == 0 {
 			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
 			r.w.Flush()
 			return nil
@@ -213,13 +240,14 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
 		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
 		fmt.Fprintf(r.w, "  Support Bundle: %s\n", supportBundleVersion)
+		fmt.Fprintf(r.w, "  Embedded Cluster: %s\n", embeddedClusterVersion)
 
 		fmt.Fprintln(r.w)
 		r.w.Flush()
 	}
 
 	// Extract all paths and metadata once (consolidates extraction logic across linters)
-	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion)
+	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract paths and metadata")
 	}
@@ -332,6 +360,27 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		output.SupportBundleResults = &SupportBundleLintResults{Enabled: false, Specs: []SupportBundleLintResult{}}
 		if r.outputFormat == "table" {
 			fmt.Fprintf(r.w, "Support Bundle linting is disabled in .replicated config\n\n")
+		}
+	}
+
+	// Lint Embedded Cluster configs if enabled
+	if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+		if len(extracted.EmbeddedClusterPaths) == 0 {
+			output.EmbeddedClusterResults = &EmbeddedClusterLintResults{Enabled: true, Configs: []EmbeddedClusterLintResult{}}
+			if r.outputFormat == "table" {
+				fmt.Fprintf(r.w, "No embedded cluster configs configured (skipping EC linting)\n\n")
+			}
+		} else {
+			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion)
+			if err != nil {
+				return err
+			}
+			output.EmbeddedClusterResults = ecResults
+		}
+	} else {
+		output.EmbeddedClusterResults = &EmbeddedClusterLintResults{Enabled: false, Configs: []EmbeddedClusterLintResult{}}
+		if r.outputFormat == "table" {
+			fmt.Fprintf(r.w, "Embedded Cluster linting is disabled in .replicated config\n\n")
 		}
 	}
 
@@ -480,6 +529,49 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 		}
 		if err := r.displayLintResults("SUPPORT BUNDLES", "support bundle spec", "support bundle specs", lintableResults); err != nil {
 			return nil, errors.Wrap(err, "failed to display support bundle results")
+		}
+	}
+
+	return results, nil
+}
+
+func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string) (*EmbeddedClusterLintResults, error) {
+	results := &EmbeddedClusterLintResults{
+		Enabled: true,
+		Configs: make([]EmbeddedClusterLintResult, 0, len(ecPaths)),
+	}
+
+	// If no embedded cluster configs found, that's not an error - they're optional
+	if len(ecPaths) == 0 {
+		return results, nil
+	}
+
+	// Lint all embedded cluster configs and collect results
+	for _, configPath := range ecPaths {
+		lint2Result, err := lint2.LintEmbeddedCluster(cmd.Context(), configPath, ecVersion)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to lint embedded cluster config: %s", configPath)
+		}
+
+		// Convert to structured format
+		ecResult := EmbeddedClusterLintResult{
+			Path:     configPath,
+			Success:  lint2Result.Success,
+			Messages: convertLint2Messages(lint2Result.Messages),
+			Summary:  calculateResourceSummary(lint2Result.Messages),
+		}
+		results.Configs = append(results.Configs, ecResult)
+	}
+
+	// Display results in table format (only if table output)
+	if r.outputFormat == "table" {
+		// Convert to []LintableResult for generic display
+		lintableResults := make([]LintableResult, len(results.Configs))
+		for i, config := range results.Configs {
+			lintableResults[i] = config
+		}
+		if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+			return nil, errors.Wrap(err, "failed to display embedded cluster results")
 		}
 	}
 
@@ -717,6 +809,15 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 		results := make([]LintableResult, len(output.SupportBundleResults.Specs))
 		for i, spec := range output.SupportBundleResults.Specs {
 			results[i] = spec
+		}
+		accumulateSummary(&summary, results)
+	}
+
+	// Accumulate from Embedded Cluster results
+	if output.EmbeddedClusterResults != nil {
+		results := make([]LintableResult, len(output.EmbeddedClusterResults.Configs))
+		for i, config := range output.EmbeddedClusterResults.Configs {
+			results[i] = config
 		}
 		accumulateSummary(&summary, results)
 	}

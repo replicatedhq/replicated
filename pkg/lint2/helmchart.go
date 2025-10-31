@@ -90,7 +90,7 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 			seenFiles[path] = true
 
 			// Check if this file contains a HelmChart resource
-			isHelmChart, err := hasKind(path, "HelmChart")
+			isHelmChart, err := hasGVK(path, "", "", "HelmChart")
 			if err != nil {
 				// Skip files we can't read or parse
 				continue
@@ -131,9 +131,8 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 }
 
 // isHelmChartManifest checks if a YAML file contains a HelmChart kind.
-// This is a thin wrapper around hasKind for backward compatibility.
 func isHelmChartManifest(path string) (bool, error) {
-	return hasKind(path, "HelmChart")
+	return hasGVK(path, "", "", "HelmChart")
 }
 
 // parseHelmChartManifest parses a HelmChart manifest and extracts the fields needed for preflight rendering.
