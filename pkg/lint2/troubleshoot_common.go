@@ -6,6 +6,104 @@ import (
 	"strings"
 )
 
+// extractJSONFromOutput extracts a JSON object from command output that may
+// contain error messages before or after the JSON. Uses brace counting to
+// find the complete JSON object boundaries while properly handling strings
+// and escape sequences.
+//
+// This is used by all linters (preflight, support-bundle, embedded-cluster) to
+// handle output where the tool prints "ERROR: ..." or other messages alongside
+// the JSON results.
+//
+// The function searches for each '{' in the output, extracts a complete JSON object
+// using brace counting, and attempts to decode it. This handles cases where error
+// messages contain braces (e.g., "Error: failed {something}") before the actual JSON.
+func extractJSONFromOutput(output string) (string, error) {
+	if output == "" {
+		return "", fmt.Errorf("empty output")
+	}
+
+	// Try to find and extract valid JSON starting from each { in the output
+	searchOffset := 0
+	var lastErr error
+
+	for {
+		// Find next opening brace
+		idx := strings.Index(output[searchOffset:], "{")
+		if idx == -1 {
+			break
+		}
+
+		startIdx := searchOffset + idx
+
+		// Use brace counting to find matching closing brace
+		jsonEnd := -1
+		braceCount := 0
+		inString := false
+		escaped := false
+
+		for i := startIdx; i < len(output); i++ {
+			ch := rune(output[i])
+
+			if escaped {
+				escaped = false
+				continue
+			}
+
+			if ch == '\\' {
+				escaped = true
+				continue
+			}
+
+			if ch == '"' {
+				inString = !inString
+				continue
+			}
+
+			if inString {
+				continue
+			}
+
+			if ch == '{' {
+				braceCount++
+			} else if ch == '}' {
+				braceCount--
+				if braceCount == 0 {
+					jsonEnd = i + 1
+					break
+				}
+			}
+		}
+
+		if jsonEnd == -1 {
+			// Unclosed braces from this position, try next {
+			searchOffset = startIdx + 1
+			lastErr = fmt.Errorf("unclosed JSON object")
+			continue
+		}
+
+		// We found a complete brace-balanced substring, try to validate it as JSON
+		candidate := output[startIdx:jsonEnd]
+
+		// Quick validation: try to unmarshal to check if it's valid JSON
+		var testObj interface{}
+		if err := json.Unmarshal([]byte(candidate), &testObj); err == nil {
+			// Valid JSON found
+			return candidate, nil
+		} else {
+			lastErr = err
+		}
+
+		// Not valid JSON, try next {
+		searchOffset = startIdx + 1
+	}
+
+	if lastErr != nil {
+		return "", fmt.Errorf("no valid JSON found in output: %w", lastErr)
+	}
+	return "", fmt.Errorf("no JSON object found in output")
+}
+
 // TroubleshootIssue is an interface that both PreflightLintIssue and
 // SupportBundleLintIssue satisfy, allowing common formatting logic.
 // Both tools come from the troubleshoot.sh repository and share the same
@@ -46,39 +144,18 @@ type TroubleshootLintResult[T TroubleshootIssue] struct {
 
 // parseTroubleshootJSON extracts and decodes JSON from troubleshoot tool output.
 // The tool binaries may output "Error:" on stderr before/after the JSON when there
-// are issues. This gets combined with stdout by CombinedOutput(). We search for each
-// potential JSON object and try to decode it. The decoder automatically handles
-// trailing garbage after valid JSON.
+// are issues. This gets combined with stdout by CombinedOutput().
 func parseTroubleshootJSON[T TroubleshootIssue](output string) (*TroubleshootLintResult[T], error) {
-	var result TroubleshootLintResult[T]
-	var lastErr error
-
-	// Try to find and decode JSON starting from each { in the output
-	// This handles cases where error messages contain braces before the actual JSON
-	searchOffset := 0
-	for {
-		idx := strings.Index(output[searchOffset:], "{")
-		if idx == -1 {
-			break
-		}
-
-		startIdx := searchOffset + idx
-		decoder := json.NewDecoder(strings.NewReader(output[startIdx:]))
-		err := decoder.Decode(&result)
-		if err == nil {
-			// Successfully decoded JSON
-			break
-		}
-
-		lastErr = err
-		searchOffset = startIdx + 1
+	// Extract clean JSON from output that may contain error messages
+	jsonStr, err := extractJSONFromOutput(output)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract JSON from output: %w", err)
 	}
 
-	if result.Results == nil {
-		if lastErr != nil {
-			return nil, fmt.Errorf("no valid JSON found in output: %w", lastErr)
-		}
-		return nil, fmt.Errorf("no JSON found in output")
+	// Decode the JSON into the result structure
+	var result TroubleshootLintResult[T]
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
 	return &result, nil

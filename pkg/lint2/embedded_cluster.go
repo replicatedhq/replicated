@@ -38,6 +38,14 @@ type ECLintIssue struct {
 // These environment variables enable all linters (helm, preflight, support-bundle, embedded-cluster)
 // to make vendor portal API calls for enhanced validation capabilities.
 func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion string) (*LintResult, error) {
+	// Defensive check: validate config path exists (before resolving binary)
+	if _, err := os.Stat(configPath); err != nil {
+		if os.IsNotExist(err) {
+			return nil, fmt.Errorf("embedded cluster config path does not exist: %s", configPath)
+		}
+		return nil, fmt.Errorf("failed to access embedded cluster config path: %w", err)
+	}
+
 	// Check for local binary override (for development)
 	ecPath := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_PATH")
 	if ecPath == "" {
@@ -48,14 +56,6 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 		if err != nil {
 			return nil, fmt.Errorf("resolving embedded-cluster: %w", err)
 		}
-	}
-
-	// Defensive check: validate config path exists
-	if _, err := os.Stat(configPath); err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("embedded cluster config path does not exist: %s", configPath)
-		}
-		return nil, fmt.Errorf("failed to access embedded cluster config path: %w", err)
 	}
 
 	// Build command arguments
@@ -95,52 +95,16 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 		return []LintMessage{}, nil
 	}
 
-	// embedded-cluster lint outputs JSON followed by "ERROR: validation failed with errors" on failures
-	// We need to extract just the JSON part. Look for the closing brace of the root object.
-	// The output format is: {"files":[...]}
-	// Followed by optional "ERROR: ..." message
-	jsonEnd := -1
-	braceCount := 0
-	inString := false
-	escaped := false
-
-	for i, ch := range output {
-		if escaped {
-			escaped = false
-			continue
-		}
-
-		if ch == '\\' {
-			escaped = true
-			continue
-		}
-
-		if ch == '"' {
-			inString = !inString
-			continue
-		}
-
-		if inString {
-			continue
-		}
-
-		if ch == '{' {
-			braceCount++
-		} else if ch == '}' {
-			braceCount--
-			if braceCount == 0 {
-				jsonEnd = i + 1
-				break
-			}
-		}
+	// Extract clean JSON from output that may contain error messages
+	// (e.g., "ERROR: validation failed with errors" after the JSON)
+	jsonStr, err := extractJSONFromOutput(output)
+	if err != nil {
+		return nil, fmt.Errorf("failed to extract JSON from output: %w", err)
 	}
 
-	if jsonEnd > 0 {
-		output = output[:jsonEnd]
-	}
-
+	// Decode the JSON into the embedded-cluster result structure
 	var ecOutput ECLintOutput
-	if err := json.Unmarshal([]byte(output), &ecOutput); err != nil {
+	if err := json.Unmarshal([]byte(jsonStr), &ecOutput); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal JSON output: %w", err)
 	}
 
