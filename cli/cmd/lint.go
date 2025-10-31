@@ -242,10 +242,10 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Resolve app context for all linters (not just embedded-cluster)
 	// This makes REPLICATED_APP, REPLICATED_API_TOKEN, and REPLICATED_API_ORIGIN
 	// available to all linter binaries for future vendor portal integrations.
-	appID, err := r.resolveAppContext(cmd.Context(), config)
-	if err != nil {
-		return errors.Wrap(err, "failed to resolve app context")
-	}
+	//
+	// If app resolution fails, we store the error and continue with other linters.
+	// Only the embedded-cluster linter will fail if app context is required but unavailable.
+	appID, appResolveErr := r.resolveAppContext(cmd.Context(), config)
 
 	// Set REPLICATED_APP env var if we successfully resolved an app
 	// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
@@ -475,7 +475,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 				fmt.Fprintf(r.w, "No embedded cluster configs configured (skipping EC linting)\n\n")
 			}
 		} else {
-			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion)
+			// Pass app resolution error - EC linter will fail gracefully if app context unavailable
+			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion, appResolveErr)
 			if err != nil {
 				return err
 			}
@@ -639,7 +640,7 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 	return results, nil
 }
 
-func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string) (*EmbeddedClusterLintResults, error) {
+func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string, appResolveErr error) (*EmbeddedClusterLintResults, error) {
 	results := &EmbeddedClusterLintResults{
 		Enabled: true,
 		Configs: make([]EmbeddedClusterLintResult, 0, len(ecPaths)),
@@ -647,6 +648,41 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 
 	// If no embedded cluster configs found, that's not an error - they're optional
 	if len(ecPaths) == 0 {
+		return results, nil
+	}
+
+	// If app resolution failed, embedded-cluster linter cannot run
+	// Return a failed result for each config instead of stopping the entire lint command
+	if appResolveErr != nil {
+		for _, configPath := range ecPaths {
+			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
+				Path:    configPath,
+				Success: false,
+				Messages: []LintMessage{
+					{
+						Severity: "ERROR",
+						Message:  fmt.Sprintf("Embedded cluster linting requires app context: %v", appResolveErr),
+					},
+				},
+				Summary: ResourceSummary{
+					ErrorCount:   1,
+					WarningCount: 0,
+					InfoCount:    0,
+				},
+			})
+		}
+
+		// Display results in table format
+		if r.outputFormat == "table" {
+			lintableResults := make([]LintableResult, len(results.Configs))
+			for i, config := range results.Configs {
+				lintableResults[i] = config
+			}
+			if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+				return nil, errors.Wrap(err, "failed to display embedded cluster results")
+			}
+		}
+
 		return results, nil
 	}
 
