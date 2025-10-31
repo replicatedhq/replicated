@@ -130,6 +130,73 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to load .replicated config")
 	}
 
+	// If embedded-cluster linter is enabled, determine the app context and
+	// set REPLICATED_APP for downstream tools (embedded-cluster lint).
+	if config.ReplLint != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+		selectedApp := ""
+		// 1) Highest priority: --app flag
+		if appSlugOrID != "" {
+			selectedApp = appSlugOrID
+		} else if config.AppId != "" { // 2) .replicated config: appId
+			selectedApp = config.AppId
+		} else if config.AppSlug != "" { // 3) .replicated config: appSlug
+			selectedApp = config.AppSlug
+		} else {
+			// 4) Fetch apps for current profile; pick one or prompt user if multiple
+			apps, err := r.kotsAPI.ListApps(cmd.Context(), false)
+			if err != nil {
+				return errors.Wrap(err, "failed to list apps for selection")
+			}
+			if len(apps) == 0 {
+				return errors.New("no apps available for the current credentials; specify --app or set appId/appSlug in .replicated")
+			}
+			if len(apps) == 1 {
+				if apps[0].App != nil && apps[0].App.ID != "" {
+					selectedApp = apps[0].App.ID
+				} else {
+					selectedApp = apps[0].App.Slug
+				}
+			} else {
+				// Prompt the user to select an app (interactive only)
+				items := make([]string, 0, len(apps))
+				for _, a := range apps {
+					if a.App == nil {
+						continue
+					}
+					items = append(items, fmt.Sprintf("%s (%s / %s)", a.App.Name, a.App.Slug, a.App.ID))
+				}
+				prompt := promptui.Select{
+					Label: "Select app for embedded-cluster lint",
+					Items: items,
+				}
+				idx, _, perr := prompt.Run()
+				if perr != nil {
+					return errors.Wrap(perr, "app selection canceled")
+				}
+				if apps[idx].App != nil && apps[idx].App.ID != "" {
+					selectedApp = apps[idx].App.ID
+				} else {
+					selectedApp = apps[idx].App.Slug
+				}
+			}
+		}
+
+		if selectedApp != "" {
+			// Resolve to canonical app ID (handles either slug or id input)
+			appObj, err := r.kotsAPI.GetApp(cmd.Context(), selectedApp, true)
+			if err != nil || appObj == nil || appObj.ID == "" {
+				return errors.Wrap(err, "failed to resolve app id from selection")
+			}
+
+			// Export only REPLICATED_APP (canonical app ID) for downstream tools
+			_ = os.Setenv("REPLICATED_APP", appObj.ID)
+
+			// Ensure downstream tools can authenticate and hit the correct origin
+			_ = os.Setenv("REPLICATED_API_TOKEN", apiToken)
+			_ = os.Setenv("REPLICATED_API_ORIGIN", platformOrigin)
+		}
+	}
+
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
 
@@ -724,8 +791,8 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 // This eliminates duplication across chart, preflight, and support bundle display functions.
 func (r *runners) displayLintResults(
 	sectionTitle string,
-	itemName string,     // e.g., "chart", "preflight spec", "support bundle spec"
-	pluralName string,   // e.g., "charts", "preflight specs", "support bundle specs"
+	itemName string, // e.g., "chart", "preflight spec", "support bundle spec"
+	pluralName string, // e.g., "charts", "preflight specs", "support bundle specs"
 	results []LintableResult,
 ) error {
 	if len(results) == 0 {

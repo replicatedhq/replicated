@@ -384,6 +384,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			if debugFlag {
 				fmt.Fprintf(os.Stderr, "[DEBUG] Platform API origin: %s\n", platformOrigin)
 			}
+
+			// Propagate auth and origin to environment so child tools (e.g., embedded-cluster lint)
+			// can make vendor portal API calls without additional flags
+			_ = os.Setenv("REPLICATED_API_TOKEN", apiToken)
+			_ = os.Setenv("REPLICATED_API_ORIGIN", platformOrigin)
 		}
 
 		// allow override
