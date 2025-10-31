@@ -25,6 +25,12 @@ type EmbeddedClusterLintIssue struct {
 }
 
 // LintEmbeddedCluster executes embedded-cluster lint on the given config path and returns structured results
+//
+// The caller (cli/cmd/lint.go) sets the following environment variables for the embedded-cluster binary:
+//   - REPLICATED_APP: Canonical app ID for vendor portal context
+//   - REPLICATED_API_TOKEN: Authentication token for vendor portal API
+//   - REPLICATED_API_ORIGIN: API endpoint (e.g., https://api.replicated.com)
+//
 // TODO: This is currently a stub implementation that returns success without executing the actual linter.
 // Replace this with real implementation when the embedded-cluster lint command is available.
 func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion string) (*LintResult, error) {
@@ -43,7 +49,10 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 		return nil, fmt.Errorf("failed to access embedded cluster config path: %w", err)
 	}
 
-	// TODO: Replace this stub with actual command execution when lint command is ready:
+	// TODO: Replace this stub with actual command execution when lint command is ready.
+	// The embedded-cluster binary will have access to REPLICATED_APP, REPLICATED_API_TOKEN,
+	// and REPLICATED_API_ORIGIN environment variables for vendor portal integration.
+	// Example:
 	// cmd := exec.CommandContext(ctx, ecPath, "lint", "--format", "json", configPath)
 	// output, err := cmd.CombinedOutput()
 	// messages, parseErr := parseEmbeddedClusterOutput(string(output))

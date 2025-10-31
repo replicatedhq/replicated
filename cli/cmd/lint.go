@@ -14,6 +14,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // InitLint is removed - the standalone "replicated lint" command has been removed.
@@ -176,7 +177,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 					selectedApp = apps[0].App.Slug
 				}
 			} else {
-				// Prompt the user to select an app (interactive only)
+				// Multiple apps available - prompt user (interactive mode only)
+				// Check if we're in a TTY (required for interactive prompts)
+				if !term.IsTerminal(int(os.Stdin.Fd())) {
+					return errors.New("multiple apps available for the current credentials; specify --app flag or set appId/appSlug in .replicated config")
+				}
+
 				items := make([]string, 0, len(apps))
 				for _, a := range apps {
 					if a.App == nil {
@@ -203,16 +209,16 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		if selectedApp != "" {
 			// Resolve to canonical app ID (handles either slug or id input)
 			appObj, err := r.kotsAPI.GetApp(cmd.Context(), selectedApp, true)
-			if err != nil || appObj == nil || appObj.ID == "" {
-				return errors.Wrap(err, "failed to resolve app id from selection")
+			if err != nil {
+				return errors.Wrapf(err, "failed to resolve app from selection: %s", selectedApp)
+			}
+			if appObj == nil || appObj.ID == "" {
+				return errors.Errorf("failed to resolve app id from selection: %s (app not found or invalid)", selectedApp)
 			}
 
-			// Export only REPLICATED_APP (canonical app ID) for downstream tools
+			// Export REPLICATED_APP (canonical app ID) for downstream tools
+			// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
 			_ = os.Setenv("REPLICATED_APP", appObj.ID)
-
-			// Ensure downstream tools can authenticate and hit the correct origin
-			_ = os.Setenv("REPLICATED_API_TOKEN", apiToken)
-			_ = os.Setenv("REPLICATED_API_ORIGIN", platformOrigin)
 		}
 	}
 
