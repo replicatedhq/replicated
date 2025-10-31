@@ -1,0 +1,6 @@
+manifests:
+  - manifests/*.yaml
+repl-lint:
+  linters:
+    helm: {}
+    preflight: {}

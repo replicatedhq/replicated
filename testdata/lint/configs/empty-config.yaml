@@ -1,0 +1,8 @@
+charts: []
+manifests: []
+preflights: []
+repl-lint:
+  linters:
+    helm: {}
+    preflight:
+      disabled: true
