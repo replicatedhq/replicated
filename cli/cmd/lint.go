@@ -136,6 +136,95 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 	return result, nil
 }
 
+// resolveAppContext determines which app to use for linting based on the following priority:
+// 1. appID from runners (from --app-id or REPLICATED_APP env var) (highest priority)
+// 2. appSlug from runners (from --app-slug flag)
+// 3. appId from .replicated config
+// 4. appSlug from .replicated config
+// 5. API fetch (auto-select if 1 app, prompt if multiple, empty string if 0 apps)
+//
+// Returns the canonical app ID (empty string if no app available) and any error encountered.
+// This function is graceful: it returns empty string (not an error) if no app is available,
+// except when the user explicitly specified an app that cannot be resolved.
+func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (string, error) {
+	selectedApp := ""
+
+	// 1) Highest priority: appID from runners (--app-id flag or env var)
+	if r.appID != "" {
+		selectedApp = r.appID
+	} else if r.appSlug != "" { // 2) appSlug from runners (--app-slug flag)
+		selectedApp = r.appSlug
+	} else if config.AppId != "" { // 3) .replicated config: appId
+		selectedApp = config.AppId
+	} else if config.AppSlug != "" { // 4) .replicated config: appSlug
+		selectedApp = config.AppSlug
+	} else {
+		// 5) Fetch apps for current profile; pick one or prompt user if multiple
+		apps, err := r.kotsAPI.ListApps(ctx, false)
+		if err != nil {
+			// API failure: return empty string (graceful degradation)
+			return "", nil
+		}
+
+		if len(apps) == 0 {
+			// No apps available: return empty string (not an error)
+			return "", nil
+		}
+
+		if len(apps) == 1 {
+			// Single app: auto-select
+			if apps[0].App != nil && apps[0].App.ID != "" {
+				selectedApp = apps[0].App.ID
+			} else {
+				selectedApp = apps[0].App.Slug
+			}
+		} else {
+			// Multiple apps available - prompt user (interactive mode only)
+			// Check if we're in a TTY (required for interactive prompts)
+			if !term.IsTerminal(int(os.Stdin.Fd())) {
+				return "", errors.New("multiple apps available for the current credentials; specify --app flag or set appId/appSlug in .replicated config")
+			}
+
+			items := make([]string, 0, len(apps))
+			for _, a := range apps {
+				if a.App == nil {
+					continue
+				}
+				items = append(items, fmt.Sprintf("%s (%s / %s)", a.App.Name, a.App.Slug, a.App.ID))
+			}
+			prompt := promptui.Select{
+				Label: "Select app for linting",
+				Items: items,
+			}
+			idx, _, perr := prompt.Run()
+			if perr != nil {
+				return "", errors.Wrap(perr, "app selection canceled")
+			}
+			if apps[idx].App != nil && apps[idx].App.ID != "" {
+				selectedApp = apps[idx].App.ID
+			} else {
+				selectedApp = apps[idx].App.Slug
+			}
+		}
+	}
+
+	// If no app selected, return empty string (graceful)
+	if selectedApp == "" {
+		return "", nil
+	}
+
+	// Resolve to canonical app ID (handles either slug or id input)
+	appObj, err := r.kotsAPI.GetApp(ctx, selectedApp, true)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to resolve app from selection: %s", selectedApp)
+	}
+	if appObj == nil || appObj.ID == "" {
+		return "", errors.Errorf("failed to resolve app id from selection: %s (app not found or invalid)", selectedApp)
+	}
+
+	return appObj.ID, nil
+}
+
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Validate output format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
@@ -150,76 +239,18 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to load .replicated config")
 	}
 
-	// If embedded-cluster linter is enabled, determine the app context and
-	// set REPLICATED_APP for downstream tools (embedded-cluster lint).
-	if config.ReplLint != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
-		selectedApp := ""
-		// 1) Highest priority: --app flag
-		if appSlugOrID != "" {
-			selectedApp = appSlugOrID
-		} else if config.AppId != "" { // 2) .replicated config: appId
-			selectedApp = config.AppId
-		} else if config.AppSlug != "" { // 3) .replicated config: appSlug
-			selectedApp = config.AppSlug
-		} else {
-			// 4) Fetch apps for current profile; pick one or prompt user if multiple
-			apps, err := r.kotsAPI.ListApps(cmd.Context(), false)
-			if err != nil {
-				return errors.Wrap(err, "failed to list apps for selection")
-			}
-			if len(apps) == 0 {
-				return errors.New("no apps available for the current credentials; specify --app or set appId/appSlug in .replicated")
-			}
-			if len(apps) == 1 {
-				if apps[0].App != nil && apps[0].App.ID != "" {
-					selectedApp = apps[0].App.ID
-				} else {
-					selectedApp = apps[0].App.Slug
-				}
-			} else {
-				// Multiple apps available - prompt user (interactive mode only)
-				// Check if we're in a TTY (required for interactive prompts)
-				if !term.IsTerminal(int(os.Stdin.Fd())) {
-					return errors.New("multiple apps available for the current credentials; specify --app flag or set appId/appSlug in .replicated config")
-				}
+	// Resolve app context for all linters (not just embedded-cluster)
+	// This makes REPLICATED_APP, REPLICATED_API_TOKEN, and REPLICATED_API_ORIGIN
+	// available to all linter binaries for future vendor portal integrations.
+	appID, err := r.resolveAppContext(cmd.Context(), config)
+	if err != nil {
+		return errors.Wrap(err, "failed to resolve app context")
+	}
 
-				items := make([]string, 0, len(apps))
-				for _, a := range apps {
-					if a.App == nil {
-						continue
-					}
-					items = append(items, fmt.Sprintf("%s (%s / %s)", a.App.Name, a.App.Slug, a.App.ID))
-				}
-				prompt := promptui.Select{
-					Label: "Select app for embedded-cluster lint",
-					Items: items,
-				}
-				idx, _, perr := prompt.Run()
-				if perr != nil {
-					return errors.Wrap(perr, "app selection canceled")
-				}
-				if apps[idx].App != nil && apps[idx].App.ID != "" {
-					selectedApp = apps[idx].App.ID
-				} else {
-					selectedApp = apps[idx].App.Slug
-				}
-			}
-		}
-
-		if selectedApp != "" {
-			// Resolve to canonical app ID (handles either slug or id input)
-			appObj, err := r.kotsAPI.GetApp(cmd.Context(), selectedApp, true)
-			if err != nil {
-				return errors.Wrapf(err, "failed to resolve app from selection: %s", selectedApp)
-			}
-			if appObj == nil || appObj.ID == "" {
-				return errors.Errorf("failed to resolve app id from selection: %s (app not found or invalid)", selectedApp)
-			}
-
-			// Export REPLICATED_APP (canonical app ID) for downstream tools
-			// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
-			_ = os.Setenv("REPLICATED_APP", appObj.ID)
-		}
+	// Set REPLICATED_APP env var if we successfully resolved an app
+	// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
+	if appID != "" {
+		_ = os.Setenv("REPLICATED_APP", appID)
 	}
 
 	// Initialize JSON output structure

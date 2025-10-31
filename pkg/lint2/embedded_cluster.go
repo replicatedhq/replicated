@@ -26,10 +26,13 @@ type EmbeddedClusterLintIssue struct {
 
 // LintEmbeddedCluster executes embedded-cluster lint on the given config path and returns structured results
 //
-// The caller (cli/cmd/lint.go) sets the following environment variables for the embedded-cluster binary:
-//   - REPLICATED_APP: Canonical app ID for vendor portal context
+// The caller (cli/cmd/lint.go) sets the following environment variables for ALL linter binaries:
+//   - REPLICATED_APP: Canonical app ID for vendor portal context (if available)
 //   - REPLICATED_API_TOKEN: Authentication token for vendor portal API
 //   - REPLICATED_API_ORIGIN: API endpoint (e.g., https://api.replicated.com)
+//
+// These environment variables enable all linters (helm, preflight, support-bundle, embedded-cluster)
+// to make vendor portal API calls for enhanced validation capabilities.
 //
 // TODO: This is currently a stub implementation that returns success without executing the actual linter.
 // Replace this with real implementation when the embedded-cluster lint command is available.
@@ -50,8 +53,8 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 	}
 
 	// TODO: Replace this stub with actual command execution when lint command is ready.
-	// The embedded-cluster binary will have access to REPLICATED_APP, REPLICATED_API_TOKEN,
-	// and REPLICATED_API_ORIGIN environment variables for vendor portal integration.
+	// The binary will have access to REPLICATED_APP, REPLICATED_API_TOKEN, and
+	// REPLICATED_API_ORIGIN environment variables (set by caller for all linters).
 	// Example:
 	// cmd := exec.CommandContext(ctx, ecPath, "lint", "--format", "json", configPath)
 	// output, err := cmd.CombinedOutput()
