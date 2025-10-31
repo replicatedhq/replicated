@@ -12,8 +12,6 @@ charts: [
 preflights: [
   {
       path: "./preflights/**",
-      chartName: "helm-chart",
-      chartVersion: "1.0.0",
   }
 ]
 releaseLabel: ""  ## some sort of semver pattern?
@@ -26,6 +24,8 @@ repl-lint:
     preflight:
       disabled: false
     support-bundle:
+      disabled: false
+    embedded-cluster:
       disabled: false
   tools:
     helm: "latest"
