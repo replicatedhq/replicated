@@ -1718,3 +1718,638 @@ spec:
 
 	t.Log("SUCCESS: Autodiscovery correctly handled both .yaml and .yml extensions for manifests")
 }
+
+// Tests for config discovery vs autodiscovery behavior
+
+// TestLint_SubdirectoryWithParentConfig tests that running lint from a subdirectory
+// uses the parent's .replicated config and does NOT trigger autodiscovery.
+func TestLint_SubdirectoryWithParentConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create chart1 in parent directory
+	chart1Dir := filepath.Join(tmpDir, "chart1")
+	if err := os.MkdirAll(chart1Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chart1Yaml := filepath.Join(chart1Dir, "Chart.yaml")
+	chart1Content := `apiVersion: v2
+name: app1
+version: 1.0.0
+description: Chart in parent config
+`
+	if err := os.WriteFile(chart1Yaml, []byte(chart1Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chart1Dir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest for chart1
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChartFile := filepath.Join(manifestsDir, "helmchart1.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: app1-chart
+spec:
+  chart:
+    name: app1
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config in parent with chart1
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: ` + chart1Dir + `
+manifests:
+  - ` + manifestsDir + `/**
+repl-lint:
+  linters:
+    helm: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create subdirectory with chart2 (NOT in parent config)
+	subDir := filepath.Join(tmpDir, "subdir")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chart2Dir := filepath.Join(subDir, "chart2")
+	if err := os.MkdirAll(chart2Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chart2Yaml := filepath.Join(chart2Dir, "Chart.yaml")
+	chart2Content := `apiVersion: v2
+name: app2
+version: 1.0.0
+description: Chart NOT in parent config
+`
+	if err := os.WriteFile(chart2Yaml, []byte(chart2Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	chart2Values := filepath.Join(chart2Dir, "values.yaml")
+	if err := os.WriteFile(chart2Values, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to subdirectory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(subDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify that autodiscovery did NOT trigger
+	output := buf.String()
+	if strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("autodiscovery should NOT trigger when parent config exists with resources")
+	}
+
+	// Verify chart1 from parent config was linted
+	if !strings.Contains(output, chart1Dir) {
+		t.Errorf("expected chart1 from parent config to be linted, got output:\n%s", output)
+	}
+
+	// Verify chart2 was NOT linted (not in parent config)
+	if strings.Contains(output, "app2") {
+		t.Error("chart2 should NOT be linted (not in parent config)")
+	}
+
+	t.Log("SUCCESS: Subdirectory correctly used parent config instead of autodiscovery")
+}
+
+// TestLint_SubdirectoryWithEmptyParentConfig tests that running lint from a subdirectory
+// with an empty parent config DOES trigger autodiscovery.
+func TestLint_SubdirectoryWithEmptyParentConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create empty .replicated config in parent (no charts/preflights/manifests)
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `repl-lint:
+  linters:
+    helm: {}
+    preflight: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create subdirectory with resources
+	subDir := filepath.Join(tmpDir, "subdir")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create chart in subdirectory
+	chartDir := filepath.Join(subDir, "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: discovered-app
+version: 1.0.0
+description: Chart discovered by autodiscovery
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	valuesYaml := filepath.Join(chartDir, "values.yaml")
+	if err := os.WriteFile(valuesYaml, []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest for the discovered chart
+	helmChartFile := filepath.Join(subDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: discovered-app-chart
+spec:
+  chart:
+    name: discovered-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create preflight in subdirectory
+	preflightFile := filepath.Join(subDir, "preflight.yaml")
+	preflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: discovered-preflight
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - pass:
+              message: Valid
+`
+	if err := os.WriteFile(preflightFile, []byte(preflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to subdirectory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(subDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify autodiscovery DID trigger
+	output := buf.String()
+	if !strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("autodiscovery SHOULD trigger when parent config is empty")
+	}
+
+	// Verify resources were discovered
+	if !strings.Contains(output, "1 Helm chart(s)") {
+		t.Error("expected to discover 1 chart")
+	}
+	if !strings.Contains(output, "1 Preflight spec(s)") {
+		t.Error("expected to discover 1 preflight")
+	}
+
+	t.Log("SUCCESS: Empty parent config correctly triggered autodiscovery")
+}
+
+// TestLint_MonorepoMultipleConfigs tests that multiple .replicated configs
+// are merged correctly and autodiscovery does NOT trigger.
+func TestLint_MonorepoMultipleConfigs(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create app1 chart at grandparent level
+	app1Dir := filepath.Join(tmpDir, "app1")
+	if err := os.MkdirAll(app1Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	app1Chart := filepath.Join(app1Dir, "Chart.yaml")
+	app1Content := `apiVersion: v2
+name: app1
+version: 1.0.0
+description: Grandparent app
+`
+	if err := os.WriteFile(app1Chart, []byte(app1Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(app1Dir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest for app1
+	app1HelmChart := filepath.Join(tmpDir, "app1-helmchart.yaml")
+	app1HelmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: app1-chart
+spec:
+  chart:
+    name: app1
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(app1HelmChart, []byte(app1HelmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create grandparent .replicated with app1
+	grandparentConfig := filepath.Join(tmpDir, ".replicated")
+	grandparentContent := `charts:
+  - path: ` + app1Dir + `
+manifests:
+  - ` + tmpDir + `/*.yaml
+repl-lint:
+  linters:
+    helm: {}
+`
+	if err := os.WriteFile(grandparentConfig, []byte(grandparentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create parent directory
+	parentDir := filepath.Join(tmpDir, "parent")
+	if err := os.MkdirAll(parentDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create app2 chart at parent level
+	app2Dir := filepath.Join(parentDir, "app2")
+	if err := os.MkdirAll(app2Dir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	app2Chart := filepath.Join(app2Dir, "Chart.yaml")
+	app2Content := `apiVersion: v2
+name: app2
+version: 1.0.0
+description: Parent app
+`
+	if err := os.WriteFile(app2Chart, []byte(app2Content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(app2Dir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest for app2
+	app2HelmChart := filepath.Join(parentDir, "app2-helmchart.yaml")
+	app2HelmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: app2-chart
+spec:
+  chart:
+    name: app2
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(app2HelmChart, []byte(app2HelmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create parent .replicated with app2
+	parentConfig := filepath.Join(parentDir, ".replicated")
+	parentContent := `charts:
+  - path: ` + app2Dir + `
+manifests:
+  - ` + parentDir + `/*.yaml
+`
+	if err := os.WriteFile(parentConfig, []byte(parentContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create child directory
+	childDir := filepath.Join(parentDir, "child")
+	if err := os.MkdirAll(childDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to child directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(childDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify autodiscovery did NOT trigger
+	output := buf.String()
+	if strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("autodiscovery should NOT trigger when merged configs have resources")
+	}
+
+	// Verify BOTH apps were linted (merged from grandparent and parent configs)
+	if !strings.Contains(output, "app1") {
+		t.Error("expected app1 from grandparent config to be linted")
+	}
+	if !strings.Contains(output, "app2") {
+		t.Error("expected app2 from parent config to be linted")
+	}
+
+	t.Log("SUCCESS: Multiple configs correctly merged and both apps linted")
+}
+
+// TestLint_AutodiscoveryOnlyWhenAllArraysEmpty tests that autodiscovery
+// only triggers when ALL resource arrays are empty.
+func TestLint_AutodiscoveryOnlyWhenAllArraysEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create support bundle manifest
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	sbFile := filepath.Join(manifestsDir, "support-bundle.yaml")
+	sbContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: configured-sb
+spec:
+  collectors:
+    - logs:
+        selector:
+          - app=test
+`
+	if err := os.WriteFile(sbFile, []byte(sbContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with ONLY manifests (no charts/preflights)
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `manifests:
+  - ` + manifestsDir + `/**
+repl-lint:
+  linters:
+    support-bundle: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create subdirectory with a chart (NOT in config)
+	subDir := filepath.Join(tmpDir, "subdir")
+	if err := os.MkdirAll(subDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartDir := filepath.Join(subDir, "chart1")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: undiscovered-app
+version: 1.0.0
+description: Should NOT be discovered
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to subdirectory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(subDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify autodiscovery did NOT trigger
+	output := buf.String()
+	if strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("autodiscovery should NOT trigger when manifests array is non-empty")
+	}
+
+	// Verify chart was NOT discovered
+	if strings.Contains(output, "undiscovered-app") {
+		t.Error("chart should NOT be discovered when config has manifests")
+	}
+
+	// Verify support bundle from config was used
+	if !strings.Contains(output, sbFile) {
+		t.Errorf("expected support bundle from parent config to be linted, got output:\n%s", output)
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly did NOT trigger with non-empty manifests array")
+}
+
+// TestLint_NoConfigAnywhere tests autodiscovery when no .replicated config
+// exists anywhere in the directory tree.
+func TestLint_NoConfigAnywhere(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create deep nested directory structure with NO .replicated anywhere
+	deepDir := filepath.Join(tmpDir, "level1", "level2", "level3")
+	if err := os.MkdirAll(deepDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create chart in deep directory
+	chartDir := filepath.Join(deepDir, "my-chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: deep-app
+version: 1.0.0
+description: Chart in deep directory
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest
+	helmChartFile := filepath.Join(deepDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: deep-app-chart
+spec:
+  chart:
+    name: deep-app
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartFile, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to deep directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(deepDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Verify autodiscovery triggered
+	output := buf.String()
+	if !strings.Contains(output, "Auto-discovering lintable resources") {
+		t.Error("autodiscovery SHOULD trigger when no config exists anywhere")
+	}
+
+	// Verify chart was discovered
+	if !strings.Contains(output, "1 Helm chart(s)") {
+		t.Error("expected to discover 1 chart")
+	}
+
+	t.Log("SUCCESS: Autodiscovery correctly triggered with no config in directory tree")
+}
