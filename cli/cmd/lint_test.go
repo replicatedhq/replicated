@@ -76,7 +76,6 @@ func copyFixtureToTemp(t *testing.T, fixturePath string) string {
 }
 
 func TestLint_VerboseFlag(t *testing.T) {
-	// Use fixture for test data
 	fixturePath := getTestDataPath(t, "testdata/lint/simple-chart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -260,7 +259,6 @@ repl-lint:
 }
 
 func TestExtractAndDisplayImagesFromConfig_MultipleCharts(t *testing.T) {
-	// Use multi-chart fixture
 	fixturePath := getTestDataPath(t, "testdata/lint/multi-chart-project")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -336,7 +334,6 @@ func TestExtractAndDisplayImagesFromConfig_MultipleCharts(t *testing.T) {
 
 // TestJSONOutputContainsAllToolVersions tests that JSON output includes all tool versions
 func TestJSONOutputContainsAllToolVersions(t *testing.T) {
-	// Use fixture and customize config with tool versions
 	fixturePath := getTestDataPath(t, "testdata/lint/simple-chart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -545,7 +542,6 @@ repl-lint:
 
 // TestConfigMissingToolVersions tests that missing tool versions default to "latest"
 func TestConfigMissingToolVersions(t *testing.T) {
-	// Use fixture and customize config without tool versions
 	fixturePath := getTestDataPath(t, "testdata/lint/simple-chart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -647,7 +643,6 @@ func isValidSemVer(version string) bool {
 
 // TestLint_ChartValidationError tests that lint fails when a chart is missing its HelmChart manifest
 func TestLint_ChartValidationError(t *testing.T) {
-	// Use fixture with chart but no HelmChart manifest
 	fixturePath := getTestDataPath(t, "testdata/lint/chart-missing-helmchart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -701,7 +696,6 @@ func TestLint_ChartValidationError(t *testing.T) {
 
 // TestLint_ChartValidationWarning tests that lint succeeds but shows warning for orphaned HelmChart manifest
 func TestLint_ChartValidationWarning(t *testing.T) {
-	// Use fixture with matching HelmChart + orphaned HelmChart manifest
 	fixturePath := getTestDataPath(t, "testdata/lint/orphaned-helmchart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -753,7 +747,6 @@ func TestLint_ChartValidationWarning(t *testing.T) {
 
 // TestLint_NoManifestsConfig tests error when charts configured but manifests section missing
 func TestLint_NoManifestsConfig(t *testing.T) {
-	// Use fixture and modify config to remove manifests section
 	fixturePath := getTestDataPath(t, "testdata/lint/chart-missing-helmchart")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -822,7 +815,6 @@ repl-lint:
 // when manifests directory contains BOTH HelmChart manifests and Support Bundle specs,
 // and also includes Preflight specs.
 func TestLint_AutodiscoveryWithMixedManifests(t *testing.T) {
-	// Use fixture with mixed manifests (no .replicated to trigger autodiscovery)
 	fixturePath := getTestDataPath(t, "testdata/lint/mixed-manifests-autodiscovery")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -1133,7 +1125,6 @@ spec:
 
 // TestLint_AutodiscoveryHiddenDirectories tests that hidden directories (.git, .github) are ignored
 func TestLint_AutodiscoveryHiddenDirectories(t *testing.T) {
-	// Use fixture with hidden .github directory and real chart
 	fixturePath := getTestDataPath(t, "testdata/lint/hidden-dirs-test")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
@@ -1198,7 +1189,6 @@ func TestLint_AutodiscoveryHiddenDirectories(t *testing.T) {
 
 // TestLint_AutodiscoveryBothYamlExtensions tests that both .yaml and .yml files are discovered
 func TestLint_AutodiscoveryBothYamlExtensions(t *testing.T) {
-	// Use fixture with mixed .yaml and .yml extensions
 	fixturePath := getTestDataPath(t, "testdata/lint/mixed-manifests-yaml-yml")
 	testDir := copyFixtureToTemp(t, fixturePath)
 
