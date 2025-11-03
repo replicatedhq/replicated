@@ -148,7 +148,7 @@ func (r *runners) getNetworkReportSummary(ctx context.Context) error {
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if errors.Cause(err) == platformclient.ErrNotFound {
-		return fmt.Errorf("network report summary not found for network %s, network must be terminated and events must have been porcessed", r.args.networkReportID)
+		return fmt.Errorf("network report summary not found for network %s, network must be terminated and events must have been processed", r.args.networkReportID)
 	} else if err != nil {
 		return errors.Wrap(err, "get network report summary")
 	}
