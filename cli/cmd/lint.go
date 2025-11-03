@@ -117,11 +117,6 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 			ecPaths = append(ecPaths, paths...)
 		}
 		result.EmbeddedClusterPaths = ecPaths
-
-		// Validate: error if 2+ configs found (exactly 0 or 1 allowed)
-		if len(ecPaths) > 1 {
-			return nil, fmt.Errorf("multiple embedded cluster configs found (%d). Only 0 or 1 config per project is supported. Found configs:\n  - %s", len(ecPaths), strings.Join(ecPaths, "\n  - "))
-		}
 	}
 
 	// Extract charts with metadata (needed for validation and image extraction)
@@ -662,6 +657,41 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 					{
 						Severity: "ERROR",
 						Message:  fmt.Sprintf("Embedded cluster linting requires app context: %v", appResolveErr),
+					},
+				},
+				Summary: ResourceSummary{
+					ErrorCount:   1,
+					WarningCount: 0,
+					InfoCount:    0,
+				},
+			})
+		}
+
+		// Display results in table format
+		if r.outputFormat == "table" {
+			lintableResults := make([]LintableResult, len(results.Configs))
+			for i, config := range results.Configs {
+				lintableResults[i] = config
+			}
+			if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+				return nil, errors.Wrap(err, "failed to display embedded cluster results")
+			}
+		}
+
+		return results, nil
+	}
+
+	// Validate: only 0 or 1 config allowed
+	// If 2+ found, return failed results but don't block other linters
+	if len(ecPaths) > 1 {
+		for _, configPath := range ecPaths {
+			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
+				Path:    configPath,
+				Success: false,
+				Messages: []LintMessage{
+					{
+						Severity: "ERROR",
+						Message:  fmt.Sprintf("Multiple embedded cluster configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s", len(ecPaths), strings.Join(ecPaths, ", ")),
 					},
 				},
 				Summary: ResourceSummary{

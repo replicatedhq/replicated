@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"github.com/spf13/cobra"
 )
 
 // TestResolveAppContext_Integration tests app resolution with real API calls.
@@ -423,9 +425,10 @@ spec:
 		t.Fatalf("expected 2 EC configs, found %d", len(paths))
 	}
 	
-	// The error should be caught at the runLint level when validating
-	// that there's only 0 or 1 EC config allowed
-	t.Logf("SUCCESS: Discovered %d EC configs (validation will reject multiple)", len(paths))
+	// Note: Discovery succeeds even with 2+ configs
+	// The validation happens in lintEmbeddedClusterConfigs() which fails gracefully
+	// without blocking other linters
+	t.Logf("SUCCESS: Discovered %d EC configs (EC linter will fail gracefully, other linters continue)", len(paths))
 }
 
 // TestEmbeddedClusterDiscovery_NoConfigs tests graceful handling of no EC configs
@@ -466,4 +469,103 @@ spec:
 	}
 	
 	t.Log("SUCCESS: No EC configs found (as expected)")
+}
+
+// TestEmbeddedClusterLint_MultipleConfigsGracefulFailure tests that when 2+ EC configs
+// are found, the EC linter fails gracefully with a clear error message and doesn't
+// block the entire lint command.
+func TestEmbeddedClusterLint_MultipleConfigsGracefulFailure(t *testing.T) {
+	ecBinaryPath := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_PATH")
+	if ecBinaryPath == "" {
+		t.Skip("Skipping: REPLICATED_EMBEDDED_CLUSTER_PATH not set")
+	}
+
+	// Create temp directory with multiple EC configs
+	tmpDir := t.TempDir()
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create first EC config
+	ecConfig1 := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: cluster-1
+spec:
+  version: "1.0.0"
+`
+	ecConfig1Path := filepath.Join(manifestsDir, "cluster-1.yaml")
+	if err := os.WriteFile(ecConfig1Path, []byte(ecConfig1), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create second EC config
+	ecConfig2 := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: cluster-2
+spec:
+  version: "2.0.0"
+`
+	ecConfig2Path := filepath.Join(manifestsDir, "cluster-2.yaml")
+	if err := os.WriteFile(ecConfig2Path, []byte(ecConfig2), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a minimal cobra command for testing
+	cmd := &cobra.Command{
+		Use: "test",
+	}
+
+	// Create a runners instance with minimal setup
+	var output bytes.Buffer
+	w := tabwriter.NewWriter(&output, 0, 0, 2, ' ', 0)
+	runners := &runners{
+		outputFormat: "table",
+		w:            w,
+	}
+
+	// Call lintEmbeddedClusterConfigs with both config paths
+	ecPaths := []string{ecConfig1Path, ecConfig2Path}
+	results, err := runners.lintEmbeddedClusterConfigs(cmd, ecPaths, "latest", nil)
+
+	// Should return results (not error out) - graceful failure
+	if err != nil {
+		t.Fatalf("expected graceful failure (return results), got error: %v", err)
+	}
+
+	// Should have results for both configs
+	if len(results.Configs) != 2 {
+		t.Fatalf("expected 2 config results, got %d", len(results.Configs))
+	}
+
+	// All results should show Success: false
+	for i, config := range results.Configs {
+		if config.Success {
+			t.Errorf("config %d should have Success=false, got true", i)
+		}
+
+		// Check that error message mentions "Multiple embedded cluster configs"
+		if len(config.Messages) == 0 {
+			t.Errorf("config %d has no error messages", i)
+			continue
+		}
+
+		foundMultipleConfigsError := false
+		for _, msg := range config.Messages {
+			if msg.Severity == "ERROR" && strings.Contains(msg.Message, "Multiple embedded cluster configs") {
+				foundMultipleConfigsError = true
+				break
+			}
+		}
+
+		if !foundMultipleConfigsError {
+			t.Errorf("config %d missing 'Multiple embedded cluster configs' error message", i)
+		}
+	}
+
+	t.Log("✓ EC linter failed gracefully with clear error message")
+	t.Log("✓ Function returned results (not fatal error)")
+	t.Log("✓ Other linters would continue running")
 }
