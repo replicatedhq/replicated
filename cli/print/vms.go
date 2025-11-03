@@ -24,9 +24,9 @@ var vmsTmplTable = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs)
 var vmsTmplTableNoHeader = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplTableRowSrc))
 
 // Wide table formatting
-var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	LAST SCHEDULING STATUS        NETWORK	CREATED	EXPIRES	COST	TAGS`
+var vmsTmplWideHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	INSTANCE TYPE	STATUS	LAST SCHEDULING STATUS        NETWORK	CREATED	EXPIRES	COST	TAGS`
 var vmsTmplWideRowSrc    = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ if .LastSchedulingStatus }}{{ padding .LastSchedulingStatus 29 }}{{ else }}{{ padding "-" 29 }}{{ end }} {{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}} 	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{ if eq (len .Tags) 0 }}{{ padding "-" 11 }}{{ else }}{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}{{ end }}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ if .InstanceType }}{{ padding .InstanceType 13 }}{{ else }}{{ padding "-" 13 }}{{ end }}	{{ padding (printf "%s" .Status) 12 }}	{{ if .LastSchedulingStatus }}{{ padding .LastSchedulingStatus 29 }}{{ else }}{{ padding "-" 29 }}{{ end }} {{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}} 	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{ if eq (len .Tags) 0 }}{{ padding "-" 11 }}{{ else }}{{ range $index, $tag := .Tags }}{{if $index}}, {{end}}{{ $tag.Key }}={{ $tag.Value }}{{ end }}{{ end }}
 {{ end }}`
 var vmsTmplWideSrc = fmt.Sprintln(vmsTmplWideHeaderSrc) + vmsTmplWideRowSrc
 var vmsTmplWide = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplWideSrc))
