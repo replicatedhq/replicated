@@ -2229,6 +2229,382 @@ spec:
 	}
 }
 
+// ==============================================================================
+// GVK Edge Case Tests: Embedded Cluster vs KOTS Config Distinction
+// ==============================================================================
+//
+// These tests verify the crucial distinction between Embedded Cluster Config
+// and KOTS Config - both have kind: Config but different apiVersion groups.
+
+func TestHasGVK_EmbeddedClusterConfig_Matched(t *testing.T) {
+	// Test that EC Config with correct group is matched
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "ec-config.yaml")
+
+	content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: my-ec-config
+spec:
+  version: "1.33+k8s-1.33"
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// DiscoverEmbeddedClusterPaths uses these exact parameters
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if !got {
+		t.Error("hasGVK() = false for EC Config, want true")
+	}
+}
+
+func TestHasGVK_KotsConfig_NotMatched(t *testing.T) {
+	// Test that KOTS Config is NOT matched when searching for EC Config
+	// This is the critical test - both have kind: Config but different groups
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "kots-config.yaml")
+
+	content := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-kots-config
+spec:
+  title: My Application
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Try to match with EC group - should NOT match KOTS
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if got {
+		t.Error("hasGVK() = true for KOTS Config when searching for EC Config, want false")
+	}
+}
+
+func TestHasGVK_EmbeddedClusterConfig_MultipleVersions(t *testing.T) {
+	// Test that different EC API versions all match (version is wildcard)
+	tests := []struct {
+		name       string
+		apiVersion string
+	}{
+		{"v1beta1", "embeddedcluster.replicated.com/v1beta1"},
+		{"v1beta2", "embeddedcluster.replicated.com/v1beta2"},
+		{"v1", "embeddedcluster.replicated.com/v1"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "ec-config.yaml")
+
+			content := "apiVersion: " + tt.apiVersion + "\nkind: Config\nmetadata:\n  name: test\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			// Empty version parameter = match any version
+			got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+			if !got {
+				t.Errorf("hasGVK() = false for %s, want true (version wildcard should match)", tt.apiVersion)
+			}
+		})
+	}
+}
+
+func TestHasGVK_EmbeddedClusterConfig_GroupCaseSensitive(t *testing.T) {
+	// Test that group matching is case-sensitive
+	tests := []struct {
+		name       string
+		apiVersion string
+		wantMatch  bool
+	}{
+		{"correct case", "embeddedcluster.replicated.com/v1beta1", true},
+		{"uppercase group", "EmbeddedCluster.replicated.com/v1beta1", false},
+		{"uppercase domain", "embeddedcluster.Replicated.Com/v1beta1", false},
+		{"all uppercase", "EMBEDDEDCLUSTER.REPLICATED.COM/v1beta1", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "config.yaml")
+
+			content := "apiVersion: " + tt.apiVersion + "\nkind: Config\nmetadata:\n  name: test\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+			if got != tt.wantMatch {
+				t.Errorf("hasGVK() = %v for %s, want %v (group should be case-sensitive)", got, tt.apiVersion, tt.wantMatch)
+			}
+		})
+	}
+}
+
+func TestHasGVK_Config_MissingAPIVersion(t *testing.T) {
+	// Test handling of Config without apiVersion field
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "config.yaml")
+
+	content := `kind: Config
+metadata:
+  name: test-config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should not match - requires specific group
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if got {
+		t.Error("hasGVK() = true for Config without apiVersion, want false")
+	}
+}
+
+func TestHasGVK_Config_EmptyAPIVersion(t *testing.T) {
+	// Test handling of Config with empty apiVersion field
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "config.yaml")
+
+	content := `apiVersion: ""
+kind: Config
+metadata:
+  name: test-config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should not match - requires specific group
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if got {
+		t.Error("hasGVK() = true for Config with empty apiVersion, want false")
+	}
+}
+
+func TestHasGVK_EmbeddedCluster_NonConfigKinds(t *testing.T) {
+	// Test that other EC kinds (not Config) are NOT matched
+	tests := []struct {
+		name string
+		kind string
+	}{
+		{"Installation", "Installation"},
+		{"ClusterProfile", "ClusterProfile"},
+		{"Preflight", "Preflight"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "ec-resource.yaml")
+
+			content := "apiVersion: embeddedcluster.replicated.com/v1beta1\nkind: " + tt.kind + "\nmetadata:\n  name: test\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			// Searching for Config kind specifically
+			got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+			if got {
+				t.Errorf("hasGVK() = true for EC %s, want false (only Config kind should match)", tt.kind)
+			}
+		})
+	}
+}
+
+func TestHasGVK_Config_KindCaseSensitive(t *testing.T) {
+	// Test that kind matching is case-sensitive
+	tests := []struct {
+		name      string
+		kind      string
+		wantMatch bool
+	}{
+		{"correct case", "Config", true},
+		{"lowercase", "config", false},
+		{"uppercase", "CONFIG", false},
+		{"mixed case", "CoNfIg", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "config.yaml")
+
+			content := "apiVersion: embeddedcluster.replicated.com/v1beta1\nkind: " + tt.kind + "\nmetadata:\n  name: test\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+			if got != tt.wantMatch {
+				t.Errorf("hasGVK() = %v for kind %s, want %v (kind should be case-sensitive)", got, tt.kind, tt.wantMatch)
+			}
+		})
+	}
+}
+
+func TestHasGVK_MultiDoc_KotsThenEC(t *testing.T) {
+	// Test multi-document YAML with KOTS Config first, then EC Config
+	// Should find the EC Config (second document)
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "multi-config.yaml")
+
+	content := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should find the EC Config in the second document
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if !got {
+		t.Error("hasGVK() = false for multi-doc with EC Config in second doc, want true")
+	}
+}
+
+func TestHasGVK_MultiDoc_ECThenKots(t *testing.T) {
+	// Test multi-document YAML with EC Config first, then KOTS Config
+	// Should find the EC Config (first document)
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "multi-config.yaml")
+
+	content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should find the EC Config in the first document
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if !got {
+		t.Error("hasGVK() = false for multi-doc with EC Config in first doc, want true")
+	}
+}
+
+func TestHasGVK_EmptyFile(t *testing.T) {
+	// Test completely empty file
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "empty.yaml")
+
+	if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if got {
+		t.Error("hasGVK() = true for empty file, want false")
+	}
+}
+
+func TestHasGVK_OnlyComments(t *testing.T) {
+	// Test file with only comments (no actual YAML)
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "comments.yaml")
+
+	content := `# This is a comment
+# Another comment
+# No actual YAML content
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if got {
+		t.Error("hasGVK() = true for comments-only file, want false")
+	}
+}
+
+func TestHasGVK_MalformedAPIVersion(t *testing.T) {
+	// Test that apiVersions with wrong group don't match
+	// Note: Version wildcards mean malformed versions still match if group is correct
+	tests := []struct {
+		name       string
+		apiVersion string
+		wantMatch  bool
+	}{
+		{"just slash", "/", false},
+		{"no group", "v1beta1", false},
+		{"wrong group", "wronggroup.com/v1beta1", false},
+		{"partial group", "embeddedcluster/v1beta1", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			path := filepath.Join(tmpDir, "config.yaml")
+
+			content := "apiVersion: " + tt.apiVersion + "\nkind: Config\nmetadata:\n  name: test\n"
+			if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := hasGVK(path, "embeddedcluster.replicated.com", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+			if got != tt.wantMatch {
+				t.Errorf("hasGVK() = %v for apiVersion %q, want %v", got, tt.apiVersion, tt.wantMatch)
+			}
+		})
+	}
+}
+
 // Phase 9 Tests: Support Bundle Smart Pattern Logic
 
 func TestDiscoverSupportBundlePaths_SmartPatternRecursive(t *testing.T) {
