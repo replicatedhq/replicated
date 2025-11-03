@@ -31,7 +31,7 @@ Output formats:
 		Example: `# Get full network traffic report
 replicated network report <network-id>
 
-# Get aggregated summary with statistics
+# Get aggregated summary with statistics. Only available for networks that have been terminated.
 replicated network report <network-id> --summary
 
 # Watch for new network events in real-time
@@ -147,6 +147,8 @@ func (r *runners) getNetworkReportSummary(ctx context.Context) error {
 	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
+	} else if errors.Cause(err) == platformclient.ErrNotFound {
+		return fmt.Errorf("network report summary not found for network %s, network must be terminated and events must have been porcessed", r.args.networkReportID)
 	} else if err != nil {
 		return errors.Wrap(err, "get network report summary")
 	}
