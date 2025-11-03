@@ -174,8 +174,7 @@ func getLatestStableVersion(toolName string) (string, error) {
 	case ToolSupportBundle:
 		versionKey = "support_bundle"
 	case ToolEmbeddedCluster:
-		// Embedded cluster not in ping API yet - use GitHub API fallback
-		return getLatestEmbeddedClusterVersion()
+		versionKey = "embedded_cluster"
 	default:
 		return "", fmt.Errorf("unknown tool: %s", toolName)
 	}
@@ -366,41 +365,6 @@ func (d *Downloader) downloadEmbeddedClusterArchive(version string) ([]byte, str
 
 	// No checksum file published - return empty strings for checksum URL and filename
 	return data, "", "", nil
-}
-
-// githubRelease represents a GitHub release from the API
-type githubRelease struct {
-	TagName string `json:"tag_name"`
-}
-
-// getLatestEmbeddedClusterVersion fetches the latest version from GitHub API
-func getLatestEmbeddedClusterVersion() (string, error) {
-	url := "https://api.github.com/repos/replicatedhq/embedded-cluster/releases/latest"
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return "", fmt.Errorf("fetching latest embedded-cluster version from GitHub: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("GitHub API returned HTTP %d", resp.StatusCode)
-	}
-
-	var release githubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return "", fmt.Errorf("parsing GitHub release JSON: %w", err)
-	}
-
-	// Strip leading 'v' if present (e.g., "v2.11.3+k8s-1.33" → "2.11.3+k8s-1.33")
-	version := strings.TrimPrefix(release.TagName, "v")
-
-	if version == "" {
-		return "", fmt.Errorf("no tag_name found in GitHub release")
-	}
-
-	return version, nil
 }
 
 // extractFromZip extracts a specific file from a zip archive in memory
