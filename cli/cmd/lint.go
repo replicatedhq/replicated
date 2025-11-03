@@ -243,6 +243,13 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Only the embedded-cluster linter will fail if app context is required but unavailable.
 	appID, appResolveErr := r.resolveAppContext(cmd.Context(), config)
 
+	// Warn user if app resolution failed and EC linter is enabled
+	if appResolveErr != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+		fmt.Fprintf(r.w, "⚠️  Warning: Could not resolve app context: %v\n", appResolveErr)
+		fmt.Fprintf(r.w, "   Embedded-cluster linter will fail. Other linters will continue.\n\n")
+		r.w.Flush()
+	}
+
 	// Set REPLICATED_APP env var if we successfully resolved an app
 	// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
 	if appID != "" {
