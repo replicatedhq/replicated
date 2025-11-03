@@ -15,10 +15,10 @@ repl-lint:
         support-bundle:
             enabled: true
             strict: false
-        embedded-cluster:                # embedded cluster and kots linters do not exist as of yet
+        embedded-cluster:                # embedded cluster linter validates EC config files
             enabled: false
             strict: false
-        kots:
+        kots:                            # kots linter does not exist as of yet
             enabled: false
             strict: false
     tools:                               # tool resolution (optional)
@@ -297,3 +297,152 @@ spec:
 **Problem:** Warning about orphaned HelmChart manifest
 
 **Solution:** Either add the corresponding chart to your configuration or remove the unused HelmChart manifest. Warnings are informational and won't cause linting to fail.
+
+## Embedded Cluster Configuration
+
+The embedded-cluster linter validates Embedded Cluster configuration files. Embedded Cluster is Replicated's solution for packaging Kubernetes and your application together as a single appliance-style installer.
+
+### What It Validates
+
+The embedded-cluster linter validates:
+- Configuration schema correctness
+- Kubernetes version compatibility
+- Extension configurations
+- Network and storage settings
+- High availability settings
+- Custom branding configuration
+
+### Platform Requirements
+
+**Important:** The embedded-cluster linter binary is currently only available for **Linux AMD64**.
+
+- ✅ **Linux (x86_64/amd64)**: Full support
+- ❌ **macOS**: Not currently available
+- ❌ **Windows**: Not currently available
+- ❌ **ARM64**: Not currently available
+
+If you're on an unsupported platform:
+- The linter will fail gracefully with a clear error message
+- Other linters (helm, preflight, support-bundle) will continue running
+- Consider running in a Linux container or CI environment
+
+### Configuration
+
+Enable the embedded-cluster linter in your `.replicated` file:
+
+```yaml
+repl-lint:
+  version: 1
+  linters:
+    embedded-cluster:
+      enabled: true
+      strict: false    # Set to true to treat warnings as errors
+  tools:
+    embedded-cluster: "latest"   # Optional: pin to specific version
+```
+
+### Auto-Discovery
+
+When no `.replicated` config exists, the linter automatically discovers embedded-cluster configs by:
+- Finding files with `kind: Config` and `apiVersion: embeddedcluster.replicated.com/v1beta1`
+- Validating only 0 or 1 config exists (multiple configs are not supported)
+
+### Multiple Config Validation
+
+**Only 0 or 1 embedded cluster config is allowed per project.**
+
+If multiple configs are detected:
+- Each config will show as failed with a clear error message
+- Other linters (helm, preflight, support-bundle) continue running
+- The linting command returns a non-zero exit code
+
+### Example Configuration
+
+**Minimal `.replicated` with embedded-cluster:**
+```yaml
+appId: ""
+appSlug: "my-app"
+manifests:
+  - "./embedded-cluster/*.yaml"
+
+repl-lint:
+  version: 1
+  linters:
+    embedded-cluster:
+      enabled: true
+      strict: true
+  tools:
+    embedded-cluster: "latest"
+```
+
+**Example embedded-cluster config file (ec-config.yaml):**
+```yaml
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: my-app-config
+spec:
+  version: "1.33+k8s-1.33"
+  roles:
+    controller:
+      name: "Controller"
+      description: "Kubernetes controller node"
+
+  extensions:
+    helm:
+      repositories:
+        - name: my-repo
+          url: https://charts.example.com
+
+  network:
+    podCIDR: "10.244.0.0/16"
+    serviceCIDR: "10.96.0.0/12"
+
+  unsupportedOverrides:
+    k0s: |
+      apiVersion: k0s.k0sproject.io/v1beta1
+      kind: ClusterConfig
+      spec:
+        network:
+          provider: calico
+```
+
+### Output Format
+
+The embedded-cluster linter returns JSON output with structured validation results:
+
+```json
+{
+  "files": [
+    {
+      "path": "embedded-cluster/config.yaml",
+      "valid": true,
+      "errors": [],
+      "warnings": [],
+      "infos": []
+    }
+  ]
+}
+```
+
+**Validation Messages:**
+- **errors**: Schema violations, invalid values, unsupported configurations
+- **warnings**: Deprecated fields, potential issues, best practice violations
+- **infos**: Informational messages about configuration choices
+
+### Troubleshooting
+
+**Problem:** "embedded-cluster binaries are only available for linux-amd64"
+
+**Solution:**
+- Run linting in a Linux environment or Docker container
+- Use CI/CD on Linux runners
+- The error won't block other linters from running
+
+**Problem:** "Multiple embedded cluster configs found"
+
+**Solution:** Only one embedded cluster config is allowed per project. Remove duplicate configs or move them to separate projects.
+
+**Problem:** Validation errors about Kubernetes version
+
+**Solution:** Ensure the `spec.version` field uses a supported Kubernetes version. Check the embedded-cluster documentation for supported versions.

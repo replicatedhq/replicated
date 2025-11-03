@@ -13,6 +13,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/imageextract"
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -260,7 +261,7 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
-	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, "v0.90.0") // TODO: Get actual CLI version
+	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, version.Version())
 
 	// Check if we're in auto-discovery mode (no charts/preflights/manifests configured)
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0

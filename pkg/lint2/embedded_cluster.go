@@ -47,6 +47,9 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 	}
 
 	// Check for local binary override (for development)
+	// TODO: Remove REPLICATED_EMBEDDED_CLUSTER_PATH environment variable support
+	// once embedded-cluster releases include the linter binary and are published
+	// to GitHub releases. This is a temporary workaround for local development.
 	ecPath := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_PATH")
 	if ecPath == "" {
 		// Use resolver to get embedded-cluster binary
