@@ -1,0 +1,4 @@
+apiVersion: v2
+name: my-app
+version: 1.0.0
+description: Test chart for autodiscovery with mixed manifests

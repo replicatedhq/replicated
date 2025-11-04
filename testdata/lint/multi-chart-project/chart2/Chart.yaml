@@ -1,0 +1,4 @@
+apiVersion: v2
+name: chart2
+version: 1.0.0
+description: Second chart for multi-chart testing

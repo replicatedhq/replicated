@@ -1,0 +1,10 @@
+charts:
+  - path: chart
+manifests:
+  - manifests/*.yaml
+repl-lint:
+  linters:
+    helm:
+      disabled: true
+    preflight:
+      disabled: true

@@ -1,0 +1,9 @@
+repl-lint:
+  tools:
+    helm: "latest"
+    preflight: "latest"
+    support-bundle: "latest"
+  linters:
+    helm: {}
+    preflight:
+      disabled: true

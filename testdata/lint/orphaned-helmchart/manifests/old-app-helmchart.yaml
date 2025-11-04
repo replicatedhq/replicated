@@ -1,0 +1,9 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: old-app
+spec:
+  chart:
+    name: old-app
+    chartVersion: 0.9.0
+  weight: 2

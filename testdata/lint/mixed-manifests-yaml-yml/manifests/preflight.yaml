@@ -1,0 +1,13 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-app-preflight
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.20.0"
+              message: Kubernetes version must be at least 1.20.0
+          - pass:
+              message: Kubernetes version is supported

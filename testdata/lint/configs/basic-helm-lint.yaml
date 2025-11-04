@@ -1,0 +1,5 @@
+repl-lint:
+  linters:
+    helm: {}
+    preflight:
+      disabled: true

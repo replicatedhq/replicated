@@ -1,0 +1,10 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: my-app-support-bundle
+spec:
+  collectors:
+    - logs:
+        selector:
+          - app=my-app
+        namespace: default

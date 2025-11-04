@@ -1,0 +1,6 @@
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+    preflight: {}
+    support-bundle: {}
