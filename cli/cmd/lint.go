@@ -156,6 +156,11 @@ func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (
 		selectedApp = config.AppSlug
 	} else {
 		// 5) Fetch apps for current profile; pick one or prompt user if multiple
+		// Check if API client is available (may be nil in tests)
+		if r.kotsAPI == nil {
+			return "", errors.New("API client not initialized")
+		}
+
 		apps, err := r.kotsAPI.ListApps(ctx, false)
 		if err != nil {
 			// API failure: return empty string (graceful degradation)
@@ -243,8 +248,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Only the embedded-cluster linter will fail if app context is required but unavailable.
 	appID, appResolveErr := r.resolveAppContext(cmd.Context(), config)
 
-	// Warn user if app resolution failed and EC linter is enabled
-	if appResolveErr != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+	// Warn user if app resolution failed and EC linter is enabled (table mode only)
+	if appResolveErr != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() && r.outputFormat == "table" {
 		fmt.Fprintf(r.w, "⚠️  Warning: Could not resolve app context: %v\n", appResolveErr)
 		fmt.Fprintf(r.w, "   Embedded-cluster linter will fail. Other linters will continue.\n\n")
 		r.w.Flush()
