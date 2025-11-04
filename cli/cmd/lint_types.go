@@ -9,13 +9,13 @@ import (
 
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
-	Metadata               LintMetadata                 `json:"metadata"`
-	HelmResults            *HelmLintResults             `json:"helm_results,omitempty"`
-	PreflightResults       *PreflightLintResults        `json:"preflight_results,omitempty"`
-	SupportBundleResults   *SupportBundleLintResults    `json:"support_bundle_results,omitempty"`
-	EmbeddedClusterResults *EmbeddedClusterLintResults  `json:"embedded_cluster_results,omitempty"`
-	Summary                LintSummary                  `json:"summary"`
-	Images                 *ImageExtractResults         `json:"images,omitempty"` // Only if --verbose
+	Metadata               LintMetadata                `json:"metadata"`
+	HelmResults            *HelmLintResults            `json:"helm_results,omitempty"`
+	PreflightResults       *PreflightLintResults       `json:"preflight_results,omitempty"`
+	SupportBundleResults   *SupportBundleLintResults   `json:"support_bundle_results,omitempty"`
+	EmbeddedClusterResults *EmbeddedClusterLintResults `json:"embedded_cluster_results,omitempty"`
+	Summary                LintSummary                 `json:"summary"`
+	Images                 *ImageExtractResults        `json:"images,omitempty"` // Only if --verbose
 }
 
 // LintMetadata contains execution context and environment information
@@ -59,7 +59,7 @@ type PreflightLintResult struct {
 
 // SupportBundleLintResults contains all Support Bundle spec lint results
 type SupportBundleLintResults struct {
-	Enabled bool                       `json:"enabled"`
+	Enabled bool                      `json:"enabled"`
 	Specs   []SupportBundleLintResult `json:"specs"`
 }
 
@@ -73,7 +73,7 @@ type SupportBundleLintResult struct {
 
 // EmbeddedClusterLintResults contains all Embedded Cluster config lint results
 type EmbeddedClusterLintResults struct {
-	Enabled bool                         `json:"enabled"`
+	Enabled bool                        `json:"enabled"`
 	Configs []EmbeddedClusterLintResult `json:"configs"`
 }
 
@@ -164,27 +164,27 @@ type LintableResult interface {
 }
 
 // Implement LintableResult interface for ChartLintResult
-func (c ChartLintResult) GetPath() string            { return c.Path }
-func (c ChartLintResult) GetSuccess() bool           { return c.Success }
-func (c ChartLintResult) GetMessages() []LintMessage { return c.Messages }
+func (c ChartLintResult) GetPath() string             { return c.Path }
+func (c ChartLintResult) GetSuccess() bool            { return c.Success }
+func (c ChartLintResult) GetMessages() []LintMessage  { return c.Messages }
 func (c ChartLintResult) GetSummary() ResourceSummary { return c.Summary }
 
 // Implement LintableResult interface for PreflightLintResult
-func (p PreflightLintResult) GetPath() string            { return p.Path }
-func (p PreflightLintResult) GetSuccess() bool           { return p.Success }
-func (p PreflightLintResult) GetMessages() []LintMessage { return p.Messages }
+func (p PreflightLintResult) GetPath() string             { return p.Path }
+func (p PreflightLintResult) GetSuccess() bool            { return p.Success }
+func (p PreflightLintResult) GetMessages() []LintMessage  { return p.Messages }
 func (p PreflightLintResult) GetSummary() ResourceSummary { return p.Summary }
 
 // Implement LintableResult interface for SupportBundleLintResult
-func (s SupportBundleLintResult) GetPath() string            { return s.Path }
-func (s SupportBundleLintResult) GetSuccess() bool           { return s.Success }
-func (s SupportBundleLintResult) GetMessages() []LintMessage { return s.Messages }
+func (s SupportBundleLintResult) GetPath() string             { return s.Path }
+func (s SupportBundleLintResult) GetSuccess() bool            { return s.Success }
+func (s SupportBundleLintResult) GetMessages() []LintMessage  { return s.Messages }
 func (s SupportBundleLintResult) GetSummary() ResourceSummary { return s.Summary }
 
 // Implement LintableResult interface for EmbeddedClusterLintResult
-func (e EmbeddedClusterLintResult) GetPath() string            { return e.Path }
-func (e EmbeddedClusterLintResult) GetSuccess() bool           { return e.Success }
-func (e EmbeddedClusterLintResult) GetMessages() []LintMessage { return e.Messages }
+func (e EmbeddedClusterLintResult) GetPath() string             { return e.Path }
+func (e EmbeddedClusterLintResult) GetSuccess() bool            { return e.Success }
+func (e EmbeddedClusterLintResult) GetMessages() []LintMessage  { return e.Messages }
 func (e EmbeddedClusterLintResult) GetSummary() ResourceSummary { return e.Summary }
 
 // Helper functions to convert between types

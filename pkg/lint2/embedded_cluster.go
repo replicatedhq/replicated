@@ -16,11 +16,11 @@ type ECLintOutput struct {
 }
 
 type ECLintFileResult struct {
-	Path     string         `json:"path"`
-	Valid    bool           `json:"valid"`
-	Errors   []ECLintIssue  `json:"errors,omitempty"`
-	Warnings []ECLintIssue  `json:"warnings,omitempty"`
-	Infos    []ECLintIssue  `json:"infos,omitempty"`
+	Path     string        `json:"path"`
+	Valid    bool          `json:"valid"`
+	Errors   []ECLintIssue `json:"errors,omitempty"`
+	Warnings []ECLintIssue `json:"warnings,omitempty"`
+	Infos    []ECLintIssue `json:"infos,omitempty"`
 }
 
 type ECLintIssue struct {
