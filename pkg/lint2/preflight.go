@@ -4,8 +4,10 @@
 package lint2
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -144,22 +146,37 @@ func LintPreflight(
 
 // isPreflightV1Beta3 checks if a preflight spec is apiVersion v1beta3
 // Tries YAML parsing first for accurate detection, falls back to string matching for templated specs
+// Scans ALL documents in multi-document YAML files
 func isPreflightV1Beta3(specPath string) (bool, error) {
 	data, err := os.ReadFile(specPath)
 	if err != nil {
 		return false, fmt.Errorf("failed to read spec file: %w", err)
 	}
 
-	// Strategy 1: Try YAML parsing for accurate detection
-	var doc struct {
-		APIVersion string `yaml:"apiVersion"`
-		Kind       string `yaml:"kind"`
-	}
-	if err := yaml.Unmarshal(data, &doc); err == nil {
-		// Successfully parsed as YAML - use accurate field matching
-		isPreflightKind := doc.Kind == "Preflight"
-		hasV1Beta3 := strings.Contains(doc.APIVersion, "v1beta3")
-		return isPreflightKind && hasV1Beta3, nil
+	// Strategy 1: Try YAML parsing for accurate detection (multi-document aware)
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+
+	// Iterate through all documents in the file
+	for {
+		var doc struct {
+			APIVersion string `yaml:"apiVersion"`
+			Kind       string `yaml:"kind"`
+		}
+
+		err := decoder.Decode(&doc)
+		if err != nil {
+			if err == io.EOF {
+				// Reached end of file without finding v1beta3 Preflight
+				break
+			}
+			// Parse error - fall through to string matching strategy
+			break
+		}
+
+		// Check if this document is a v1beta3 Preflight
+		if doc.Kind == "Preflight" && strings.Contains(doc.APIVersion, "v1beta3") {
+			return true, nil
+		}
 	}
 
 	// Strategy 2: Fall back to string matching for templated specs (with {{ }} syntax)

@@ -1,6 +1,7 @@
 package lint2
 
 import (
+	"os"
 	"testing"
 )
 
@@ -328,6 +329,90 @@ func TestFormatPreflightMessage(t *testing.T) {
 			result := formatTroubleshootMessage(tt.issue)
 			if result != tt.expected {
 				t.Errorf("formatTroubleshootMessage() = %q, want %q", result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestIsPreflightV1Beta3_MultiDocument(t *testing.T) {
+	tests := []struct {
+		name     string
+		content  string
+		expected bool
+	}{
+		{
+			name: "v1beta3 in first document",
+			content: `apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: my-preflight
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config`,
+			expected: true,
+		},
+		{
+			name: "v1beta3 in second document",
+			content: `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-config
+---
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: my-preflight`,
+			expected: true,
+		},
+		{
+			name: "v1beta2 only (not v1beta3)",
+			content: `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: my-preflight`,
+			expected: false,
+		},
+		{
+			name: "v1beta3 in third document",
+			content: `apiVersion: v1
+kind: ConfigMap
+---
+apiVersion: v1
+kind: Service
+---
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: my-preflight`,
+			expected: true,
+		},
+		{
+			name: "no Preflight kind",
+			content: `apiVersion: troubleshoot.sh/v1beta3
+kind: SupportBundle
+metadata:
+  name: my-bundle`,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create temporary file
+			tmpDir := t.TempDir()
+			tmpFile := tmpDir + "/test-preflight.yaml"
+			if err := os.WriteFile(tmpFile, []byte(tt.content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			got, err := isPreflightV1Beta3(tmpFile)
+			if err != nil {
+				t.Fatalf("isPreflightV1Beta3() error = %v", err)
+			}
+			if got != tt.expected {
+				t.Errorf("isPreflightV1Beta3() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
