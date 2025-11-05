@@ -44,17 +44,24 @@ func init() {
 		platformOrigin = originFromEnv
 	}
 
-	c, err := replicatedcache.InitCache()
-	if err != nil {
-		panic(err)
-	}
-	cache = c
+	// Note: Cache initialization is now deferred until we know which profile to use
+	// See initCacheForProfile() in preRunSetupAPIs
 
 	// Set debug mode from environment variable
 	if os.Getenv("REPLICATED_DEBUG") == "1" || os.Getenv("REPLICATED_DEBUG") == "true" {
 		debugFlag = true
 		version.SetDebugMode(true)
 	}
+}
+
+// initCacheForProfile initializes the cache for the given profile name
+func initCacheForProfile(profileName string) error {
+	c, err := replicatedcache.InitCache(profileName)
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize cache")
+	}
+	cache = c
+	return nil
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -312,19 +319,25 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
-		if apiToken == "" {
-			// Try to load profile from --profile flag, then default profile
-			var profileName string
-			if profileNameFlag != "" {
-				// Command-line flag takes precedence
-				profileName = profileNameFlag
-			} else {
-				// Fall back to default profile from ~/.replicated/config.yaml
-				defaultProfileName, err := credentials.GetDefaultProfile()
-				if err == nil && defaultProfileName != "" {
-					profileName = defaultProfileName
-				}
+		// Determine profile name first
+		var profileName string
+		if profileNameFlag != "" {
+			// Command-line flag takes precedence
+			profileName = profileNameFlag
+		} else {
+			// Fall back to default profile from ~/.replicated/config.yaml
+			defaultProfileName, err := credentials.GetDefaultProfile()
+			if err == nil && defaultProfileName != "" {
+				profileName = defaultProfileName
 			}
+		}
+
+		// Initialize cache for this profile
+		if err := initCacheForProfile(profileName); err != nil {
+			return errors.Wrap(err, "initialize cache")
+		}
+
+		if apiToken == "" {
 			// Get credentials with profile support
 			creds, err := credentials.GetCredentialsWithProfile(profileName)
 			if err != nil {

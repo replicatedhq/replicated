@@ -21,17 +21,11 @@ Optionally, you can specify custom API and registry origins.
 If a profile with the same name already exists, it will be updated.
 
 The profile will be stored in ~/.replicated/config.yaml with file permissions 600 (owner read/write only).`,
-		Example: `# Add a production profile (will prompt for token)
-replicated profile add prod
+		Example: `# Add a team profile (will prompt for token)
+replicated profile add my-team
 
-# Add a production profile with token flag
-replicated profile add prod --token=your-prod-token
-
-# Add a development profile with custom origins
-replicated profile add dev \
-  --token=your-dev-token \
-  --api-origin=https://vendor-api-noahecampbell.okteto.repldev.com \
-  --registry-origin=vendor-registry-v2-noahecampbell.okteto.repldev.com`,
+# Add a team profile with token flag
+replicated profile add my-team --token=your-token`,
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE:         r.profileAdd,
@@ -39,9 +33,12 @@ replicated profile add dev \
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&r.args.profileAddToken, "token", "", "API token for this profile (optional, will prompt if not provided)")
-	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor). Mutually exclusive with --namespace")
-	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com). Mutually exclusive with --namespace")
-	cmd.Flags().StringVar(&r.args.profileAddNamespace, "namespace", "", "Okteto namespace for dev environments (e.g., 'noahecampbell'). Auto-generates service URLs. Mutually exclusive with --api-origin and --registry-origin")
+	cmd.Flags().StringVar(&r.args.profileAddAPIOrigin, "api-origin", "", "API origin (optional, e.g., https://api.replicated.com/vendor).")
+	cmd.Flags().StringVar(&r.args.profileAddRegistryOrigin, "registry-origin", "", "Registry origin (optional, e.g., registry.replicated.com).")
+	cmd.Flags().StringVar(&r.args.profileAddOktetoNamespace, "okteto-namespace", "", "Okteto namespace for dev environments (e.g., 'your-namespace'). Auto-generates service URLs. Mutually exclusive with --api-origin and --registry-origin")
+
+	// "okteto-namespace" is hidden, it's just for replicated users
+	cmd.Flags().MarkHidden("okteto-namespace")
 
 	return cmd
 }
@@ -76,7 +73,7 @@ func (r *runners) profileAdd(cmd *cobra.Command, args []string) error {
 		APIToken:       token,
 		APIOrigin:      r.args.profileAddAPIOrigin,
 		RegistryOrigin: r.args.profileAddRegistryOrigin,
-		Namespace:      r.args.profileAddNamespace,
+		Namespace:      r.args.profileAddOktetoNamespace,
 	}
 
 	if err := credentials.AddProfile(profileName, profile); err != nil {
