@@ -77,34 +77,34 @@ func TestNormalizeKotsSeverity(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "error maps to error",
+			name:     "error maps to ERROR",
 			input:    "error",
-			expected: "error",
+			expected: "ERROR",
 		},
 		{
-			name:     "warn maps to warning",
+			name:     "warn maps to WARNING",
 			input:    "warn",
-			expected: "warning",
+			expected: "WARNING",
 		},
 		{
-			name:     "info maps to info",
+			name:     "info maps to INFO",
 			input:    "info",
-			expected: "info",
+			expected: "INFO",
 		},
 		{
-			name:     "unknown maps to info",
+			name:     "unknown maps to INFO",
 			input:    "unknown",
-			expected: "info",
+			expected: "INFO",
 		},
 		{
-			name:     "empty maps to info",
+			name:     "empty maps to INFO",
 			input:    "",
-			expected: "info",
+			expected: "INFO",
 		},
 		{
-			name:     "case sensitive - ERROR stays as info",
+			name:     "case sensitive - ERROR stays as INFO (no match)",
 			input:    "ERROR",
-			expected: "info",
+			expected: "INFO",
 		},
 	}
 
@@ -118,12 +118,12 @@ func TestNormalizeKotsSeverity(t *testing.T) {
 
 func TestParseKotsOutput_Valid(t *testing.T) {
 	tests := []struct {
-		name            string
-		output          string
-		expectedCount   int
-		expectedFirst   LintMessage
-		expectError     bool
-		errorContains   string
+		name          string
+		output        string
+		expectedCount int
+		expectedFirst LintMessage
+		expectError   bool
+		errorContains string
 	}{
 		{
 			name: "single error",
@@ -141,7 +141,7 @@ func TestParseKotsOutput_Valid(t *testing.T) {
 			}`,
 			expectedCount: 1,
 			expectedFirst: LintMessage{
-				Severity: "error",
+				Severity: "ERROR",
 				Message:  "[config-option-invalid-type] line 10: Config option \"test\" has an invalid type",
 				Path:     "kots-config.yaml",
 			},
@@ -176,7 +176,7 @@ func TestParseKotsOutput_Valid(t *testing.T) {
 			}`,
 			expectedCount: 3,
 			expectedFirst: LintMessage{
-				Severity: "error",
+				Severity: "ERROR",
 				Message:  "[error-rule] line 5: Critical error",
 				Path:     "config.yaml",
 			},
@@ -217,7 +217,7 @@ Initializing KOTS linter...
 `,
 			expectedCount: 1,
 			expectedFirst: LintMessage{
-				Severity: "warning",
+				Severity: "WARNING",
 				Message:  "[test-rule] Test warning",
 				Path:     "test.yaml",
 			},
@@ -354,11 +354,11 @@ func TestParseKotsOutput_SeverityCounts(t *testing.T) {
 
 	for _, msg := range messages {
 		switch msg.Severity {
-		case "error":
+		case "ERROR":
 			errorCount++
-		case "warning":
+		case "WARNING":
 			warningCount++
-		case "info":
+		case "INFO":
 			infoCount++
 		}
 	}

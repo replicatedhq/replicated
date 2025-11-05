@@ -159,15 +159,16 @@ func formatKotsMessage(expr KotsLintExpression) string {
 }
 
 // normalizeKotsSeverity converts KOTS severity types to standard severity levels.
+// Returns uppercase values to match the CLI's internal representation and summary calculator.
 func normalizeKotsSeverity(kotsType string) string {
 	switch kotsType {
 	case "error":
-		return "error"
+		return "ERROR"
 	case "warn":
-		return "warning"
+		return "WARNING"
 	case "info":
-		return "info"
+		return "INFO"
 	default:
-		return "info" // Default fallback
+		return "INFO" // Default fallback
 	}
 }

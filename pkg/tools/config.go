@@ -269,7 +269,7 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 				Preflight:       LinterConfig{Disabled: boolPtr(false)},
 				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
 				EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)},
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
+				Kots:            LinterConfig{Disabled: boolPtr(false)}, // Enable by default (consistent with other linters)
 			},
 			Tools: make(map[string]string),
 		}

@@ -122,7 +122,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "error",
+				Severity: "ERROR",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})
@@ -135,7 +135,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "warning",
+				Severity: "WARNING",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})
@@ -148,7 +148,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "info",
+				Severity: "INFO",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})
