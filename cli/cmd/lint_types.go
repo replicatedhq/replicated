@@ -14,6 +14,7 @@ type JSONLintOutput struct {
 	PreflightResults       *PreflightLintResults       `json:"preflight_results,omitempty"`
 	SupportBundleResults   *SupportBundleLintResults   `json:"support_bundle_results,omitempty"`
 	EmbeddedClusterResults *EmbeddedClusterLintResults `json:"embedded_cluster_results,omitempty"`
+	KotsResults            *KotsLintResults            `json:"kots_results,omitempty"`
 	Summary                LintSummary                 `json:"summary"`
 	Images                 *ImageExtractResults        `json:"images,omitempty"` // Only if --verbose
 }
@@ -26,6 +27,7 @@ type LintMetadata struct {
 	PreflightVersion       string `json:"preflight_version,omitempty"`
 	SupportBundleVersion   string `json:"support_bundle_version,omitempty"`
 	EmbeddedClusterVersion string `json:"embedded_cluster_version,omitempty"`
+	KotsVersion            string `json:"kots_version,omitempty"`
 	CLIVersion             string `json:"cli_version"`
 }
 
@@ -85,6 +87,20 @@ type EmbeddedClusterLintResult struct {
 	Summary  ResourceSummary `json:"summary"`
 }
 
+// KotsLintResults contains all KOTS manifest lint results
+type KotsLintResults struct {
+	Enabled   bool             `json:"enabled"`
+	Manifests []KotsLintResult `json:"manifests"`
+}
+
+// KotsLintResult represents lint results for a single KOTS manifest
+type KotsLintResult struct {
+	Path     string          `json:"path"`
+	Success  bool            `json:"success"`
+	Messages []LintMessage   `json:"messages"`
+	Summary  ResourceSummary `json:"summary"`
+}
+
 // LintMessage represents a single lint issue (wraps lint2.LintMessage with JSON tags)
 type LintMessage struct {
 	Severity string `json:"severity"` // ERROR, WARNING, INFO
@@ -138,6 +154,9 @@ type ExtractedPaths struct {
 	// Embedded cluster: simple paths
 	EmbeddedClusterPaths []string
 
+	// KOTS: simple paths
+	KotsPaths []string
+
 	// Shared: HelmChart manifests (used by preflight + image extraction)
 	HelmChartManifests map[string]*lint2.HelmChartManifest
 
@@ -149,6 +168,7 @@ type ExtractedPaths struct {
 	PreflightVersion string
 	SBVersion        string
 	ECVersion        string
+	KotsVersion      string
 
 	// Metadata
 	ConfigPath string
@@ -187,6 +207,12 @@ func (e EmbeddedClusterLintResult) GetSuccess() bool            { return e.Succe
 func (e EmbeddedClusterLintResult) GetMessages() []LintMessage  { return e.Messages }
 func (e EmbeddedClusterLintResult) GetSummary() ResourceSummary { return e.Summary }
 
+// Implement LintableResult interface for KotsLintResult
+func (k KotsLintResult) GetPath() string             { return k.Path }
+func (k KotsLintResult) GetSuccess() bool            { return k.Success }
+func (k KotsLintResult) GetMessages() []LintMessage  { return k.Messages }
+func (k KotsLintResult) GetSummary() ResourceSummary { return k.Summary }
+
 // Helper functions to convert between types
 
 // convertLint2Messages converts lint2.LintMessage slice to LintMessage slice
@@ -219,7 +245,7 @@ func calculateResourceSummary(messages []lint2.LintMessage) ResourceSummary {
 }
 
 // newLintMetadata creates metadata for the lint output
-func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, cliVersion string) LintMetadata {
+func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, kotsVersion, cliVersion string) LintMetadata {
 	return LintMetadata{
 		Timestamp:              time.Now().UTC().Format(time.RFC3339),
 		ConfigFile:             configFile,
@@ -227,6 +253,7 @@ func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVer
 		PreflightVersion:       preflightVersion,
 		SupportBundleVersion:   supportBundleVersion,
 		EmbeddedClusterVersion: embeddedClusterVersion,
+		KotsVersion:            kotsVersion,
 		CLIVersion:             cliVersion,
 	}
 }

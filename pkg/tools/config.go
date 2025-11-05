@@ -299,6 +299,9 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 	if _, exists := config.ReplLint.Tools[ToolEmbeddedCluster]; !exists {
 		config.ReplLint.Tools[ToolEmbeddedCluster] = "latest"
 	}
+	if _, exists := config.ReplLint.Tools[ToolKots]; !exists {
+		config.ReplLint.Tools[ToolKots] = "latest"
+	}
 }
 
 // validateConfig validates the config structure
