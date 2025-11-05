@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
@@ -160,8 +161,9 @@ func formatKotsMessage(expr KotsLintExpression) string {
 
 // normalizeKotsSeverity converts KOTS severity types to standard severity levels.
 // Returns uppercase values to match the CLI's internal representation and summary calculator.
+// Performs case-insensitive matching to handle variations in casing from the binary output.
 func normalizeKotsSeverity(kotsType string) string {
-	switch kotsType {
+	switch strings.ToLower(kotsType) {
 	case "error":
 		return "ERROR"
 	case "warn":

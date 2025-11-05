@@ -817,8 +817,38 @@ func (r *runners) lintKotsManifests(cmd *cobra.Command, kotsPaths []string, kots
 	}
 
 	// Validate: Only 0 or 1 KOTS Config allowed per project (like EC)
+	// If 2+ found, return failed results but don't block other linters
 	if len(kotsPaths) > 1 {
-		return nil, fmt.Errorf("found %d KOTS configs, but only 0 or 1 is allowed per project", len(kotsPaths))
+		for _, configPath := range kotsPaths {
+			results.Manifests = append(results.Manifests, KotsLintResult{
+				Path:    configPath,
+				Success: false,
+				Messages: []LintMessage{
+					{
+						Severity: "ERROR",
+						Message:  fmt.Sprintf("Multiple KOTS configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s", len(kotsPaths), strings.Join(kotsPaths, ", ")),
+					},
+				},
+				Summary: ResourceSummary{
+					ErrorCount:   1,
+					WarningCount: 0,
+					InfoCount:    0,
+				},
+			})
+		}
+
+		// Display results in table format
+		if r.outputFormat == "table" {
+			lintableResults := make([]LintableResult, len(results.Manifests))
+			for i, manifest := range results.Manifests {
+				lintableResults[i] = manifest
+			}
+			if err := r.displayLintResults("KOTS", "KOTS manifest", "KOTS manifests", lintableResults); err != nil {
+				return nil, errors.Wrap(err, "failed to display KOTS results")
+			}
+		}
+
+		return results, nil
 	}
 
 	// Lint all KOTS manifests and collect results

@@ -102,8 +102,28 @@ func TestNormalizeKotsSeverity(t *testing.T) {
 			expected: "INFO",
 		},
 		{
-			name:     "case sensitive - ERROR stays as INFO (no match)",
+			name:     "uppercase ERROR maps to ERROR (case-insensitive)",
 			input:    "ERROR",
+			expected: "ERROR",
+		},
+		{
+			name:     "mixed case Error maps to ERROR (case-insensitive)",
+			input:    "Error",
+			expected: "ERROR",
+		},
+		{
+			name:     "uppercase WARN maps to WARNING (case-insensitive)",
+			input:    "WARN",
+			expected: "WARNING",
+		},
+		{
+			name:     "mixed case Warn maps to WARNING (case-insensitive)",
+			input:    "Warn",
+			expected: "WARNING",
+		},
+		{
+			name:     "uppercase INFO maps to INFO (case-insensitive)",
+			input:    "INFO",
 			expected: "INFO",
 		},
 	}
