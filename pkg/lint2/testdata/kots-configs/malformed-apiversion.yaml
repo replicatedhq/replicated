@@ -1,0 +1,6 @@
+apiVersion: kots.io/v1beta1/extra/invalid
+kind: Config
+metadata:
+  name: malformed
+spec:
+  groups: []

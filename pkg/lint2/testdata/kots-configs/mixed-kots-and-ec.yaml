@@ -1,0 +1,24 @@
+---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+spec:
+  groups:
+    - name: settings
+      title: Settings
+      items:
+        - name: hostname
+          title: Hostname
+          type: text
+          required: true
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+spec:
+  version: "1.0.0"
+  roles:
+    controller:
+      name: management
