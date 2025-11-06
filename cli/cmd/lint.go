@@ -23,7 +23,7 @@ import (
 // release-validation-v2 feature flag. The runLint function below is still used
 // internally by the release lint command.
 
-// getToolVersion extracts a tool version from config, defaulting to "latest" if not found.
+// getToolVersion returns tool version from config or "latest" as fallback.
 func getToolVersion(config *tools.Config, tool string) string {
 	if config.ReplLint.Tools != nil {
 		if v, ok := config.ReplLint.Tools[tool]; ok {
@@ -33,9 +33,7 @@ func getToolVersion(config *tools.Config, tool string) string {
 	return "latest"
 }
 
-// resolveToolVersion extracts and resolves a tool version from config.
-// If the version is "latest" or empty, it resolves to an actual version using the resolver.
-// Falls back to the provided default version if resolution fails.
+// resolveToolVersion gets tool version from config, resolving "latest" to actual version or falling back to default
 func resolveToolVersion(ctx context.Context, config *tools.Config, resolver *tools.Resolver, toolName, defaultVersion string) string {
 	// Get version from config
 	version := "latest"
@@ -56,10 +54,7 @@ func resolveToolVersion(ctx context.Context, config *tools.Config, resolver *too
 	return version
 }
 
-// extractAllPathsAndMetadata extracts all paths and metadata needed for linting.
-// This function consolidates extraction logic across all linters to avoid duplication.
-// If verbose is true, it will also extract ChartsWithMetadata for image extraction.
-// Accepts already-resolved tool versions.
+// extractAllPathsAndMetadata extracts all paths and metadata for linting, optionally including ChartsWithMetadata if verbose
 func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion, ecVersion, kotsVersion string) (*ExtractedPaths, error) {
 	result := &ExtractedPaths{
 		HelmVersion:      helmVersion,
@@ -146,16 +141,8 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 	return result, nil
 }
 
-// resolveAppContext determines which app to use for linting based on the following priority:
-// 1. appID from runners (from --app-id or REPLICATED_APP env var) (highest priority)
-// 2. appSlug from runners (from --app-slug flag)
-// 3. appId from .replicated config
-// 4. appSlug from .replicated config
-// 5. API fetch (auto-select if 1 app, prompt if multiple, empty string if 0 apps)
-//
-// Returns the canonical app ID (empty string if no app available) and any error encountered.
-// This function is graceful: it returns empty string (not an error) if no app is available,
-// except when the user explicitly specified an app that cannot be resolved.
+// resolveAppContext determines app ID using priority: --app-id > --app-slug > config appId > config appSlug > API fetch
+// Returns empty string if no app available (not an error), except when user explicitly specified an app that cannot be resolved
 func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (string, error) {
 	selectedApp := ""
 
@@ -692,13 +679,8 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 	return results, nil
 }
 
-// validateSingleConfigLimit checks if more than one config file was found
-// and returns appropriate error results if so. This validation applies to
-// linters that support exactly 0 or 1 config per project (EC and KOTS).
-//
-// Returns:
-//   - results: Slice of failed LintableResults (one per path)
-//   - hasError: true if validation failed (multiple configs found)
+// validateSingleConfigLimit enforces 0 or 1 config limit for EC and KOTS linters
+// Returns failed results for each path if multiple configs found
 func validateSingleConfigLimit[T LintableResult](
 	r *runners,
 	paths []string,

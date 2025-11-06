@@ -30,10 +30,6 @@ import (
 //   - REPLICATED_SUPPORT_BUNDLE_PATH
 //   - REPLICATED_EMBEDDED_CLUSTER_PATH
 //   - REPLICATED_KOTS_PATH
-//
-// TODO: Remove environment variable support once all linters are stable and
-// published to production releases. This is a temporary workaround for local
-// development and testing.
 func resolveLinterBinary(
 	ctx context.Context,
 	toolName string,
