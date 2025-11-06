@@ -692,6 +692,56 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 	return results, nil
 }
 
+// validateSingleConfigLimit checks if more than one config file was found
+// and returns appropriate error results if so. This validation applies to
+// linters that support exactly 0 or 1 config per project (EC and KOTS).
+//
+// Returns:
+//   - results: Slice of failed LintableResults (one per path)
+//   - hasError: true if validation failed (multiple configs found)
+func validateSingleConfigLimit[T LintableResult](
+	r *runners,
+	paths []string,
+	linterName string,
+	singularName string,
+	pluralName string,
+	resultConstructor func(path string, errorMsg LintMessage) T,
+) ([]T, bool) {
+	// No error if 0 or 1 config
+	if len(paths) <= 1 {
+		return nil, false
+	}
+
+	// Create error message
+	errorMsg := LintMessage{
+		Severity: "ERROR",
+		Message: fmt.Sprintf(
+			"Multiple %s configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s",
+			linterName, len(paths), strings.Join(paths, ", "),
+		),
+	}
+
+	// Build failed results for each path
+	results := make([]T, 0, len(paths))
+	for _, path := range paths {
+		results = append(results, resultConstructor(path, errorMsg))
+	}
+
+	// Display if table format
+	if r.outputFormat == "table" {
+		lintableResults := make([]LintableResult, len(results))
+		for i, result := range results {
+			lintableResults[i] = result
+		}
+		if err := r.displayLintResults(linterName, singularName, pluralName, lintableResults); err != nil {
+			// Non-fatal display error - log but continue
+			fmt.Fprintf(r.w, "Warning: failed to display results: %v\n", err)
+		}
+	}
+
+	return results, true
+}
+
 func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string, appResolveErr error) (*EmbeddedClusterLintResults, error) {
 	results := &EmbeddedClusterLintResults{
 		Enabled: true,
@@ -740,36 +790,28 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 
 	// Validate: only 0 or 1 config allowed
 	// If 2+ found, return failed results but don't block other linters
-	if len(ecPaths) > 1 {
-		for _, configPath := range ecPaths {
-			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
-				Path:    configPath,
+	if failedResults, hasError := validateSingleConfigLimit(
+		r,
+		ecPaths,
+		"EMBEDDED CLUSTER",
+		"embedded cluster config",
+		"embedded cluster configs",
+		func(path string, errorMsg LintMessage) EmbeddedClusterLintResult {
+			return EmbeddedClusterLintResult{
+				Path:    path,
 				Success: false,
-				Messages: []LintMessage{
-					{
-						Severity: "ERROR",
-						Message:  fmt.Sprintf("Multiple embedded cluster configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s", len(ecPaths), strings.Join(ecPaths, ", ")),
-					},
-				},
+				Messages: []LintMessage{errorMsg},
 				Summary: ResourceSummary{
 					ErrorCount:   1,
 					WarningCount: 0,
 					InfoCount:    0,
 				},
-			})
-		}
-
-		// Display results in table format
-		if r.outputFormat == "table" {
-			lintableResults := make([]LintableResult, len(results.Configs))
-			for i, config := range results.Configs {
-				lintableResults[i] = config
 			}
-			if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
-				return nil, errors.Wrap(err, "failed to display embedded cluster results")
-			}
+		},
+	); hasError {
+		for _, result := range failedResults {
+			results.Configs = append(results.Configs, result)
 		}
-
 		return results, nil
 	}
 
@@ -818,36 +860,28 @@ func (r *runners) lintKotsManifests(cmd *cobra.Command, kotsPaths []string, kots
 
 	// Validate: Only 0 or 1 KOTS Config allowed per project (like EC)
 	// If 2+ found, return failed results but don't block other linters
-	if len(kotsPaths) > 1 {
-		for _, configPath := range kotsPaths {
-			results.Manifests = append(results.Manifests, KotsLintResult{
-				Path:    configPath,
+	if failedResults, hasError := validateSingleConfigLimit(
+		r,
+		kotsPaths,
+		"KOTS",
+		"KOTS manifest",
+		"KOTS manifests",
+		func(path string, errorMsg LintMessage) KotsLintResult {
+			return KotsLintResult{
+				Path:    path,
 				Success: false,
-				Messages: []LintMessage{
-					{
-						Severity: "ERROR",
-						Message:  fmt.Sprintf("Multiple KOTS configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s", len(kotsPaths), strings.Join(kotsPaths, ", ")),
-					},
-				},
+				Messages: []LintMessage{errorMsg},
 				Summary: ResourceSummary{
 					ErrorCount:   1,
 					WarningCount: 0,
 					InfoCount:    0,
 				},
-			})
-		}
-
-		// Display results in table format
-		if r.outputFormat == "table" {
-			lintableResults := make([]LintableResult, len(results.Manifests))
-			for i, manifest := range results.Manifests {
-				lintableResults[i] = manifest
 			}
-			if err := r.displayLintResults("KOTS", "KOTS manifest", "KOTS manifests", lintableResults); err != nil {
-				return nil, errors.Wrap(err, "failed to display KOTS results")
-			}
+		},
+	); hasError {
+		for _, result := range failedResults {
+			results.Manifests = append(results.Manifests, result)
 		}
-
 		return results, nil
 	}
 
