@@ -254,10 +254,10 @@ type runnerArgs struct {
 	lsNetworkEndTime        string
 	lsNetworkWatch          bool
 
-	networkReportID            string
-	networkReportWatch         bool
-	networkReportSummary       bool
-	networkReportIgnoreDefault bool
+	networkReportID               string
+	networkReportWatch            bool
+	networkReportSummary          bool
+	networkReportShowExternalOnly bool
 
 	updateNetworkPolicy        string
 	updateNetworkCollectReport bool

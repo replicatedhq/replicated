@@ -11,17 +11,17 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *VendorV3Client) GetNetworkReport(id string, ignoreDefault bool) (*types.NetworkReport, error) {
-	return c.GetNetworkReportAfter(id, nil, ignoreDefault)
+func (c *VendorV3Client) GetNetworkReport(id string, showExternalOnly bool) (*types.NetworkReport, error) {
+	return c.GetNetworkReportAfter(id, nil, showExternalOnly)
 }
 
-func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time, ignoreDefault bool) (*types.NetworkReport, error) {
+func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time, showExternalOnly bool) (*types.NetworkReport, error) {
 	urlPath := fmt.Sprintf("/v3/network/%s/report", id)
 	v := url.Values{}
 	if after != nil {
 		v.Set("after", after.Format(time.RFC3339Nano))
 	}
-	v.Set("ignore-default", fmt.Sprintf("%t", ignoreDefault))
+	v.Set("show-external-only", fmt.Sprintf("%t", showExternalOnly))
 	if len(v) > 0 {
 		urlPath = fmt.Sprintf("%s?%s", urlPath, v.Encode())
 	}
