@@ -698,7 +698,7 @@ func validateSingleConfigLimit[T LintableResult](
 	errorMsg := LintMessage{
 		Severity: "ERROR",
 		Message: fmt.Sprintf(
-			"Multiple %s configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s",
+			"Multiple %s configs found (%d). Only 0 or 1 config per project is supported. Remove duplicate configs or specify a single config file. Found configs: %s",
 			linterName, len(paths), strings.Join(paths, ", "),
 		),
 	}
