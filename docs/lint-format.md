@@ -371,8 +371,16 @@ repl-lint:
     embedded-cluster:
       enabled: true
       strict: false
-  tools:
-    embedded-cluster: "latest"
+```
+
+**Version source:** The embedded-cluster linter version is determined by the `spec.version` field in the Embedded Cluster Config manifest, not from the `.replicated` config file. If `tools.embedded-cluster` is specified in config, it will be ignored with a warning.
+
+**Example manifest:**
+```yaml
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+spec:
+  version: "1.33+k8s-1.33"  # This version determines the linter binary
 ```
 
 **Auto-discovery:** Finds configs by locating files with:

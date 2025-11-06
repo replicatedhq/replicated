@@ -114,6 +114,17 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 			ecPaths = append(ecPaths, paths...)
 		}
 		result.EmbeddedClusterPaths = ecPaths
+
+		// Extract EC version from the first config (only one EC config is allowed)
+		if len(ecPaths) > 0 {
+			ecVersion, err := lint2.ExtractECVersion(ecPaths[0])
+			if err != nil {
+				// Use "latest" as fallback if version extraction fails
+				// The EC linter will report the missing version error
+				ecVersion = "latest"
+			}
+			result.ECVersion = ecVersion
+		}
 	}
 
 	// Discover KOTS manifests
@@ -245,6 +256,17 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to load .replicated config")
 	}
 
+	// Warn if user has tools.embedded-cluster in config (it's ignored - version comes from manifest)
+	if config.ReplLint.Tools != nil {
+		if _, hasECTool := config.ReplLint.Tools[tools.ToolEmbeddedCluster]; hasECTool {
+			if r.outputFormat == "table" {
+				fmt.Fprintf(r.w, "⚠️  Warning: tools.embedded-cluster in .replicated config is ignored.\n")
+				fmt.Fprintf(r.w, "   Embedded Cluster version comes from the manifest's spec.version field.\n\n")
+				r.w.Flush()
+			}
+		}
+	}
+
 	// Resolve app context for all linters (not just embedded-cluster)
 	// This makes REPLICATED_APP, REPLICATED_API_TOKEN, and REPLICATED_API_ORIGIN
 	// available to all linter binaries for future vendor portal integrations.
@@ -271,14 +293,16 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	output := &JSONLintOutput{}
 
 	// Resolve all tool versions (including "latest" to actual versions)
+	// Note: EC version comes from manifest spec.version, not from config
 	resolver := tools.NewResolver()
 	helmVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolHelm, tools.DefaultHelmVersion)
 	preflightVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolPreflight, tools.DefaultPreflightVersion)
 	supportBundleVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolSupportBundle, tools.DefaultSupportBundleVersion)
-	embeddedClusterVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolEmbeddedCluster, "latest")
+	embeddedClusterVersion := "" // EC version extracted from manifest later (not from config)
 	kotsVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolKots, "latest")
 
 	// Populate metadata with all resolved versions
+	// Note: EC version will be updated after manifest extraction
 	configPath := findConfigFilePath(".")
 	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, kotsVersion, version.Version())
 
@@ -377,6 +401,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, kotsVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract paths and metadata")
+	}
+
+	// Update metadata with EC version extracted from manifest
+	// (EC version comes from spec.version, not from config)
+	if extracted.ECVersion != "" {
+		output.Metadata.EmbeddedClusterVersion = extracted.ECVersion
 	}
 
 	// Validate chart-to-HelmChart mapping if charts are configured
