@@ -243,14 +243,8 @@ func (p *ConfigParser) DefaultConfig() *Config {
 	config := &Config{
 		ReplLint: &ReplLintConfig{
 			Version: 1,
-			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
-			},
-			Tools: make(map[string]string),
+			Linters: defaultLintersConfig(),
+			Tools:   make(map[string]string),
 		},
 	}
 
@@ -264,14 +258,8 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 	if config.ReplLint == nil {
 		config.ReplLint = &ReplLintConfig{
 			Version: 1,
-			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)},
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)},
-				Kots:            LinterConfig{Disabled: boolPtr(false)}, // Enable by default (consistent with other linters)
-			},
-			Tools: make(map[string]string),
+			Linters: defaultLintersConfig(),
+			Tools:   make(map[string]string),
 		}
 	}
 
@@ -287,20 +275,17 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 
 	// Apply "latest" for tool versions if not specified
 	// The resolver will fetch the actual latest version from GitHub
-	if _, exists := config.ReplLint.Tools[ToolHelm]; !exists {
-		config.ReplLint.Tools[ToolHelm] = "latest"
+	defaultTools := []string{
+		ToolHelm,
+		ToolPreflight,
+		ToolSupportBundle,
+		ToolEmbeddedCluster,
+		ToolKots,
 	}
-	if _, exists := config.ReplLint.Tools[ToolPreflight]; !exists {
-		config.ReplLint.Tools[ToolPreflight] = "latest"
-	}
-	if _, exists := config.ReplLint.Tools[ToolSupportBundle]; !exists {
-		config.ReplLint.Tools[ToolSupportBundle] = "latest"
-	}
-	if _, exists := config.ReplLint.Tools[ToolEmbeddedCluster]; !exists {
-		config.ReplLint.Tools[ToolEmbeddedCluster] = "latest"
-	}
-	if _, exists := config.ReplLint.Tools[ToolKots]; !exists {
-		config.ReplLint.Tools[ToolKots] = "latest"
+	for _, tool := range defaultTools {
+		if _, exists := config.ReplLint.Tools[tool]; !exists {
+			config.ReplLint.Tools[tool] = "latest"
+		}
 	}
 }
 
@@ -461,6 +446,18 @@ func mergeLinterConfig(parent, child LinterConfig) LinterConfig {
 	}
 
 	return result
+}
+
+// defaultLintersConfig returns the default linter configuration
+// with all linters enabled by default
+func defaultLintersConfig() LintersConfig {
+	return LintersConfig{
+		Helm:            LinterConfig{Disabled: boolPtr(false)},
+		Preflight:       LinterConfig{Disabled: boolPtr(false)},
+		SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+		EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)},
+		Kots:            LinterConfig{Disabled: boolPtr(false)},
+	}
 }
 
 // boolPtr returns a pointer to a boolean value
