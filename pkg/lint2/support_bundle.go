@@ -32,11 +32,10 @@ type SupportBundleLintIssue struct {
 
 // LintSupportBundle executes support-bundle lint on the given spec path and returns structured results
 func LintSupportBundle(ctx context.Context, specPath string, sbVersion string) (*LintResult, error) {
-	// Use resolver to get support-bundle binary
-	resolver := tools.NewResolver()
-	sbPath, err := resolver.Resolve(ctx, tools.ToolSupportBundle, sbVersion)
+	// Resolve support-bundle binary (supports REPLICATED_SUPPORT_BUNDLE_PATH override for development)
+	sbPath, err := resolveLinterBinary(ctx, tools.ToolSupportBundle, sbVersion, "REPLICATED_SUPPORT_BUNDLE_PATH")
 	if err != nil {
-		return nil, fmt.Errorf("resolving support-bundle: %w", err)
+		return nil, err
 	}
 
 	// Defensive check: validate spec path exists

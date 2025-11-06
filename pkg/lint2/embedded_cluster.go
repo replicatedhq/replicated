@@ -46,19 +46,10 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 		return nil, fmt.Errorf("failed to access embedded cluster config path: %w", err)
 	}
 
-	// Check for local binary override (for development)
-	// TODO: Remove REPLICATED_EMBEDDED_CLUSTER_PATH environment variable support
-	// once embedded-cluster releases include the linter binary and are published
-	// to GitHub releases. This is a temporary workaround for local development.
-	ecPath := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_PATH")
-	if ecPath == "" {
-		// Use resolver to get embedded-cluster binary
-		resolver := tools.NewResolver()
-		var err error
-		ecPath, err = resolver.Resolve(ctx, tools.ToolEmbeddedCluster, ecVersion)
-		if err != nil {
-			return nil, fmt.Errorf("resolving embedded-cluster: %w", err)
-		}
+	// Resolve embedded-cluster binary (supports REPLICATED_EMBEDDED_CLUSTER_PATH override for development)
+	ecPath, err := resolveLinterBinary(ctx, tools.ToolEmbeddedCluster, ecVersion, "REPLICATED_EMBEDDED_CLUSTER_PATH")
+	if err != nil {
+		return nil, err
 	}
 
 	// Build command arguments

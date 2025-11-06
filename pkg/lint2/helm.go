@@ -15,11 +15,10 @@ import (
 
 // LintChart executes helm lint on the given chart path and returns structured results
 func LintChart(ctx context.Context, chartPath string, helmVersion string) (*LintResult, error) {
-	// Use resolver to get helm binary
-	resolver := tools.NewResolver()
-	helmPath, err := resolver.Resolve(ctx, tools.ToolHelm, helmVersion)
+	// Resolve helm binary (supports REPLICATED_HELM_PATH override for development)
+	helmPath, err := resolveLinterBinary(ctx, tools.ToolHelm, helmVersion, "REPLICATED_HELM_PATH")
 	if err != nil {
-		return nil, fmt.Errorf("resolving helm: %w", err)
+		return nil, err
 	}
 
 	// Defensive check: validate chart path exists

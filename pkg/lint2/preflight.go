@@ -47,11 +47,10 @@ func LintPreflight(
 	helmChartManifests map[string]*HelmChartManifest,
 	preflightVersion string,
 ) (*LintResult, error) {
-	// Use resolver to get preflight binary
-	resolver := tools.NewResolver()
-	preflightPath, err := resolver.Resolve(ctx, tools.ToolPreflight, preflightVersion)
+	// Resolve preflight binary (supports REPLICATED_PREFLIGHT_PATH override for development)
+	preflightPath, err := resolveLinterBinary(ctx, tools.ToolPreflight, preflightVersion, "REPLICATED_PREFLIGHT_PATH")
 	if err != nil {
-		return nil, fmt.Errorf("resolving preflight: %w", err)
+		return nil, err
 	}
 
 	// Defensive check: validate spec path exists

@@ -39,18 +39,10 @@ func LintKots(ctx context.Context, configPath string, kotsVersion string) (*Lint
 		return nil, fmt.Errorf("failed to access kots config path: %w", err)
 	}
 
-	// Check for local binary override (for development)
-	// TODO: Remove REPLICATED_KOTS_PATH environment variable support
-	// once kots linter is stable and published to production releases.
-	kotsPath := os.Getenv("REPLICATED_KOTS_PATH")
-	if kotsPath == "" {
-		// Use resolver to get kots binary
-		resolver := tools.NewResolver()
-		var err error
-		kotsPath, err = resolver.Resolve(ctx, tools.ToolKots, kotsVersion)
-		if err != nil {
-			return nil, fmt.Errorf("resolving kots: %w", err)
-		}
+	// Resolve kots binary (supports REPLICATED_KOTS_PATH override for development)
+	kotsPath, err := resolveLinterBinary(ctx, tools.ToolKots, kotsVersion, "REPLICATED_KOTS_PATH")
+	if err != nil {
+		return nil, err
 	}
 
 	// Build command arguments
