@@ -33,7 +33,7 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 
 	// Execute helm lint
 	cmd := exec.CommandContext(ctx, helmPath, "lint", chartPath)
-	output, err := cmd.CombinedOutput()
+	output, cmdErr := cmd.CombinedOutput()
 
 	// helm lint returns non-zero exit code if there are errors,
 	// but we still want to parse and display the output
@@ -42,19 +42,18 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 	// Parse the output
 	messages := parseHelmOutput(outputStr)
 
-	// Determine success based on exit code
-	// We trust helm's exit code: 0 = success, non-zero = failure
-	success := err == nil
+	// Success when linter binary exits cleanly (exit code 0)
+	lintSuccess := (cmdErr == nil)
 
 	// However, if helm failed but we got parseable output, we should
 	// still return the parsed messages
-	if err != nil && len(messages) == 0 {
+	if cmdErr != nil && len(messages) == 0 {
 		// If helm failed and we have no parsed messages, return the error
-		return nil, fmt.Errorf("helm lint failed: %w\n%s", err, outputStr)
+		return nil, fmt.Errorf("helm lint failed: %w\n%s", cmdErr, outputStr)
 	}
 
 	return &LintResult{
-		Success:  success,
+		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
 }

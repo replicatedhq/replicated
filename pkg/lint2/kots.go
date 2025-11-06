@@ -50,7 +50,7 @@ func LintKots(ctx context.Context, configPath string, kotsVersion string) (*Lint
 
 	// Execute kots lint
 	cmd := exec.CommandContext(ctx, kotsPath, args...)
-	output, err := cmd.CombinedOutput()
+	output, cmdErr := cmd.CombinedOutput()
 
 	// kots lint returns non-zero exit code if there are validation errors,
 	// but we still want to parse and display the output
@@ -60,18 +60,17 @@ func LintKots(ctx context.Context, configPath string, kotsVersion string) (*Lint
 	messages, parseErr := parseKotsOutput(outputStr)
 	if parseErr != nil {
 		// If we can't parse the output, return both the parse error and original error
-		if err != nil {
-			return nil, fmt.Errorf("kots lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
+		if cmdErr != nil {
+			return nil, fmt.Errorf("kots lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", cmdErr, parseErr, outputStr)
 		}
 		return nil, fmt.Errorf("failed to parse kots lint output: %w\nOutput: %s", parseErr, outputStr)
 	}
 
-	// Determine success based on exit code
-	// Exit code 0 = no errors, non-zero = validation errors
-	success := err == nil
+	// Success when linter binary exits cleanly (exit code 0)
+	lintSuccess := (cmdErr == nil)
 
 	return &LintResult{
-		Success:  success,
+		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
 }

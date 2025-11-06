@@ -117,7 +117,7 @@ func LintPreflight(
 
 	// Execute preflight lint
 	cmd := exec.CommandContext(ctx, preflightPath, args...)
-	output, err := cmd.CombinedOutput()
+	output, cmdErr := cmd.CombinedOutput()
 
 	// preflight lint returns exit code 2 if there are errors,
 	// but we still want to parse and display the output
@@ -127,18 +127,17 @@ func LintPreflight(
 	messages, parseErr := parsePreflightOutput(outputStr)
 	if parseErr != nil {
 		// If we can't parse the output, return both the parse error and original error
-		if err != nil {
-			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
+		if cmdErr != nil {
+			return nil, fmt.Errorf("preflight lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", cmdErr, parseErr, outputStr)
 		}
 		return nil, fmt.Errorf("failed to parse preflight lint output: %w\nOutput: %s", parseErr, outputStr)
 	}
 
-	// Determine success based on exit code
-	// Exit code 0 = no errors, exit code 2 = validation errors
-	success := err == nil
+	// Success when linter binary exits cleanly (exit code 0)
+	lintSuccess := (cmdErr == nil)
 
 	return &LintResult{
-		Success:  success,
+		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
 }

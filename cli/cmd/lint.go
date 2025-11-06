@@ -142,7 +142,11 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 }
 
 // resolveAppContext determines app ID using priority: --app-id > --app-slug > config appId > config appSlug > API fetch
-// Returns empty string if no app available (not an error), except when user explicitly specified an app that cannot be resolved
+//
+// Returns:
+//   - (appID, nil): Successfully resolved an app ID
+//   - ("", nil): No app available or API call failed (graceful degradation - linters continue without app context)
+//   - ("", error): User explicitly specified an app that could not be resolved (fatal - command should abort)
 func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (string, error) {
 	selectedApp := ""
 
@@ -245,13 +249,14 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// This makes REPLICATED_APP, REPLICATED_API_TOKEN, and REPLICATED_API_ORIGIN
 	// available to all linter binaries for future vendor portal integrations.
 	//
-	// If app resolution fails, we store the error and continue with other linters.
+	// Resolve app context (may return warning if API unavailable or no apps found)
+	// If app resolution fails, we store the warning and continue with other linters.
 	// Only the embedded-cluster linter will fail if app context is required but unavailable.
-	appID, appResolveErr := r.resolveAppContext(cmd.Context(), config)
+	appID, appResolutionWarning := r.resolveAppContext(cmd.Context(), config)
 
 	// Warn user if app resolution failed and EC linter is enabled (table mode only)
-	if appResolveErr != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() && r.outputFormat == "table" {
-		fmt.Fprintf(r.w, "⚠️  Warning: Could not resolve app context: %v\n", appResolveErr)
+	if appResolutionWarning != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() && r.outputFormat == "table" {
+		fmt.Fprintf(r.w, "⚠️  Warning: Could not resolve app context: %v\n", appResolutionWarning)
 		fmt.Fprintf(r.w, "   Embedded-cluster linter will fail. Other linters will continue.\n\n")
 		r.w.Flush()
 	}
@@ -493,8 +498,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 				fmt.Fprintf(r.w, "No embedded cluster configs configured (skipping EC linting)\n\n")
 			}
 		} else {
-			// Pass app resolution error - EC linter will fail gracefully if app context unavailable
-			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion, appResolveErr)
+			// Pass app resolution warning - EC linter will fail gracefully if app context unavailable
+			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion, appResolutionWarning)
 			if err != nil {
 				return err
 			}
@@ -679,8 +684,11 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 	return results, nil
 }
 
-// validateSingleConfigLimit enforces 0 or 1 config limit for EC and KOTS linters
-// Returns failed results for each path if multiple configs found
+// validateSingleConfigLimit enforces 0 or 1 config limit for EC and KOTS linters.
+//
+// Returns:
+//   - (nil, false): Validation passed (0 or 1 config found)
+//   - ([]T, true): Validation failed (multiple configs found) - returns error result for each path
 func validateSingleConfigLimit[T LintableResult](
 	r *runners,
 	paths []string,
@@ -724,7 +732,7 @@ func validateSingleConfigLimit[T LintableResult](
 	return results, true
 }
 
-func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string, appResolveErr error) (*EmbeddedClusterLintResults, error) {
+func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string, appResolutionWarning error) (*EmbeddedClusterLintResults, error) {
 	results := &EmbeddedClusterLintResults{
 		Enabled: true,
 		Configs: make([]EmbeddedClusterLintResult, 0, len(ecPaths)),
@@ -737,7 +745,7 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 
 	// If app resolution failed, embedded-cluster linter cannot run
 	// Return a failed result for each config instead of stopping the entire lint command
-	if appResolveErr != nil {
+	if appResolutionWarning != nil {
 		for _, configPath := range ecPaths {
 			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
 				Path:    configPath,
@@ -745,7 +753,7 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 				Messages: []LintMessage{
 					{
 						Severity: "ERROR",
-						Message:  fmt.Sprintf("Embedded cluster linting requires app context: %v", appResolveErr),
+						Message:  fmt.Sprintf("Embedded cluster linting requires app context: %v", appResolutionWarning),
 					},
 				},
 				Summary: ResourceSummary{
