@@ -47,6 +47,7 @@ replicated network report <network-id> --watch`,
 
 	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events in real-time (polls every 2 seconds)")
 	cmd.Flags().BoolVar(&r.args.networkReportSummary, "summary", false, "Get aggregated report summary with statistics instead of individual events")
+	cmd.Flags().BoolVar(&r.args.networkReportShowExternalOnly, "show-external-only", true, "Show only external network traffic")
 
 	return cmd
 }
@@ -68,6 +69,11 @@ func (r *runners) getNetworkReport(cmd *cobra.Command, args []string) error {
 
 	// Don't call getNetworkIDFromArg here. Reporting API supports short IDs and will also work for networks that have been deleted.
 
+	// Validate flags
+	if r.args.networkReportSummary && cmd.Flags().Lookup("show-external-only").Changed {
+		return fmt.Errorf("cannot use --show-external-only and --summary flags together")
+	}
+
 	// Get the initial network report or summary depending on args provided
 	if r.args.networkReportSummary {
 		return r.getNetworkReportSummary(cmd.Context())
@@ -77,7 +83,7 @@ func (r *runners) getNetworkReport(cmd *cobra.Command, args []string) error {
 }
 
 func (r *runners) getNetworkReportEvents() error {
-	report, err := r.kotsAPI.GetNetworkReport(r.args.networkReportID)
+	report, err := r.kotsAPI.GetNetworkReport(r.args.networkReportID, r.args.networkReportShowExternalOnly)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -111,9 +117,9 @@ func (r *runners) getNetworkReportEvents() error {
 		for range time.Tick(2 * time.Second) {
 			var newReport *types.NetworkReport
 			if lastEventTime != nil {
-				newReport, err = r.kotsAPI.GetNetworkReportAfter(r.args.networkReportID, lastEventTime)
+				newReport, err = r.kotsAPI.GetNetworkReportAfter(r.args.networkReportID, lastEventTime, r.args.networkReportShowExternalOnly)
 			} else {
-				newReport, err = r.kotsAPI.GetNetworkReport(r.args.networkReportID)
+				newReport, err = r.kotsAPI.GetNetworkReport(r.args.networkReportID, r.args.networkReportShowExternalOnly)
 			}
 
 			if err != nil {
