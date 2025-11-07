@@ -440,3 +440,62 @@ spec:
           required: true
           default: "postgres"
 ```
+
+---
+
+## Tool Version Checks
+
+The linter automatically checks if your configured tool versions are up-to-date compared to recommended versions from the Replicated API.
+
+### When Version Checks Run
+
+Version checks occur automatically before linting starts. They:
+- **Only check enabled linters** - Disabled linters are skipped
+- **Only check explicitly pinned versions** - Tools set to "latest" are not checked (you're already getting the latest)
+- **Only warn for minor/major version differences** - Patch version differences (e.g., 3.14.4 vs 3.14.5) are silent
+- **Are informational only** - Version warnings don't cause linting to fail
+- **Make a single API call** - All tool versions are fetched in one request with a 5-second timeout
+
+### Special Cases
+
+**Embedded Cluster**: Version comes from the manifest's `spec.version` field (not from `.replicated` config), so warnings compare the manifest version against the recommended version.
+
+**Auto-discovery mode**: When no `.replicated` config exists, all tools default to "latest", so no version checks are performed.
+
+**API unavailable**: If the Replicated API is unreachable, a simple info message is displayed and linting continues normally.
+
+### Example Output
+
+**Table format:**
+```
+Tool Version Check:
+Warning: helm version 3.14.0 is below recommended version 3.15.2. Update your .replicated config:
+  tools:
+    helm: '3.15.2'
+
+Warning: preflight version 0.98.0 is below recommended version 0.99.0. Update your .replicated config:
+  tools:
+    preflight: '0.99.0'
+
+Linting Charts...
+```
+
+**JSON format:**
+```json
+{
+  "metadata": { ... },
+  "tool_version_warnings": [
+    "Warning: helm version 3.14.0 is below recommended version 3.15.2. Update your .replicated config:\n  tools:\n    helm: '3.15.2'",
+    "Warning: preflight version 0.98.0 is below recommended version 0.99.0. Update your .replicated config:\n  tools:\n    preflight: '0.99.0'"
+  ],
+  "helm_results": { ... }
+}
+```
+
+### Version Comparison Rules
+
+- **Major version behind** (3.x.x vs 4.x.x) → Warning
+- **Minor version behind** (3.14.x vs 3.15.x) → Warning
+- **Patch version behind** (3.14.4 vs 3.14.5) → No warning (silent)
+- **Same version** (3.14.0 vs 3.14.0) → No warning
+- **Ahead of recommended** (3.16.0 vs 3.15.0) → No warning
