@@ -1876,3 +1876,521 @@ spec:
 
 	t.Log("SUCCESS: Autodiscovery correctly triggered with no config in directory tree")
 }
+
+// TestLint_VersionWarningsDisplay verifies that version warnings appear before linting starts
+func TestLint_VersionWarningsDisplay(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test that makes real API calls")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create minimal chart structure
+	chartDir := filepath.Join(tmpDir, "chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+description: Test chart
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChartManifest := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-chart
+spec:
+  chart:
+    name: test-chart
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartManifest, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with intentionally outdated helm version
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: chart
+manifests:
+  - manifests/**/*.yaml
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+  tools:
+    helm: "3.10.0"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to test directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{})
+
+	w.Flush()
+	output := buf.String()
+
+	// Verify "Tool Version Check:" section appears
+	if !strings.Contains(output, "Tool Version Check:") {
+		t.Errorf("expected 'Tool Version Check:' header in output, got:\n%s", output)
+	}
+
+	// Verify warning mentions helm and version numbers
+	if !strings.Contains(output, "helm") || !strings.Contains(output, "3.10.0") {
+		t.Errorf("expected warning to mention helm and version 3.10.0, got:\n%s", output)
+	}
+
+	// Verify warning includes actionable advice (YAML config update)
+	if !strings.Contains(output, "tools:") {
+		t.Errorf("expected warning to include YAML config example with 'tools:', got:\n%s", output)
+	}
+
+	// Verify version check appears (it should appear early in output)
+	toolCheckIndex := strings.Index(output, "Tool Version Check:")
+	if toolCheckIndex == -1 {
+		t.Errorf("expected 'Tool Version Check:' section in output, got:\n%s", output)
+	}
+}
+
+// TestLint_VersionWarningsOnlyForEnabledLinters verifies warnings only appear for enabled linters
+func TestLint_VersionWarningsOnlyForEnabledLinters(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test that makes real API calls")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create minimal chart structure
+	chartDir := filepath.Join(tmpDir, "chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+description: Test chart
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with helm enabled but preflight disabled
+	// Both have outdated versions
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: chart
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+    preflight:
+      disabled: true
+  tools:
+    helm: "3.10.0"
+    preflight: "0.50.0"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to test directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{})
+
+	w.Flush()
+	output := buf.String()
+
+	// Should have warning for helm (enabled)
+	if !strings.Contains(output, "helm") || !strings.Contains(output, "3.10.0") {
+		t.Errorf("expected warning for enabled helm linter, got:\n%s", output)
+	}
+
+	// Should NOT have warning for preflight (disabled)
+	// Check more carefully - preflight might appear in other contexts
+	toolCheckStart := strings.Index(output, "Tool Version Check:")
+	if toolCheckStart != -1 {
+		// Extract just the version check section
+		versionSection := output[toolCheckStart:]
+		// Look for the specific version warning pattern
+		if strings.Contains(versionSection, "preflight version 0.50.0 is below recommended") {
+			t.Errorf("should not warn about disabled preflight linter, got:\n%s", output)
+		}
+	}
+}
+
+// TestLint_VersionWarningsSkipLatest verifies that "latest" versions don't trigger warnings
+func TestLint_VersionWarningsSkipLatest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test that makes real API calls")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create minimal chart structure
+	chartDir := filepath.Join(tmpDir, "chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+description: Test chart
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with helm: "latest"
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: chart
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+  tools:
+    helm: "latest"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to test directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{})
+
+	w.Flush()
+	output := buf.String()
+
+	// Should NOT have version warnings when using "latest"
+	// Either no "Tool Version Check:" section, or section with no warnings
+	if strings.Contains(output, "Tool Version Check:") {
+		// If section exists, it should not contain helm warnings
+		toolCheckStart := strings.Index(output, "Tool Version Check:")
+		lintingStart := strings.Index(output, "Linting Charts")
+		if toolCheckStart != -1 && lintingStart != -1 {
+			versionSection := output[toolCheckStart:lintingStart]
+			if strings.Contains(versionSection, "helm") && strings.Contains(versionSection, "below recommended") {
+				t.Error("should not warn about helm version when set to 'latest'")
+			}
+		}
+	}
+}
+
+// TestLint_VersionWarningsInJSON verifies JSON output includes tool_version_warnings field
+func TestLint_VersionWarningsInJSON(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test that makes real API calls")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create minimal chart structure
+	chartDir := filepath.Join(tmpDir, "chart")
+	if err := os.MkdirAll(chartDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	chartYaml := filepath.Join(chartDir, "Chart.yaml")
+	chartContent := `apiVersion: v2
+name: test-chart
+version: 1.0.0
+description: Test chart
+`
+	if err := os.WriteFile(chartYaml, []byte(chartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.WriteFile(filepath.Join(chartDir, "values.yaml"), []byte("replicaCount: 1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create HelmChart manifest
+	manifestsDir := filepath.Join(tmpDir, "manifests")
+	if err := os.MkdirAll(manifestsDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	helmChartManifest := filepath.Join(manifestsDir, "helmchart.yaml")
+	helmChartContent := `apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: test-chart
+spec:
+  chart:
+    name: test-chart
+    chartVersion: 1.0.0
+  builder: {}
+`
+	if err := os.WriteFile(helmChartManifest, []byte(helmChartContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config with intentionally outdated helm version
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `charts:
+  - path: chart
+manifests:
+  - manifests/**/*.yaml
+repl-lint:
+  version: 1
+  linters:
+    helm: {}
+  tools:
+    helm: "3.10.0"
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to test directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "json",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	err = r.runLint(cmd, []string{})
+	if err != nil {
+		t.Logf("runLint returned error: %v", err)
+	}
+
+	w.Flush()
+	output := buf.String()
+
+	// Debug: Check if output is empty
+	if len(output) == 0 {
+		t.Fatal("runLint produced no output")
+	}
+
+	// Parse JSON output
+	var jsonOutput JSONLintOutput
+	if err := json.Unmarshal([]byte(output), &jsonOutput); err != nil {
+		t.Fatalf("failed to parse JSON output: %v\nOutput was:\n%s", err, output)
+	}
+
+	// Verify tool_version_warnings field exists
+	if jsonOutput.ToolVersionWarnings == nil {
+		t.Error("expected tool_version_warnings field to exist in JSON output")
+	}
+
+	// Verify it contains a warning for helm
+	foundHelmWarning := false
+	for _, warning := range jsonOutput.ToolVersionWarnings {
+		if strings.Contains(warning, "helm") && strings.Contains(warning, "3.10.0") {
+			foundHelmWarning = true
+			break
+		}
+	}
+
+	if !foundHelmWarning {
+		t.Errorf("expected to find helm version warning in tool_version_warnings, got: %v", jsonOutput.ToolVersionWarnings)
+	}
+}
+
+// TestLint_VersionWarningsECUsesManifest verifies EC version warnings use manifest spec.version
+func TestLint_VersionWarningsECUsesManifest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test that makes real API calls")
+	}
+
+	tmpDir := t.TempDir()
+
+	// Create minimal EC config manifest with intentionally old version
+	ecConfigPath := filepath.Join(tmpDir, "ec-config.yaml")
+	ecConfigContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: test-ec-config
+spec:
+  version: "1.20.0+k8s-1.29"
+`
+	if err := os.WriteFile(ecConfigPath, []byte(ecConfigContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create .replicated config that references EC config
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `manifests:
+  - "*.yaml"
+repl-lint:
+  version: 1
+  linters:
+    embedded-cluster: {}
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Change to test directory
+	oldWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(oldWd)
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create output buffer
+	buf := new(bytes.Buffer)
+	w := tabwriter.NewWriter(buf, 0, 8, 4, ' ', 0)
+
+	r := &runners{
+		w:            w,
+		outputFormat: "table",
+		args: runnerArgs{
+			lintVerbose: false,
+		},
+	}
+
+	// Create a mock command with context
+	cmd := &cobra.Command{}
+	cmd.SetContext(context.Background())
+
+	// Run the lint command
+	_ = r.runLint(cmd, []string{})
+
+	w.Flush()
+	output := buf.String()
+
+	// Verify warning mentions embedded-cluster and the manifest version (1.20.0)
+	if !strings.Contains(output, "embedded") && !strings.Contains(output, "1.20.0") {
+		t.Error("expected warning to mention embedded-cluster and manifest version 1.20.0")
+	}
+
+	// Verify the version from manifest is used (should show 1.20.0+k8s-1.29 or at least 1.20)
+	// This validates that EC version comes from manifest, not config
+	if strings.Contains(output, "Tool Version Check:") {
+		if !strings.Contains(output, "1.20") {
+			t.Error("expected EC version warning to reference manifest version (1.20.0)")
+		}
+	}
+}

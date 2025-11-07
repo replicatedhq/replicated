@@ -1,71 +1,11 @@
 package tools
 
 import (
-	"net/http"
-	"net/http/httptest"
 	"testing"
-	"time"
 )
 
-func TestFetchRecommendedVersions_Success(t *testing.T) {
-	// Mock server returning valid ping response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{
-			"client_ip": "1.2.3.4",
-			"client_versions": {
-				"helm": "3.15.2",
-				"preflight": "0.99.0",
-				"support_bundle": "0.99.0",
-				"embedded_cluster": "1.33.0+k8s-1.33",
-				"kots": "1.120.0"
-			}
-		}`))
-	}))
-	defer server.Close()
-
-	// Temporarily replace ping URL for testing
-	originalURL := "https://replicated.app/ping"
-	defer func() {
-		// Note: We can't actually override the URL in the function,
-		// so this test will make a real HTTP call. That's acceptable for unit tests.
-	}()
-
-	// This test will make a real call to replicated.app/ping
-	// In a real scenario, we'd refactor to allow URL injection, but for now
-	// we'll just test that it doesn't error and returns a map
-	versions, err := FetchRecommendedVersions()
-	if err != nil {
-		t.Fatalf("FetchRecommendedVersions() error = %v", err)
-	}
-
-	// Just verify we got something back
-	if len(versions) == 0 {
-		t.Error("Expected non-empty versions map")
-	}
-
-	_ = originalURL // Use variable to avoid unused warning
-}
-
-func TestFetchRecommendedVersions_Timeout(t *testing.T) {
-	// Mock server that delays response beyond 5 second timeout
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(6 * time.Second)
-		w.WriteHeader(http.StatusOK)
-	}))
-	defer server.Close()
-
-	// This test would need URL injection to work properly
-	// For now, we'll skip this test as it would make a real API call
-	t.Skip("Timeout test requires URL injection capability")
-}
-
-func TestFetchRecommendedVersions_NetworkError(t *testing.T) {
-	// This would require mocking the HTTP client or using a bad URL
-	// Skipping for now as the current implementation doesn't support injection
-	t.Skip("Network error test requires HTTP client injection")
-}
+// Note: FetchRecommendedVersions() is tested via integration tests in cli/cmd/lint_test.go
+// (TestLint_VersionWarnings* tests validate the full flow including API calls)
 
 func TestCompareVersions_MajorVersionBehind(t *testing.T) {
 	result := CompareVersions("3.0.0", "4.0.0")
