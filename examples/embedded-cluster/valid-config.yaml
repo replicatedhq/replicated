@@ -1,0 +1,31 @@
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: my-app-embedded-cluster
+spec:
+  version: "1.33+k8s-1.33"
+
+  roles:
+    controller:
+      name: "Controller"
+      description: "Kubernetes controller node that manages the cluster"
+
+  extensions:
+    helm:
+      repositories:
+        - name: bitnami
+          url: https://charts.bitnami.com/bitnami
+
+  network:
+    podCIDR: "10.244.0.0/16"
+    serviceCIDR: "10.96.0.0/12"
+
+  unsupportedOverrides:
+    k0s: |
+      apiVersion: k0s.k0sproject.io/v1beta1
+      kind: ClusterConfig
+      spec:
+        network:
+          provider: calico
+          calico:
+            mode: vxlan

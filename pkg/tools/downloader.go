@@ -70,6 +70,8 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 		archiveData, checksumURL, checksumFilename, err = d.downloadPreflightArchive(version)
 	case ToolSupportBundle:
 		archiveData, checksumURL, checksumFilename, err = d.downloadSupportBundleArchive(version)
+	case ToolEmbeddedCluster:
+		archiveData, checksumURL, checksumFilename, err = d.downloadEmbeddedClusterArchive(version)
 	default:
 		return fmt.Errorf("unknown tool: %s", name)
 	}
@@ -79,7 +81,9 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 	}
 
 	// Verify checksum
-	if name == ToolHelm {
+	if name == ToolEmbeddedCluster {
+		// Embedded cluster doesn't publish checksums - skip verification
+	} else if name == ToolHelm {
 		if err := VerifyHelmChecksum(archiveData, checksumURL); err != nil {
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
@@ -111,6 +115,9 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 		} else {
 			binaryData, err = extractFromTarGz(archiveData, binaryName)
 		}
+	case ToolEmbeddedCluster:
+		// Embedded cluster is only available for Linux amd64
+		binaryData, err = extractFromTarGz(archiveData, "embedded-cluster")
 	}
 
 	if err != nil {
@@ -166,6 +173,8 @@ func getLatestStableVersion(toolName string) (string, error) {
 		versionKey = "preflight"
 	case ToolSupportBundle:
 		versionKey = "support_bundle"
+	case ToolEmbeddedCluster:
+		versionKey = "embedded_cluster"
 	default:
 		return "", fmt.Errorf("unknown tool: %s", toolName)
 	}
@@ -330,6 +339,32 @@ func (d *Downloader) downloadSupportBundleArchive(version string) ([]byte, strin
 	checksumURL := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/troubleshoot_%s_checksums.txt", version, version)
 
 	return data, checksumURL, filename, nil
+}
+
+// downloadEmbeddedClusterArchive downloads the embedded-cluster archive
+func (d *Downloader) downloadEmbeddedClusterArchive(version string) ([]byte, string, string, error) {
+	platformOS := runtime.GOOS
+	platformArch := runtime.GOARCH
+
+	// Embedded cluster is currently only published for Linux amd64
+	if platformOS != "linux" || platformArch != "amd64" {
+		return nil, "", "", fmt.Errorf("embedded-cluster binaries are only available for linux-amd64 (current platform: %s-%s)", platformOS, platformArch)
+	}
+
+	// URL encode the + character in version (e.g., 2.11.3+k8s-1.33 → 2.11.3%2Bk8s-1.33)
+	urlVersion := strings.ReplaceAll(version, "+", "%2B")
+
+	filename := "embedded-cluster-linux-amd64.tgz"
+	url := fmt.Sprintf("https://github.com/replicatedhq/embedded-cluster/releases/download/%s/%s", urlVersion, filename)
+
+	// Download archive with retry
+	data, err := d.downloadWithRetry(url)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	// No checksum file published - return empty strings for checksum URL and filename
+	return data, "", "", nil
 }
 
 // extractFromZip extracts a specific file from a zip archive in memory

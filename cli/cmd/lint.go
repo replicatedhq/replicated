@@ -13,7 +13,9 @@ import (
 	"github.com/replicatedhq/replicated/pkg/imageextract"
 	"github.com/replicatedhq/replicated/pkg/lint2"
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // InitLint is removed - the standalone "replicated lint" command has been removed.
@@ -58,11 +60,12 @@ func resolveToolVersion(ctx context.Context, config *tools.Config, resolver *too
 // This function consolidates extraction logic across all linters to avoid duplication.
 // If verbose is true, it will also extract ChartsWithMetadata for image extraction.
 // Accepts already-resolved tool versions.
-func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion string) (*ExtractedPaths, error) {
+func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbose bool, helmVersion, preflightVersion, sbVersion, ecVersion string) (*ExtractedPaths, error) {
 	result := &ExtractedPaths{
 		HelmVersion:      helmVersion,
 		PreflightVersion: preflightVersion,
 		SBVersion:        sbVersion,
+		ECVersion:        ecVersion,
 	}
 
 	// Extract chart paths (for Helm linting)
@@ -104,6 +107,19 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 		result.SupportBundles = sbPaths
 	}
 
+	// Discover embedded cluster configs
+	if len(config.Manifests) > 0 {
+		ecPaths := []string{}
+		for _, pattern := range config.Manifests {
+			paths, err := lint2.DiscoverEmbeddedClusterPaths(pattern)
+			if err != nil {
+				return nil, fmt.Errorf("failed to discover embedded cluster configs from pattern %s: %w", pattern, err)
+			}
+			ecPaths = append(ecPaths, paths...)
+		}
+		result.EmbeddedClusterPaths = ecPaths
+	}
+
 	// Extract charts with metadata (needed for validation and image extraction)
 	if len(config.Charts) > 0 {
 		chartsWithMetadata, err := lint2.GetChartsWithMetadataFromConfig(config)
@@ -114,6 +130,100 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 	}
 
 	return result, nil
+}
+
+// resolveAppContext determines which app to use for linting based on the following priority:
+// 1. appID from runners (from --app-id or REPLICATED_APP env var) (highest priority)
+// 2. appSlug from runners (from --app-slug flag)
+// 3. appId from .replicated config
+// 4. appSlug from .replicated config
+// 5. API fetch (auto-select if 1 app, prompt if multiple, empty string if 0 apps)
+//
+// Returns the canonical app ID (empty string if no app available) and any error encountered.
+// This function is graceful: it returns empty string (not an error) if no app is available,
+// except when the user explicitly specified an app that cannot be resolved.
+func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (string, error) {
+	selectedApp := ""
+
+	// 1) Highest priority: appID from runners (--app-id flag or env var)
+	if r.appID != "" {
+		selectedApp = r.appID
+	} else if r.appSlug != "" { // 2) appSlug from runners (--app-slug flag)
+		selectedApp = r.appSlug
+	} else if config.AppId != "" { // 3) .replicated config: appId
+		selectedApp = config.AppId
+	} else if config.AppSlug != "" { // 4) .replicated config: appSlug
+		selectedApp = config.AppSlug
+	} else {
+		// 5) Fetch apps for current profile; pick one or prompt user if multiple
+		// Check if API client is available (may be nil in tests)
+		if r.kotsAPI == nil {
+			return "", errors.New("API client not initialized")
+		}
+
+		apps, err := r.kotsAPI.ListApps(ctx, false)
+		if err != nil {
+			// API failure: return empty string (graceful degradation)
+			return "", nil
+		}
+
+		if len(apps) == 0 {
+			// No apps available: return empty string (not an error)
+			return "", nil
+		}
+
+		if len(apps) == 1 {
+			// Single app: auto-select
+			if apps[0].App != nil && apps[0].App.ID != "" {
+				selectedApp = apps[0].App.ID
+			} else {
+				selectedApp = apps[0].App.Slug
+			}
+		} else {
+			// Multiple apps available - prompt user (interactive mode only)
+			// Check if we're in a TTY (required for interactive prompts)
+			if !term.IsTerminal(int(os.Stdin.Fd())) {
+				return "", errors.New("multiple apps available for the current credentials; specify --app flag or set appId/appSlug in .replicated config")
+			}
+
+			items := make([]string, 0, len(apps))
+			for _, a := range apps {
+				if a.App == nil {
+					continue
+				}
+				items = append(items, fmt.Sprintf("%s (%s / %s)", a.App.Name, a.App.Slug, a.App.ID))
+			}
+			prompt := promptui.Select{
+				Label: "Select app for linting",
+				Items: items,
+			}
+			idx, _, perr := prompt.Run()
+			if perr != nil {
+				return "", errors.Wrap(perr, "app selection canceled")
+			}
+			if apps[idx].App != nil && apps[idx].App.ID != "" {
+				selectedApp = apps[idx].App.ID
+			} else {
+				selectedApp = apps[idx].App.Slug
+			}
+		}
+	}
+
+	// If no app selected, return empty string (graceful)
+	if selectedApp == "" {
+		return "", nil
+	}
+
+	// Resolve to canonical app ID (handles either slug or id input)
+	appObj, err := r.kotsAPI.GetApp(ctx, selectedApp, true)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to resolve app from selection: %s", selectedApp)
+	}
+	if appObj == nil || appObj.ID == "" {
+		return "", errors.Errorf("failed to resolve app id from selection: %s (app not found or invalid)", selectedApp)
+	}
+
+	return appObj.ID, nil
 }
 
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
@@ -130,6 +240,27 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "failed to load .replicated config")
 	}
 
+	// Resolve app context for all linters (not just embedded-cluster)
+	// This makes REPLICATED_APP, REPLICATED_API_TOKEN, and REPLICATED_API_ORIGIN
+	// available to all linter binaries for future vendor portal integrations.
+	//
+	// If app resolution fails, we store the error and continue with other linters.
+	// Only the embedded-cluster linter will fail if app context is required but unavailable.
+	appID, appResolveErr := r.resolveAppContext(cmd.Context(), config)
+
+	// Warn user if app resolution failed and EC linter is enabled (table mode only)
+	if appResolveErr != nil && config.ReplLint.Linters.EmbeddedCluster.IsEnabled() && r.outputFormat == "table" {
+		fmt.Fprintf(r.w, "⚠️  Warning: Could not resolve app context: %v\n", appResolveErr)
+		fmt.Fprintf(r.w, "   Embedded-cluster linter will fail. Other linters will continue.\n\n")
+		r.w.Flush()
+	}
+
+	// Set REPLICATED_APP env var if we successfully resolved an app
+	// Note: REPLICATED_API_TOKEN and REPLICATED_API_ORIGIN are already set in root.go
+	if appID != "" {
+		_ = os.Setenv("REPLICATED_APP", appID)
+	}
+
 	// Initialize JSON output structure
 	output := &JSONLintOutput{}
 
@@ -138,10 +269,11 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	helmVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolHelm, tools.DefaultHelmVersion)
 	preflightVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolPreflight, tools.DefaultPreflightVersion)
 	supportBundleVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolSupportBundle, tools.DefaultSupportBundleVersion)
+	embeddedClusterVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolEmbeddedCluster, "latest")
 
 	// Populate metadata with all resolved versions
 	configPath := findConfigFilePath(".")
-	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, "v0.90.0") // TODO: Get actual CLI version
+	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, version.Version())
 
 	// Check if we're in auto-discovery mode (no charts/preflights/manifests configured)
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
@@ -174,6 +306,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to discover HelmChart manifests")
 		}
 
+		// Auto-discover Embedded Cluster configs (for counting and display)
+		ecPaths, err := lint2.DiscoverEmbeddedClusterPaths(filepath.Join(".", "**"))
+		if err != nil {
+			return errors.Wrap(err, "failed to discover embedded cluster configs")
+		}
+
 		// Store glob patterns (not explicit paths) for extraction phase
 		// This matches non-autodiscovery behavior and uses lenient filtering
 		if len(chartPaths) > 0 {
@@ -184,8 +322,8 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 				{Path: "./**"},
 			}
 		}
-		// Both Support Bundles and HelmChart manifests go into config.Manifests
-		if len(sbPaths) > 0 || len(helmChartPaths) > 0 {
+		// Support Bundles, HelmChart manifests, and Embedded Cluster configs go into config.Manifests
+		if len(sbPaths) > 0 || len(helmChartPaths) > 0 || len(ecPaths) > 0 {
 			config.Manifests = []string{"./**"}
 		}
 
@@ -194,11 +332,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
 		fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
 		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n", len(sbPaths))
-		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
+		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n", len(helmChartPaths))
+		fmt.Fprintf(r.w, "  - %d Embedded Cluster config(s)\n\n", len(ecPaths))
 		r.w.Flush()
 
 		// If nothing was found, exit early
-		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 && len(ecPaths) == 0 {
 			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
 			r.w.Flush()
 			return nil
@@ -213,13 +352,14 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  Helm: %s\n", helmVersion)
 		fmt.Fprintf(r.w, "  Preflight: %s\n", preflightVersion)
 		fmt.Fprintf(r.w, "  Support Bundle: %s\n", supportBundleVersion)
+		fmt.Fprintf(r.w, "  Embedded Cluster: %s\n", embeddedClusterVersion)
 
 		fmt.Fprintln(r.w)
 		r.w.Flush()
 	}
 
 	// Extract all paths and metadata once (consolidates extraction logic across linters)
-	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion)
+	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract paths and metadata")
 	}
@@ -332,6 +472,28 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		output.SupportBundleResults = &SupportBundleLintResults{Enabled: false, Specs: []SupportBundleLintResult{}}
 		if r.outputFormat == "table" {
 			fmt.Fprintf(r.w, "Support Bundle linting is disabled in .replicated config\n\n")
+		}
+	}
+
+	// Lint Embedded Cluster configs if enabled
+	if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+		if len(extracted.EmbeddedClusterPaths) == 0 {
+			output.EmbeddedClusterResults = &EmbeddedClusterLintResults{Enabled: true, Configs: []EmbeddedClusterLintResult{}}
+			if r.outputFormat == "table" {
+				fmt.Fprintf(r.w, "No embedded cluster configs configured (skipping EC linting)\n\n")
+			}
+		} else {
+			// Pass app resolution error - EC linter will fail gracefully if app context unavailable
+			ecResults, err := r.lintEmbeddedClusterConfigs(cmd, extracted.EmbeddedClusterPaths, extracted.ECVersion, appResolveErr)
+			if err != nil {
+				return err
+			}
+			output.EmbeddedClusterResults = ecResults
+		}
+	} else {
+		output.EmbeddedClusterResults = &EmbeddedClusterLintResults{Enabled: false, Configs: []EmbeddedClusterLintResult{}}
+		if r.outputFormat == "table" {
+			fmt.Fprintf(r.w, "Embedded Cluster linting is disabled in .replicated config\n\n")
 		}
 	}
 
@@ -480,6 +642,119 @@ func (r *runners) lintSupportBundleSpecs(cmd *cobra.Command, sbPaths []string, s
 		}
 		if err := r.displayLintResults("SUPPORT BUNDLES", "support bundle spec", "support bundle specs", lintableResults); err != nil {
 			return nil, errors.Wrap(err, "failed to display support bundle results")
+		}
+	}
+
+	return results, nil
+}
+
+func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []string, ecVersion string, appResolveErr error) (*EmbeddedClusterLintResults, error) {
+	results := &EmbeddedClusterLintResults{
+		Enabled: true,
+		Configs: make([]EmbeddedClusterLintResult, 0, len(ecPaths)),
+	}
+
+	// If no embedded cluster configs found, that's not an error - they're optional
+	if len(ecPaths) == 0 {
+		return results, nil
+	}
+
+	// If app resolution failed, embedded-cluster linter cannot run
+	// Return a failed result for each config instead of stopping the entire lint command
+	if appResolveErr != nil {
+		for _, configPath := range ecPaths {
+			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
+				Path:    configPath,
+				Success: false,
+				Messages: []LintMessage{
+					{
+						Severity: "ERROR",
+						Message:  fmt.Sprintf("Embedded cluster linting requires app context: %v", appResolveErr),
+					},
+				},
+				Summary: ResourceSummary{
+					ErrorCount:   1,
+					WarningCount: 0,
+					InfoCount:    0,
+				},
+			})
+		}
+
+		// Display results in table format
+		if r.outputFormat == "table" {
+			lintableResults := make([]LintableResult, len(results.Configs))
+			for i, config := range results.Configs {
+				lintableResults[i] = config
+			}
+			if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+				return nil, errors.Wrap(err, "failed to display embedded cluster results")
+			}
+		}
+
+		return results, nil
+	}
+
+	// Validate: only 0 or 1 config allowed
+	// If 2+ found, return failed results but don't block other linters
+	if len(ecPaths) > 1 {
+		for _, configPath := range ecPaths {
+			results.Configs = append(results.Configs, EmbeddedClusterLintResult{
+				Path:    configPath,
+				Success: false,
+				Messages: []LintMessage{
+					{
+						Severity: "ERROR",
+						Message:  fmt.Sprintf("Multiple embedded cluster configs found (%d). Only 0 or 1 config per project is supported. Found configs: %s", len(ecPaths), strings.Join(ecPaths, ", ")),
+					},
+				},
+				Summary: ResourceSummary{
+					ErrorCount:   1,
+					WarningCount: 0,
+					InfoCount:    0,
+				},
+			})
+		}
+
+		// Display results in table format
+		if r.outputFormat == "table" {
+			lintableResults := make([]LintableResult, len(results.Configs))
+			for i, config := range results.Configs {
+				lintableResults[i] = config
+			}
+			if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+				return nil, errors.Wrap(err, "failed to display embedded cluster results")
+			}
+		}
+
+		return results, nil
+	}
+
+	// Lint all embedded cluster configs and collect results
+	for _, configPath := range ecPaths {
+		lint2Result, err := lint2.LintEmbeddedCluster(cmd.Context(), configPath, ecVersion)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to lint embedded cluster config: %s", configPath)
+		}
+
+		// Convert to structured format
+		ecResult := EmbeddedClusterLintResult{
+			Path:     configPath,
+			Success:  lint2Result.Success,
+			Messages: convertLint2Messages(lint2Result.Messages),
+			Summary:  calculateResourceSummary(lint2Result.Messages),
+		}
+		results.Configs = append(results.Configs, ecResult)
+	}
+
+	// Display results in table format (only if table output)
+	if r.outputFormat == "table" {
+		// Convert to []LintableResult for generic display
+		lintableResults := make([]LintableResult, len(results.Configs))
+		for i, config := range results.Configs {
+			lintableResults[i] = config
+		}
+		if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster config", "embedded cluster configs", lintableResults); err != nil {
+			return nil, errors.Wrap(err, "failed to display embedded cluster results")
 		}
 	}
 
@@ -721,6 +996,15 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 		accumulateSummary(&summary, results)
 	}
 
+	// Accumulate from Embedded Cluster results
+	if output.EmbeddedClusterResults != nil {
+		results := make([]LintableResult, len(output.EmbeddedClusterResults.Configs))
+		for i, config := range output.EmbeddedClusterResults.Configs {
+			results[i] = config
+		}
+		accumulateSummary(&summary, results)
+	}
+
 	summary.OverallSuccess = summary.FailedResources == 0
 
 	return summary
@@ -730,8 +1014,8 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 // This eliminates duplication across chart, preflight, and support bundle display functions.
 func (r *runners) displayLintResults(
 	sectionTitle string,
-	itemName string,     // e.g., "chart", "preflight spec", "support bundle spec"
-	pluralName string,   // e.g., "charts", "preflight specs", "support bundle specs"
+	itemName string, // e.g., "chart", "preflight spec", "support bundle spec"
+	pluralName string, // e.g., "charts", "preflight specs", "support bundle specs"
 	results []LintableResult,
 ) error {
 	if len(results) == 0 {

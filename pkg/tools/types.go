@@ -65,7 +65,8 @@ const (
 
 // Supported tool names
 const (
-	ToolHelm          = "helm"
-	ToolPreflight     = "preflight"
-	ToolSupportBundle = "support-bundle"
+	ToolHelm            = "helm"
+	ToolPreflight       = "preflight"
+	ToolSupportBundle   = "support-bundle"
+	ToolEmbeddedCluster = "embedded-cluster"
 )

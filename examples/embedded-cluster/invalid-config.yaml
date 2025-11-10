@@ -1,0 +1,22 @@
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: invalid-example
+spec:
+  # Missing required 'version' field - will cause validation error
+
+  roles:
+    controller:
+      name: "Controller"
+      # Missing required 'description' field - will cause validation error
+
+  network:
+    # Invalid CIDR format - will cause validation error
+    podCIDR: "invalid-cidr"
+    serviceCIDR: "10.96.0.0/12"
+
+  extensions:
+    helm:
+      repositories:
+        # Missing required 'url' field - will cause validation error
+        - name: my-repo

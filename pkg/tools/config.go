@@ -247,7 +247,7 @@ func (p *ConfigParser) DefaultConfig() *Config {
 				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
 				Preflight:       LinterConfig{Disabled: boolPtr(false)},
 				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
 				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
@@ -268,7 +268,7 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 				Helm:            LinterConfig{Disabled: boolPtr(false)},
 				Preflight:       LinterConfig{Disabled: boolPtr(false)},
 				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)},
+				EmbeddedCluster: LinterConfig{Disabled: boolPtr(false)},
 				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
@@ -295,6 +295,9 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 	}
 	if _, exists := config.ReplLint.Tools[ToolSupportBundle]; !exists {
 		config.ReplLint.Tools[ToolSupportBundle] = "latest"
+	}
+	if _, exists := config.ReplLint.Tools[ToolEmbeddedCluster]; !exists {
+		config.ReplLint.Tools[ToolEmbeddedCluster] = "latest"
 	}
 }
 

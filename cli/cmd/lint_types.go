@@ -9,22 +9,24 @@ import (
 
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
-	Metadata             LintMetadata              `json:"metadata"`
-	HelmResults          *HelmLintResults          `json:"helm_results,omitempty"`
-	PreflightResults     *PreflightLintResults     `json:"preflight_results,omitempty"`
-	SupportBundleResults *SupportBundleLintResults `json:"support_bundle_results,omitempty"`
-	Summary              LintSummary               `json:"summary"`
-	Images               *ImageExtractResults      `json:"images,omitempty"` // Only if --verbose
+	Metadata               LintMetadata                `json:"metadata"`
+	HelmResults            *HelmLintResults            `json:"helm_results,omitempty"`
+	PreflightResults       *PreflightLintResults       `json:"preflight_results,omitempty"`
+	SupportBundleResults   *SupportBundleLintResults   `json:"support_bundle_results,omitempty"`
+	EmbeddedClusterResults *EmbeddedClusterLintResults `json:"embedded_cluster_results,omitempty"`
+	Summary                LintSummary                 `json:"summary"`
+	Images                 *ImageExtractResults        `json:"images,omitempty"` // Only if --verbose
 }
 
 // LintMetadata contains execution context and environment information
 type LintMetadata struct {
-	Timestamp            string `json:"timestamp"`
-	ConfigFile           string `json:"config_file"`
-	HelmVersion          string `json:"helm_version,omitempty"`
-	PreflightVersion     string `json:"preflight_version,omitempty"`
-	SupportBundleVersion string `json:"support_bundle_version,omitempty"`
-	CLIVersion           string `json:"cli_version"`
+	Timestamp              string `json:"timestamp"`
+	ConfigFile             string `json:"config_file"`
+	HelmVersion            string `json:"helm_version,omitempty"`
+	PreflightVersion       string `json:"preflight_version,omitempty"`
+	SupportBundleVersion   string `json:"support_bundle_version,omitempty"`
+	EmbeddedClusterVersion string `json:"embedded_cluster_version,omitempty"`
+	CLIVersion             string `json:"cli_version"`
 }
 
 // HelmLintResults contains all Helm chart lint results
@@ -57,12 +59,26 @@ type PreflightLintResult struct {
 
 // SupportBundleLintResults contains all Support Bundle spec lint results
 type SupportBundleLintResults struct {
-	Enabled bool                       `json:"enabled"`
+	Enabled bool                      `json:"enabled"`
 	Specs   []SupportBundleLintResult `json:"specs"`
 }
 
 // SupportBundleLintResult represents lint results for a single Support Bundle spec
 type SupportBundleLintResult struct {
+	Path     string          `json:"path"`
+	Success  bool            `json:"success"`
+	Messages []LintMessage   `json:"messages"`
+	Summary  ResourceSummary `json:"summary"`
+}
+
+// EmbeddedClusterLintResults contains all Embedded Cluster config lint results
+type EmbeddedClusterLintResults struct {
+	Enabled bool                        `json:"enabled"`
+	Configs []EmbeddedClusterLintResult `json:"configs"`
+}
+
+// EmbeddedClusterLintResult represents lint results for a single Embedded Cluster config
+type EmbeddedClusterLintResult struct {
 	Path     string          `json:"path"`
 	Success  bool            `json:"success"`
 	Messages []LintMessage   `json:"messages"`
@@ -119,6 +135,9 @@ type ExtractedPaths struct {
 	// Support bundles: simple paths
 	SupportBundles []string
 
+	// Embedded cluster: simple paths
+	EmbeddedClusterPaths []string
+
 	// Shared: HelmChart manifests (used by preflight + image extraction)
 	HelmChartManifests map[string]*lint2.HelmChartManifest
 
@@ -129,6 +148,7 @@ type ExtractedPaths struct {
 	HelmVersion      string
 	PreflightVersion string
 	SBVersion        string
+	ECVersion        string
 
 	// Metadata
 	ConfigPath string
@@ -144,22 +164,28 @@ type LintableResult interface {
 }
 
 // Implement LintableResult interface for ChartLintResult
-func (c ChartLintResult) GetPath() string            { return c.Path }
-func (c ChartLintResult) GetSuccess() bool           { return c.Success }
-func (c ChartLintResult) GetMessages() []LintMessage { return c.Messages }
+func (c ChartLintResult) GetPath() string             { return c.Path }
+func (c ChartLintResult) GetSuccess() bool            { return c.Success }
+func (c ChartLintResult) GetMessages() []LintMessage  { return c.Messages }
 func (c ChartLintResult) GetSummary() ResourceSummary { return c.Summary }
 
 // Implement LintableResult interface for PreflightLintResult
-func (p PreflightLintResult) GetPath() string            { return p.Path }
-func (p PreflightLintResult) GetSuccess() bool           { return p.Success }
-func (p PreflightLintResult) GetMessages() []LintMessage { return p.Messages }
+func (p PreflightLintResult) GetPath() string             { return p.Path }
+func (p PreflightLintResult) GetSuccess() bool            { return p.Success }
+func (p PreflightLintResult) GetMessages() []LintMessage  { return p.Messages }
 func (p PreflightLintResult) GetSummary() ResourceSummary { return p.Summary }
 
 // Implement LintableResult interface for SupportBundleLintResult
-func (s SupportBundleLintResult) GetPath() string            { return s.Path }
-func (s SupportBundleLintResult) GetSuccess() bool           { return s.Success }
-func (s SupportBundleLintResult) GetMessages() []LintMessage { return s.Messages }
+func (s SupportBundleLintResult) GetPath() string             { return s.Path }
+func (s SupportBundleLintResult) GetSuccess() bool            { return s.Success }
+func (s SupportBundleLintResult) GetMessages() []LintMessage  { return s.Messages }
 func (s SupportBundleLintResult) GetSummary() ResourceSummary { return s.Summary }
+
+// Implement LintableResult interface for EmbeddedClusterLintResult
+func (e EmbeddedClusterLintResult) GetPath() string             { return e.Path }
+func (e EmbeddedClusterLintResult) GetSuccess() bool            { return e.Success }
+func (e EmbeddedClusterLintResult) GetMessages() []LintMessage  { return e.Messages }
+func (e EmbeddedClusterLintResult) GetSummary() ResourceSummary { return e.Summary }
 
 // Helper functions to convert between types
 
@@ -193,13 +219,14 @@ func calculateResourceSummary(messages []lint2.LintMessage) ResourceSummary {
 }
 
 // newLintMetadata creates metadata for the lint output
-func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVersion, cliVersion string) LintMetadata {
+func newLintMetadata(configFile, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, cliVersion string) LintMetadata {
 	return LintMetadata{
-		Timestamp:            time.Now().UTC().Format(time.RFC3339),
-		ConfigFile:           configFile,
-		HelmVersion:          helmVersion,
-		PreflightVersion:     preflightVersion,
-		SupportBundleVersion: supportBundleVersion,
-		CLIVersion:           cliVersion,
+		Timestamp:              time.Now().UTC().Format(time.RFC3339),
+		ConfigFile:             configFile,
+		HelmVersion:            helmVersion,
+		PreflightVersion:       preflightVersion,
+		SupportBundleVersion:   supportBundleVersion,
+		EmbeddedClusterVersion: embeddedClusterVersion,
+		CLIVersion:             cliVersion,
 	}
 }
