@@ -3052,3 +3052,232 @@ func TestDiscoverSupportBundlePaths_ExplicitBypass(t *testing.T) {
 		t.Errorf("Expected bundle in dist/, got: %s", bundles[0])
 	}
 }
+
+func TestDiscoverEmbeddedClusterPaths_MultiDocument(t *testing.T) {
+	// Create temporary directory
+	tmpDir := t.TempDir()
+
+	// Create multi-document YAML with EC config and other resources
+	multiDocFile := filepath.Join(tmpDir, "multi-doc.yaml")
+	multiDocContent := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-config
+data:
+  key: value
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: my-ec-config
+spec:
+  version: "1.12.0+k8s-1.30"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-deployment
+spec:
+  replicas: 1`
+
+	if err := os.WriteFile(multiDocFile, []byte(multiDocContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	paths, err := DiscoverEmbeddedClusterPaths(multiDocFile)
+	if err != nil {
+		t.Fatalf("DiscoverEmbeddedClusterPaths() unexpected error: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverEmbeddedClusterPaths() returned %d paths, want 1", len(paths))
+		return
+	}
+
+	if paths[0] != multiDocFile {
+		t.Errorf("DiscoverEmbeddedClusterPaths() path = %s, want %s", paths[0], multiDocFile)
+	}
+}
+
+func TestDiscoverEmbeddedClusterPaths_MultipleECConfigs(t *testing.T) {
+	// Create temporary directory
+	tmpDir := t.TempDir()
+
+	// Create multi-document YAML with multiple EC configs
+	multiConfigFile := filepath.Join(tmpDir, "multi-config.yaml")
+	multiConfigContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config-1
+spec:
+  version: "1.12.0+k8s-1.30"
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config-2
+spec:
+  version: "1.13.0+k8s-1.31"`
+
+	if err := os.WriteFile(multiConfigFile, []byte(multiConfigContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Discovery should find the file (it has at least one EC Config)
+	paths, err := DiscoverEmbeddedClusterPaths(multiConfigFile)
+	if err != nil {
+		t.Fatalf("DiscoverEmbeddedClusterPaths() unexpected error: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverEmbeddedClusterPaths() returned %d paths, want 1", len(paths))
+		return
+	}
+
+	if paths[0] != multiConfigFile {
+		t.Errorf("DiscoverEmbeddedClusterPaths() path = %s, want %s", paths[0], multiConfigFile)
+	}
+}
+
+func TestDiscoverEmbeddedClusterPaths_DistinguishesFromKOTSConfig(t *testing.T) {
+	// Create temporary directory
+	tmpDir := t.TempDir()
+
+	// Create file with KOTS Config only (should NOT be discovered by EC linter)
+	kotsOnlyFile := filepath.Join(tmpDir, "kots-only.yaml")
+	kotsOnlyContent := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+spec:
+  groups:
+    - name: settings
+      items:
+        - name: hostname
+          type: text`
+
+	if err := os.WriteFile(kotsOnlyFile, []byte(kotsOnlyContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should NOT discover KOTS Config (explicit path = strict validation, returns error)
+	paths, err := DiscoverEmbeddedClusterPaths(kotsOnlyFile)
+	if err == nil {
+		t.Fatalf("DiscoverEmbeddedClusterPaths() expected error for KOTS Config, got nil")
+	}
+
+	if len(paths) != 0 {
+		t.Errorf("DiscoverEmbeddedClusterPaths() found KOTS Config (should not), returned %d paths", len(paths))
+	}
+
+	// Create file with both KOTS and EC Config
+	mixedFile := filepath.Join(tmpDir, "mixed.yaml")
+	mixedContent := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+spec:
+  version: "1.12.0+k8s-1.30"`
+
+	if err := os.WriteFile(mixedFile, []byte(mixedContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should discover the file (contains EC Config)
+	paths, err = DiscoverEmbeddedClusterPaths(mixedFile)
+	if err != nil {
+		t.Fatalf("DiscoverEmbeddedClusterPaths() unexpected error on mixed file: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverEmbeddedClusterPaths() returned %d paths for mixed file, want 1", len(paths))
+		return
+	}
+
+	if paths[0] != mixedFile {
+		t.Errorf("DiscoverEmbeddedClusterPaths() path = %s, want %s", paths[0], mixedFile)
+	}
+}
+
+func TestHasGVK_EmptyDocuments(t *testing.T) {
+	// Create temporary directory
+	tmpDir := t.TempDir()
+
+	// Create file with empty documents between separators
+	emptyDocsFile := filepath.Join(tmpDir, "empty-docs.yaml")
+	emptyDocsContent := `---
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+---
+---`
+
+	if err := os.WriteFile(emptyDocsFile, []byte(emptyDocsContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Should find the EC Config despite empty documents
+	got, err := hasGVK(emptyDocsFile, "embeddedcluster.replicated.com", "", "Config")
+	if err != nil {
+		t.Fatalf("hasGVK() error = %v", err)
+	}
+	if !got {
+		t.Errorf("hasGVK() = false, want true (should find Config despite empty documents)")
+	}
+}
+
+func TestDiscoverPreflightPaths_MultiplePreflights(t *testing.T) {
+	// Create temporary directory
+	tmpDir := t.TempDir()
+
+	// Create multi-document YAML with multiple Preflight specs
+	multiPreflightFile := filepath.Join(tmpDir, "multi-preflight.yaml")
+	multiPreflightContent := `apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: pre-install-checks
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              message: Requires Kubernetes 1.25+
+---
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: post-upgrade-checks
+spec:
+  analyzers:
+    - nodeResources:
+        checkName: Node Requirements
+        outcomes:
+          - fail:
+              message: Insufficient resources`
+
+	if err := os.WriteFile(multiPreflightFile, []byte(multiPreflightContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Discovery should find the file (it has at least one Preflight)
+	paths, err := DiscoverPreflightPaths(multiPreflightFile)
+	if err != nil {
+		t.Fatalf("DiscoverPreflightPaths() unexpected error: %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverPreflightPaths() returned %d paths, want 1", len(paths))
+		return
+	}
+
+	if paths[0] != multiPreflightFile {
+		t.Errorf("DiscoverPreflightPaths() path = %s, want %s", paths[0], multiPreflightFile)
+	}
+}
