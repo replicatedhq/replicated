@@ -15,7 +15,7 @@ preflights: [
   }
 ]
 releaseLabel: ""  ## some sort of semver pattern?
-manifests: ["./support-bundles/**"]
+manifests: ["./support-bundles/**", "./embedded-cluster/**", "./kots/**"]
 repl-lint:
   version: 1
   linters:
@@ -27,7 +27,10 @@ repl-lint:
       disabled: false
     embedded-cluster:
       disabled: false
+    kots:
+      disabled: false
   tools:
     helm: "latest"
     preflight: "latest"
     support-bundle: "latest"
+    kots: "latest"
