@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -89,17 +88,6 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		clusterID = r.args.kubeconfigClusterID
 	} else {
 		return errors.New("must provide cluster id or name")
-	}
-
-	cluster, err := r.kotsAPI.GetCluster(clusterID)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
-		return errors.Wrap(err, "get cluster")
-	}
-
-	if cluster.Status != types.ClusterStatusRunning {
-		return errors.Errorf("cluster %s is not running, current status is %s", clusterID, cluster.Status)
 	}
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
