@@ -72,6 +72,8 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 		archiveData, checksumURL, checksumFilename, err = d.downloadSupportBundleArchive(version)
 	case ToolEmbeddedCluster:
 		archiveData, checksumURL, checksumFilename, err = d.downloadEmbeddedClusterArchive(version)
+	case ToolKots:
+		archiveData, checksumURL, checksumFilename, err = d.downloadKotsArchive(version)
 	default:
 		return fmt.Errorf("unknown tool: %s", name)
 	}
@@ -88,7 +90,7 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
 	} else {
-		// Troubleshoot tools (preflight, support-bundle)
+		// Troubleshoot tools (preflight, support-bundle) and KOTS use unified checksums file
 		if err := VerifyTroubleshootChecksum(archiveData, version, checksumFilename); err != nil {
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
@@ -118,6 +120,9 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 	case ToolEmbeddedCluster:
 		// Embedded cluster is only available for Linux amd64
 		binaryData, err = extractFromTarGz(archiveData, "embedded-cluster")
+	case ToolKots:
+		// KOTS binary is at root of archive
+		binaryData, err = extractFromTarGz(archiveData, "kots")
 	}
 
 	if err != nil {
@@ -175,6 +180,8 @@ func getLatestStableVersion(toolName string) (string, error) {
 		versionKey = "support_bundle"
 	case ToolEmbeddedCluster:
 		versionKey = "embedded_cluster"
+	case ToolKots:
+		versionKey = "kots"
 	default:
 		return "", fmt.Errorf("unknown tool: %s", toolName)
 	}
@@ -365,6 +372,39 @@ func (d *Downloader) downloadEmbeddedClusterArchive(version string) ([]byte, str
 
 	// No checksum file published - return empty strings for checksum URL and filename
 	return data, "", "", nil
+}
+
+// downloadKotsArchive downloads the kots archive
+func (d *Downloader) downloadKotsArchive(version string) ([]byte, string, string, error) {
+	platformOS := runtime.GOOS
+	platformArch := runtime.GOARCH
+
+	// KOTS is not available on Windows
+	if platformOS == "windows" {
+		return nil, "", "", fmt.Errorf("kots binaries are not available for Windows")
+	}
+
+	// Determine architecture suffix
+	var archSuffix string
+	if platformOS == "darwin" {
+		archSuffix = "all" // Universal binary
+	} else {
+		archSuffix = platformArch // linux: amd64 or arm64
+	}
+
+	filename := fmt.Sprintf("kots_%s_%s.tar.gz", platformOS, archSuffix)
+	url := fmt.Sprintf("https://github.com/replicatedhq/kots/releases/download/v%s/%s", version, filename)
+
+	// Download archive with retry
+	data, err := d.downloadWithRetry(url)
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	// Checksum file pattern
+	checksumURL := fmt.Sprintf("https://github.com/replicatedhq/kots/releases/download/v%s/kots_%s_checksums.txt", version, version)
+
+	return data, checksumURL, filename, nil
 }
 
 // extractFromZip extracts a specific file from a zip archive in memory

@@ -377,8 +377,8 @@ func TestConfigParser_MergeConfigs(t *testing.T) {
 			PromoteToChannelNames: []string{"stable"},
 		}
 		child := &Config{
-			AppId:                 "", // Empty - should not override
-			PromoteToChannelIds:   nil, // Nil - should not override
+			AppId:                 "",         // Empty - should not override
+			PromoteToChannelIds:   nil,        // Nil - should not override
 			PromoteToChannelNames: []string{}, // Empty slice - should not override
 		}
 
@@ -1384,6 +1384,118 @@ func TestApplyDefaultsWithNilTools(t *testing.T) {
 	}
 	if v, ok := config.ReplLint.Tools[ToolSupportBundle]; !ok || v != "latest" {
 		t.Errorf("Expected SupportBundle to default to 'latest', got '%s' (exists: %v)", v, ok)
+	}
+}
+
+// TestApplyDefaultsWithNilReplLint tests that ApplyDefaults initializes all linters as enabled by default
+func TestApplyDefaultsWithNilReplLint(t *testing.T) {
+	parser := NewConfigParser()
+
+	// Start with completely empty config (nil ReplLint)
+	config := &Config{}
+
+	// Apply defaults
+	parser.ApplyDefaults(config)
+
+	// ReplLint should be initialized
+	if config.ReplLint == nil {
+		t.Fatal("ReplLint should be initialized after ApplyDefaults")
+	}
+
+	// All linters should be enabled by default (Disabled = false)
+	linters := map[string]LinterConfig{
+		"Helm":            config.ReplLint.Linters.Helm,
+		"Preflight":       config.ReplLint.Linters.Preflight,
+		"SupportBundle":   config.ReplLint.Linters.SupportBundle,
+		"EmbeddedCluster": config.ReplLint.Linters.EmbeddedCluster,
+		"Kots":            config.ReplLint.Linters.Kots,
+	}
+
+	for name, linter := range linters {
+		if linter.Disabled == nil {
+			t.Errorf("%s.Disabled should not be nil after ApplyDefaults", name)
+			continue
+		}
+		if *linter.Disabled != false {
+			t.Errorf("%s.Disabled = %v, want false (enabled by default)", name, *linter.Disabled)
+		}
+	}
+}
+
+// TestKotsLinterDefaultConsistency verifies KOTS defaults match other linters
+func TestKotsLinterDefaultConsistency(t *testing.T) {
+	parser := NewConfigParser()
+	config := &Config{}
+	parser.ApplyDefaults(config)
+
+	// KOTS should have same default as other linters (all enabled)
+	helmDisabled := config.ReplLint.Linters.Helm.Disabled
+	kotsDisabled := config.ReplLint.Linters.Kots.Disabled
+
+	if helmDisabled == nil || kotsDisabled == nil {
+		t.Fatal("Linter Disabled fields should not be nil")
+	}
+
+	if *helmDisabled != *kotsDisabled {
+		t.Errorf("KOTS default (Disabled=%v) doesn't match Helm default (Disabled=%v) - should be consistent",
+			*kotsDisabled, *helmDisabled)
+	}
+
+	// Verify all linters have consistent defaults
+	allDisabledValues := []*bool{
+		config.ReplLint.Linters.Helm.Disabled,
+		config.ReplLint.Linters.Preflight.Disabled,
+		config.ReplLint.Linters.SupportBundle.Disabled,
+		config.ReplLint.Linters.EmbeddedCluster.Disabled,
+		config.ReplLint.Linters.Kots.Disabled,
+	}
+
+	expectedValue := false // All should be enabled by default
+	for i, disabled := range allDisabledValues {
+		if disabled == nil {
+			t.Errorf("Linter %d: Disabled is nil", i)
+			continue
+		}
+		if *disabled != expectedValue {
+			t.Errorf("Linter %d: Disabled=%v, want %v (all linters should have same default)", i, *disabled, expectedValue)
+		}
+	}
+}
+
+// TestKotsLinterExplicitDisable verifies users can explicitly disable KOTS linter
+func TestKotsLinterExplicitDisable(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create config with KOTS explicitly disabled
+	configPath := filepath.Join(tmpDir, ".replicated")
+	configContent := `repl-lint:
+  version: 1
+  linters:
+    kots:
+      disabled: true
+`
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Parse config
+	parser := NewConfigParser()
+	config, err := parser.FindAndParseConfig(tmpDir)
+	if err != nil {
+		t.Fatalf("Failed to parse config: %v", err)
+	}
+
+	// Verify KOTS is disabled as specified
+	if config.ReplLint.Linters.Kots.Disabled == nil {
+		t.Fatal("Kots.Disabled should not be nil")
+	}
+	if !*config.ReplLint.Linters.Kots.Disabled {
+		t.Error("Kots.Disabled should be true when explicitly set in config")
+	}
+
+	// Verify KOTS is actually disabled via IsEnabled()
+	if config.ReplLint.Linters.Kots.IsEnabled() {
+		t.Error("Kots linter should not be enabled when explicitly disabled in config")
 	}
 }
 

@@ -1,0 +1,28 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-app-config
+spec:
+  groups:
+    - name: database
+      title: Database Settings
+      description: Configure the database connection
+      items:
+        - name: postgres_host
+          title: PostgreSQL Host
+          type: text
+          required: true
+          default: "postgres"
+        - name: postgres_port
+          title: PostgreSQL Port
+          type: text
+          required: false
+          default: "5432"
+    - name: application
+      title: Application Settings
+      items:
+        - name: app_replicas
+          title: Number of Replicas
+          type: text
+          required: true
+          default: "3"

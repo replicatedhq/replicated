@@ -69,4 +69,5 @@ const (
 	ToolPreflight       = "preflight"
 	ToolSupportBundle   = "support-bundle"
 	ToolEmbeddedCluster = "embedded-cluster"
+	ToolKots            = "kots"
 )

@@ -298,151 +298,137 @@ spec:
 
 **Solution:** Either add the corresponding chart to your configuration or remove the unused HelmChart manifest. Warnings are informational and won't cause linting to fail.
 
-## Embedded Cluster Configuration
+## Linter-Specific Configuration
 
-The embedded-cluster linter validates Embedded Cluster configuration files. Embedded Cluster is Replicated's solution for packaging Kubernetes and your application together as a single appliance-style installer.
+### Helm Linter
 
-### What It Validates
+The Helm linter validates Helm chart structure, templates, and values files using the official `helm lint` command.
 
-The embedded-cluster linter validates:
+**What it validates:**
+- Chart.yaml metadata and format
+- Template syntax and rendering
+- Values file structure
+- Required files and directories
+- Kubernetes resource validity
+
+**Configuration:**
+```yaml
+repl-lint:
+  linters:
+    helm:
+      enabled: true
+      strict: false    # Set to true to treat warnings as errors
+  tools:
+    helm: "latest"     # Optional: pin to specific version (e.g., "3.14.4")
+```
+
+**Auto-discovery:** Automatically finds charts by locating `Chart.yaml` files in your project.
+
+---
+
+### Support Bundle Linter
+
+The Support Bundle linter validates support bundle collector specs for Replicated's troubleshooting framework.
+
+**What it validates:**
+- Collector spec syntax and structure
+- Analyzer definitions
+- Output redaction rules
+- Kubernetes resource collectors
+
+**Configuration:**
+```yaml
+repl-lint:
+  linters:
+    support-bundle:
+      enabled: true
+      strict: false
+  tools:
+    support-bundle: "latest"   # Optional: pin to specific version
+```
+
+**Auto-discovery:** Finds support bundle specs by locating files with `kind: SupportBundle` or `kind: Collector`.
+
+---
+
+### Embedded Cluster Linter
+
+The Embedded Cluster linter validates Embedded Cluster configuration files for Replicated's embedded Kubernetes installer solution.
+
+**What it validates:**
 - Configuration schema correctness
 - Kubernetes version compatibility
 - Extension configurations
 - Network and storage settings
 - High availability settings
-- Custom branding configuration
 
-### Platform Requirements
+**Important constraint:** Only 0 or 1 embedded cluster config is allowed per project.
 
-**Important:** The embedded-cluster linter binary is currently only available for **Linux AMD64**.
-
-- ✅ **Linux (x86_64/amd64)**: Full support
-- ❌ **macOS**: Not currently available
-- ❌ **Windows**: Not currently available
-- ❌ **ARM64**: Not currently available
-
-If you're on an unsupported platform:
-- The linter will fail gracefully with a clear error message
-- Other linters (helm, preflight, support-bundle) will continue running
-- Consider running in a Linux container or CI environment
-
-### Configuration
-
-Enable the embedded-cluster linter in your `.replicated` file:
-
+**Configuration:**
 ```yaml
 repl-lint:
-  version: 1
   linters:
     embedded-cluster:
       enabled: true
-      strict: false    # Set to true to treat warnings as errors
-  tools:
-    embedded-cluster: "latest"   # Optional: pin to specific version
-```
-
-### Auto-Discovery
-
-When no `.replicated` config exists, the linter automatically discovers embedded-cluster configs by:
-- Finding files with `kind: Config` and `apiVersion: embeddedcluster.replicated.com/v1beta1`
-- Validating only 0 or 1 config exists (multiple configs are not supported)
-
-### Multiple Config Validation
-
-**Only 0 or 1 embedded cluster config is allowed per project.**
-
-If multiple configs are detected:
-- Each config will show as failed with a clear error message
-- Other linters (helm, preflight, support-bundle) continue running
-- The linting command returns a non-zero exit code
-
-### Example Configuration
-
-**Minimal `.replicated` with embedded-cluster:**
-```yaml
-appId: ""
-appSlug: "my-app"
-manifests:
-  - "./embedded-cluster/*.yaml"
-
-repl-lint:
-  version: 1
-  linters:
-    embedded-cluster:
-      enabled: true
-      strict: true
+      strict: false
   tools:
     embedded-cluster: "latest"
 ```
 
-**Example embedded-cluster config file (ec-config.yaml):**
+**Auto-discovery:** Finds configs by locating files with:
+- `kind: Config`
+- `apiVersion: embeddedcluster.replicated.com/v1beta1`
+
+**Multiple configs error:** If multiple configs are found, each will show as failed with a clear error message. Other linters continue running.
+
+---
+
+### KOTS Linter
+
+The KOTS linter validates KOTS Config manifests (custom resource for application configuration UI).
+
+**What it validates:**
+- Config schema correctness
+- Config group and item definitions
+- Field types and validation rules
+- Template syntax
+- Required vs optional fields
+
+**Important constraint:** Only 0 or 1 KOTS config is allowed per project.
+
+**Configuration:**
 ```yaml
-apiVersion: embeddedcluster.replicated.com/v1beta1
+repl-lint:
+  linters:
+    kots:
+      enabled: true
+      strict: false
+  tools:
+    kots: "latest"     # Optional: pin to specific version
+```
+
+**Auto-discovery:** Finds KOTS Configs by locating files with:
+- `kind: Config`
+- `apiVersion: kots.io/*` (any version: v1beta1, v1beta2, v1, etc.)
+
+**GVK filtering:** The linter distinguishes KOTS Config (`kots.io`) from Embedded Cluster Config (`embeddedcluster.replicated.com`) using Group-Version-Kind filtering. Both use `kind: Config` but belong to different API groups.
+
+**Multiple configs error:** If multiple KOTS configs are found, each will show as failed with an actionable error message: "Remove duplicate configs or specify a single config file." Other linters continue running.
+
+**Example KOTS Config:**
+```yaml
+apiVersion: kots.io/v1beta1
 kind: Config
 metadata:
   name: my-app-config
 spec:
-  version: "1.33+k8s-1.33"
-  roles:
-    controller:
-      name: "Controller"
-      description: "Kubernetes controller node"
-
-  extensions:
-    helm:
-      repositories:
-        - name: my-repo
-          url: https://charts.example.com
-
-  network:
-    podCIDR: "10.244.0.0/16"
-    serviceCIDR: "10.96.0.0/12"
-
-  unsupportedOverrides:
-    k0s: |
-      apiVersion: k0s.k0sproject.io/v1beta1
-      kind: ClusterConfig
-      spec:
-        network:
-          provider: calico
+  groups:
+    - name: database
+      title: Database Settings
+      items:
+        - name: postgres_host
+          title: PostgreSQL Host
+          type: text
+          required: true
+          default: "postgres"
 ```
-
-### Output Format
-
-The embedded-cluster linter returns JSON output with structured validation results:
-
-```json
-{
-  "files": [
-    {
-      "path": "embedded-cluster/config.yaml",
-      "valid": true,
-      "errors": [],
-      "warnings": [],
-      "infos": []
-    }
-  ]
-}
-```
-
-**Validation Messages:**
-- **errors**: Schema violations, invalid values, unsupported configurations
-- **warnings**: Deprecated fields, potential issues, best practice violations
-- **infos**: Informational messages about configuration choices
-
-### Troubleshooting
-
-**Problem:** "embedded-cluster binaries are only available for linux-amd64"
-
-**Solution:**
-- Run linting in a Linux environment or Docker container
-- Use CI/CD on Linux runners
-- The error won't block other linters from running
-
-**Problem:** "Multiple embedded cluster configs found"
-
-**Solution:** Only one embedded cluster config is allowed per project. Remove duplicate configs or move them to separate projects.
-
-**Problem:** Validation errors about Kubernetes version
-
-**Solution:** Ensure the `spec.version` field uses a supported Kubernetes version. Check the embedded-cluster documentation for supported versions.

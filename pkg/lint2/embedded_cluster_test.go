@@ -91,8 +91,8 @@ func TestParseEmbeddedClusterOutput_ErrorsOnly(t *testing.T) {
 	}
 
 	// Check first error (with field)
-	if messages[0].Severity != "error" {
-		t.Errorf("expected severity 'error', got %q", messages[0].Severity)
+	if messages[0].Severity != "ERROR" {
+		t.Errorf("expected severity 'ERROR', got %q", messages[0].Severity)
 	}
 	if messages[0].Message != "spec.version: version is required" {
 		t.Errorf("unexpected message: %q", messages[0].Message)
@@ -132,8 +132,8 @@ func TestParseEmbeddedClusterOutput_WarningsOnly(t *testing.T) {
 		t.Errorf("expected 1 message, got %d", len(messages))
 	}
 
-	if messages[0].Severity != "warning" {
-		t.Errorf("expected severity 'warning', got %q", messages[0].Severity)
+	if messages[0].Severity != "WARNING" {
+		t.Errorf("expected severity 'WARNING', got %q", messages[0].Severity)
 	}
 	if messages[0].Message != "spec.extensions: extension may be deprecated" {
 		t.Errorf("unexpected message: %q", messages[0].Message)
@@ -165,8 +165,8 @@ func TestParseEmbeddedClusterOutput_InfosOnly(t *testing.T) {
 		t.Errorf("expected 1 message, got %d", len(messages))
 	}
 
-	if messages[0].Severity != "info" {
-		t.Errorf("expected severity 'info', got %q", messages[0].Severity)
+	if messages[0].Severity != "INFO" {
+		t.Errorf("expected severity 'INFO', got %q", messages[0].Severity)
 	}
 }
 
@@ -208,14 +208,14 @@ func TestParseEmbeddedClusterOutput_MixedSeverities(t *testing.T) {
 	}
 
 	// Messages should be in order: errors, warnings, infos
-	if messages[0].Severity != "error" {
-		t.Errorf("expected first message to be error, got %q", messages[0].Severity)
+	if messages[0].Severity != "ERROR" {
+		t.Errorf("expected first message to be ERROR, got %q", messages[0].Severity)
 	}
-	if messages[1].Severity != "warning" {
-		t.Errorf("expected second message to be warning, got %q", messages[1].Severity)
+	if messages[1].Severity != "WARNING" {
+		t.Errorf("expected second message to be WARNING, got %q", messages[1].Severity)
 	}
-	if messages[2].Severity != "info" {
-		t.Errorf("expected third message to be info, got %q", messages[2].Severity)
+	if messages[2].Severity != "INFO" {
+		t.Errorf("expected third message to be INFO, got %q", messages[2].Severity)
 	}
 }
 
@@ -266,8 +266,8 @@ ERROR: validation failed with errors`
 		t.Errorf("expected 1 message, got %d", len(messages))
 	}
 
-	if messages[0].Severity != "error" {
-		t.Errorf("expected severity 'error', got %q", messages[0].Severity)
+	if messages[0].Severity != "ERROR" {
+		t.Errorf("expected severity 'ERROR', got %q", messages[0].Severity)
 	}
 
 	// Verify the error message was parsed correctly

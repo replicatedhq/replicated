@@ -1,0 +1,9 @@
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: embedded-cluster-config
+spec:
+  version: "1.0.0"
+  roles:
+    controller:
+      name: management

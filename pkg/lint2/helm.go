@@ -15,11 +15,10 @@ import (
 
 // LintChart executes helm lint on the given chart path and returns structured results
 func LintChart(ctx context.Context, chartPath string, helmVersion string) (*LintResult, error) {
-	// Use resolver to get helm binary
-	resolver := tools.NewResolver()
-	helmPath, err := resolver.Resolve(ctx, tools.ToolHelm, helmVersion)
+	// Resolve helm binary (supports REPLICATED_HELM_PATH override for development)
+	helmPath, err := resolveLinterBinary(ctx, tools.ToolHelm, helmVersion, "REPLICATED_HELM_PATH")
 	if err != nil {
-		return nil, fmt.Errorf("resolving helm: %w", err)
+		return nil, err
 	}
 
 	// Defensive check: validate chart path exists
@@ -34,7 +33,7 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 
 	// Execute helm lint
 	cmd := exec.CommandContext(ctx, helmPath, "lint", chartPath)
-	output, err := cmd.CombinedOutput()
+	output, cmdErr := cmd.CombinedOutput()
 
 	// helm lint returns non-zero exit code if there are errors,
 	// but we still want to parse and display the output
@@ -43,19 +42,18 @@ func LintChart(ctx context.Context, chartPath string, helmVersion string) (*Lint
 	// Parse the output
 	messages := parseHelmOutput(outputStr)
 
-	// Determine success based on exit code
-	// We trust helm's exit code: 0 = success, non-zero = failure
-	success := err == nil
+	// Success when linter binary exits cleanly (exit code 0)
+	lintSuccess := (cmdErr == nil)
 
 	// However, if helm failed but we got parseable output, we should
 	// still return the parsed messages
-	if err != nil && len(messages) == 0 {
+	if cmdErr != nil && len(messages) == 0 {
 		// If helm failed and we have no parsed messages, return the error
-		return nil, fmt.Errorf("helm lint failed: %w\n%s", err, outputStr)
+		return nil, fmt.Errorf("helm lint failed: %w\n%s", cmdErr, outputStr)
 	}
 
 	return &LintResult{
-		Success:  success,
+		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
 }

@@ -250,6 +250,23 @@ func DiscoverEmbeddedClusterPaths(pattern string) ([]string, error) {
 	return discoverYAMLsByGVK(pattern, "embeddedcluster.replicated.com", "", "Config", "embedded cluster config")
 }
 
+// DiscoverKotsPaths discovers KOTS Config files from a glob pattern.
+// Filters by both kind and group to distinguish from Embedded Cluster Config (which also uses kind: Config).
+//
+// Matches:
+//   - kind: Config
+//   - group: kots.io (any version: v1beta1, v1beta2, v1, etc.)
+//
+// Supports patterns like:
+//   - "./manifests/**"           (finds all KOTS configs recursively)
+//   - "./manifests/**/*.yaml"    (explicit YAML extension)
+//   - "./kots-config.yaml"       (explicit file path - validated strictly)
+func DiscoverKotsPaths(pattern string) ([]string, error) {
+	// Filter by group to distinguish from Embedded Cluster Config
+	// Match any version within the kots.io group
+	return discoverYAMLsByGVK(pattern, "kots.io", "", "Config", "kots config")
+}
+
 // (duplicate isPreflightSpec removed)
 // (duplicate isSupportBundleSpec removed)
 

@@ -46,19 +46,10 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 		return nil, fmt.Errorf("failed to access embedded cluster config path: %w", err)
 	}
 
-	// Check for local binary override (for development)
-	// TODO: Remove REPLICATED_EMBEDDED_CLUSTER_PATH environment variable support
-	// once embedded-cluster releases include the linter binary and are published
-	// to GitHub releases. This is a temporary workaround for local development.
-	ecPath := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_PATH")
-	if ecPath == "" {
-		// Use resolver to get embedded-cluster binary
-		resolver := tools.NewResolver()
-		var err error
-		ecPath, err = resolver.Resolve(ctx, tools.ToolEmbeddedCluster, ecVersion)
-		if err != nil {
-			return nil, fmt.Errorf("resolving embedded-cluster: %w", err)
-		}
+	// Resolve embedded-cluster binary (supports REPLICATED_EMBEDDED_CLUSTER_PATH override for development)
+	ecPath, err := resolveLinterBinary(ctx, tools.ToolEmbeddedCluster, ecVersion, "REPLICATED_EMBEDDED_CLUSTER_PATH")
+	if err != nil {
+		return nil, err
 	}
 
 	// Build command arguments
@@ -66,7 +57,7 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 
 	// Execute embedded-cluster lint
 	cmd := exec.CommandContext(ctx, ecPath, args...)
-	output, err := cmd.CombinedOutput()
+	output, cmdErr := cmd.CombinedOutput()
 
 	// embedded-cluster lint returns non-zero exit code if there are validation errors,
 	// but we still want to parse and display the output
@@ -76,18 +67,17 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 	messages, parseErr := parseEmbeddedClusterOutput(outputStr)
 	if parseErr != nil {
 		// If we can't parse the output, return both the parse error and original error
-		if err != nil {
-			return nil, fmt.Errorf("embedded-cluster lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", err, parseErr, outputStr)
+		if cmdErr != nil {
+			return nil, fmt.Errorf("embedded-cluster lint failed and output parsing failed: %w\nParse error: %v\nOutput: %s", cmdErr, parseErr, outputStr)
 		}
 		return nil, fmt.Errorf("failed to parse embedded-cluster lint output: %w\nOutput: %s", parseErr, outputStr)
 	}
 
-	// Determine success based on exit code
-	// Exit code 0 = no errors, non-zero = validation errors
-	success := err == nil
+	// Success when linter binary exits cleanly (exit code 0)
+	lintSuccess := (cmdErr == nil)
 
 	return &LintResult{
-		Success:  success,
+		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
 }
@@ -122,7 +112,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "error",
+				Severity: "ERROR",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})
@@ -135,7 +125,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "warning",
+				Severity: "WARNING",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})
@@ -148,7 +138,7 @@ func parseEmbeddedClusterOutput(output string) ([]LintMessage, error) {
 				msg = fmt.Sprintf("%s: %s", issue.Field, issue.Message)
 			}
 			messages = append(messages, LintMessage{
-				Severity: "info",
+				Severity: "INFO",
 				Message:  msg,
 				Path:     fileResult.Path,
 			})

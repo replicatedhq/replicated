@@ -37,7 +37,7 @@ func TestGetLatestStableVersion_EmbeddedCluster(t *testing.T) {
 }
 
 // TestGetLatestStableVersion_AllTools verifies that all supported tools
-// can retrieve versions from the ping API, including embedded-cluster.
+// can retrieve versions from the ping API, including embedded-cluster and KOTS.
 func TestGetLatestStableVersion_AllTools(t *testing.T) {
 	tools := []struct {
 		name string
@@ -47,6 +47,7 @@ func TestGetLatestStableVersion_AllTools(t *testing.T) {
 		{"Preflight", ToolPreflight},
 		{"Support Bundle", ToolSupportBundle},
 		{"Embedded Cluster", ToolEmbeddedCluster},
+		{"KOTS", ToolKots},
 	}
 
 	for _, tc := range tools {

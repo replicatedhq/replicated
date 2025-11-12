@@ -1,0 +1,58 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-application-config
+spec:
+  groups:
+    - name: database
+      title: Database Settings
+      description: Configure database connection settings
+      items:
+        - name: postgres_host
+          title: PostgreSQL Hostname
+          help_text: The hostname or IP address of your PostgreSQL server
+          type: text
+          required: true
+          default: "postgres"
+        - name: postgres_port
+          title: PostgreSQL Port
+          type: text
+          required: false
+          default: "5432"
+        - name: postgres_user
+          title: Database Username
+          type: text
+          required: true
+          default: "myapp"
+        - name: postgres_password
+          title: Database Password
+          type: password
+          required: true
+    - name: application
+      title: Application Settings
+      items:
+        - name: app_replicas
+          title: Number of Application Replicas
+          help_text: Number of application pods to run
+          type: text
+          required: true
+          default: "3"
+        - name: enable_debug
+          title: Enable Debug Mode
+          type: bool
+          required: false
+          default: "0"
+        - name: log_level
+          title: Log Level
+          type: select_one
+          required: true
+          default: info
+          items:
+            - name: debug
+              title: Debug
+            - name: info
+              title: Info
+            - name: warn
+              title: Warning
+            - name: error
+              title: Error

@@ -1,6 +1,7 @@
 package lint2
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -3279,5 +3280,256 @@ spec:
 
 	if paths[0] != multiPreflightFile {
 		t.Errorf("DiscoverPreflightPaths() path = %s, want %s", paths[0], multiPreflightFile)
+	}
+}
+
+// TestDiscoverKotsPaths tests KOTS Config discovery with GVK filtering
+func TestDiscoverKotsPaths(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Test 1: Valid KOTS Config should be discovered
+	kotsFile := filepath.Join(tmpDir, "kots-config.yaml")
+	kotsContent := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: my-app-config
+spec:
+  groups:
+    - name: database
+      title: Database Settings`
+
+	if err := os.WriteFile(kotsFile, []byte(kotsContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	paths, err := DiscoverKotsPaths(kotsFile)
+	if err != nil {
+		t.Fatalf("DiscoverKotsPaths() error = %v", err)
+	}
+
+	if len(paths) != 1 {
+		t.Errorf("DiscoverKotsPaths() returned %d paths, want 1", len(paths))
+	}
+	if len(paths) > 0 && paths[0] != kotsFile {
+		t.Errorf("DiscoverKotsPaths() path = %s, want %s", paths[0], kotsFile)
+	}
+
+	// Test 2: EC Config should NOT be discovered by KOTS discovery
+	ecFile := filepath.Join(tmpDir, "ec-config.yaml")
+	ecContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+spec:
+  version: "1.0.0"`
+
+	if err := os.WriteFile(ecFile, []byte(ecContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Use glob pattern to avoid strict file validation (explicit paths are validated strictly)
+	ecPattern := filepath.Join(tmpDir, "ec-*.yaml")
+	paths, err = DiscoverKotsPaths(ecPattern)
+	if err != nil {
+		t.Fatalf("DiscoverKotsPaths() error on EC pattern = %v", err)
+	}
+
+	if len(paths) != 0 {
+		t.Errorf("DiscoverKotsPaths() on EC Config pattern returned %d paths, want 0 (should not match)", len(paths))
+		t.Logf("Found paths: %v", paths)
+	}
+
+	// Test 3: KOTS Application (wrong kind) should NOT be discovered
+	appFile := filepath.Join(tmpDir, "kots-app.yaml")
+	appContent := `apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: my-app
+spec:
+  title: My Application`
+
+	if err := os.WriteFile(appFile, []byte(appContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Use glob pattern to avoid strict file validation
+	appPattern := filepath.Join(tmpDir, "kots-app*.yaml")
+	paths, err = DiscoverKotsPaths(appPattern)
+	if err != nil {
+		t.Fatalf("DiscoverKotsPaths() error on Application pattern = %v", err)
+	}
+
+	if len(paths) != 0 {
+		t.Errorf("DiscoverKotsPaths() on KOTS Application pattern returned %d paths, want 0 (wrong kind)", len(paths))
+	}
+}
+
+// TestDiscoverKotsPaths_MixedDocument tests multi-document YAML with both KOTS and EC Config
+func TestDiscoverKotsPaths_MixedDocument(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	mixedFile := filepath.Join(tmpDir, "mixed.yaml")
+	mixedContent := `---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: kots-config
+spec:
+  groups: []
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec-config
+spec:
+  version: "1.0.0"`
+
+	if err := os.WriteFile(mixedFile, []byte(mixedContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// KOTS discovery should find the file (contains KOTS Config)
+	kotsPaths, err := DiscoverKotsPaths(mixedFile)
+	if err != nil {
+		t.Fatalf("DiscoverKotsPaths() error on mixed file = %v", err)
+	}
+
+	if len(kotsPaths) != 1 {
+		t.Errorf("DiscoverKotsPaths() on mixed file returned %d paths, want 1", len(kotsPaths))
+	}
+	if len(kotsPaths) > 0 && kotsPaths[0] != mixedFile {
+		t.Errorf("DiscoverKotsPaths() path = %s, want %s", kotsPaths[0], mixedFile)
+	}
+
+	// EC discovery should also find the file (contains EC Config)
+	ecPaths, err := DiscoverEmbeddedClusterPaths(mixedFile)
+	if err != nil {
+		t.Fatalf("DiscoverEmbeddedClusterPaths() error on mixed file = %v", err)
+	}
+
+	if len(ecPaths) != 1 {
+		t.Errorf("DiscoverEmbeddedClusterPaths() on mixed file returned %d paths, want 1", len(ecPaths))
+	}
+	if len(ecPaths) > 0 && ecPaths[0] != mixedFile {
+		t.Errorf("DiscoverEmbeddedClusterPaths() path = %s, want %s", ecPaths[0], mixedFile)
+	}
+}
+
+// TestHasGVK_KotsConfig tests GVK matching for KOTS Config
+func TestHasGVK_KotsConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tests := []struct {
+		name     string
+		content  string
+		wantFind bool
+		desc     string
+	}{
+		{
+			name: "kots-v1beta1",
+			content: `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: test`,
+			wantFind: true,
+			desc:     "KOTS Config v1beta1 should match",
+		},
+		{
+			name: "kots-v1beta2",
+			content: `apiVersion: kots.io/v1beta2
+kind: Config
+metadata:
+  name: test`,
+			wantFind: true,
+			desc:     "KOTS Config v1beta2 should match (version wildcard)",
+		},
+		{
+			name: "kots-v1",
+			content: `apiVersion: kots.io/v1
+kind: Config
+metadata:
+  name: test`,
+			wantFind: true,
+			desc:     "KOTS Config v1 should match (version wildcard)",
+		},
+		{
+			name: "ec-config",
+			content: `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: test`,
+			wantFind: false,
+			desc:     "EC Config should NOT match (different group)",
+		},
+		{
+			name: "kots-application",
+			content: `apiVersion: kots.io/v1beta1
+kind: Application
+metadata:
+  name: test`,
+			wantFind: false,
+			desc:     "KOTS Application should NOT match (wrong kind)",
+		},
+		{
+			name: "malformed-apiversion",
+			content: `apiVersion: kots.io/v1beta1/extra
+kind: Config
+metadata:
+  name: test`,
+			wantFind: true,
+			desc:     "Malformed apiVersion still matches (YAML parser extracts kots.io group)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testFile := filepath.Join(tmpDir, tt.name+".yaml")
+			if err := os.WriteFile(testFile, []byte(tt.content), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			// Test hasGVK with kots.io group and Config kind
+			got, err := hasGVK(testFile, "kots.io", "", "Config")
+			if err != nil {
+				t.Fatalf("hasGVK() error = %v", err)
+			}
+
+			if got != tt.wantFind {
+				t.Errorf("%s: hasGVK() = %v, want %v", tt.desc, got, tt.wantFind)
+			}
+		})
+	}
+}
+
+// TestDiscoverKotsPaths_MultipleVersions tests that version wildcard works
+func TestDiscoverKotsPaths_MultipleVersions(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	// Create configs with different versions
+	versions := []string{"v1beta1", "v1beta2", "v1"}
+	for i, version := range versions {
+		file := filepath.Join(tmpDir, fmt.Sprintf("config-%d.yaml", i))
+		content := fmt.Sprintf(`apiVersion: kots.io/%s
+kind: Config
+metadata:
+  name: test-%d
+spec:
+  groups: []`, version, i)
+
+		if err := os.WriteFile(file, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Discover all KOTS configs
+	pattern := filepath.Join(tmpDir, "*.yaml")
+	paths, err := DiscoverKotsPaths(pattern)
+	if err != nil {
+		t.Fatalf("DiscoverKotsPaths() error = %v", err)
+	}
+
+	// Should find all 3 configs (version wildcard matches all)
+	if len(paths) != 3 {
+		t.Errorf("DiscoverKotsPaths() found %d paths, want 3 (all versions should match)", len(paths))
 	}
 }

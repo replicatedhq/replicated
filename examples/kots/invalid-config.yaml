@@ -1,0 +1,29 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: invalid-config
+spec:
+  groups:
+    - name: settings
+      title: Settings
+      items:
+        # Invalid: 'type' field has an unsupported value
+        - name: bad_type_field
+          title: Invalid Type
+          type: invalid_type_here
+          required: true
+        # Invalid: 'when' expression with syntax error
+        - name: conditional_field
+          title: Conditional Field
+          type: text
+          when: 'repl{{ InvalidTemplateSyntax'
+        # Invalid: select_one without items
+        - name: select_without_items
+          title: Select Without Items
+          type: select_one
+          required: true
+        # Invalid: password field with default value (security issue)
+        - name: password_with_default
+          title: Password With Default
+          type: password
+          default: "insecure-default-password"
