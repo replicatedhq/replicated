@@ -1,13 +1,17 @@
 package lint2
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"gopkg.in/yaml.v3"
 )
 
 // ECLintOutput represents the JSON output from embedded-cluster lint
@@ -80,6 +84,97 @@ func LintEmbeddedCluster(ctx context.Context, configPath string, ecVersion strin
 		Success:  lintSuccess,
 		Messages: messages,
 	}, nil
+}
+
+// ExtractECVersion reads an Embedded Cluster Config manifest and extracts spec.version.
+// This version is used to determine which embedded-cluster linter binary to download and execute.
+//
+// Returns the version string (e.g., "1.33+k8s-1.33") or error if:
+//   - File doesn't exist or can't be read
+//   - spec.version field is missing or empty
+//   - YAML parsing fails (non-templated files only)
+//
+// For multi-document YAML files, scans all documents to find the EC Config.
+// For templated YAML (containing {{ }}), falls back to string matching.
+func ExtractECVersion(configPath string) (string, error) {
+	// Read the file
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("embedded cluster config does not exist: %s", configPath)
+		}
+		return "", fmt.Errorf("failed to read embedded cluster config: %w", err)
+	}
+
+	// Strategy 1: Try YAML parsing for accurate extraction (multi-document aware)
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+
+	// Iterate through all documents in the file
+	for {
+		var doc struct {
+			APIVersion string `yaml:"apiVersion"`
+			Kind       string `yaml:"kind"`
+			Spec       struct {
+				Version string `yaml:"version"`
+			} `yaml:"spec"`
+		}
+
+		err := decoder.Decode(&doc)
+		if err != nil {
+			if err == io.EOF {
+				// Reached end of file without finding EC Config with version
+				break
+			}
+			// Parse error - fall through to string matching strategy
+			break
+		}
+
+		// Check if this document is an EC Config
+		if doc.Kind == "Config" && strings.Contains(doc.APIVersion, "embeddedcluster.replicated.com") {
+			// Found EC Config, check for version
+			if doc.Spec.Version == "" {
+				return "", fmt.Errorf("embedded cluster config missing spec.version field")
+			}
+			return doc.Spec.Version, nil
+		}
+	}
+
+	// Strategy 2: Fall back to string matching for templated specs (with {{ }} syntax)
+	// This handles specs that contain Helm template expressions and aren't valid YAML yet
+	content := string(data)
+
+	// Check if this looks like an EC Config
+	hasECKind := strings.Contains(content, "kind: Config") || strings.Contains(content, "kind:Config")
+	hasECAPIVersion := strings.Contains(content, "embeddedcluster.replicated.com")
+
+	if !hasECKind || !hasECAPIVersion {
+		return "", fmt.Errorf("file does not appear to be an embedded cluster config")
+	}
+
+	// Try to extract version using string matching
+	// Look for patterns like "version: "1.33+k8s-1.33"" or "version: 1.33+k8s-1.33"
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "version:") {
+			// Extract value after "version:"
+			versionPart := strings.TrimPrefix(line, "version:")
+			versionPart = strings.TrimSpace(versionPart)
+			// Remove quotes if present
+			versionPart = strings.Trim(versionPart, "\"'")
+
+			// Skip if it looks like a template variable
+			if strings.Contains(versionPart, "{{") {
+				continue
+			}
+
+			if versionPart != "" {
+				return versionPart, nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("embedded cluster config missing spec.version field")
 }
 
 // parseEmbeddedClusterOutput parses embedded-cluster lint JSON output into structured messages

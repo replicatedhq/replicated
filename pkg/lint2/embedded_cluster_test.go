@@ -380,3 +380,251 @@ spec:
 		t.Logf("Expected resolver error on this platform: %v", err)
 	}
 }
+
+// ExtractECVersion tests
+
+func TestExtractECVersion_ValidConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "valid-config.yaml")
+
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: test-config
+spec:
+  version: "1.33+k8s-1.33"
+  roles:
+    controller:
+      name: "Controller"
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	version, err := ExtractECVersion(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "1.33+k8s-1.33"
+	if version != expected {
+		t.Errorf("expected version %q, got %q", expected, version)
+	}
+}
+
+func TestExtractECVersion_MissingVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "missing-version.yaml")
+
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: test-config
+spec:
+  roles:
+    controller:
+      name: "Controller"
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	_, err := ExtractECVersion(configPath)
+	if err == nil {
+		t.Fatal("expected error for missing version, got nil")
+	}
+
+	if err.Error() != "embedded cluster config missing spec.version field" {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}
+
+func TestExtractECVersion_FileNotFound(t *testing.T) {
+	_, err := ExtractECVersion("/nonexistent/path/config.yaml")
+	if err == nil {
+		t.Fatal("expected error for non-existent file, got nil")
+	}
+
+	if !os.IsNotExist(err) && !filepath.IsAbs("/nonexistent/path/config.yaml") {
+		t.Errorf("expected not exist error, got: %v", err)
+	}
+}
+
+func TestExtractECVersion_MultiDocumentYAML(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "multi-doc.yaml")
+
+	// Multi-document YAML with EC Config as second document
+	configContent := `---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: some-configmap
+data:
+  key: value
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: test-config
+spec:
+  version: "2.0.0+k8s-1.29"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: some-service
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	version, err := ExtractECVersion(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "2.0.0+k8s-1.29"
+	if version != expected {
+		t.Errorf("expected version %q, got %q", expected, version)
+	}
+}
+
+func TestExtractECVersion_TemplatedYAML(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "templated.yaml")
+
+	// Templated YAML that can't be parsed as valid YAML
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: {{ .Values.appName }}
+spec:
+  version: "1.25+k8s-1.27"
+  roles:
+    controller:
+      name: {{ .Values.controllerName }}
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	// Should fall back to string matching
+	version, err := ExtractECVersion(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "1.25+k8s-1.27"
+	if version != expected {
+		t.Errorf("expected version %q, got %q", expected, version)
+	}
+}
+
+func TestExtractECVersion_QuotedVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "quoted.yaml")
+
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+spec:
+  version: "1.30+k8s-1.28"
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	version, err := ExtractECVersion(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "1.30+k8s-1.28"
+	if version != expected {
+		t.Errorf("expected version %q, got %q", expected, version)
+	}
+}
+
+func TestExtractECVersion_UnquotedVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "unquoted.yaml")
+
+	// Some users might write version without quotes (though this may cause YAML issues)
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+spec:
+  version: 1.31+k8s-1.29
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	// This should work via string matching fallback
+	version, err := ExtractECVersion(configPath)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := "1.31+k8s-1.29"
+	if version != expected {
+		t.Errorf("expected version %q, got %q", expected, version)
+	}
+}
+
+func TestExtractECVersion_NotECConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "not-ec-config.yaml")
+
+	// This is a KOTS Config, not EC Config
+	configContent := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: app-config
+spec:
+  groups:
+    - name: settings
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	_, err := ExtractECVersion(configPath)
+	if err == nil {
+		t.Fatal("expected error for non-EC config, got nil")
+	}
+
+	if err.Error() != "file does not appear to be an embedded cluster config" {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}
+
+func TestExtractECVersion_EmptyVersion(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, "empty-version.yaml")
+
+	configContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+spec:
+  version: ""
+`
+
+	if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+		t.Fatalf("failed to create test config: %v", err)
+	}
+
+	_, err := ExtractECVersion(configPath)
+	if err == nil {
+		t.Fatal("expected error for empty version, got nil")
+	}
+
+	if err.Error() != "embedded cluster config missing spec.version field" {
+		t.Errorf("unexpected error message: %v", err)
+	}
+}

@@ -10,6 +10,7 @@ import (
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
 	Metadata               LintMetadata                `json:"metadata"`
+	ToolVersionWarnings    []string                    `json:"tool_version_warnings,omitempty"` // Warnings for outdated tool versions
 	HelmResults            *HelmLintResults            `json:"helm_results,omitempty"`
 	PreflightResults       *PreflightLintResults       `json:"preflight_results,omitempty"`
 	SupportBundleResults   *SupportBundleLintResults   `json:"support_bundle_results,omitempty"`

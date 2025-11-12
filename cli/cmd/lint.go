@@ -114,6 +114,17 @@ func extractAllPathsAndMetadata(ctx context.Context, config *tools.Config, verbo
 			ecPaths = append(ecPaths, paths...)
 		}
 		result.EmbeddedClusterPaths = ecPaths
+
+		// Extract EC version from the first config (only one EC config is allowed)
+		if len(ecPaths) > 0 {
+			ecVersion, err := lint2.ExtractECVersion(ecPaths[0])
+			if err != nil {
+				// Use "latest" as fallback if version extraction fails
+				// The EC linter will report the missing version error
+				ecVersion = "latest"
+			}
+			result.ECVersion = ecVersion
+		}
 	}
 
 	// Discover KOTS manifests
@@ -231,6 +242,102 @@ func (r *runners) resolveAppContext(ctx context.Context, config *tools.Config) (
 	return appObj.ID, nil
 }
 
+// checkToolVersions checks if configured tool versions are outdated compared to recommended versions.
+// Returns a slice of warning messages (empty if no warnings or if check fails).
+// Only checks enabled linters with explicitly pinned versions (not "latest").
+func (r *runners) checkToolVersions(config *tools.Config, extracted *ExtractedPaths) []string {
+	var warnings []string
+
+	// Fetch recommended versions from replicated.app/ping
+	recommendedVersions, err := tools.FetchRecommendedVersions()
+	if err != nil {
+		// API failure - return info message (don't fail linting)
+		return []string{"Info: Could not check tool versions (replicated.app/ping unavailable)"}
+	}
+
+	// Check each tool if it's enabled and has a pinned version
+	toolsToCheck := []struct {
+		name           string // Tool constant
+		apiKey         string // Key in ping API response
+		configured     string // Configured version from config
+		displayName    string // Display name in warnings
+		enabled        bool   // Whether linter is enabled
+		skipComparison bool   // Whether to skip version comparison (e.g., EC coming from manifest)
+	}{
+		{
+			name:        tools.ToolHelm,
+			apiKey:      "helm",
+			configured:  getToolVersion(config, tools.ToolHelm),
+			displayName: "helm",
+			enabled:     config.ReplLint.Linters.Helm.IsEnabled(),
+		},
+		{
+			name:        tools.ToolPreflight,
+			apiKey:      "preflight",
+			configured:  getToolVersion(config, tools.ToolPreflight),
+			displayName: "preflight",
+			enabled:     config.ReplLint.Linters.Preflight.IsEnabled(),
+		},
+		{
+			name:        tools.ToolSupportBundle,
+			apiKey:      "support_bundle", // Note: ping API uses underscore
+			configured:  getToolVersion(config, tools.ToolSupportBundle),
+			displayName: "support-bundle",
+			enabled:     config.ReplLint.Linters.SupportBundle.IsEnabled(),
+		},
+		{
+			name:        tools.ToolKots,
+			apiKey:      "kots",
+			configured:  getToolVersion(config, tools.ToolKots),
+			displayName: "kots",
+			enabled:     config.ReplLint.Linters.Kots.IsEnabled(),
+		},
+		{
+			name:           tools.ToolEmbeddedCluster,
+			apiKey:         "embedded_cluster",  // Note: ping API uses underscore
+			configured:     extracted.ECVersion, // EC version comes from manifest, not config
+			displayName:    "embedded-cluster",
+			enabled:        config.ReplLint.Linters.EmbeddedCluster.IsEnabled(),
+			skipComparison: extracted.ECVersion == "latest", // Skip if we fell back to "latest" (extraction failed)
+		},
+	}
+
+	for _, tool := range toolsToCheck {
+		// Skip if linter is disabled
+		if !tool.enabled {
+			continue
+		}
+
+		// Skip if configured version is "latest" (user wants latest)
+		if tool.configured == "latest" {
+			continue
+		}
+
+		// Skip if explicitly told to skip comparison (e.g., EC version extraction failed)
+		if tool.skipComparison {
+			continue
+		}
+
+		// Get recommended version from ping response
+		recommended, ok := recommendedVersions[tool.apiKey]
+		if !ok {
+			// No recommended version available for this tool
+			warnings = append(warnings, fmt.Sprintf("Info: No recommended version available for %s", tool.displayName))
+			continue
+		}
+
+		// Compare versions (returns true if configured is outdated by minor/major version)
+		if tools.CompareVersions(tool.configured, recommended) {
+			// Outdated - generate warning message
+			warning := fmt.Sprintf("Warning: %s version %s is below recommended version %s. Update your .replicated config:\n  tools:\n    %s: '%s'",
+				tool.displayName, tool.configured, recommended, tool.name, recommended)
+			warnings = append(warnings, warning)
+		}
+	}
+
+	return warnings
+}
+
 func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// Validate output format
 	if r.outputFormat != "table" && r.outputFormat != "json" {
@@ -243,6 +350,17 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	if err != nil {
 		return errors.Wrap(err, "failed to load .replicated config")
+	}
+
+	// Warn if user has tools.embedded-cluster in config (it's ignored - version comes from manifest)
+	if config.ReplLint.Tools != nil {
+		if _, hasECTool := config.ReplLint.Tools[tools.ToolEmbeddedCluster]; hasECTool {
+			if r.outputFormat == "table" {
+				fmt.Fprintf(r.w, "⚠️  Warning: tools.embedded-cluster in .replicated config is ignored.\n")
+				fmt.Fprintf(r.w, "   Embedded Cluster version comes from the manifest's spec.version field.\n\n")
+				r.w.Flush()
+			}
+		}
 	}
 
 	// Resolve app context for all linters (not just embedded-cluster)
@@ -271,14 +389,16 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	output := &JSONLintOutput{}
 
 	// Resolve all tool versions (including "latest" to actual versions)
+	// Note: EC version comes from manifest spec.version, not from config
 	resolver := tools.NewResolver()
 	helmVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolHelm, tools.DefaultHelmVersion)
 	preflightVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolPreflight, tools.DefaultPreflightVersion)
 	supportBundleVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolSupportBundle, tools.DefaultSupportBundleVersion)
-	embeddedClusterVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolEmbeddedCluster, "latest")
+	embeddedClusterVersion := "" // EC version extracted from manifest later (not from config)
 	kotsVersion := resolveToolVersion(cmd.Context(), config, resolver, tools.ToolKots, "latest")
 
 	// Populate metadata with all resolved versions
+	// Note: EC version will be updated after manifest extraction
 	configPath := findConfigFilePath(".")
 	output.Metadata = newLintMetadata(configPath, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, kotsVersion, version.Version())
 
@@ -377,6 +497,26 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	extracted, err := extractAllPathsAndMetadata(cmd.Context(), config, r.args.lintVerbose, helmVersion, preflightVersion, supportBundleVersion, embeddedClusterVersion, kotsVersion)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract paths and metadata")
+	}
+
+	// Update metadata with EC version extracted from manifest
+	// (EC version comes from spec.version, not from config)
+	if extracted.ECVersion != "" {
+		output.Metadata.EmbeddedClusterVersion = extracted.ECVersion
+	}
+
+	// Check tool versions (only for enabled linters with pinned versions)
+	// This displays warnings if configured versions are outdated by minor/major version
+	toolVersionWarnings := r.checkToolVersions(config, extracted)
+	output.ToolVersionWarnings = toolVersionWarnings
+
+	// Display tool version warnings in table format
+	if r.outputFormat == "table" && len(toolVersionWarnings) > 0 {
+		fmt.Fprintf(r.w, "Tool Version Check:\n")
+		for _, warning := range toolVersionWarnings {
+			fmt.Fprintf(r.w, "%s\n\n", warning)
+		}
+		r.w.Flush()
 	}
 
 	// Validate chart-to-HelmChart mapping if charts are configured
@@ -788,8 +928,8 @@ func (r *runners) lintEmbeddedClusterConfigs(cmd *cobra.Command, ecPaths []strin
 		"embedded cluster configs",
 		func(path string, errorMsg LintMessage) EmbeddedClusterLintResult {
 			return EmbeddedClusterLintResult{
-				Path:    path,
-				Success: false,
+				Path:     path,
+				Success:  false,
 				Messages: []LintMessage{errorMsg},
 				Summary: ResourceSummary{
 					ErrorCount:   1,
@@ -858,8 +998,8 @@ func (r *runners) lintKotsManifests(cmd *cobra.Command, kotsPaths []string, kots
 		"KOTS manifests",
 		func(path string, errorMsg LintMessage) KotsLintResult {
 			return KotsLintResult{
-				Path:    path,
-				Success: false,
+				Path:     path,
+				Success:  false,
 				Messages: []LintMessage{errorMsg},
 				Summary: ResourceSummary{
 					ErrorCount:   1,
