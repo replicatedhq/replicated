@@ -21,18 +21,25 @@ func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 		Short: "Get network report",
 		Long: `Get a network report showing detailed network activity for a specified network.
 
-The report shows individual network events including source/destination IPs, ports, protocols, 
+The report shows individual network events including source/destination IPs, ports, protocols,
 pods, processes, and DNS queries. Reports must be enabled with 'replicated network update <network-id> --collect-report'.
 
 Output formats:
   - Default: Full event details in JSON format
   - --summary: Aggregated statistics with top domains and destinations
-  - --watch: Continuous stream of new events in JSON Lines format`,
-		Example: `# Get full network traffic report
+  - --watch: Continuous stream of new events in JSON Lines format
+
+Filtering:
+  - --show-external-only: Show only external network traffic (default: true)
+                          Set to false to include internal cluster traffic`,
+		Example: `# Get full network traffic report (external traffic only)
 replicated network report <network-id>
 
 # Get aggregated summary with statistics. Only available for networks that have been terminated.
 replicated network report <network-id> --summary
+
+# Include internal cluster traffic in the report
+replicated network report <network-id> --show-external-only=false
 
 # Watch for new network events in real-time
 replicated network report <network-id> --watch`,
@@ -68,11 +75,6 @@ func (r *runners) getNetworkReport(cmd *cobra.Command, args []string) error {
 	}
 
 	// Don't call getNetworkIDFromArg here. Reporting API supports short IDs and will also work for networks that have been deleted.
-
-	// Validate flags
-	if r.args.networkReportSummary && cmd.Flags().Lookup("show-external-only").Changed {
-		return fmt.Errorf("cannot use --show-external-only and --summary flags together")
-	}
 
 	// Get the initial network report or summary depending on args provided
 	if r.args.networkReportSummary {
@@ -150,7 +152,7 @@ func (r *runners) getNetworkReportSummary(ctx context.Context) error {
 		return fmt.Errorf("cannot use watch and summary flags together")
 	}
 
-	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID)
+	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID, r.args.networkReportShowExternalOnly)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if errors.Cause(err) == platformclient.ErrNotFound {

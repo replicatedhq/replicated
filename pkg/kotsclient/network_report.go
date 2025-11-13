@@ -60,8 +60,13 @@ func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time, show
 	return &types.NetworkReport{Events: events}, nil
 }
 
-func (c *VendorV3Client) GetNetworkReportSummary(ctx context.Context, id string) (*types.NetworkReportSummary, error) {
+func (c *VendorV3Client) GetNetworkReportSummary(ctx context.Context, id string, showExternalOnly bool) (*types.NetworkReportSummary, error) {
 	urlPath := fmt.Sprintf("/v3/network/%s/report/summary", id)
+	v := url.Values{}
+	v.Set("show-external-only", fmt.Sprintf("%t", showExternalOnly))
+	if len(v) > 0 {
+		urlPath = fmt.Sprintf("%s?%s", urlPath, v.Encode())
+	}
 	type summaryResp struct {
 		*types.NetworkReportSummary
 		Error string `json:"error,omitempty"`
