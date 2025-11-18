@@ -508,13 +508,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	// Execute the command and capture any error
 	executeErr := runCmds.rootCmd.Execute()
-	
+
 	// Always send telemetry after command completes (even if it errored)
 	// This ensures telemetry is sent regardless of PreRunE/RunE/PostRunE failures
 	if tel != nil {
 		tel.RecordCommandComplete(runCmds.rootCmd, executeErr)
 	}
-	
+
 	return executeErr
 }
 
