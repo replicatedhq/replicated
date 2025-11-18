@@ -15,6 +15,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/telemetry"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -110,6 +111,10 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		stdin:   stdin,
 		w:       w,
 	}
+
+	// Telemetry for tracking CLI command execution
+	var tel *telemetry.Telemetry
+
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
 	}
@@ -410,6 +415,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		version.PrintIfUpgradeAvailable()
 		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
 
+		// Initialize telemetry after APIs are set up (so we have apiToken)
+		if apiToken != "" {
+			tel = telemetry.New(apiToken, platformOrigin)
+			tel.RecordCommandStart(cmd)
+		}
+
 		return nil
 	}
 
@@ -495,7 +506,16 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	runCmds.rootCmd.AddCommand(Version())
 
-	return runCmds.rootCmd.Execute()
+	// Execute the command and capture any error
+	executeErr := runCmds.rootCmd.Execute()
+	
+	// Always send telemetry after command completes (even if it errored)
+	// This ensures telemetry is sent regardless of PreRunE/RunE/PostRunE failures
+	if tel != nil {
+		tel.RecordCommandComplete(runCmds.rootCmd, executeErr)
+	}
+	
+	return executeErr
 }
 
 func printIfError(cmd *cobra.Command, err error) {

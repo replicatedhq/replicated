@@ -125,6 +125,17 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
 
+	// Add telemetry headers
+	req.Header.Set("X-Replicated-CLI-Version", version.Version())
+
+	// Set CI detection header (must be "true" or "false" string)
+	if detectCIFromEnv() {
+		req.Header.Set("X-Replicated-CI", "true")
+	} else {
+		req.Header.Set("X-Replicated-CI", "false")
+	}
+
+	// Keep existing logic for backward compatibility
 	if _, ok := os.LookupEnv("CI"); ok {
 		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
 	}
@@ -264,4 +275,15 @@ func responseBodyToErrorMessage(body []byte) string {
 	}
 
 	return string(body)
+}
+
+// detectCIFromEnv checks if running in CI environment
+func detectCIFromEnv() bool {
+	if os.Getenv("CI") == "true" {
+		return true
+	}
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		return true
+	}
+	return false
 }
