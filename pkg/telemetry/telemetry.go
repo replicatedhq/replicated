@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	"github.com/google/uuid"
@@ -104,6 +105,8 @@ func (t *Telemetry) sendEvent(ctx context.Context, exitCode int, duration time.D
 		HasConfigFile: t.hasConfigFile,
 	}
 
+	debugLog("Sending event: command=%s, exit_code=%d, duration_ms=%d", t.command, exitCode, durationMs)
+
 	// Backend returns {"event_id": "..."} but we don't need it (we generated it)
 	return t.client.DoJSON(ctx, "POST", "/v3/cli/telemetry/event", 201, payload, nil)
 }
@@ -121,9 +124,11 @@ func (t *Telemetry) sendError(ctx context.Context, err error) error {
 	payload := ErrorPayload{
 		EventID:      t.eventID, // Links error to event
 		ErrorType:    getErrorType(err),
-		ErrorMessage: err.Error(),
+		ErrorMessage: sanitizeErrorMessage(err.Error()),
 		Command:      t.command,
 	}
+
+	debugLog("Sending error: event_id=%s, error_type=%s", t.eventID, getErrorType(err))
 
 	return t.client.DoJSON(ctx, "POST", "/v3/cli/telemetry/error", 201, payload, nil)
 }
@@ -146,6 +151,33 @@ func checkConfigFileExists() bool {
 	}
 
 	return false
+}
+
+// sanitizeErrorMessage removes potentially sensitive data from error messages
+func sanitizeErrorMessage(msg string) string {
+	// Remove potential API tokens (sk_, ghp_, glpat_, npm_, pypi_, etc.)
+	tokenPattern := regexp.MustCompile(`\b(sk|ghp|gh[pousr]|glpat|pypi|npm)_[A-Za-z0-9_-]+`)
+	msg = tokenPattern.ReplaceAllString(msg, "[TOKEN]")
+
+	// Remove file paths (Unix and Windows)
+	// Matches: /path/to/file, C:\path\to\file, ~/file
+	pathPattern := regexp.MustCompile(`(/[^\s:]+|[A-Z]:\\[^\s:]+|~[^\s:]*)`)
+	msg = pathPattern.ReplaceAllString(msg, "[PATH]")
+
+	// Remove email addresses
+	emailPattern := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
+	msg = emailPattern.ReplaceAllString(msg, "[EMAIL]")
+
+	// Remove URLs with embedded credentials (https://user:pass@host)
+	urlCredsPattern := regexp.MustCompile(`https?://[^:]+:[^@]+@[^\s]+`)
+	msg = urlCredsPattern.ReplaceAllString(msg, "[URL]")
+
+	// Remove potential passwords in error messages
+	// Matches: password=xxx, password="xxx", password: xxx
+	passwordPattern := regexp.MustCompile(`(password|passwd|pwd|secret|key)[\s=:]+[^\s,;"']+`)
+	msg = passwordPattern.ReplaceAllString(msg, "$1=[REDACTED]")
+
+	return msg
 }
 
 // getErrorType extracts error type from error

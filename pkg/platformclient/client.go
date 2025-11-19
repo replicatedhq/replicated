@@ -115,7 +115,7 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 			return err
 		}
 	}
-	req, err := http.NewRequest(method, endpoint, &buf)
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, &buf)
 	if err != nil {
 		return err
 	}
@@ -133,11 +133,6 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 		req.Header.Set("X-Replicated-CI", "true")
 	} else {
 		req.Header.Set("X-Replicated-CI", "false")
-	}
-
-	// Keep existing logic for backward compatibility
-	if _, ok := os.LookupEnv("CI"); ok {
-		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
 	}
 
 	if err := addGitHubActionsHeaders(req); err != nil {

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
@@ -513,6 +514,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	// This ensures telemetry is sent regardless of PreRunE/RunE/PostRunE failures
 	if tel != nil {
 		tel.RecordCommandComplete(runCmds.rootCmd, executeErr)
+
+		// In debug mode, wait briefly for goroutine to complete so we can see telemetry output
+		if debugFlag {
+			time.Sleep(1 * time.Second)
+		}
 	}
 
 	return executeErr
