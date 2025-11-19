@@ -527,8 +527,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		tel.RecordCommandComplete(cmdToRecord, executeErr)
 
 		// In debug mode, wait briefly for goroutine to complete so we can see telemetry output
+		// Use shorter wait in CI to avoid unnecessary delays in automated environments
 		if debugFlag {
-			time.Sleep(2 * time.Second)
+			waitTime := 2 * time.Second
+			// Check if we're in CI - if so, use shorter wait
+			if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" {
+				waitTime = 500 * time.Millisecond
+			}
+			time.Sleep(waitTime)
 		}
 	}
 

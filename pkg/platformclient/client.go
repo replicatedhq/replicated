@@ -194,13 +194,13 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 }
 
 func addGitHubActionsHeaders(req *http.Request) error {
-	// anyone can set this to false to disable this behavior
-	if os.Getenv("CI") != "true" {
+	// Only add GitHub-specific headers if in CI environment
+	// Note: X-Replicated-CI header is already set by DoJSON
+	if !detectCIFromEnv() {
 		return nil
 	}
 
-	// the following params are used to link CMX runs back to the workflow
-	req.Header.Set("X-Replicated-CI", "true")
+	// Add GitHub Actions specific metadata headers for CMX workflow linking
 	if os.Getenv("GITHUB_RUN_ID") != "" {
 		req.Header.Set("X-Replicated-GitHubRunID", os.Getenv("GITHUB_RUN_ID"))
 	}

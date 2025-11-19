@@ -171,12 +171,6 @@ func sanitizeErrorMessage(msg string) string {
 	awsKeyPattern := regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
 	msg = awsKeyPattern.ReplaceAllString(msg, "[AWS_KEY]")
 
-	// Remove file system paths - more specific regex
-	// Only matches paths with at least 2 components to avoid false positives on API paths
-	// Matches: /path/to/file, C:\path\to\file, ~/path/file
-	pathPattern := regexp.MustCompile(`(?:(?:/[\w.-]+){2,}|[A-Z]:\\(?:[\w.-]+\\)+[\w.-]+|~(?:/[\w.-]+)+)`)
-	msg = pathPattern.ReplaceAllString(msg, "[PATH]")
-
 	// Remove email addresses
 	emailPattern := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
 	msg = emailPattern.ReplaceAllString(msg, "[EMAIL]")
@@ -185,17 +179,46 @@ func sanitizeErrorMessage(msg string) string {
 	urlCredsPattern := regexp.MustCompile(`https?://[^:]+:[^@]+@[^\s]+`)
 	msg = urlCredsPattern.ReplaceAllString(msg, "[URL]")
 
-	// Remove database/connection strings
-	connStringPattern := regexp.MustCompile(`(?i)(mongodb|mysql|postgresql|redis)://[^\s]+`)
+	// Remove database/connection strings (enhanced to cover more protocols)
+	connStringPattern := regexp.MustCompile(`(?i)(mongodb(\+srv)?|mysql|mariadb|postgresql|postgres|redis|mssql|oracle)://[^\s]+`)
 	msg = connStringPattern.ReplaceAllString(msg, "$1://[CONNECTION]")
 
-	// Remove IP addresses
-	ipPattern := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
-	msg = ipPattern.ReplaceAllString(msg, "[IP]")
+	// Remove IPv4 addresses
+	ipv4Pattern := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
+	msg = ipv4Pattern.ReplaceAllString(msg, "[IP]")
 
-	// Remove potential passwords in error messages
-	// Matches: password=xxx, password="xxx", password: xxx, secret=xxx
-	passwordPattern := regexp.MustCompile(`(?i)(password|passwd|pwd|secret|api[_-]?key)[\s=:]+[^\s,;"']+`)
+	// Remove IPv6 addresses (simplified pattern covering common formats)
+	ipv6Pattern := regexp.MustCompile(`\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b|` +
+		`\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b|` +
+		`\b:(?::[0-9a-fA-F]{1,4}){1,7}\b`)
+	msg = ipv6Pattern.ReplaceAllString(msg, "[IP]")
+
+	// Remove file system paths - conservative to avoid API path false positives
+	// Focus on protecting actual filesystem locations
+	// Home directories
+	homePattern := regexp.MustCompile(`(?:/(?:home|Users)/[^\s/]+|C:\\Users\\[^\s\\]+)`)
+	msg = homePattern.ReplaceAllString(msg, "[HOME]")
+
+	// Temp directories
+	tempPattern := regexp.MustCompile(`(?:/(?:tmp|var/tmp)/[^\s:]+)`)
+	msg = tempPattern.ReplaceAllString(msg, "[TEMP]")
+
+	// Absolute file paths with 3+ segments (likely filesystem, not API)
+	absolutePathPattern := regexp.MustCompile(`(?:^|\s)(/[a-z]+(?:/[^\s:]+){2,})`)
+	msg = absolutePathPattern.ReplaceAllString(msg, " [PATH]")
+
+	// Windows paths with backslashes
+	windowsPathPattern := regexp.MustCompile(`[A-Z]:\\[^\s]+`)
+	msg = windowsPathPattern.ReplaceAllString(msg, "[PATH]")
+
+	// Home-relative paths
+	homeRelativePattern := regexp.MustCompile(`~(?:/[^\s:]+){2,}`)
+	msg = homeRelativePattern.ReplaceAllString(msg, "[PATH]")
+
+	// Remove potential passwords/secrets in error messages
+	// Matches: password=xxx, password="xxx", password: xxx, api_key=xxx
+	// Bounded to 100 chars to prevent runaway matching
+	passwordPattern := regexp.MustCompile(`(?i)(password|passwd|pwd|secret|api[_-]?key)[\s=:]["']?([^\s,;"']{1,100})["']?`)
 	msg = passwordPattern.ReplaceAllString(msg, "$1=[REDACTED]")
 
 	return msg
@@ -214,20 +237,53 @@ func getErrorType(err error) string {
 	// Categorize by error message patterns for better debugging
 	errMsg := strings.ToLower(err.Error())
 
-	if strings.Contains(errMsg, "network") || strings.Contains(errMsg, "connection") || strings.Contains(errMsg, "dial tcp") {
+	// Network-related errors
+	if strings.Contains(errMsg, "network") ||
+		strings.Contains(errMsg, "connection") ||
+		strings.Contains(errMsg, "dial tcp") ||
+		strings.Contains(errMsg, "no such host") ||
+		strings.Contains(errMsg, "dns") {
 		return "NetworkError"
 	}
-	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "timed out") {
+
+	// Timeout/cancellation errors
+	if strings.Contains(errMsg, "timeout") ||
+		strings.Contains(errMsg, "timed out") ||
+		strings.Contains(errMsg, "context deadline exceeded") ||
+		strings.Contains(errMsg, "context canceled") {
 		return "TimeoutError"
 	}
-	if strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "does not exist") {
+
+	// TLS/Certificate errors
+	if strings.Contains(errMsg, "certificate") ||
+		strings.Contains(errMsg, "tls") ||
+		strings.Contains(errMsg, "ssl") ||
+		strings.Contains(errMsg, "x509") {
+		return "TLSError"
+	}
+
+	// Not found errors
+	if strings.Contains(errMsg, "not found") ||
+		strings.Contains(errMsg, "does not exist") ||
+		strings.Contains(errMsg, "no such file") {
 		return "NotFoundError"
 	}
-	if strings.Contains(errMsg, "permission") || strings.Contains(errMsg, "forbidden") || strings.Contains(errMsg, "unauthorized") {
+
+	// Permission/authorization errors
+	if strings.Contains(errMsg, "permission") ||
+		strings.Contains(errMsg, "forbidden") ||
+		strings.Contains(errMsg, "unauthorized") ||
+		strings.Contains(errMsg, "access denied") {
 		return "PermissionError"
 	}
-	if strings.Contains(errMsg, "parse") || strings.Contains(errMsg, "unmarshal") || strings.Contains(errMsg, "decode") {
-		return "ParseError"
+
+	// Parse/validation errors
+	if strings.Contains(errMsg, "parse") ||
+		strings.Contains(errMsg, "unmarshal") ||
+		strings.Contains(errMsg, "decode") ||
+		strings.Contains(errMsg, "invalid syntax") ||
+		strings.Contains(errMsg, "invalid argument") {
+		return "ValidationError"
 	}
 
 	return "Error"
