@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -55,8 +57,12 @@ func (t *Telemetry) RecordCommandComplete(cmd *cobra.Command, err error) {
 
 	duration := time.Since(t.startTime)
 	exitCode := 0
+
+	// Capture error message before spawning goroutine to avoid race conditions
+	var errMsg string
 	if err != nil {
 		exitCode = 1
+		errMsg = err.Error()
 	}
 
 	// Fire and forget - don't block CLI execution
@@ -71,8 +77,10 @@ func (t *Telemetry) RecordCommandComplete(cmd *cobra.Command, err error) {
 		}
 
 		// Send error details if command failed
-		if exitCode != 0 && err != nil {
-			if sendErr := t.sendError(ctx, err); sendErr != nil {
+		if exitCode != 0 && errMsg != "" {
+			// Create error from captured message to avoid race conditions
+			capturedErr := errors.New(errMsg)
+			if sendErr := t.sendError(ctx, capturedErr); sendErr != nil {
 				debugLog("Failed to send telemetry error: %v", sendErr)
 			}
 		}
@@ -140,13 +148,13 @@ func checkConfigFileExists() bool {
 		return true
 	}
 
-	// Check home directory
+	// Check home directory with proper path joining
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return false
 	}
 
-	if _, err := os.Stat(homeDir + "/.replicated"); err == nil {
+	if _, err := os.Stat(filepath.Join(homeDir, ".replicated")); err == nil {
 		return true
 	}
 
@@ -159,9 +167,14 @@ func sanitizeErrorMessage(msg string) string {
 	tokenPattern := regexp.MustCompile(`\b(sk|ghp|gh[pousr]|glpat|pypi|npm)_[A-Za-z0-9_-]+`)
 	msg = tokenPattern.ReplaceAllString(msg, "[TOKEN]")
 
-	// Remove file paths (Unix and Windows)
-	// Matches: /path/to/file, C:\path\to\file, ~/file
-	pathPattern := regexp.MustCompile(`(/[^\s:]+|[A-Z]:\\[^\s:]+|~[^\s:]*)`)
+	// Remove AWS access keys (AKIA...)
+	awsKeyPattern := regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
+	msg = awsKeyPattern.ReplaceAllString(msg, "[AWS_KEY]")
+
+	// Remove file system paths - more specific regex
+	// Only matches paths with at least 2 components to avoid false positives on API paths
+	// Matches: /path/to/file, C:\path\to\file, ~/path/file
+	pathPattern := regexp.MustCompile(`(?:(?:/[\w.-]+){2,}|[A-Z]:\\(?:[\w.-]+\\)+[\w.-]+|~(?:/[\w.-]+)+)`)
 	msg = pathPattern.ReplaceAllString(msg, "[PATH]")
 
 	// Remove email addresses
@@ -172,24 +185,52 @@ func sanitizeErrorMessage(msg string) string {
 	urlCredsPattern := regexp.MustCompile(`https?://[^:]+:[^@]+@[^\s]+`)
 	msg = urlCredsPattern.ReplaceAllString(msg, "[URL]")
 
+	// Remove database/connection strings
+	connStringPattern := regexp.MustCompile(`(?i)(mongodb|mysql|postgresql|redis)://[^\s]+`)
+	msg = connStringPattern.ReplaceAllString(msg, "$1://[CONNECTION]")
+
+	// Remove IP addresses
+	ipPattern := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
+	msg = ipPattern.ReplaceAllString(msg, "[IP]")
+
 	// Remove potential passwords in error messages
-	// Matches: password=xxx, password="xxx", password: xxx
-	passwordPattern := regexp.MustCompile(`(password|passwd|pwd|secret|key)[\s=:]+[^\s,;"']+`)
+	// Matches: password=xxx, password="xxx", password: xxx, secret=xxx
+	passwordPattern := regexp.MustCompile(`(?i)(password|passwd|pwd|secret|api[_-]?key)[\s=:]+[^\s,;"']+`)
 	msg = passwordPattern.ReplaceAllString(msg, "$1=[REDACTED]")
 
 	return msg
 }
 
-// getErrorType extracts error type from error
+// getErrorType extracts error type from error with improved categorization
 func getErrorType(err error) string {
 	cause := errors.Cause(err)
 
+	// Check for specific error types
 	switch cause.(type) {
 	case platformclient.APIError:
 		return "APIError"
-	default:
-		return "Error"
 	}
+
+	// Categorize by error message patterns for better debugging
+	errMsg := strings.ToLower(err.Error())
+
+	if strings.Contains(errMsg, "network") || strings.Contains(errMsg, "connection") || strings.Contains(errMsg, "dial tcp") {
+		return "NetworkError"
+	}
+	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "timed out") {
+		return "TimeoutError"
+	}
+	if strings.Contains(errMsg, "not found") || strings.Contains(errMsg, "does not exist") {
+		return "NotFoundError"
+	}
+	if strings.Contains(errMsg, "permission") || strings.Contains(errMsg, "forbidden") || strings.Contains(errMsg, "unauthorized") {
+		return "PermissionError"
+	}
+	if strings.Contains(errMsg, "parse") || strings.Contains(errMsg, "unmarshal") || strings.Contains(errMsg, "decode") {
+		return "ParseError"
+	}
+
+	return "Error"
 }
 
 // debugLog logs debug messages only if REPLICATED_DEBUG is set

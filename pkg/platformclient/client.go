@@ -274,11 +274,28 @@ func responseBodyToErrorMessage(body []byte) string {
 
 // detectCIFromEnv checks if running in CI environment
 func detectCIFromEnv() bool {
-	if os.Getenv("CI") == "true" {
+	// Check common CI environment variable with multiple truthy values
+	ciVal := os.Getenv("CI")
+	if ciVal == "true" || ciVal == "1" || ciVal == "yes" {
 		return true
 	}
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		return true
+
+	// Check specific CI platform environment variables
+	ciEnvVars := []string{
+		"GITHUB_ACTIONS",
+		"GITLAB_CI",
+		"CIRCLECI",
+		"TRAVIS",
+		"JENKINS_URL",
+		"BUILDKITE",
+		"DRONE",
 	}
+
+	for _, envVar := range ciEnvVars {
+		if os.Getenv(envVar) != "" {
+			return true
+		}
+	}
+
 	return false
 }

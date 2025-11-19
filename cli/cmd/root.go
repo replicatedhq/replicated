@@ -115,6 +115,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	// Telemetry for tracking CLI command execution
 	var tel *telemetry.Telemetry
+	var executedCmd *cobra.Command // Track the actual executed command
 
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
@@ -419,7 +420,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		// Initialize telemetry after APIs are set up (so we have apiToken)
 		if apiToken != "" {
 			tel = telemetry.New(apiToken, platformOrigin)
-			tel.RecordCommandStart(cmd)
+			if tel != nil {
+				// Capture the actual executed command for telemetry
+				executedCmd = cmd
+				tel.RecordCommandStart(cmd)
+			}
 		}
 
 		return nil
@@ -513,11 +518,17 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	// Always send telemetry after command completes (even if it errored)
 	// This ensures telemetry is sent regardless of PreRunE/RunE/PostRunE failures
 	if tel != nil {
-		tel.RecordCommandComplete(runCmds.rootCmd, executeErr)
+		// Use the actual executed command if captured, otherwise fall back to root
+		cmdToRecord := executedCmd
+		if cmdToRecord == nil {
+			cmdToRecord = runCmds.rootCmd
+		}
+
+		tel.RecordCommandComplete(cmdToRecord, executeErr)
 
 		// In debug mode, wait briefly for goroutine to complete so we can see telemetry output
 		if debugFlag {
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 		}
 	}
 
