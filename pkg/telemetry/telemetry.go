@@ -163,62 +163,76 @@ func checkConfigFileExists() bool {
 
 // sanitizeErrorMessage removes potentially sensitive data from error messages
 func sanitizeErrorMessage(msg string) string {
-	// Remove potential API tokens (sk_, ghp_, glpat_, npm_, pypi_, etc.)
-	tokenPattern := regexp.MustCompile(`\b(sk|ghp|gh[pousr]|glpat|pypi|npm)_[A-Za-z0-9_-]+`)
-	msg = tokenPattern.ReplaceAllString(msg, "[TOKEN]")
+	// Order matters! Process in this sequence to avoid conflicts
 
-	// Remove AWS access keys (AKIA...)
-	awsKeyPattern := regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
-	msg = awsKeyPattern.ReplaceAllString(msg, "[AWS_KEY]")
-
-	// Remove email addresses
-	emailPattern := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
-	msg = emailPattern.ReplaceAllString(msg, "[EMAIL]")
-
-	// Remove URLs with embedded credentials (https://user:pass@host)
+	// 1. Remove URLs with embedded credentials FIRST (before email pattern catches them)
 	urlCredsPattern := regexp.MustCompile(`https?://[^:]+:[^@]+@[^\s]+`)
 	msg = urlCredsPattern.ReplaceAllString(msg, "[URL]")
 
-	// Remove database/connection strings (enhanced to cover more protocols)
+	// 2. Remove database/connection strings (enhanced to cover more protocols)
 	connStringPattern := regexp.MustCompile(`(?i)(mongodb(\+srv)?|mysql|mariadb|postgresql|postgres|redis|mssql|oracle)://[^\s]+`)
 	msg = connStringPattern.ReplaceAllString(msg, "$1://[CONNECTION]")
 
-	// Remove IPv4 addresses
+	// 3. Remove potential API tokens - Fixed to include glpat with dash or underscore separator
+	tokenPattern := regexp.MustCompile(`\b(sk|ghp|gh[pousr]|pypi|npm)_[A-Za-z0-9_-]+|\bglpat[-_][A-Za-z0-9_-]+`)
+	msg = tokenPattern.ReplaceAllString(msg, "[TOKEN]")
+
+	// 4. Remove AWS access keys (AKIA...)
+	awsKeyPattern := regexp.MustCompile(`AKIA[0-9A-Z]{16}`)
+	msg = awsKeyPattern.ReplaceAllString(msg, "[AWS_KEY]")
+
+	// 5. Remove email addresses (after URL credentials to avoid conflicts)
+	emailPattern := regexp.MustCompile(`[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}`)
+	msg = emailPattern.ReplaceAllString(msg, "[EMAIL]")
+
+	// 6. Remove IPv4 addresses
 	ipv4Pattern := regexp.MustCompile(`\b(?:\d{1,3}\.){3}\d{1,3}\b`)
 	msg = ipv4Pattern.ReplaceAllString(msg, "[IP]")
 
-	// Remove IPv6 addresses (simplified pattern covering common formats)
+	// 7. Remove IPv6 addresses - Fixed to handle :: notation properly
 	ipv6Pattern := regexp.MustCompile(`\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b|` +
+		`\b(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}\b|` +
 		`\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b|` +
-		`\b:(?::[0-9a-fA-F]{1,4}){1,7}\b`)
+		`\b::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\b|` +
+		`\b[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}\b|` +
+		`\bfe80::[0-9a-fA-F:]+\b`)
 	msg = ipv6Pattern.ReplaceAllString(msg, "[IP]")
 
-	// Remove file system paths - conservative to avoid API path false positives
-	// Focus on protecting actual filesystem locations
-	// Home directories
-	homePattern := regexp.MustCompile(`(?:/(?:home|Users)/[^\s/]+|C:\\Users\\[^\s\\]+)`)
+	// 8. Remove file system paths - order matters, most specific first
+	// Home directories (exact match)
+	homePattern := regexp.MustCompile(`/(?:home|Users)/[^\s/]+`)
 	msg = homePattern.ReplaceAllString(msg, "[HOME]")
 
+	// Windows home directories
+	windowsHomePattern := regexp.MustCompile(`C:\\Users\\[^\s\\]+`)
+	msg = windowsHomePattern.ReplaceAllString(msg, "[HOME]")
+
 	// Temp directories
-	tempPattern := regexp.MustCompile(`(?:/(?:tmp|var/tmp)/[^\s:]+)`)
+	tempPattern := regexp.MustCompile(`/(?:tmp|var/tmp)/[^\s:]+`)
 	msg = tempPattern.ReplaceAllString(msg, "[TEMP]")
 
-	// Absolute file paths with 3+ segments (likely filesystem, not API)
-	absolutePathPattern := regexp.MustCompile(`(?:^|\s)(/[a-z]+(?:/[^\s:]+){2,})`)
-	msg = absolutePathPattern.ReplaceAllString(msg, " [PATH]")
-
-	// Windows paths with backslashes
-	windowsPathPattern := regexp.MustCompile(`[A-Z]:\\[^\s]+`)
-	msg = windowsPathPattern.ReplaceAllString(msg, "[PATH]")
-
-	// Home-relative paths
-	homeRelativePattern := regexp.MustCompile(`~(?:/[^\s:]+){2,}`)
+	// Home-relative paths - Fixed to accept single segment (~/file.txt)
+	homeRelativePattern := regexp.MustCompile(`~(?:/[^\s:]+){1,}`)
 	msg = homeRelativePattern.ReplaceAllString(msg, "[PATH]")
 
-	// Remove potential passwords/secrets in error messages
-	// Matches: password=xxx, password="xxx", password: xxx, api_key=xxx
-	// Bounded to 100 chars to prevent runaway matching
-	passwordPattern := regexp.MustCompile(`(?i)(password|passwd|pwd|secret|api[_-]?key)[\s=:]["']?([^\s,;"']{1,100})["']?`)
+	// Absolute file paths - Only match known filesystem roots to avoid API false positives
+	// Fixed: Don't include leading space in replacement
+	absolutePathPattern := regexp.MustCompile(`(?:^|\s)(/(usr|home|var|opt|etc|srv|tmp|mnt)(?:/[^\s:]+)+)`)
+	msg = absolutePathPattern.ReplaceAllStringFunc(msg, func(match string) string {
+		if strings.HasPrefix(match, " ") {
+			return " [PATH]" // Preserve single space
+		}
+		return "[PATH]" // Start of string
+	})
+
+	// Windows paths - Fixed to handle spaces in paths (Program Files)
+	windowsPathPattern := regexp.MustCompile(`[A-Z]:[\\][^\n:]+`)
+	msg = windowsPathPattern.ReplaceAllString(msg, "[PATH]")
+
+	// 9. Remove potential passwords/secrets - Fixed to handle colons and quotes properly
+	// Matches: password=xxx, password:"xxx", password: xxx, api_key:xxx
+	// Handle quoted values specially to avoid partial matches
+	passwordPattern := regexp.MustCompile(`(?i)(password|passwd|pwd|secret|api[_-]key)[\s=:]+(?:"([^"]{1,100})"|'([^']{1,100})'|([^\s,;"'\n]{1,100}))`)
 	msg = passwordPattern.ReplaceAllString(msg, "$1=[REDACTED]")
 
 	return msg
