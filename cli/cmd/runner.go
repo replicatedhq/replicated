@@ -8,6 +8,7 @@ import (
 	"github.com/replicatedhq/replicated/client"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/telemetry"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/cli/values"
 )
@@ -25,8 +26,9 @@ type runners struct {
 	outputFormat string
 	w            *tabwriter.Writer
 
-	rootCmd *cobra.Command
-	args    runnerArgs
+	rootCmd   *cobra.Command
+	args      runnerArgs
+	telemetry *telemetry.Telemetry // Telemetry for tracking command execution
 }
 
 func (r *runners) hasApp() bool {

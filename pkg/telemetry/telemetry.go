@@ -23,15 +23,27 @@ type Telemetry struct {
 	startTime     time.Time
 	command       string
 	hasConfigFile bool
+	stats         *ResourceStats // Resource count statistics
 }
 
-// New creates a new telemetry instance
-func New(apiToken string, origin string) *Telemetry {
-	disabled := os.Getenv("REPLICATED_TELEMETRY_DISABLED") == "true"
+// CheckAndPromptConsent checks if user has consented to telemetry and prompts if needed
+// Returns true if telemetry should be enabled, false if disabled
+// This should be called BEFORE initializing telemetry to ensure clean prompt
+func CheckAndPromptConsent() bool {
+	// Check if explicitly disabled via env var
+	if os.Getenv("REPLICATED_TELEMETRY_DISABLED") == "true" {
+		return false
+	}
 
+	// Check consent file or prompt user
+	return checkTelemetryConsent()
+}
+
+// New creates a new telemetry instance (assumes consent already checked)
+func New(apiToken string, origin string) *Telemetry {
 	return &Telemetry{
 		client:   platformclient.NewHTTPClient(origin, apiToken),
-		disabled: disabled,
+		disabled: false, // Disabled state handled by not calling New() at all
 	}
 }
 
@@ -74,6 +86,12 @@ func (t *Telemetry) RecordCommandComplete(cmd *cobra.Command, err error) {
 		if sendErr := t.sendEvent(ctx, exitCode, duration); sendErr != nil {
 			debugLog("Failed to send telemetry event: %v", sendErr)
 			return
+		}
+
+		// Send stats if available
+		if sendErr := t.sendStats(ctx); sendErr != nil {
+			debugLog("Failed to send telemetry stats: %v", sendErr)
+			// Don't return - still try to send error if needed
 		}
 
 		// Send error details if command failed
@@ -127,6 +145,25 @@ type ErrorPayload struct {
 	Command      string `json:"command"`
 }
 
+// ResourceStats holds resource count statistics for a command
+type ResourceStats struct {
+	HelmChartsCount     int
+	ManifestsCount      int
+	PreflightsCount     int
+	SupportBundlesCount int
+	ToolVersions        map[string]string
+}
+
+// StatsPayload matches backend's request structure
+type StatsPayload struct {
+	Command        string            `json:"command"`
+	HelmCharts     int               `json:"helm_charts"`
+	K8sManifests   int               `json:"k8s_manifests"`
+	Preflights     int               `json:"preflights"`
+	SupportBundles int               `json:"support_bundles"`
+	ToolVersions   map[string]string `json:"tool_versions"`
+}
+
 // sendError sends error telemetry
 func (t *Telemetry) sendError(ctx context.Context, err error) error {
 	payload := ErrorPayload{
@@ -139,6 +176,38 @@ func (t *Telemetry) sendError(ctx context.Context, err error) error {
 	debugLog("Sending error: event_id=%s, error_type=%s", t.eventID, getErrorType(err))
 
 	return t.client.DoJSON(ctx, "POST", "/v3/cli/telemetry/error", 201, payload, nil)
+}
+
+// RecordStats stores resource statistics to be sent with telemetry
+func (t *Telemetry) RecordStats(stats ResourceStats) {
+	if t.disabled {
+		debugLog("RecordStats called but telemetry disabled")
+		return
+	}
+	t.stats = &stats
+	debugLog("RecordStats: collected stats for command=%s (helm=%d, manifests=%d, preflights=%d, support_bundles=%d)",
+		t.command, stats.HelmChartsCount, stats.ManifestsCount, stats.PreflightsCount, stats.SupportBundlesCount)
+}
+
+// sendStats sends resource statistics telemetry
+func (t *Telemetry) sendStats(ctx context.Context) error {
+	if t.stats == nil {
+		return nil // No stats to send
+	}
+
+	payload := StatsPayload{
+		Command:        t.command,
+		HelmCharts:     t.stats.HelmChartsCount,
+		K8sManifests:   t.stats.ManifestsCount,
+		Preflights:     t.stats.PreflightsCount,
+		SupportBundles: t.stats.SupportBundlesCount,
+		ToolVersions:   t.stats.ToolVersions,
+	}
+
+	debugLog("Sending stats: helm_charts=%d, manifests=%d, preflights=%d, support_bundles=%d",
+		t.stats.HelmChartsCount, t.stats.ManifestsCount, t.stats.PreflightsCount, t.stats.SupportBundlesCount)
+
+	return t.client.DoJSON(ctx, "POST", "/v3/cli/telemetry/stats", 201, payload, nil)
 }
 
 // checkConfigFileExists checks if .replicated config file exists
@@ -301,6 +370,110 @@ func getErrorType(err error) string {
 	}
 
 	return "Error"
+}
+
+// checkTelemetryConsent checks if user has consented to telemetry or prompts on first run
+func checkTelemetryConsent() bool {
+	// Check if consent file exists
+	consentFile := getTelemetryConsentFile()
+
+	// If file exists, read consent
+	if _, err := os.Stat(consentFile); err == nil {
+		data, err := os.ReadFile(consentFile)
+		if err == nil {
+			// File contains "enabled" or "disabled"
+			consent := strings.TrimSpace(string(data))
+			return consent == "enabled"
+		}
+	}
+
+	// First run - prompt user
+	return promptForTelemetryConsent(consentFile)
+}
+
+// getTelemetryConsentFile returns the path to the telemetry consent file
+func getTelemetryConsentFile() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return ".replicated_telemetry"
+	}
+	return filepath.Join(homeDir, ".replicated", "telemetry_consent")
+}
+
+// promptForTelemetryConsent asks user for consent on first run
+func promptForTelemetryConsent(consentFile string) bool {
+	// Check if running in non-interactive mode (CI, piped, etc.)
+	if os.Getenv("CI") == "true" || !isInteractive() {
+		// In non-interactive mode, default to enabled (can opt-out via env var)
+		saveConsent(consentFile, true)
+		return true
+	}
+
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	fmt.Fprintf(os.Stderr, "  📊 Help us improve the Replicated CLI\n")
+	fmt.Fprintf(os.Stderr, "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "The Replicated CLI would like to collect anonymous usage data to help\n")
+	fmt.Fprintf(os.Stderr, "us understand how the CLI is being used and improve the product.\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "We collect:\n")
+	fmt.Fprintf(os.Stderr, "  • Command names (e.g., 'release create', 'channel ls')\n")
+	fmt.Fprintf(os.Stderr, "  • Command duration and success/failure\n")
+	fmt.Fprintf(os.Stderr, "  • Environment (CI vs local)\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "We DO NOT collect:\n")
+	fmt.Fprintf(os.Stderr, "  • Command arguments or flags\n")
+	fmt.Fprintf(os.Stderr, "  • File contents or app data\n")
+	fmt.Fprintf(os.Stderr, "  • Personal information\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "You can opt-out anytime by setting: REPLICATED_TELEMETRY_DISABLED=true\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "Allow anonymous telemetry? [Y/n]: ")
+
+	// Read user response
+	var response string
+	fmt.Fscanln(os.Stdin, &response)
+	response = strings.ToLower(strings.TrimSpace(response))
+
+	// Default to yes if empty (just pressed enter)
+	enabled := response == "" || response == "y" || response == "yes"
+
+	// Save consent
+	saveConsent(consentFile, enabled)
+
+	if enabled {
+		fmt.Fprintf(os.Stderr, "✓ Telemetry enabled. Thank you for helping improve the CLI!\n\n")
+	} else {
+		fmt.Fprintf(os.Stderr, "✓ Telemetry disabled. You can enable it later by removing:\n")
+		fmt.Fprintf(os.Stderr, "  %s\n\n", consentFile)
+	}
+
+	return enabled
+}
+
+// saveConsent saves the user's telemetry consent choice
+func saveConsent(consentFile string, enabled bool) {
+	// Ensure directory exists
+	dir := filepath.Dir(consentFile)
+	os.MkdirAll(dir, 0755)
+
+	// Write consent
+	consent := "disabled"
+	if enabled {
+		consent = "enabled"
+	}
+	os.WriteFile(consentFile, []byte(consent), 0644)
+}
+
+// isInteractive checks if running in an interactive terminal
+func isInteractive() bool {
+	// Check if stdin is a terminal
+	fileInfo, err := os.Stdin.Stat()
+	if err != nil {
+		return false
+	}
+	return (fileInfo.Mode() & os.ModeCharDevice) != 0
 }
 
 // debugLog logs debug messages only if REPLICATED_DEBUG is set

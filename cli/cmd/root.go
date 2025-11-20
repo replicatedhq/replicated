@@ -116,6 +116,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	// Telemetry for tracking CLI command execution
 	var tel *telemetry.Telemetry
 	var executedCmd *cobra.Command // Track the actual executed command
+	var telemetryConsented bool    // Track if user consented to telemetry
 
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
@@ -413,19 +414,28 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		commonAPI := client.NewClient(platformOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
-		// Print update info from cache, then start background update for next time
-		version.PrintIfUpgradeAvailable()
-		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
+		// Check telemetry consent FIRST (before any background tasks) for clean prompt
+		// Only check once per Execute() call
+		if apiToken != "" && !telemetryConsented {
+			// This may prompt user on first run - do it synchronously before background tasks
+			telemetryConsented = telemetry.CheckAndPromptConsent()
+		}
 
-		// Initialize telemetry after APIs are set up (so we have apiToken)
-		if apiToken != "" {
+		// Initialize telemetry if consented
+		if apiToken != "" && telemetryConsented {
 			tel = telemetry.New(apiToken, platformOrigin)
 			if tel != nil {
 				// Capture the actual executed command for telemetry
 				executedCmd = cmd
 				tel.RecordCommandStart(cmd)
+				// Store telemetry in runners so commands can access it
+				runCmds.telemetry = tel
 			}
 		}
+
+		// Start background tasks AFTER consent prompt completes
+		version.PrintIfUpgradeAvailable()
+		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
 
 		return nil
 	}
