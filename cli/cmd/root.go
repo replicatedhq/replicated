@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/pkg/errors"
@@ -15,6 +16,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/telemetry"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -110,6 +112,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		stdin:   stdin,
 		w:       w,
 	}
+
+	// Telemetry for tracking CLI command execution
+	var tel *telemetry.Telemetry
+	var executedCmd *cobra.Command // Track the actual executed command
+	var telemetryConsented bool    // Track if user consented to telemetry
+
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()
 	}
@@ -406,7 +414,26 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		commonAPI := client.NewClient(platformOrigin, apiToken, kurlDotSHOrigin)
 		runCmds.api = commonAPI
 
-		// Print update info from cache, then start background update for next time
+		// Check telemetry consent FIRST (before any background tasks) for clean prompt
+		// Only check once per Execute() call
+		if apiToken != "" && !telemetryConsented {
+			// This may prompt user on first run - do it synchronously before background tasks
+			telemetryConsented = telemetry.CheckAndPromptConsent()
+		}
+
+		// Initialize telemetry if consented
+		if apiToken != "" && telemetryConsented {
+			tel = telemetry.New(apiToken, platformOrigin)
+			if tel != nil {
+				// Capture the actual executed command for telemetry
+				executedCmd = cmd
+				tel.RecordCommandStart(cmd)
+				// Store telemetry in runners so commands can access it
+				runCmds.telemetry = tel
+			}
+		}
+
+		// Start background tasks AFTER consent prompt completes
 		version.PrintIfUpgradeAvailable()
 		version.CheckForUpdatesInBackground(version.Version(), "replicatedhq/replicated/cli")
 
@@ -495,7 +522,33 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	runCmds.rootCmd.AddCommand(Version())
 
-	return runCmds.rootCmd.Execute()
+	// Execute the command and capture any error
+	executeErr := runCmds.rootCmd.Execute()
+
+	// Always send telemetry after command completes (even if it errored)
+	// This ensures telemetry is sent regardless of PreRunE/RunE/PostRunE failures
+	if tel != nil {
+		// Use the actual executed command if captured, otherwise fall back to root
+		cmdToRecord := executedCmd
+		if cmdToRecord == nil {
+			cmdToRecord = runCmds.rootCmd
+		}
+
+		tel.RecordCommandComplete(cmdToRecord, executeErr)
+
+		// In debug mode, wait briefly for goroutine to complete so we can see telemetry output
+		// Use shorter wait in CI to avoid unnecessary delays in automated environments
+		if debugFlag {
+			waitTime := 2 * time.Second
+			// Check if we're in CI - if so, use shorter wait
+			if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" {
+				waitTime = 500 * time.Millisecond
+			}
+			time.Sleep(waitTime)
+		}
+	}
+
+	return executeErr
 }
 
 func printIfError(cmd *cobra.Command, err error) {

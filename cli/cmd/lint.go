@@ -12,6 +12,7 @@ import (
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/imageextract"
 	"github.com/replicatedhq/replicated/pkg/lint2"
+	"github.com/replicatedhq/replicated/pkg/telemetry"
 	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -503,6 +504,34 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	// (EC version comes from spec.version, not from config)
 	if extracted.ECVersion != "" {
 		output.Metadata.EmbeddedClusterVersion = extracted.ECVersion
+	}
+
+	// Collect resource statistics for telemetry
+	stats := telemetry.ResourceStats{
+		HelmChartsCount:     len(extracted.ChartPaths),
+		PreflightsCount:     len(extracted.Preflights),
+		SupportBundlesCount: len(extracted.SupportBundles),
+		ManifestsCount:      len(extracted.HelmChartManifests),
+		ToolVersions: map[string]string{
+			"helm":                extracted.HelmVersion,
+			"preflight-check":     extracted.PreflightVersion,
+			"support-bundle-lint": extracted.SBVersion,
+		},
+	}
+	
+	// Add EC version if used
+	if extracted.ECVersion != "" && len(extracted.EmbeddedClusterPaths) > 0 {
+		stats.ToolVersions["embedded-cluster"] = extracted.ECVersion
+	}
+	
+	// Add KOTS version if used
+	if extracted.KotsVersion != "" && len(extracted.KotsPaths) > 0 {
+		stats.ToolVersions["kots"] = extracted.KotsVersion
+	}
+	
+	// Record stats for telemetry (will be sent when command completes)
+	if r.telemetry != nil {
+		r.telemetry.RecordStats(stats)
 	}
 
 	// Check tool versions (only for enabled linters with pinned versions)

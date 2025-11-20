@@ -115,7 +115,7 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 			return err
 		}
 	}
-	req, err := http.NewRequest(method, endpoint, &buf)
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, &buf)
 	if err != nil {
 		return err
 	}
@@ -125,8 +125,14 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
 
-	if _, ok := os.LookupEnv("CI"); ok {
-		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
+	// Add telemetry headers
+	req.Header.Set("X-Replicated-CLI-Version", version.Version())
+
+	// Set CI detection header (must be "true" or "false" string)
+	if detectCIFromEnv() {
+		req.Header.Set("X-Replicated-CI", "true")
+	} else {
+		req.Header.Set("X-Replicated-CI", "false")
 	}
 
 	if err := addGitHubActionsHeaders(req); err != nil {
@@ -188,13 +194,13 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 }
 
 func addGitHubActionsHeaders(req *http.Request) error {
-	// anyone can set this to false to disable this behavior
-	if os.Getenv("CI") != "true" {
+	// Only add GitHub-specific headers if in CI environment
+	// Note: X-Replicated-CI header is already set by DoJSON
+	if !detectCIFromEnv() {
 		return nil
 	}
 
-	// the following params are used to link CMX runs back to the workflow
-	req.Header.Set("X-Replicated-CI", "true")
+	// Add GitHub Actions specific metadata headers for CMX workflow linking
 	if os.Getenv("GITHUB_RUN_ID") != "" {
 		req.Header.Set("X-Replicated-GitHubRunID", os.Getenv("GITHUB_RUN_ID"))
 	}
@@ -264,4 +270,32 @@ func responseBodyToErrorMessage(body []byte) string {
 	}
 
 	return string(body)
+}
+
+// detectCIFromEnv checks if running in CI environment
+func detectCIFromEnv() bool {
+	// Check common CI environment variable with multiple truthy values
+	ciVal := os.Getenv("CI")
+	if ciVal == "true" || ciVal == "1" || ciVal == "yes" {
+		return true
+	}
+
+	// Check specific CI platform environment variables
+	ciEnvVars := []string{
+		"GITHUB_ACTIONS",
+		"GITLAB_CI",
+		"CIRCLECI",
+		"TRAVIS",
+		"JENKINS_URL",
+		"BUILDKITE",
+		"DRONE",
+	}
+
+	for _, envVar := range ciEnvVars {
+		if os.Getenv(envVar) != "" {
+			return true
+		}
+	}
+
+	return false
 }

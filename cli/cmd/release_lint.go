@@ -4,10 +4,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	"github.com/replicatedhq/replicated/pkg/telemetry"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -90,6 +92,10 @@ func (r *runners) releaseLintV1(_ *cobra.Command, _ []string) error {
 		return errors.New("no app specified")
 	}
 
+	// Collect stats for telemetry before sending to remote API
+	// We'll count resources in the directory/chart being linted
+	var stats *telemetry.ResourceStats
+
 	var isBuildersRelease bool
 	var lintReleaseData []byte
 	var contentType string
@@ -98,6 +104,13 @@ func (r *runners) releaseLintV1(_ *cobra.Command, _ []string) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to check if yaml dir is helm charts only")
 		}
+		
+		// Count resources in the directory for stats
+		if r.telemetry != nil {
+			resourceStats := countResourcesInDirectory(r.args.lintReleaseYamlDir)
+			stats = &resourceStats
+		}
+		
 		data, err := tarYAMLDir(r.args.lintReleaseYamlDir)
 		if err != nil {
 			return errors.Wrap(err, "failed to read yaml dir")
@@ -128,6 +141,11 @@ func (r *runners) releaseLintV1(_ *cobra.Command, _ []string) error {
 
 	if err := print.LintErrors(r.outputFormat, r.w, lintResult); err != nil {
 		return errors.Wrap(err, "failed to print lint errors")
+	}
+
+	// Record stats for telemetry if collected
+	if r.telemetry != nil && stats != nil {
+		r.telemetry.RecordStats(*stats)
 	}
 
 	if hasError := shouldFail(lintResult, r.args.lintReleaseFailOn); hasError {
@@ -184,6 +202,51 @@ func tarYAMLDir(yamlDir string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+// countResourcesInDirectory counts resources in a directory for telemetry stats
+// This is a basic implementation for the old lint path
+func countResourcesInDirectory(yamlDir string) telemetry.ResourceStats {
+	stats := telemetry.ResourceStats{
+		ToolVersions: make(map[string]string),
+	}
+	
+	// Walk the directory and count YAML files by type
+	// This is a best-effort count - may not be 100% accurate but better than nothing
+	filepath.Walk(yamlDir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		
+		// Only process YAML files
+		ext := strings.ToLower(filepath.Ext(path))
+		if ext != ".yaml" && ext != ".yml" {
+			return nil
+		}
+		
+		// Read file to determine type
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+		
+		content := string(data)
+		
+		// Simple heuristic based on kind field
+		if strings.Contains(content, "kind: Chart") || strings.Contains(content, "apiVersion: v2") {
+			stats.HelmChartsCount++
+		} else if strings.Contains(content, "kind: Preflight") {
+			stats.PreflightsCount++
+		} else if strings.Contains(content, "kind: SupportBundle") {
+			stats.SupportBundlesCount++
+		} else if strings.Contains(content, "kind: HelmChart") {
+			stats.ManifestsCount++
+		}
+		
+		return nil
+	})
+	
+	return stats
 }
 
 func isHelmChartsOnly(yamlDir string) (bool, error) {
