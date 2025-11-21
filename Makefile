@@ -100,8 +100,6 @@ release:
 		--progress plain
 	@echo ""
 	@echo "✓ Release completed successfully"
-	@echo "Waiting 15 seconds for GitHub to process release tag..."
-	@sleep 15
 	@echo "Generating documentation PR..."
 	@$(MAKE) docs || (echo "⚠️  WARNING: Docs generation failed. Please run 'make docs' manually." && exit 0)
 	@echo "✓ Documentation PR created successfully"
