@@ -101,8 +101,7 @@ release:
 	@echo ""
 	@echo "✓ Release completed successfully"
 	@echo "Generating documentation PR..."
-	@$(MAKE) docs || (echo "⚠️  WARNING: Docs generation failed. Please run 'make docs' manually." && exit 0)
-	@echo "✓ Documentation PR created successfully"
+	@$(MAKE) docs
 
 .PHONY: docs
 docs:
