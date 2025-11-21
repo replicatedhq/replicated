@@ -98,6 +98,10 @@ release:
 		--version $(version) \
 		--github-token env:GITHUB_TOKEN \
 		--progress plain
+	@echo ""
+	@echo "✓ Release completed successfully"
+	@echo "Generating documentation PR..."
+	@$(MAKE) docs
 
 .PHONY: docs
 docs:
