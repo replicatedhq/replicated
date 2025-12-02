@@ -27,19 +27,12 @@ pods, processes, and DNS queries. Reports must be enabled with 'replicated netwo
 Output formats:
   - Default: Full event details in JSON format
   - --summary: Aggregated statistics with top domains and destinations
-  - --watch: Continuous stream of new events in JSON Lines format
-
-Filtering:
-  - --show-external-only: Show only external network traffic (default: true)
-                          Set to false to include internal cluster traffic`,
+  - --watch: Continuous stream of new events in JSON Lines format`,
 		Example: `# Get full network traffic report (external traffic only)
 replicated network report <network-id>
 
 # Get aggregated summary with statistics. Only available for networks that have been terminated.
 replicated network report <network-id> --summary
-
-# Include internal cluster traffic in the report
-replicated network report <network-id> --show-external-only=false
 
 # Watch for new network events in real-time
 replicated network report <network-id> --watch`,
@@ -54,7 +47,6 @@ replicated network report <network-id> --watch`,
 
 	cmd.Flags().BoolVarP(&r.args.networkReportWatch, "watch", "w", false, "Watch for new network events in real-time (polls every 2 seconds)")
 	cmd.Flags().BoolVar(&r.args.networkReportSummary, "summary", false, "Get aggregated report summary with statistics instead of individual events")
-	cmd.Flags().BoolVar(&r.args.networkReportShowExternalOnly, "show-external-only", true, "Show only external network traffic")
 
 	return cmd
 }
@@ -85,7 +77,7 @@ func (r *runners) getNetworkReport(cmd *cobra.Command, args []string) error {
 }
 
 func (r *runners) getNetworkReportEvents() error {
-	report, err := r.kotsAPI.GetNetworkReport(r.args.networkReportID, r.args.networkReportShowExternalOnly)
+	report, err := r.kotsAPI.GetNetworkReport(r.args.networkReportID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
@@ -119,9 +111,9 @@ func (r *runners) getNetworkReportEvents() error {
 		for range time.Tick(2 * time.Second) {
 			var newReport *types.NetworkReport
 			if lastEventTime != nil {
-				newReport, err = r.kotsAPI.GetNetworkReportAfter(r.args.networkReportID, lastEventTime, r.args.networkReportShowExternalOnly)
+				newReport, err = r.kotsAPI.GetNetworkReportAfter(r.args.networkReportID, lastEventTime)
 			} else {
-				newReport, err = r.kotsAPI.GetNetworkReport(r.args.networkReportID, r.args.networkReportShowExternalOnly)
+				newReport, err = r.kotsAPI.GetNetworkReport(r.args.networkReportID)
 			}
 
 			if err != nil {
@@ -152,7 +144,7 @@ func (r *runners) getNetworkReportSummary(ctx context.Context) error {
 		return fmt.Errorf("cannot use watch and summary flags together")
 	}
 
-	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID, r.args.networkReportShowExternalOnly)
+	summary, err := r.kotsAPI.GetNetworkReportSummary(ctx, r.args.networkReportID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if errors.Cause(err) == platformclient.ErrNotFound {

@@ -11,17 +11,16 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *VendorV3Client) GetNetworkReport(id string, showExternalOnly bool) (*types.NetworkReport, error) {
-	return c.GetNetworkReportAfter(id, nil, showExternalOnly)
+func (c *VendorV3Client) GetNetworkReport(id string) (*types.NetworkReport, error) {
+	return c.GetNetworkReportAfter(id, nil)
 }
 
-func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time, showExternalOnly bool) (*types.NetworkReport, error) {
+func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time) (*types.NetworkReport, error) {
 	urlPath := fmt.Sprintf("/v3/network/%s/report", id)
 	v := url.Values{}
 	if after != nil {
 		v.Set("after", after.Format(time.RFC3339Nano))
 	}
-	v.Set("show-external-only", fmt.Sprintf("%t", showExternalOnly))
 	if len(v) > 0 {
 		urlPath = fmt.Sprintf("%s?%s", urlPath, v.Encode())
 	}
@@ -60,13 +59,9 @@ func (c *VendorV3Client) GetNetworkReportAfter(id string, after *time.Time, show
 	return &types.NetworkReport{Events: events}, nil
 }
 
-func (c *VendorV3Client) GetNetworkReportSummary(ctx context.Context, id string, showExternalOnly bool) (*types.NetworkReportSummary, error) {
+func (c *VendorV3Client) GetNetworkReportSummary(ctx context.Context, id string) (*types.NetworkReportSummary, error) {
 	urlPath := fmt.Sprintf("/v3/network/%s/report/summary", id)
-	v := url.Values{}
-	v.Set("show-external-only", fmt.Sprintf("%t", showExternalOnly))
-	if len(v) > 0 {
-		urlPath = fmt.Sprintf("%s?%s", urlPath, v.Encode())
-	}
+
 	type summaryResp struct {
 		*types.NetworkReportSummary
 		Error string `json:"error,omitempty"`
