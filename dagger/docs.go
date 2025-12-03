@@ -29,7 +29,7 @@ func (r *Replicated) GenerateDocs(
 		return errors.Wrap(err, "failed to check git tree")
 	}
 
-	latestVersion, err := getLatestVersion(ctx)
+	latestVersion, err := getLatestVersion(ctx, githubToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest version")
 	}

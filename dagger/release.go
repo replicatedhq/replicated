@@ -37,7 +37,7 @@ func (r *Replicated) Release(
 		return errors.Wrap(err, "failed to check git tree")
 	}
 
-	previousVersionTag, err := getLatestVersion(ctx)
+	previousVersionTag, err := getLatestVersion(ctx, githubToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest version")
 	}
@@ -238,11 +238,24 @@ func getReleaseBranchName(ctx context.Context, latestVersion string) (string, er
 	return fmt.Sprintf("release-%d.%d.%d", parsedLatestVersion.Major(), parsedLatestVersion.Minor(), parsedLatestVersion.Patch()), nil
 }
 
-func getLatestVersion(ctx context.Context) (string, error) {
-	resp, err := http.DefaultClient.Get("https://api.github.com/repos/replicatedhq/replicated/releases/latest")
+func getLatestVersion(ctx context.Context, githubToken *dagger.Secret) (string, error) {
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/replicatedhq/replicated/releases/latest", nil)
 	if err != nil {
 		return "", err
 	}
+
+	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get github token plaintext")
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("token %s", githubTokenPlaintext))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to do github request")
+	}
+
 	defer resp.Body.Close()
 
 	var release struct {
