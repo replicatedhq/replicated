@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -69,7 +69,7 @@ func (r *runners) archiveCustomer(customers []string) error {
 
 		// try to get the customer as if we have an id first
 		cc, err := r.api.GetCustomerByID(customer)
-		if err != nil && err != kotsclient.ErrNotFound {
+		if err != nil && errors.Cause(err) != platformclient.ErrNotFound {
 			return errors.Wrapf(err, "find customer %q", customer)
 		}
 		if cc != nil {
