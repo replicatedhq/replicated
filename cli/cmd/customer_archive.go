@@ -2,16 +2,13 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
 func (r *runners) InitCustomersArchiveCommand(parent *cobra.Command) *cobra.Command {
-	var (
-		customer string
-		app      string
-	)
+	var customer string
 
 	cmd := &cobra.Command{
 		Use:   "archive <customer_name_or_id>",
@@ -43,18 +40,18 @@ replicated customer archive --app myapp "Acme Inc"`,
 				customers = args
 			}
 
-			return r.archiveCustomer(cmd, customers, app)
+			return r.archiveCustomer(customers)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID to archive")
 	cmd.Flags().MarkHidden("customer")
-	cmd.Flags().StringVar(&app, "app", "", "The app to archive the customer in (not required when using a customer id)")
+	// Local --app flag removed - will use global flag from parent
 
 	return cmd
 }
-func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app string) error {
+func (r *runners) archiveCustomer(customers []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
@@ -72,7 +69,7 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app st
 
 		// try to get the customer as if we have an id first
 		cc, err := r.api.GetCustomerByID(customer)
-		if err != nil && err != kotsclient.ErrNotFound {
+		if err != nil && errors.Cause(err) != platformclient.ErrNotFound {
 			return errors.Wrapf(err, "find customer %q", customer)
 		}
 		if cc != nil {
@@ -81,7 +78,7 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app st
 
 		if c == nil {
 			// try to get the customer as if we have a name
-			cc, err := r.api.GetCustomerByName(app, customer)
+			cc, err := r.api.GetCustomerByName(r.appID, customer)
 			if err != nil {
 				return errors.Wrapf(err, "find customer %q", customer)
 			}
