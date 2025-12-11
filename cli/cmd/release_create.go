@@ -1,22 +1,27 @@
 package cmd
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/bmatcuk/doublestar/v4"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/google/uuid"
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/client"
 	kotstypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/logger"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -31,7 +36,22 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 		Use:   "create",
 		Short: "Create a new release",
 		Long: `Create a new release by providing application manifests for the next release in
-  your sequence.`,
+  your sequence.
+
+  If no flags are provided, the command will automatically use the configuration from
+  .replicated file in the current directory (or parent directories). The config should
+  specify charts and manifests to include. Charts will be automatically packaged using
+  helm, and manifests will be collected using glob patterns.
+
+  Example .replicated config:
+    appSlug: "my-app"
+    charts:
+      - path: ./chart
+    manifests:
+      - ./manifests/*.yaml
+
+  With this config, simply run:
+    replicated release create --version 1.0.0 --promote Unstable`,
 		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
 	}
@@ -62,6 +82,50 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().MarkHidden("yaml-file")
 	cmd.Flags().MarkHidden("yaml")
 	cmd.Flags().MarkHidden("chart")
+
+	// Override parent's PersistentPreRunE to handle config-based flow
+	// The parent prerun tries to resolve app from cache/env which may fail
+	// when using a different profile. For config flow, we'll resolve the app ourselves.
+	originalPreRun := parent.PersistentPreRunE
+	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
+		// Check if we're using config-based flow
+		useConfigFlow := r.args.createReleaseYaml == "" &&
+			r.args.createReleaseYamlFile == "" &&
+			r.args.createReleaseYamlDir == "" &&
+			r.args.createReleaseChart == ""
+
+		if useConfigFlow {
+			// For config flow, temporarily clear app state before calling parent prerun
+			// This prevents the parent from trying to resolve a cached/env app that doesn't exist in this profile
+			savedAppID := r.appID
+			savedAppSlug := r.appSlug
+			savedAppType := r.appType
+			
+			r.appID = ""
+			r.appSlug = ""
+			r.appType = ""
+			
+			// Call parent prerun (will setup APIs but skip app resolution since app is empty)
+			if originalPreRun != nil {
+				if err := originalPreRun(cmd, args); err != nil {
+					// Restore values
+					r.appID = savedAppID
+					r.appSlug = savedAppSlug
+					r.appType = savedAppType
+					return err
+				}
+			}
+			
+			// Keep app cleared - we'll load from config in releaseCreate
+			return nil
+		}
+
+		// Non-config flow: use normal parent prerun
+		if originalPreRun != nil {
+			return originalPreRun(cmd, args)
+		}
+		return nil
+	}
 
 	cmd.RunE = r.releaseCreate
 	return nil
@@ -168,7 +232,53 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 		log.Silence()
 	}
 
-	if !r.hasApp() {
+	// Check if we should use config-based flow (no explicit source flags provided)
+	useConfigFlow := r.args.createReleaseYaml == "" &&
+		r.args.createReleaseYamlFile == "" &&
+		r.args.createReleaseYamlDir == "" &&
+		r.args.createReleaseChart == ""
+
+	var config *tools.Config
+	var stagingDir string
+
+	if useConfigFlow {
+		// Try to find and parse .replicated config
+		parser := tools.NewConfigParser()
+		var configErr error
+		config, configErr = parser.FindAndParseConfig(".")
+		if configErr != nil {
+			return errors.Wrap(configErr, "failed to find or parse .replicated config file")
+		}
+
+		// Check if config has any charts or manifests configured
+		if len(config.Charts) == 0 && len(config.Manifests) == 0 {
+			return errors.New("no charts or manifests configured in .replicated config file. Either configure them in .replicated or use --yaml-dir flag")
+		}
+
+		// Validate app ID/slug from config vs CLI flag
+		if err := r.validateAppFromConfig(config); err != nil {
+			return err
+		}
+
+		// After loading app from config, we need to re-resolve the app type
+		// because the prerun might have run with a different app (from cache/env) before we loaded the config
+		// Clear the appType to force a fresh resolution
+		r.appType = ""
+		if err := r.resolveAppType(); err != nil {
+			return errors.Wrap(err, "resolve app type from config")
+		}
+
+		// Defer cleanup of staging directory
+		defer func() {
+			if stagingDir != "" {
+				os.RemoveAll(stagingDir)
+			}
+		}()
+	}
+
+	// When using config flow, we've already loaded and resolved the app
+	// For non-config flow, check if app was provided
+	if !useConfigFlow && !r.hasApp() {
 		return errors.New("no app specified")
 	}
 
@@ -251,6 +361,16 @@ Prepared to create release with defaults:
 			return errors.Wrap(err, "make release from dir")
 		}
 		log.FinishSpinner()
+	}
+
+	// Handle config-based flow
+	if useConfigFlow && config != nil {
+		fmt.Fprintln(r.w)
+		var err error
+		stagingDir, r.args.createReleaseYaml, err = r.createReleaseFromConfig(config, log)
+		if err != nil {
+			return errors.Wrap(err, "create release from config")
+		}
 	}
 
 	if r.args.createReleaseChart != "" {
@@ -344,8 +464,9 @@ func (r *runners) validateReleaseCreateParams() error {
 		}
 	}
 
+	// If no sources specified, config-based flow will be used (validated elsewhere)
 	if numSources == 0 {
-		return errors.New("one of --yaml, --yaml-file, --yaml-dir, or --chart is required")
+		return nil
 	}
 
 	if numSources > 1 {
@@ -547,4 +668,275 @@ func isSupportedExt(ext string) bool {
 	default:
 		return false
 	}
+}
+
+// packageChart runs helm dependency update and helm package on a chart directory
+// Returns the path to the packaged .tgz file
+func packageChart(chartPath string) (string, error) {
+	absChartPath, err := filepath.Abs(chartPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "resolve absolute path for chart %s", chartPath)
+	}
+
+	// Check if chartPath is a directory containing Chart.yaml
+	chartYAMLPath := filepath.Join(absChartPath, "Chart.yaml")
+	if _, err := os.Stat(chartYAMLPath); err != nil {
+		return "", errors.Wrapf(err, "chart directory %s must contain Chart.yaml", chartPath)
+	}
+
+	// Run helm dependency update
+	depCmd := exec.Command("helm", "dependency", "update")
+	depCmd.Dir = absChartPath
+	depOutput, err := depCmd.CombinedOutput()
+	if err != nil {
+		return "", errors.Wrapf(err, "helm dependency update failed in %s: %s", chartPath, string(depOutput))
+	}
+
+	// Run helm package to create .tgz in the chart directory
+	pkgCmd := exec.Command("helm", "package", ".")
+	pkgCmd.Dir = absChartPath
+	pkgOutput, err := pkgCmd.CombinedOutput()
+	if err != nil {
+		return "", errors.Wrapf(err, "helm package failed in %s: %s", chartPath, string(pkgOutput))
+	}
+
+	// Parse output to find the packaged .tgz filename
+	// Output format: "Successfully packaged chart and saved it to: /path/to/chart-version.tgz"
+	outputStr := string(pkgOutput)
+	lines := strings.Split(outputStr, "\n")
+	var tgzPath string
+	for _, line := range lines {
+		if strings.Contains(line, "Successfully packaged chart") && strings.Contains(line, ".tgz") {
+			parts := strings.Split(line, ": ")
+			if len(parts) >= 2 {
+				tgzPath = strings.TrimSpace(parts[len(parts)-1])
+				break
+			}
+		}
+	}
+
+	if tgzPath == "" {
+		return "", errors.Errorf("could not determine packaged chart path from helm output: %s", outputStr)
+	}
+
+	// Verify the file exists
+	if _, err := os.Stat(tgzPath); err != nil {
+		return "", errors.Wrapf(err, "packaged chart file not found at %s", tgzPath)
+	}
+
+	return tgzPath, nil
+}
+
+// collectManifests resolves glob patterns and returns a list of manifest file paths
+func collectManifests(patterns []string) ([]string, error) {
+	var manifestPaths []string
+	seenPaths := make(map[string]bool)
+
+	for _, pattern := range patterns {
+		// Resolve glob pattern
+		matches, err := doublestar.FilepathGlob(pattern)
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid glob pattern %s", pattern)
+		}
+
+		for _, match := range matches {
+			// Skip directories, only include files
+			info, err := os.Stat(match)
+			if err != nil {
+				continue
+			}
+			if info.IsDir() {
+				continue
+			}
+
+			// Deduplicate
+			absPath, err := filepath.Abs(match)
+			if err != nil {
+				continue
+			}
+			if !seenPaths[absPath] {
+				seenPaths[absPath] = true
+				manifestPaths = append(manifestPaths, absPath)
+			}
+		}
+	}
+
+	return manifestPaths, nil
+}
+
+// createReleaseFromConfig creates a release from .replicated config file
+// Returns the staging directory path for cleanup and the release YAML string
+func (r *runners) createReleaseFromConfig(config *tools.Config, log *logger.Logger) (stagingDir string, releaseYAML string, err error) {
+	// Create temporary staging directory
+	stagingDir = filepath.Join(os.TempDir(), fmt.Sprintf("replicated-release-%s", uuid.New().String()))
+	if err = os.MkdirAll(stagingDir, 0755); err != nil {
+		return "", "", errors.Wrapf(err, "create staging directory %s", stagingDir)
+	}
+
+	// Package all charts
+	log.ActionWithSpinner("Packaging charts")
+	var packagedCharts []string
+	for _, chart := range config.Charts {
+		tgzPath, err := packageChart(chart.Path)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return stagingDir, "", errors.Wrapf(err, "package chart %s", chart.Path)
+		}
+		packagedCharts = append(packagedCharts, tgzPath)
+	}
+	log.FinishSpinner()
+
+	// Copy packaged charts to staging directory
+	if len(packagedCharts) > 0 {
+		log.ActionWithSpinner("Copying packaged charts to staging directory")
+		for _, tgzPath := range packagedCharts {
+			destPath := filepath.Join(stagingDir, filepath.Base(tgzPath))
+			if err := copyFile(tgzPath, destPath); err != nil {
+				log.FinishSpinnerWithError()
+				return stagingDir, "", errors.Wrapf(err, "copy chart %s to staging", tgzPath)
+			}
+		}
+		log.FinishSpinner()
+	}
+
+	// Collect and copy manifest files
+	if len(config.Manifests) > 0 {
+		log.ActionWithSpinner("Collecting manifest files")
+		manifestPaths, err := collectManifests(config.Manifests)
+		if err != nil {
+			log.FinishSpinnerWithError()
+			return stagingDir, "", errors.Wrap(err, "collect manifests")
+		}
+		log.FinishSpinner()
+
+		if len(manifestPaths) > 0 {
+			log.ActionWithSpinner("Copying manifests to staging directory")
+			for _, manifestPath := range manifestPaths {
+				destPath := filepath.Join(stagingDir, filepath.Base(manifestPath))
+				if err := copyFile(manifestPath, destPath); err != nil {
+					log.FinishSpinnerWithError()
+					return stagingDir, "", errors.Wrapf(err, "copy manifest %s to staging", manifestPath)
+				}
+			}
+			log.FinishSpinner()
+		}
+	}
+
+	// Generate release YAML from staging directory
+	log.ActionWithSpinner("Reading manifests from staging directory")
+	releaseYAML, err = makeReleaseFromDir(stagingDir)
+	if err != nil {
+		log.FinishSpinnerWithError()
+		return stagingDir, "", errors.Wrap(err, "make release from staging directory")
+	}
+	log.FinishSpinner()
+
+	return stagingDir, releaseYAML, nil
+}
+
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	sourceFile, err := os.Open(src)
+	if err != nil {
+		return errors.Wrapf(err, "open source file %s", src)
+	}
+	defer sourceFile.Close()
+
+	destFile, err := os.Create(dst)
+	if err != nil {
+		return errors.Wrapf(err, "create destination file %s", dst)
+	}
+	defer destFile.Close()
+
+	if _, err := destFile.ReadFrom(sourceFile); err != nil {
+		return errors.Wrapf(err, "copy file from %s to %s", src, dst)
+	}
+
+	return nil
+}
+
+// resolveAppType resolves the app type by querying the API with the current appID or appSlug
+func (r *runners) resolveAppType() error {
+	if r.appID == "" && r.appSlug == "" {
+		return nil // nothing to resolve
+	}
+
+	appSlugOrID := r.appSlug
+	if appSlugOrID == "" {
+		appSlugOrID = r.appID
+	}
+
+	app, appType, err := r.api.GetAppType(context.Background(), appSlugOrID, true)
+	if err != nil {
+		return errors.Wrapf(err, "get app type for %q", appSlugOrID)
+	}
+
+	r.appType = appType
+	r.appID = app.ID
+	r.appSlug = app.Slug
+
+	return nil
+}
+
+// validateAppFromConfig validates that the app from config doesn't conflict with CLI --app flag
+func (r *runners) validateAppFromConfig(config *tools.Config) error {
+	configAppSlug := config.AppSlug
+	configAppId := config.AppId
+
+	// If config has an app configured
+	if configAppSlug != "" || configAppId != "" {
+		// If CLI --app flag was provided, validate it matches config
+		if r.appID != "" || r.appSlug != "" {
+			// Allow if CLI flag matches either the config's appId or appSlug
+			// This handles cases where user passes appId and config has appSlug (or vice versa)
+			// as long as they refer to the same app
+			cliMatchesConfig := false
+			
+			// Check if CLI appID matches config appId
+			if r.appID != "" && configAppId != "" && r.appID == configAppId {
+				cliMatchesConfig = true
+			}
+			
+			// Check if CLI appSlug matches config appSlug
+			if r.appSlug != "" && configAppSlug != "" && r.appSlug == configAppSlug {
+				cliMatchesConfig = true
+			}
+			
+			// Check if CLI appID matches config appSlug (or vice versa)
+			// We need to resolve this via API to check if they're the same app
+			if r.appID != "" && configAppSlug != "" && !cliMatchesConfig {
+				// The appID from CLI might be the ID for the slug in config
+				// We'll allow this and let the API resolve it
+				cliMatchesConfig = true
+			}
+			
+			if r.appSlug != "" && configAppId != "" && !cliMatchesConfig {
+				// The appSlug from CLI might be the slug for the ID in config
+				// We'll allow this and let the API resolve it
+				cliMatchesConfig = true
+			}
+			
+			// If we couldn't match, show error with both values
+			if !cliMatchesConfig {
+				configValue := configAppSlug
+				if configValue == "" {
+					configValue = configAppId
+				}
+				cliValue := r.appSlug
+				if cliValue == "" {
+					cliValue = r.appID
+				}
+				return errors.Errorf("app mismatch: .replicated config specifies app %q but --app flag specifies %q. Remove --app flag or update .replicated config", configValue, cliValue)
+			}
+		} else {
+			// No CLI flag provided, use app from config
+			if config.AppSlug != "" {
+				r.appSlug = config.AppSlug
+			} else {
+				r.appID = config.AppId
+			}
+		}
+	}
+
+	return nil
 }
