@@ -4,6 +4,7 @@ import "time"
 
 // CustomHostname represents a custom hostname in cloudflare for a team
 type CustomHostname struct {
+	AppID                      string    `json:"app_id"`
 	TeamID                     string    `json:"team_id"`
 	OriginServer               string    `json:"origin_server"`
 	Hostname                   string    `json:"hostname"`
@@ -13,10 +14,14 @@ type CustomHostname struct {
 	DomainVerificationStatus   string    `json:"domain_verification_status"`
 	DomainTxtRecordName        string    `json:"domain_txt_record_name"`
 	DomainTxtRecordValue       string    `json:"domain_txt_record_value"`
+	DomainChallenge            string    `json:"-"`
+	DomainChallengeResponse    string    `json:"-"`
 	TLSVerificationType        string    `json:"tls_verification_type"`
 	TLSVerificationStatus      string    `json:"tls_verification_status"`
 	TLSTxtRecordName           string    `json:"tls_txt_record_name"`
 	TLSTxtRecordValue          string    `json:"tls_txt_record_value"`
+	TLSHTTPChallenge           string    `json:"-"`
+	TLSHTTPBody                string    `json:"-"`
 	CloudflareCustomHostnameID string    `json:"cloudflare_custom_hostname_id"`
 	CloudflareWorkerRouteID    string    `json:"cloudflare_worker_route_id,omitempty"`
 	VerificationErrors         []string  `json:"verification_errors"`
@@ -37,4 +42,12 @@ type KotsAppCustomHostnames struct {
 	Proxy          []KotsAppCustomHostname `json:"proxy"`
 	DownloadPortal []KotsAppCustomHostname `json:"downloadPortal"`
 	ReplicatedApp  []KotsAppCustomHostname `json:"replicatedApp"`
+}
+
+// DefaultHostnames represents the default hostnames for a kots app
+type DefaultHostnames struct {
+	Registry       string `json:"registry"`
+	Proxy          string `json:"proxy"`
+	DownloadPortal string `json:"downloadPortal"`
+	ReplicatedApp  string `json:"replicatedApp"`
 }
