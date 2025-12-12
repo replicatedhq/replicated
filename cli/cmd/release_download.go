@@ -164,19 +164,42 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		log.ActionWithoutSpinner("Latest release is sequence %d", seq)
 	}
 
-	// Determine destination
+	// Determine destination and whether to save as file or directory
 	dest := r.args.releaseDownloadDest
+	saveAsFile := false
+	
 	if dest == "" {
-		// Auto-generate filename
+		// Auto-generate filename for .tgz
 		dest = r.generateDownloadFilename()
+		saveAsFile = true
+	} else {
+		// Check if dest is an existing directory or should be treated as a file
+		destInfo, statErr := os.Stat(dest)
+		if statErr == nil {
+			// Path exists - check if it's a directory
+			saveAsFile = !destInfo.IsDir()
+		} else {
+			// Path doesn't exist - determine intent based on file extension
+			// If it has .tgz or .tar.gz extension, treat as file; otherwise treat as directory
+			if filepath.Ext(dest) == ".tgz" || filepath.Ext(dest) == ".gz" {
+				saveAsFile = true
+			} else {
+				saveAsFile = false
+			}
+		}
 	}
 
-	// Check if dest is a directory or file
-	destInfo, statErr := os.Stat(dest)
-	isDir := statErr == nil && destInfo.IsDir()
-
-	if isDir {
-		// Legacy behavior: unpack to directory
+	if saveAsFile {
+		// Download as .tgz file
+		log.ActionWithSpinner("Downloading Release %d as %s", seq, dest)
+		if err := r.downloadReleaseArchive(seq, dest); err != nil {
+			log.FinishSpinnerWithError()
+			return errors.Wrap(err, "download release archive")
+		}
+		log.FinishSpinner()
+		log.ActionWithoutSpinner("Release %d downloaded to %s", seq, dest)
+	} else {
+		// Unpack to directory
 		log.ActionWithSpinner("Fetching Release %d", seq)
 		release, err := r.api.GetRelease(r.appID, r.appType, seq)
 		if err != nil {
@@ -190,15 +213,6 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		if err != nil {
 			return errors.Wrap(err, "save release")
 		}
-	} else {
-		// Download as .tgz file
-		log.ActionWithSpinner("Downloading Release %d as %s", seq, dest)
-		if err := r.downloadReleaseArchive(seq, dest); err != nil {
-			log.FinishSpinnerWithError()
-			return errors.Wrap(err, "download release archive")
-		}
-		log.FinishSpinner()
-		log.ActionWithoutSpinner("Release %d downloaded to %s", seq, dest)
 	}
 
 	return nil
