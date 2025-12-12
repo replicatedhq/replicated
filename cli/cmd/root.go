@@ -198,6 +198,9 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitAppCreate(appCmd)
 	runCmds.InitAppRm(appCmd)
 
+	appHostnameCmd := runCmds.InitAppHostnameCommand(appCmd)
+	runCmds.InitAppHostnameListCommand(appHostnameCmd)
+
 	defaultCmd := runCmds.InitDefaultCommand(runCmds.rootCmd)
 	runCmds.InitDefaultShowCommand(defaultCmd)
 	runCmds.InitDefaultSetCommand(defaultCmd)
