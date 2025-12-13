@@ -13,6 +13,7 @@ require (
 	github.com/docker/docker v28.0.4+incompatible
 	github.com/fatih/color v1.18.0
 	github.com/go-git/go-git/v5 v5.13.0
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/k0kubun/go-ansi v0.0.0-20180517002512-3bf9e2903213
@@ -21,6 +22,7 @@ require (
 	github.com/mholt/archiver/v3 v3.5.1
 	github.com/minio/selfupdate v0.6.0
 	github.com/moby/moby v26.1.0+incompatible
+	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/pact-foundation/pact-go v1.7.0
@@ -93,7 +95,6 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/go-netrc v0.0.0-20140422174119-9fd32a8b3d3d // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/bmatcuk/doublestar/v4 v4.9.1 // indirect
 	github.com/c9s/goprocinfo v0.0.0-20170724085704-0010a05ce49f // indirect
 	github.com/casbin/govaluate v1.8.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -103,7 +104,7 @@ require (
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cncf/xds/go v0.0.0-20241223141626-cff3c89139a3 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
-	github.com/containerd/containerd v1.7.27 // indirect
+	github.com/containerd/containerd v1.7.29 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -116,7 +117,7 @@ require (
 	github.com/containers/storage v1.58.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
-	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
+	github.com/cyphar/filepath-securejoin v0.5.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/distribution/distribution/v3 v3.0.0 // indirect
 	github.com/docker/cli v28.0.4+incompatible // indirect
@@ -165,7 +166,6 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
@@ -217,13 +217,12 @@ require (
 	github.com/moby/term v0.5.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/runtime-spec v1.2.1 // indirect
-	github.com/opencontainers/selinux v1.12.0 // indirect
+	github.com/opencontainers/selinux v1.13.1 // indirect
 	github.com/ostreedev/ostree-go v0.0.0-20210805093236-719684c64e4f // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
@@ -286,7 +285,7 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	golang.org/x/time v0.9.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
 	golang.org/x/tools v0.34.0 // indirect
 	google.golang.org/api v0.218.0 // indirect
 	google.golang.org/genproto v0.0.0-20241118233622-e639e219e697 // indirect
