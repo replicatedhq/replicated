@@ -1,8 +1,7 @@
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates curl git nodejs npm && \
-    update-ca-certificates && \
-    npm install -g replicated-lint
+RUN apk add --no-cache ca-certificates curl git && \
+    update-ca-certificates
 
 ENV IN_CONTAINER=1
 
