@@ -74,11 +74,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '^1.24'
-      - name: Build binary
-        run: make build
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
@@ -124,27 +119,35 @@ jobs:
         with:
           repository: replicatedhq/replicated-docs
           path: replicated-docs
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.DOCS_REPO_TOKEN }}
       - name: Update docs
         run: |
+          set -euo pipefail
           VERSION=${GITHUB_REF#refs/tags/}
           BRANCH_NAME="update-cli-docs-${VERSION}-$(date +%Y-%m-%d-%H%M%S)"
-          
+          WORKSPACE_ROOT=$(pwd)
+
           cd replicated-docs
           git config user.name "Replicated Release Pipeline"
           git config user.email "release@replicated.com"
           git checkout -b "$BRANCH_NAME"
-          
+
+          # Configure git to use token from environment variable for authentication
+          # This avoids exposing the token in command strings or git config history
+          # The credential helper reads from GITHUB_TOKEN environment variable
+          git config credential.helper "!f() { echo \"username=x-access-token\"; echo \"password=${GITHUB_TOKEN}\"; }; f"
+          git remote set-url origin https://github.com/replicatedhq/replicated-docs.git
+
           # Remove existing CLI docs (except installing doc)
           find docs/reference -name "replicated-cli-*.mdx" ! -name "replicated-cli-installing.mdx" -delete
           rm -f docs/reference/replicated.mdx
-          
+
           # Copy new docs
-          for file in ../gen/docs/*.md; do
+          for file in "${WORKSPACE_ROOT}/gen/docs"/*.md; do
             if [ -f "$file" ]; then
               filename=$(basename "$file" .md)
               newname=$(echo "$filename" | sed 's/replicated_/replicated-cli-/g' | sed 's/_/-/g')
-              
+
               # Fix header level and internal links
               sed 's/^## /# /' "$file" | \
               sed 's/\.md//' | \
@@ -152,12 +155,12 @@ jobs:
               sed 's/_/-/g' > "docs/reference/${newname}.mdx"
             fi
           done
-          
+
           # Update sidebar - this is a simplified version, may need manual adjustment
           git add .
           git commit -m "Update Replicated CLI docs for ${VERSION}"
           git push origin "$BRANCH_NAME"
-          
+
           # Create PR using GitHub CLI
           gh pr create \
             --repo replicatedhq/replicated-docs \
@@ -166,5 +169,5 @@ jobs:
             --title "Update Replicated CLI docs for ${VERSION}" \
             --body "Automated update of CLI documentation for release ${VERSION}"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DOCS_REPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.DOCS_REPO_TOKEN }}
