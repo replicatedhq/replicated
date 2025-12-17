@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/spf13/cobra"
 )
@@ -41,6 +43,12 @@ func (r *runners) profileRm(_ *cobra.Command, args []string) error {
 	}
 	if err != nil {
 		return errors.Wrap(err, "failed to get profile")
+	}
+
+	// Remove the profile's cache file before removing the profile
+	if err := replicatedcache.DeleteCacheFile(profileName); err != nil {
+		// Don't fail profile removal if cache delete fails, just warn
+		fmt.Fprintf(os.Stderr, "Warning: failed to delete cache for profile '%s': %v\n", profileName, err)
 	}
 
 	// Remove the profile
