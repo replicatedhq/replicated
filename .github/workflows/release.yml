@@ -1,0 +1,176 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify tag is from main branch
+        run: |
+          git fetch origin main
+          if ! git merge-base --is-ancestor ${{ github.sha }} origin/main; then
+            echo "Error: Tag must be created from main branch"
+            exit 1
+          fi
+
+  test:
+    runs-on: ubuntu-24.04
+    needs: validate
+    strategy:
+      matrix:
+        test-type: [unit, pact, integration]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.24'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Install pact
+        if: matrix.test-type == 'pact'
+        uses: replicatedhq/action-install-pact@v1
+      - name: Run tests
+        run: make test-${{ matrix.test-type }}
+
+  release:
+    runs-on: ubuntu-24.04
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.24'
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: v2.10.2
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  docker:
+    runs-on: ubuntu-24.04
+    needs: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.24'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install replicated-lint
+        run: npm install -g replicated-lint
+      - name: Build binary
+        run: make build
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "major=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_OUTPUT
+          echo "minor=$(echo $VERSION | cut -d. -f1,2)" >> $GITHUB_OUTPUT
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            replicated/vendor-cli:latest
+            replicated/vendor-cli:${{ steps.version.outputs.major }}
+            replicated/vendor-cli:${{ steps.version.outputs.minor }}
+            replicated/vendor-cli:${{ steps.version.outputs.version }}
+          labels: |
+            com.replicated.vendor_cli=true
+          platforms: linux/amd64
+
+  docs:
+    runs-on: ubuntu-24.04
+    needs: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '^1.24'
+      - name: Generate CLI docs
+        run: go run ./docs/gen.go
+      - name: Checkout replicated-docs
+        uses: actions/checkout@v4
+        with:
+          repository: replicatedhq/replicated-docs
+          path: replicated-docs
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update docs
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          BRANCH_NAME="update-cli-docs-${VERSION}-$(date +%Y-%m-%d-%H%M%S)"
+          
+          cd replicated-docs
+          git config user.name "Replicated Release Pipeline"
+          git config user.email "release@replicated.com"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Remove existing CLI docs (except installing doc)
+          find docs/reference -name "replicated-cli-*.mdx" ! -name "replicated-cli-installing.mdx" -delete
+          rm -f docs/reference/replicated.mdx
+          
+          # Copy new docs
+          for file in ../gen/docs/*.md; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file" .md)
+              newname=$(echo "$filename" | sed 's/replicated_/replicated-cli-/g' | sed 's/_/-/g')
+              
+              # Fix header level and internal links
+              sed 's/^## /# /' "$file" | \
+              sed 's/\.md//' | \
+              sed 's/replicated_/replicated-cli-/g' | \
+              sed 's/_/-/g' > "docs/reference/${newname}.mdx"
+            fi
+          done
+          
+          # Update sidebar - this is a simplified version, may need manual adjustment
+          git add .
+          git commit -m "Update Replicated CLI docs for ${VERSION}"
+          git push origin "$BRANCH_NAME"
+          
+          # Create PR using GitHub CLI
+          gh pr create \
+            --repo replicatedhq/replicated-docs \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "Update Replicated CLI docs for ${VERSION}" \
+            --body "Automated update of CLI documentation for release ${VERSION}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

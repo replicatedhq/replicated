@@ -1,11 +1,15 @@
-FROM golang:1.24
+FROM alpine:latest
 
-ENV PROJECTPATH=/go/src/github.com/replicatedhq/replicated
+RUN apk add --no-cache ca-certificates curl git nodejs npm && \
+    update-ca-certificates && \
+    npm install -g replicated-lint
 
-RUN go get github.com/go-swagger/go-swagger/cmd/swagger
+ENV IN_CONTAINER=1
 
-WORKDIR $PROJECTPATH
+WORKDIR /out
 
-ENV GO111MODULE=on
+COPY bin/replicated /replicated
 
-CMD ["/bin/bash"]
+LABEL com.replicated.vendor_cli=true
+
+ENTRYPOINT ["/replicated"]

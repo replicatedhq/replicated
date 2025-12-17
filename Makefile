@@ -93,18 +93,15 @@ build:
 
 .PHONY: release
 release:
-	dagger call release \
-		--one-password-service-account-production env:OP_SERVICE_ACCOUNT_PRODUCTION \
-		--version $(version) \
-		--github-token env:GITHUB_TOKEN \
-		--progress plain
+	@echo "Releases are now automated via GitHub Actions"
+	@echo "To create a release:"
+	@echo "  1. Ensure you are on the main branch with a clean working tree"
+	@echo "  2. Create and push a tag: git tag v1.2.3 && git push origin v1.2.3"
+	@echo "  3. GitHub Actions will automatically build, test, and release"
 	@echo ""
-	@echo "✓ Release completed successfully"
-	@echo "Generating documentation PR..."
-	@$(MAKE) docs
-
-.PHONY: docs
-docs:
-	dagger --progress plain call generate-docs \
-		--github-token env:GITHUB_TOKEN \
-		--progress plain
+	@echo "The workflow will:"
+	@echo "  - Run all tests"
+	@echo "  - Build multi-platform binaries with GoReleaser"
+	@echo "  - Create a GitHub release with artifacts"
+	@echo "  - Build and push Docker images"
+	@echo "  - Generate and submit CLI documentation PR"
