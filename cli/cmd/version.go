@@ -18,9 +18,9 @@ func Version() *cobra.Command {
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			currentVersion := version.Version()
-				
+
 			// For version command, do a synchronous update check
-			updateChecker, err := version.NewUpdateChecker(currentVersion, "replicatedhq/replicated/cli") 
+			updateChecker, err := version.NewUpdateChecker(currentVersion, "replicatedhq/replicated/cli")
 			if err == nil {
 				// If we're in a development build or unknown version, still try to get latest
 				// version info but don't compare versions
@@ -32,7 +32,7 @@ func Version() *cobra.Command {
 					version.SaveUpdateCache(currentVersion, updateInfo)
 				}
 			}
-			
+
 			// Now get the (potentially updated) build info
 			build := version.GetBuild()
 

@@ -107,7 +107,7 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 
 	// Extract and clean up image names
 	images := make([]string, 0)
-	
+
 	for _, image := range targetRelease.AirgapBundleImages {
 		// Remove registry prefixes and clean up image names
 		var cleanProxyDomain string
@@ -207,5 +207,3 @@ func findTargetRelease(releases []*types.ChannelRelease, requestedVersion string
 
 	return targetRelease, nil
 }
-
-

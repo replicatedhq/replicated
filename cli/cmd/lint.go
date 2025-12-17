@@ -730,8 +730,8 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 // This eliminates duplication across chart, preflight, and support bundle display functions.
 func (r *runners) displayLintResults(
 	sectionTitle string,
-	itemName string,     // e.g., "chart", "preflight spec", "support bundle spec"
-	pluralName string,   // e.g., "charts", "preflight specs", "support bundle specs"
+	itemName string, // e.g., "chart", "preflight spec", "support bundle spec"
+	pluralName string, // e.g., "charts", "preflight specs", "support bundle specs"
 	results []LintableResult,
 ) error {
 	if len(results) == 0 {

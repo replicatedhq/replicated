@@ -17,9 +17,9 @@ type Network struct {
 	OverlayEndpoint string `json:"overlay_endpoint,omitempty"`
 	OverlayToken    string `json:"overlay_token,omitempty"`
 
-	Policy        string            `json:"policy,omitempty"`
-	CollectReport bool              `json:"collect_report,omitempty"`
-	HasReport     bool              `json:"has_report,omitempty"`
+	Policy        string             `json:"policy,omitempty"`
+	CollectReport bool               `json:"collect_report,omitempty"`
+	HasReport     bool               `json:"has_report,omitempty"`
 	Resources     []*NetworkResource `json:"resources,omitempty"`
 }
 

@@ -43,17 +43,17 @@ replicated release download --channel Unstable
 
 # Download to directory (KOTS only with sequence)
 replicated release download 1 --dest ./manifests`,
-		Args:    cobra.MaximumNArgs(1),
+		Args: cobra.MaximumNArgs(1),
 	}
 	parent.AddCommand(cmd)
-	
+
 	// Similar to release create, handle config-based flow in PreRunE
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		// Check if --app flag was explicitly provided by the user
 		appFlagProvided := cmd.Flags().Changed("app")
-		
+
 		// Check if we should use config-based flow (no --app flag was provided)
-		// Note: Parent's PersistentPreRunE runs BEFORE our PreRunE, so appID/appSlug 
+		// Note: Parent's PersistentPreRunE runs BEFORE our PreRunE, so appID/appSlug
 		// may already be set from cache/env even if user didn't provide --app flag
 		usingConfigFlow := false
 		if !appFlagProvided {
@@ -69,28 +69,28 @@ replicated release download 1 --dest ./manifests`,
 				}
 			}
 		}
-		
+
 		if usingConfigFlow {
 			// The parent's PersistentPreRunE already ran and may have set wrong app from cache
 			// We need to override it with the app from config and re-resolve
-			
+
 			// Clear the wrong app state that parent set
 			r.appID = ""
 			r.appType = ""
 			// r.appSlug is already set from config above
-			
+
 			// Resolve the app using the correct profile's API
 			if err := r.resolveAppTypeForDownload(); err != nil {
 				return errors.Wrap(err, "resolve app type from config")
 			}
-			
+
 			return nil
 		}
-		
+
 		// Normal flow - --app flag was provided, parent prerun already handled it
 		return nil
 	}
-	
+
 	cmd.RunE = r.releaseDownload
 	cmd.Flags().StringVarP(&r.args.releaseDownloadDest, "dest", "d", "", "File or directory to which release should be downloaded. Auto-generated if not specified.")
 	cmd.Flags().StringVarP(&r.args.releaseDownloadChannel, "channel", "c", "", "Download the current release from this channel (case sensitive)")
@@ -110,25 +110,25 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	// Determine sequence to download
 	var seq int64
 	var err error
-	
+
 	if r.args.releaseDownloadChannel != "" {
 		// Download from channel
 		if len(args) > 0 {
 			return errors.New("cannot specify both sequence and --channel flag")
 		}
-		
+
 		log.ActionWithSpinner("Finding channel %q", r.args.releaseDownloadChannel)
 		channel, err := r.api.GetChannelByName(r.appID, r.appType, r.args.releaseDownloadChannel)
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrapf(err, "get channel %q", r.args.releaseDownloadChannel)
 		}
-		
+
 		if channel.ReleaseSequence == 0 {
 			log.FinishSpinnerWithError()
 			return errors.Errorf("channel %q has no releases", r.args.releaseDownloadChannel)
 		}
-		
+
 		seq = channel.ReleaseSequence
 		log.FinishSpinner()
 		log.ActionWithoutSpinner("Channel %q is at sequence %d", r.args.releaseDownloadChannel, seq)
@@ -146,19 +146,19 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "list channels to find latest release")
 		}
-		
+
 		var latestSeq int64
 		for _, channel := range channels {
 			if channel.ReleaseSequence > latestSeq {
 				latestSeq = channel.ReleaseSequence
 			}
 		}
-		
+
 		if latestSeq == 0 {
 			log.FinishSpinnerWithError()
 			return errors.New("no releases found")
 		}
-		
+
 		seq = latestSeq
 		log.FinishSpinner()
 		log.ActionWithoutSpinner("Latest release is sequence %d", seq)
@@ -167,7 +167,7 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 	// Determine destination and whether to save as file or directory
 	dest := r.args.releaseDownloadDest
 	saveAsFile := false
-	
+
 	if dest == "" {
 		// Auto-generate filename for .tgz
 		dest = r.generateDownloadFilename()
@@ -247,7 +247,7 @@ func (r *runners) generateDownloadFilename() string {
 	if base == "" {
 		base = r.appID
 	}
-	
+
 	filename := fmt.Sprintf("%s.tgz", base)
 	if _, err := os.Stat(filename); err == nil {
 		// File exists, try with incrementing number
@@ -258,7 +258,7 @@ func (r *runners) generateDownloadFilename() string {
 			}
 		}
 	}
-	
+
 	return filename
 }
 
@@ -273,7 +273,7 @@ func (r *runners) downloadReleaseArchive(seq int64, dest string) error {
 	// The release config is base64 encoded JSON, we need to get the raw archive
 	// For now, we'll use the kotsrelease.Save to a temp dir then tar it up
 	// TODO: Look for a direct archive download endpoint
-	
+
 	tempDir, err := os.MkdirTemp("", "replicated-download-*")
 	if err != nil {
 		return errors.Wrap(err, "create temp directory")

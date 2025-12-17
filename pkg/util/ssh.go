@@ -30,7 +30,7 @@ func ReadAndValidatePublicKey(path string) (string, error) {
 	parts := strings.Fields(keyContent)
 	if len(parts) > 2 {
 		comment := strings.Join(parts[2:], " ")
-		
+
 		dangerousPattern := regexp.MustCompile(`[;&|<>$\\\(\)\[\]\{\}\*\?]`)
 		if dangerousPattern.MatchString(comment) {
 			return "", fmt.Errorf("SSH public key comment contains potentially dangerous characters: %s", path)
@@ -38,8 +38,8 @@ func ReadAndValidatePublicKey(path string) (string, error) {
 	}
 
 	keyType := pubKey.Type()
-	if keyType != "ssh-rsa" && keyType != "ssh-ed25519" && 
-	   !strings.HasPrefix(keyType, "ecdsa-sha2-nistp") && keyType != "ssh-dss" {
+	if keyType != "ssh-rsa" && keyType != "ssh-ed25519" &&
+		!strings.HasPrefix(keyType, "ecdsa-sha2-nistp") && keyType != "ssh-dss" {
 		return "", fmt.Errorf("unsupported SSH public key type %s in file: %s", keyType, path)
 	}
 

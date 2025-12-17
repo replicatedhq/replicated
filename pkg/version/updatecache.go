@@ -27,9 +27,9 @@ func debugLog(format string, args ...interface{}) {
 
 // UpdateCache represents the cached update information
 type UpdateCache struct {
-	Version        string     `json:"cachedVersion"`
-	UpdateInfo     UpdateInfo `json:"updateCheckerInfo"`
-	LastCheckedAt  time.Time  `json:"lastCheckedAt"`
+	Version       string     `json:"cachedVersion"`
+	UpdateInfo    UpdateInfo `json:"updateCheckerInfo"`
+	LastCheckedAt time.Time  `json:"lastCheckedAt"`
 }
 
 // getCacheDir returns the directory where the cache file is stored
@@ -79,7 +79,7 @@ func LoadUpdateCache() (*UpdateCache, error) {
 		return nil, nil // Invalid cache, silently return nil
 	}
 
-	debugLog("Successfully loaded cache: version=%s, latest=%s, checked=%s", 
+	debugLog("Successfully loaded cache: version=%s, latest=%s, checked=%s",
 		cache.Version, cache.UpdateInfo.LatestVersion, cache.LastCheckedAt.Format(time.RFC3339))
 	return &cache, nil
 }
@@ -92,7 +92,7 @@ func ClearUpdateCache() {
 		debugLog("Failed to get cache path: %v", err)
 		return
 	}
-	
+
 	// Check if file exists first
 	_, err = os.Stat(cachePath)
 	if err != nil {
@@ -103,7 +103,7 @@ func ClearUpdateCache() {
 		debugLog("Error checking cache file: %v", err)
 		return
 	}
-	
+
 	debugLog("Clearing update cache at %s", cachePath)
 	err = os.Remove(cachePath)
 	if err != nil {
@@ -121,7 +121,7 @@ func SaveUpdateCache(currentVersion string, updateInfo *UpdateInfo) {
 		return
 	}
 
-	debugLog("Saving update cache for version %s, latest version %s", 
+	debugLog("Saving update cache for version %s, latest version %s",
 		currentVersion, updateInfo.LatestVersion)
 
 	cacheDir, err := getCacheDir()
@@ -167,9 +167,9 @@ func SaveUpdateCache(currentVersion string, updateInfo *UpdateInfo) {
 	if err := os.Rename(tmpFile, cachePath); err != nil {
 		debugLog("Failed to rename temporary file: %v", err)
 		os.Remove(tmpFile) // Clean up temp file if rename fails
-		return // Silently fail
+		return             // Silently fail
 	}
-	
+
 	debugLog("Successfully saved update cache")
 }
 
@@ -178,7 +178,7 @@ func SaveUpdateCache(currentVersion string, updateInfo *UpdateInfo) {
 // handles all errors.
 func CheckForUpdatesInBackground(currentVersion string, homebrewFormula string) {
 	debugLog("Starting background update check for version %s", currentVersion)
-	
+
 	go func() {
 		// Create update checker with shorter timeout for background checks
 		debugLog("Creating update checker with formula %s", homebrewFormula)
@@ -187,7 +187,7 @@ func CheckForUpdatesInBackground(currentVersion string, homebrewFormula string) 
 			debugLog("Failed to create update checker: %v", err)
 			return // Silently fail
 		}
-		
+
 		// Use a shorter timeout for background checks
 		updateChecker.httpTimeout = 1 * time.Second
 
@@ -205,7 +205,7 @@ func CheckForUpdatesInBackground(currentVersion string, homebrewFormula string) 
 		}
 
 		debugLog("Update check complete, latest version: %s", updateInfo.LatestVersion)
-		
+
 		// Save to cache
 		SaveUpdateCache(currentVersion, updateInfo)
 	}()

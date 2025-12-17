@@ -218,7 +218,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 		if err != nil {
 			return nil, "", err
 		}
-		
+
 		// If the channel has releases data, find the current one
 		if len(kotsChannel.Releases) > 0 {
 			var currentRelease *types.ChannelRelease
@@ -249,24 +249,24 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 				return currentRelease, proxyDomain, nil
 			}
 		}
-		
+
 		// Fallback to the existing approach if releases aren't included
 		releases, err := c.KotsClient.ListChannelReleases(appID, channelID)
 		if err != nil {
 			return nil, "", err
 		}
-		
+
 		if len(releases) == 0 {
 			return nil, "", errors.New("no releases found in channel")
 		}
-		
+
 		var currentRelease *types.ChannelRelease
 		for _, release := range releases {
 			if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
 				currentRelease = release
 			}
 		}
-		
+
 		proxyDomain := currentRelease.ProxyRegistryDomain
 		if proxyDomain == "" && kotsChannel.CustomHostNameOverrides.Proxy.Hostname != "" {
 			proxyDomain = kotsChannel.CustomHostNameOverrides.Proxy.Hostname
@@ -285,7 +285,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 				proxyDomain = "proxy.replicated.com"
 			}
 		}
-		
+
 		return currentRelease, proxyDomain, nil
 	}
 	return nil, "", errors.Errorf("unknown app type %q", appType)

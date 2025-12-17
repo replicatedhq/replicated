@@ -57,7 +57,7 @@ type PreflightLintResult struct {
 
 // SupportBundleLintResults contains all Support Bundle spec lint results
 type SupportBundleLintResults struct {
-	Enabled bool                       `json:"enabled"`
+	Enabled bool                      `json:"enabled"`
 	Specs   []SupportBundleLintResult `json:"specs"`
 }
 
@@ -144,21 +144,21 @@ type LintableResult interface {
 }
 
 // Implement LintableResult interface for ChartLintResult
-func (c ChartLintResult) GetPath() string            { return c.Path }
-func (c ChartLintResult) GetSuccess() bool           { return c.Success }
-func (c ChartLintResult) GetMessages() []LintMessage { return c.Messages }
+func (c ChartLintResult) GetPath() string             { return c.Path }
+func (c ChartLintResult) GetSuccess() bool            { return c.Success }
+func (c ChartLintResult) GetMessages() []LintMessage  { return c.Messages }
 func (c ChartLintResult) GetSummary() ResourceSummary { return c.Summary }
 
 // Implement LintableResult interface for PreflightLintResult
-func (p PreflightLintResult) GetPath() string            { return p.Path }
-func (p PreflightLintResult) GetSuccess() bool           { return p.Success }
-func (p PreflightLintResult) GetMessages() []LintMessage { return p.Messages }
+func (p PreflightLintResult) GetPath() string             { return p.Path }
+func (p PreflightLintResult) GetSuccess() bool            { return p.Success }
+func (p PreflightLintResult) GetMessages() []LintMessage  { return p.Messages }
 func (p PreflightLintResult) GetSummary() ResourceSummary { return p.Summary }
 
 // Implement LintableResult interface for SupportBundleLintResult
-func (s SupportBundleLintResult) GetPath() string            { return s.Path }
-func (s SupportBundleLintResult) GetSuccess() bool           { return s.Success }
-func (s SupportBundleLintResult) GetMessages() []LintMessage { return s.Messages }
+func (s SupportBundleLintResult) GetPath() string             { return s.Path }
+func (s SupportBundleLintResult) GetSuccess() bool            { return s.Success }
+func (s SupportBundleLintResult) GetMessages() []LintMessage  { return s.Messages }
 func (s SupportBundleLintResult) GetSummary() ResourceSummary { return s.Summary }
 
 // Helper functions to convert between types

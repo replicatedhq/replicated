@@ -100,11 +100,11 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 			savedAppID := r.appID
 			savedAppSlug := r.appSlug
 			savedAppType := r.appType
-			
+
 			r.appID = ""
 			r.appSlug = ""
 			r.appType = ""
-			
+
 			// Call parent prerun (will setup APIs but skip app resolution since app is empty)
 			if originalPreRun != nil {
 				if err := originalPreRun(cmd, args); err != nil {
@@ -115,7 +115,7 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 					return err
 				}
 			}
-			
+
 			// Keep app cleared - we'll load from config in releaseCreate
 			return nil
 		}
@@ -891,17 +891,17 @@ func (r *runners) validateAppFromConfig(config *tools.Config) error {
 			// This handles cases where user passes appId and config has appSlug (or vice versa)
 			// as long as they refer to the same app
 			cliMatchesConfig := false
-			
+
 			// Check if CLI appID matches config appId
 			if r.appID != "" && configAppId != "" && r.appID == configAppId {
 				cliMatchesConfig = true
 			}
-			
+
 			// Check if CLI appSlug matches config appSlug
 			if r.appSlug != "" && configAppSlug != "" && r.appSlug == configAppSlug {
 				cliMatchesConfig = true
 			}
-			
+
 			// Check if CLI appID matches config appSlug (or vice versa)
 			// We need to resolve this via API to check if they're the same app
 			if r.appID != "" && configAppSlug != "" && !cliMatchesConfig {
@@ -909,13 +909,13 @@ func (r *runners) validateAppFromConfig(config *tools.Config) error {
 				// We'll allow this and let the API resolve it
 				cliMatchesConfig = true
 			}
-			
+
 			if r.appSlug != "" && configAppId != "" && !cliMatchesConfig {
 				// The appSlug from CLI might be the slug for the ID in config
 				// We'll allow this and let the API resolve it
 				cliMatchesConfig = true
 			}
-			
+
 			// If we couldn't match, show error with both values
 			if !cliMatchesConfig {
 				configValue := configAppSlug

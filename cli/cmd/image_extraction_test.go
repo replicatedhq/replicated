@@ -117,7 +117,6 @@ func TestExtractImagesFromConfig_ChartWithRequiredValues_NoHelmChartManifest(t *
 	// This tests only the discovery layer behavior
 }
 
-
 func TestExtractImagesFromConfig_NonMatchingHelmChart_FailsToRender(t *testing.T) {
 	// Test that HelmChart manifest must match chart name:version exactly
 	chartPath := getAbsTestDataPath(t, filepath.Join("testdata", "image-extraction", "non-matching-helmchart-test", "chart"))
@@ -274,7 +273,6 @@ func TestExtractImagesFromConfig_NoManifests_ReturnsError(t *testing.T) {
 	// Note: Validation that charts require manifests happens in runLint()
 	// This tests only the discovery layer behavior (which is now lenient)
 }
-
 
 func TestExtractImagesFromConfig_EmptyBuilder_FailsToRender(t *testing.T) {
 	// Test that HelmChart manifest with empty builder section doesn't provide values
