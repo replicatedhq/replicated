@@ -32,7 +32,7 @@ func initBuild() {
 			debugLog("Using cached update info for version %s", build.Version)
 			build.UpdateInfo = &updateCache.UpdateInfo
 		} else {
-			debugLog("Cached update info is for version %s, current version is %s - clearing cache", 
+			debugLog("Cached update info is for version %s, current version is %s - clearing cache",
 				updateCache.Version, build.Version)
 			// Clear the cache when CLI version has changed
 			ClearUpdateCache()

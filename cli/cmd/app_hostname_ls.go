@@ -187,23 +187,23 @@ func extractHostnameStrings(merged *types.KotsAppCustomHostnames) map[string]str
 // printHostnamesTable prints hostnames in a table format
 func printHostnamesTable(w *tabwriter.Writer, hostnames map[string]string) error {
 	fmt.Fprintln(w, "TYPE\tHOSTNAME")
-	
+
 	if registry, ok := hostnames["registry"]; ok && registry != "" {
 		fmt.Fprintf(w, "Registry\t%s\n", registry)
 	}
-	
+
 	if proxy, ok := hostnames["proxy"]; ok && proxy != "" {
 		fmt.Fprintf(w, "Proxy\t%s\n", proxy)
 	}
-	
+
 	if downloadPortal, ok := hostnames["downloadPortal"]; ok && downloadPortal != "" {
 		fmt.Fprintf(w, "Download Portal\t%s\n", downloadPortal)
 	}
-	
+
 	if replicatedApp, ok := hostnames["replicatedApp"]; ok && replicatedApp != "" {
 		fmt.Fprintf(w, "Replicated App\t%s\n", replicatedApp)
 	}
-	
+
 	w.Flush()
 	return nil
 }
@@ -215,11 +215,11 @@ func mergeHostnames(defaults *types.DefaultHostnames, custom *types.KotsAppCusto
 	if custom == nil && defaults == nil {
 		return &types.KotsAppCustomHostnames{}
 	}
-	
+
 	if custom == nil {
 		custom = &types.KotsAppCustomHostnames{}
 	}
-	
+
 	if defaults == nil {
 		return custom
 	}

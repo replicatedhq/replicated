@@ -63,7 +63,7 @@ type ClientVersions struct {
 func getLatestVersion(timeout time.Duration) (*VersionInfo, error) {
 	startTime := time.Now()
 	debugLog("Making HTTP request to %s with timeout %v", latestVersionURI, timeout)
-	
+
 	client := &http.Client{
 		Timeout: timeout,
 	}
@@ -149,7 +149,7 @@ func UpdateInfoFromVersions(currentVersion string, latestVersion *VersionInfo) (
 
 	// Compare versions and only return update info if a newer version is available
 	if latestSemver.LessThan(currentSemver) || latestSemver.Equal(currentSemver) {
-		debugLog("Current version %s is equal to or newer than latest %s, no update needed", 
+		debugLog("Current version %s is equal to or newer than latest %s, no update needed",
 			currentVersion, latestVersion.Version)
 		return nil, nil
 	}

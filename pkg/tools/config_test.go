@@ -377,8 +377,8 @@ func TestConfigParser_MergeConfigs(t *testing.T) {
 			PromoteToChannelNames: []string{"stable"},
 		}
 		child := &Config{
-			AppId:                 "", // Empty - should not override
-			PromoteToChannelIds:   nil, // Nil - should not override
+			AppId:                 "",         // Empty - should not override
+			PromoteToChannelIds:   nil,        // Nil - should not override
 			PromoteToChannelNames: []string{}, // Empty slice - should not override
 		}
 

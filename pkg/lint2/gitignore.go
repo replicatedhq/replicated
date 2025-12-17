@@ -181,6 +181,7 @@ func loadGitInfoExcludeMatcher(repoRoot string) (gitignore.IgnoreMatcher, []stri
 //   - Parse ~/.gitconfig directly (no command execution)
 //   - Validate paths to prevent traversal attacks
 //   - Add comprehensive input validation
+//
 // See: https://github.com/replicatedhq/replicated/pull/634
 func loadGlobalGitignoreMatcher() (gitignore.IgnoreMatcher, []string, error) {
 	// Disabled for security - will re-enable with proper validation in future PR

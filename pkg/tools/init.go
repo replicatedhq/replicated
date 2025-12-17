@@ -62,8 +62,8 @@ func AutoDetectResources(startPath string) (*DetectedResources, error) {
 			// Check if this is a manifest directory
 			dirName := strings.ToLower(name)
 			if dirName == "manifests" || dirName == "replicated" ||
-			   dirName == "kustomize" || dirName == "k8s" ||
-			   dirName == "kubernetes" || dirName == "yaml" {
+				dirName == "kustomize" || dirName == "k8s" ||
+				dirName == "kubernetes" || dirName == "yaml" {
 				relPath, err := filepath.Rel(absStartPath, path)
 				if err == nil && relPath != "." {
 					manifestDirs[relPath] = true

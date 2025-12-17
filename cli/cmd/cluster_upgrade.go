@@ -47,7 +47,7 @@ func (r *runners) upgradeCluster(cmd *cobra.Command, args []string) error {
 	if len(args) < 1 {
 		return errors.New("cluster id or name is required")
 	}
-	
+
 	clusterID, err := r.getClusterIDFromArg(args[0])
 	if err != nil {
 		return errors.Wrap(err, "get cluster id from arg")
