@@ -26,6 +26,7 @@ var (
 // httpClient is a custom HTTP client that handles .localhost domains properly.
 // Go's default DNS resolver doesn't handle .localhost domains like browsers do
 // (per RFC 6761), so we need custom logic to resolve them to 127.0.0.1.
+// This is a singleton that's reused for all requests to avoid leaking connections.
 var httpClient = &http.Client{
 	Transport: &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -52,6 +53,11 @@ var httpClient = &http.Client{
 			}
 			return dialer.DialContext(ctx, network, addr)
 		},
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	},
 }
 
