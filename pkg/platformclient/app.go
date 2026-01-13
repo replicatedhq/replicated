@@ -52,7 +52,7 @@ func (c *HTTPClient) DeleteApp(id string) error {
 		return err
 	}
 	req.Header.Add("Authorization", c.apiKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("DeleteApp (%s %s): %w", req.Method, endpoint, err)
 	}

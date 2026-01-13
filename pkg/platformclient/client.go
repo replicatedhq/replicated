@@ -7,8 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/version"
@@ -19,6 +22,38 @@ const apiOrigin = "https://api.replicated.com/vendor"
 var (
 	ErrForbidden = errors.New("the action is not allowed for the current user or team")
 )
+
+// httpClient is a custom HTTP client that handles .localhost domains properly.
+// Go's default DNS resolver doesn't handle .localhost domains like browsers do
+// (per RFC 6761), so we need custom logic to resolve them to 127.0.0.1.
+var httpClient = &http.Client{
+	Transport: &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// Check if the address is a .localhost domain
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				// If there's no port, just use the address as host
+				host = addr
+				port = ""
+			}
+
+			// If the host ends with .localhost, replace it with 127.0.0.1
+			if strings.HasSuffix(host, ".localhost") {
+				if port != "" {
+					addr = net.JoinHostPort("127.0.0.1", port)
+				} else {
+					addr = "127.0.0.1"
+				}
+			}
+
+			dialer := &net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}
+			return dialer.DialContext(ctx, network, addr)
+		},
+	},
+}
 
 type APIError struct {
 	Method     string
@@ -83,7 +118,7 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 	req.Header.Set("Authorization", c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +168,7 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 		return errors.Wrap(err, "add github actions headers")
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -222,7 +257,7 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 	}
 
 	req.Header.Set("Authorization", c.apiKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
