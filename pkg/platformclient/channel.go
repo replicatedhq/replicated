@@ -60,7 +60,7 @@ func (c *HTTPClient) ArchiveChannel(appID, channelID string) error {
 		return err
 	}
 	req.Header.Add("Authorization", c.apiKey)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("ArchiveChannel (%s %s): %w", req.Method, endpoint, err)
 	}

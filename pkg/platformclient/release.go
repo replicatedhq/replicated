@@ -49,7 +49,7 @@ func (c *HTTPClient) UpdateRelease(appID string, sequence int64, yaml string) er
 	}
 	req.Header.Set("Authorization", c.apiKey)
 	req.Header.Set("Content-Type", "application/yaml")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("UpdateRelease: %w", err)
 	}
