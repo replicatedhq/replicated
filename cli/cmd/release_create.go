@@ -470,6 +470,11 @@ func (r *runners) validateReleaseCreateParams() error {
 		}
 	}
 
+	// can't mark a release as required if you didn't pass a promote channel
+	if r.args.createReleasePromoteRequired && r.args.createReleasePromote == "" {
+		return errors.New("--required can only be used with --promote <channel>")
+	}
+
 	// If no sources specified, config-based flow will be used (validated elsewhere)
 	if numSources == 0 {
 		return nil
@@ -506,11 +511,6 @@ func (r *runners) validateReleaseCreateParams() error {
 	// we check this again below, but lets be explicit and fail fast
 	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
 		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
-	}
-
-	// can't mark a release as required if you didn't pass a promote channel
-	if r.args.createReleasePromoteRequired && r.args.createReleasePromote == "" {
-		return errors.New("--required can only be used with --promote <channel>")
 	}
 
 	return nil

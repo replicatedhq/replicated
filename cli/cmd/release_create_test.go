@@ -264,3 +264,20 @@ func TestRequiredFlagDefaultsFalse(t *testing.T) {
 	assert.False(t, r.args.createReleasePromoteRequired,
 		"--required should default to false")
 }
+
+// TestRequiredFlagRequiresPromoteInConfigBasedFlow tests that --required fails
+// without --promote even in config-based flow (no explicit yaml sources)
+func TestRequiredFlagRequiresPromoteInConfigBasedFlow(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleasePromoteRequired: true,
+			createReleasePromote:         "", // No promote channel
+			// No yaml sources specified - simulates config-based flow
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--required can only be used with --promote")
+}
