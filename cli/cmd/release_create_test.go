@@ -220,3 +220,47 @@ func TestSetKOTSDefaultReleaseParams_SetsEnsureChannelAndLint(t *testing.T) {
 	assert.True(t, args.createReleasePromoteEnsureChannel, "ensure-channel should be set to true")
 	assert.True(t, args.createReleaseLint, "lint should be set to true")
 }
+
+// TestRequiredFlagRequiresPromote tests that --required fails without --promote
+func TestRequiredFlagRequiresPromote(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleasePromoteRequired: true,
+			createReleasePromote:         "", // No promote channel
+			createReleaseYamlDir:         "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--required can only be used with --promote")
+}
+
+// TestRequiredFlagWithPromote tests that --required works with --promote
+func TestRequiredFlagWithPromote(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleasePromoteRequired: true,
+			createReleasePromote:         "Unstable",
+			createReleaseYamlDir:         "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.NoError(t, err)
+}
+
+// TestRequiredFlagDefaultsFalse tests that --required defaults to false
+func TestRequiredFlagDefaultsFalse(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleasePromote: "Unstable",
+			createReleaseYamlDir: "./manifests",
+		},
+	}
+
+	assert.False(t, r.args.createReleasePromoteRequired,
+		"--required should default to false")
+}

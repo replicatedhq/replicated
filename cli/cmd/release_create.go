@@ -51,7 +51,10 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
       - ./manifests/*.yaml
 
   With this config, simply run:
-    replicated release create --version 1.0.0 --promote Unstable`,
+    replicated release create --version 1.0.0 --promote Unstable
+
+  To mark a release as required during upgrades:
+    replicated release create --version 1.0.0 --promote Unstable --required`,
 		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
 	}
@@ -78,7 +81,6 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	// not supported for KOTS
-	cmd.Flags().MarkHidden("required")
 	cmd.Flags().MarkHidden("yaml-file")
 	cmd.Flags().MarkHidden("yaml")
 	cmd.Flags().MarkHidden("chart")
@@ -504,6 +506,11 @@ func (r *runners) validateReleaseCreateParams() error {
 	// we check this again below, but lets be explicit and fail fast
 	if r.args.createReleasePromoteEnsureChannel && r.appType != "kots" {
 		return errors.Errorf("the flag --ensure-channel is only supported for KOTS applications, app %q is of type %q", r.appID, r.appType)
+	}
+
+	// can't mark a release as required if you didn't pass a promote channel
+	if r.args.createReleasePromoteRequired && r.args.createReleasePromote == "" {
+		return errors.New("--required can only be used with --promote <channel>")
 	}
 
 	return nil
