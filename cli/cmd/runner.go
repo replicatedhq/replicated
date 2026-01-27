@@ -283,7 +283,7 @@ type runnerArgs struct {
 	profileAddToken           string
 	profileAddAPIOrigin       string
 	profileAddRegistryOrigin  string
-	profileAddNamespace       string
+	profileAddOktetoNamespace string
 	profileEditToken          string
 	profileEditAPIOrigin      string
 	profileEditRegistryOrigin string
