@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -15,8 +13,7 @@ import (
 type createCustomerOpts struct {
 	Name                              string
 	CustomID                          string
-	ChannelNames                      []string
-	DefaultChannel                    string
+	ChannelName                       string
 	ExpiryDuration                    time.Duration
 	EnsureChannel                     bool
 	IsAirgapEnabled                   bool
@@ -54,9 +51,6 @@ The --app flag must be set to specify the target application.`,
 		Example: `# Create a basic customer with a name and assigned to a channel
 replicated customer create --app myapp --name "Acme Inc" --channel stable
 
-# Create a customer with multiple channels and a custom ID
-replicated customer create --app myapp --name "Beta Corp" --custom-id "BETA123" --channel beta --channel stable
-
 # Create a paid customer with specific features enabled
 replicated customer create --app myapp --name "Enterprise Ltd" --type paid --channel enterprise --airgap --snapshot
 
@@ -65,8 +59,7 @@ replicated customer create --app myapp --name "Trial User" --type trial --channe
 
 # Create a customer with all available options
 replicated customer create --app myapp --name "Full Options Inc" --custom-id "FULL001" \
-	--channel stable --channel beta --default-channel stable --type paid \
-	--email "contact@fulloptions.com" --expires-in 8760h \
+	--channel stable --type paid --email "contact@fulloptions.com" --expires-in 8760h \
 	--airgap --snapshot --kots-install --embedded-cluster-download \
 	--support-bundle-upload --ensure-channel`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -79,8 +72,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the customer")
 	cmd.Flags().StringVar(&opts.CustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
-	cmd.Flags().StringArrayVar(&opts.ChannelNames, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
-	cmd.Flags().StringVar(&opts.DefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
+	cmd.Flags().StringVar(&opts.ChannelName, "channel", "", "Release channel to which the customer should be assigned")
 	cmd.Flags().DurationVar(&opts.ExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
 	cmd.Flags().BoolVar(&opts.EnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&opts.IsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
@@ -126,50 +118,24 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		opts.CustomerType = "prod"
 	}
 
-	channels := []kotsclient.CustomerChannel{}
-
-	foundDefaultChannel := false
-	for _, requestedChannel := range opts.ChannelNames {
-		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
-			AppID:          r.appID,
-			AppType:        r.appType,
-			NameOrID:       requestedChannel,
-			Description:    "",
-			CreateIfAbsent: opts.EnsureChannel,
-		}
-
-		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
-		if err != nil {
-			return errors.Wrap(err, "get channel")
-		}
-
-		customerChannel := kotsclient.CustomerChannel{
-			ID: channel.ID,
-		}
-
-		if opts.DefaultChannel == requestedChannel {
-			customerChannel.IsDefault = true
-			foundDefaultChannel = true
-		}
-
-		channels = append(channels, customerChannel)
+	getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
+		AppID:          r.appID,
+		AppType:        r.appType,
+		NameOrID:       opts.ChannelName,
+		Description:    "",
+		CreateIfAbsent: opts.EnsureChannel,
 	}
 
-	if len(channels) == 0 {
-		return errors.New("no channels found")
+	channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
+	if err != nil {
+		return errors.Wrap(err, "get channel")
 	}
 
-	if opts.DefaultChannel != "" && !foundDefaultChannel {
-		return errors.New("default channel not found in specified channels")
-	}
-
-	if !foundDefaultChannel {
-		if len(channels) > 1 {
-			fmt.Fprintln(os.Stderr, "No default channel specified, defaulting to the first channel specified.")
-		}
-		firstChannel := channels[0]
-		firstChannel.IsDefault = true
-		channels[0] = firstChannel
+	channels := []kotsclient.CustomerChannel{
+		{
+			ID:        channel.ID,
+			IsDefault: true,
+		},
 	}
 
 	createOpts := kotsclient.CreateCustomerOpts{

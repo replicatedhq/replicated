@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -16,8 +14,7 @@ type updateCustomerOpts struct {
 	CustomerID                        string
 	Name                              string
 	CustomID                          string
-	Channels                          []string
-	DefaultChannel                    string
+	Channel                           string
 	ExpiryDuration                    time.Duration
 	EnsureChannel                     bool
 	IsAirgapEnabled                   bool
@@ -53,8 +50,8 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 		Example: `# Update a customer's name
 replicated customer update --customer cus_abcdef123456 --name "New Company Name"
 
-# Change a customer's channel and make it the default
-replicated customer update --customer cus_abcdef123456 --channel stable --default-channel stable
+# Change a customer's channel
+replicated customer update --customer cus_abcdef123456 --channel stable
 
 # Enable airgap installations for a customer
 replicated customer update --customer cus_abcdef123456 --airgap
@@ -79,8 +76,7 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().StringVar(&opts.CustomerID, "customer", "", "The ID of the customer to update")
 	cmd.Flags().StringVar(&opts.Name, "name", "", "Name of the customer")
 	cmd.Flags().StringVar(&opts.CustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
-	cmd.Flags().StringArrayVar(&opts.Channels, "channel", []string{}, "Release channel to which the customer should be assigned (can be specified multiple times)")
-	cmd.Flags().StringVar(&opts.DefaultChannel, "default-channel", "", "Which of the specified channels should be the default channel. if not set, the first channel specified will be the default channel.")
+	cmd.Flags().StringVar(&opts.Channel, "channel", "", "Release channel to which the customer should be assigned")
 	cmd.Flags().DurationVar(&opts.ExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
 	cmd.Flags().BoolVar(&opts.EnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&opts.IsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
@@ -132,50 +128,24 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 		opts.Type = "prod"
 	}
 
-	channels := []kotsclient.CustomerChannel{}
-
-	foundDefaultChannel := false
-	for _, requestedChannel := range opts.Channels {
-		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
-			AppID:          r.appID,
-			AppType:        r.appType,
-			NameOrID:       requestedChannel,
-			Description:    "",
-			CreateIfAbsent: opts.EnsureChannel,
-		}
-
-		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
-		if err != nil {
-			return errors.Wrap(err, "get channel")
-		}
-
-		customerChannel := kotsclient.CustomerChannel{
-			ID: channel.ID,
-		}
-
-		if opts.DefaultChannel == requestedChannel {
-			customerChannel.IsDefault = true
-			foundDefaultChannel = true
-		}
-
-		channels = append(channels, customerChannel)
+	getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
+		AppID:          r.appID,
+		AppType:        r.appType,
+		NameOrID:       opts.Channel,
+		Description:    "",
+		CreateIfAbsent: opts.EnsureChannel,
 	}
 
-	if len(channels) == 0 {
-		return errors.New("no channels found")
+	channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
+	if err != nil {
+		return errors.Wrap(err, "get channel")
 	}
 
-	if opts.DefaultChannel != "" && !foundDefaultChannel {
-		return errors.New("default channel not found in specified channels")
-	}
-
-	if !foundDefaultChannel {
-		if len(channels) > 1 {
-			fmt.Fprintln(os.Stderr, "No default channel specified, defaulting to the first channel specified.")
-		}
-		firstChannel := channels[0]
-		firstChannel.IsDefault = true
-		channels[0] = firstChannel
+	channels := []kotsclient.CustomerChannel{
+		{
+			ID:        channel.ID,
+			IsDefault: true,
+		},
 	}
 
 	updateOpts := kotsclient.UpdateCustomerOpts{
