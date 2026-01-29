@@ -10,7 +10,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-var customersTmplSrc = `ID	NAME	CHANNELS	EXPIRES	TYPE	CUSTOM_ID
+var customersTmplSrc = `ID	NAME	CHANNEL	EXPIRES	TYPE	CUSTOM_ID
 {{ range . -}}
 {{ .ID }}	{{ .Name }}	{{range .Channels}} {{.Name}}{{end}}	{{if not .Expires}}Never{{else}}{{.Expires}}{{end}}	{{.Type}}	{{if not .CustomID}}Not Set{{else}}{{.CustomID}}{{end}}
 {{ end }}`
