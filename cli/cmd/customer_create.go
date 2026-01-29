@@ -44,8 +44,8 @@ func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Comma
 		Long: `Create a new customer for the current application with specified attributes.
 
 This command allows you to create a customer record with various properties such as name,
-custom ID, channels, license type, and feature flags. You can set expiration dates,
-enable or disable specific features, and assign the customer to one or more channels.
+custom ID, channel, license type, and feature flags. You can set expiration dates,
+enable or disable specific features, and assign the customer to a channel.
 
 The --app flag must be set to specify the target application.`,
 		Example: `# Create a basic customer with a name and assigned to a channel

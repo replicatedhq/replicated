@@ -43,8 +43,8 @@ func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Comman
 		Long: `Update an existing customer's information and settings.
 
 	This command allows you to modify various attributes of a customer, including their name,
-	custom ID, assigned channels, license type, and feature flags. You can update expiration dates,
-	enable or disable specific features, and change channel assignments.
+	custom ID, assigned channel, license type, and feature flags. You can update expiration dates,
+	enable or disable specific features, and change the channel assignment.
 
 	The --customer flag is required to specify which customer to update.`,
 		Example: `# Update a customer's name
