@@ -196,22 +196,22 @@ func replaceFilenamesInSidebar(sidebarContent string, newDocFilenames []string) 
 			continue
 		}
 
-		if strings.Contains(line, `'reference/replicated'`) { // CLI root command that is also generated.
+		if strings.Contains(line, `"reference/replicated"`) { // CLI root command that is also generated.
 			continue
 		}
 
-		if strings.Contains(line, `label: 'Replicated CLI'`) {
-			newDocLines = append(newDocLines, `    label: 'Replicated CLI', // This label is generated. Do not edit.`)
+		if strings.Contains(line, `label: "Replicated CLI"`) {
+			newDocLines = append(newDocLines, `    label: "Replicated CLI", // This label is generated. Do not edit.`)
 			foundCLILabel = true
 			continue
 		}
 
 		if foundCLILabel && !wroteNewList && strings.Contains(line, `items: [`) {
 			newDocLines = append(newDocLines, `    items: [ // This list is generated. Do not edit.`)
-			// 'reference/replicated-cli-installing' is a special file that's not a CLI doc and should at the top of the list
-			newDocLines = append(newDocLines, `      'reference/replicated-cli-installing',`)
+			// "reference/replicated-cli-installing" is a special file that's not a CLI doc and should at the top of the list
+			newDocLines = append(newDocLines, `      "reference/replicated-cli-installing",`)
 			for _, newDocFilename := range newDocFilenames {
-				newDocLines = append(newDocLines, fmt.Sprintf(`      'reference/%s',`, strings.TrimSuffix(newDocFilename, filepath.Ext(newDocFilename))))
+				newDocLines = append(newDocLines, fmt.Sprintf(`      "reference/%s",`, strings.TrimSuffix(newDocFilename, filepath.Ext(newDocFilename))))
 			}
 			wroteNewList = true
 			continue
