@@ -38,7 +38,7 @@ replicated network report <network-id> --summary
 replicated network report <network-id> --watch`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
-		Hidden:            true,
+		Hidden:            false,
 	}
 	parent.AddCommand(cmd)
 
