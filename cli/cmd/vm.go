@@ -160,7 +160,11 @@ func (r *runners) completeVMSnapshotIDs(cmd *cobra.Command, args []string, toCom
 
 	var snapshotIDs []string
 	for _, s := range snapshots {
-		snapshotIDs = append(snapshotIDs, s.ID)
+		id := s.ID
+		if len(id) > 8 {
+			id = id[:8]
+		}
+		snapshotIDs = append(snapshotIDs, id)
 	}
 	return snapshotIDs, cobra.ShellCompDirectiveNoFileComp
 }
