@@ -142,6 +142,29 @@ func (r *runners) completeVMInstanceTypes(cmd *cobra.Command, args []string, toC
 	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
+func (r *runners) completeVMSnapshotIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	vmID, _ := cmd.Flags().GetString("vm-id")
+	if vmID == "" {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	snapshots, err := r.kotsAPI.ListVMSnapshots(vmID)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var snapshotIDs []string
+	for _, s := range snapshots {
+		snapshotIDs = append(snapshotIDs, s.ID)
+	}
+	return snapshotIDs, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (r *runners) completeVMIDsAndNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	err := r.initVMClient()
 	if err != nil {

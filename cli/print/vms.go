@@ -15,9 +15,9 @@ var vmFuncs = template.FuncMap{
 }
 
 // Table formatting
-var vmsTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	NETWORK	CREATED	EXPIRES	COST	HAS SNAPSHOT`
+var vmsTmplTableHeaderSrc = `ID	NAME	DISTRIBUTION	VERSION	STATUS	NETWORK	CREATED	EXPIRES	COST`
 var vmsTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}} 	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}	{{if .HasSnapshot}}{{ padding "yes" 12 }}{{else}}{{ padding "no" 12 }}{{end}}
+{{ .ID }}	{{ padding .Name 27	}}	{{ padding .Distribution 12 }}	{{ padding .Version 10 }}	{{ padding (printf "%s" .Status) 12 }}	{{ if .Network }}{{ padding (printf "%.8s" .Network) 8 }}{{else}}{{ padding "-" 8 }}{{end}} 	{{ padding (printf "%s" (localeTime .CreatedAt)) 30 }}	{{if .ExpiresAt.IsZero}}{{ padding "-" 30 }}{{else}}{{ padding (printf "%s" (localeTime .ExpiresAt)) 30 }}{{end}}	{{ padding (CreditsToDollarsDisplay .EstimatedCost) 11 }}
 {{ end }}`
 var vmsTmplTableSrc = fmt.Sprintln(vmsTmplTableHeaderSrc) + vmsTmplTableRowSrc
 var vmsTmplTable = template.Must(template.New("vms").Funcs(vmFuncs).Funcs(funcs).Parse(vmsTmplTableSrc))

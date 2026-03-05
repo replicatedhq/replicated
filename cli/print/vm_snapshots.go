@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"text/tabwriter"
 	"text/template"
-	"time"
-
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
@@ -37,17 +35,11 @@ var vmSnapshotFuncs = template.FuncMap{
 			return fmt.Sprintf("%d B", *b)
 		}
 	},
-	"optionalTime": func(t *time.Time) string {
-		if t == nil || t.IsZero() {
-			return "-"
-		}
-		return t.Local().Format("2006-01-02 15:04 MST")
-	},
 }
 
-var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	STATUS	SIZE	CREATED	READY AT	ERROR`
+var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	STATUS	SIZE	CREATED	ERROR`
 var vmSnapshotsTmplTableRowSrc = `{{ range . -}}
-{{ shortID .ID }}	{{ shortID .VMID }}	{{ padding .Status 12 }}	{{ formatBytes .SizeBytes }}	{{ localeTime .CreatedAt }}	{{ optionalTime .ReadyAt }}	{{ if .Error }}{{ .Error }}{{ else }}-{{ end }}
+{{ shortID .ID }}	{{ shortID .VMID }}	{{ padding .Status 12 }}	{{ formatBytes .SizeBytes }}	{{ localeTime .CreatedAt }}	{{ if .Error }}{{ .Error }}{{ else }}-{{ end }}
 {{ end }}`
 
 var vmSnapshotsTmplTableSrc = fmt.Sprintln(vmSnapshotsTmplTableHeaderSrc) + vmSnapshotsTmplTableRowSrc

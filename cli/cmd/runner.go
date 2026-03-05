@@ -244,7 +244,8 @@ type runnerArgs struct {
 	vmExposePortProtocols []string
 	vmPortRemoveAddonID   string
 
-	vmSnapshotVMID string
+	vmSnapshotVMID       string
+	vmSnapshotPublicKeys []string
 
 	createNetworkName         string
 	createNetworkTTL          string

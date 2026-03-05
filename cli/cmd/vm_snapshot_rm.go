@@ -28,6 +28,7 @@ replicated vm snapshot rm --vm-id VM_ID SNAPSHOT_ID`,
 		panic(err)
 	}
 	cmd.RegisterFlagCompletionFunc("vm-id", r.completeVMIDs)
+	cmd.ValidArgsFunction = r.completeVMSnapshotIDs
 
 	return cmd
 }

@@ -8,10 +8,19 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *VendorV3Client) RestoreVMSnapshot(vmID, snapshotID string) (*types.VM, error) {
+type RestoreVMSnapshotRequest struct {
+	PublicKeys []string `json:"public_keys,omitempty"`
+}
+
+func (c *VendorV3Client) RestoreVMSnapshot(vmID, snapshotID string, publicKeys []string) (*types.VM, error) {
+	var req *RestoreVMSnapshotRequest
+	if len(publicKeys) > 0 {
+		req = &RestoreVMSnapshotRequest{PublicKeys: publicKeys}
+	}
+
 	var vm types.VM
 	endpoint := fmt.Sprintf("/v3/vm/%s/snapshot/%s", vmID, snapshotID)
-	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusCreated, nil, &vm)
+	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusCreated, req, &vm)
 	if err != nil {
 		return nil, err
 	}
