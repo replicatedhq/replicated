@@ -11,6 +11,12 @@ import (
 )
 
 var vmSnapshotFuncs = template.FuncMap{
+	"shortID": func(id string) string {
+		if len(id) > 8 {
+			return id[:8]
+		}
+		return id
+	},
 	"formatBytes": func(b *int64) string {
 		if b == nil {
 			return "-"
@@ -41,7 +47,7 @@ var vmSnapshotFuncs = template.FuncMap{
 
 var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	STATUS	SIZE	CREATED	READY AT	ERROR`
 var vmSnapshotsTmplTableRowSrc = `{{ range . -}}
-{{ .ID }}	{{ padding .VMID 27 }}	{{ padding .Status 12 }}	{{ formatBytes .SizeBytes }}	{{ localeTime .CreatedAt }}	{{ optionalTime .ReadyAt }}	{{ if .Error }}{{ .Error }}{{ else }}-{{ end }}
+{{ shortID .ID }}	{{ shortID .VMID }}	{{ padding .Status 12 }}	{{ formatBytes .SizeBytes }}	{{ localeTime .CreatedAt }}	{{ optionalTime .ReadyAt }}	{{ if .Error }}{{ .Error }}{{ else }}-{{ end }}
 {{ end }}`
 
 var vmSnapshotsTmplTableSrc = fmt.Sprintln(vmSnapshotsTmplTableHeaderSrc) + vmSnapshotsTmplTableRowSrc

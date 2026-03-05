@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -37,9 +36,7 @@ func (r *runners) vmSnapshotRemove(_ *cobra.Command, args []string) error {
 	snapshotID := args[0]
 
 	err := r.kotsAPI.DeleteVMSnapshot(r.args.vmSnapshotVMID, snapshotID)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
+	if err != nil {
 		return errors.Wrap(err, "remove vm snapshot")
 	}
 

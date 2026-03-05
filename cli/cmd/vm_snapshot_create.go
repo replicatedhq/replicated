@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +11,8 @@ func (r *runners) InitVMSnapshotCreate(parent *cobra.Command) *cobra.Command {
 		Use:   "create",
 		Short: "Create a snapshot of a running VM.",
 		Long: `The 'vm snapshot create' command creates a snapshot of a running VM. The VM must be in a running state for snapshot creation to succeed.
+
+IMPORTANT: The VM will be temporarily paused during snapshot creation. This may result in a brief service interruption or pause in VM activity.
 
 The snapshot is created asynchronously. The command returns immediately with the snapshot in a pending state. Use 'vm snapshot ls' to check the snapshot status.`,
 		Example: `# Create a snapshot of a VM
@@ -36,9 +37,7 @@ replicated vm snapshot create --vm-id VM_ID --output json`,
 
 func (r *runners) vmSnapshotCreate(_ *cobra.Command, args []string) error {
 	snapshot, err := r.kotsAPI.CreateVMSnapshot(r.args.vmSnapshotVMID)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
+	if err != nil {
 		return errors.Wrap(err, "create vm snapshot")
 	}
 

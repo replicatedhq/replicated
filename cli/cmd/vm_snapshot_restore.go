@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -39,9 +38,7 @@ func (r *runners) vmSnapshotRestore(_ *cobra.Command, args []string) error {
 	snapshotID := args[0]
 
 	vm, err := r.kotsAPI.RestoreVMSnapshot(r.args.vmSnapshotVMID, snapshotID)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
+	if err != nil {
 		return errors.Wrap(err, "restore vm snapshot")
 	}
 

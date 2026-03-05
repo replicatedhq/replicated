@@ -29,6 +29,8 @@ type VM struct {
 	DirectSSHEndpoint string `json:"direct_ssh_endpoint,omitempty"`
 
 	Tags []Tag `json:"tags"`
+
+	HasSnapshot bool `json:"has_snapshot,omitempty"`
 }
 
 type VMStatus string

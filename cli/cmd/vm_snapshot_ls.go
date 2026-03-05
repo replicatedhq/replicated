@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/spf13/cobra"
 )
 
@@ -37,9 +36,7 @@ replicated vm snapshot ls --vm-id VM_ID --output json`,
 
 func (r *runners) vmSnapshotList(_ *cobra.Command, args []string) error {
 	snapshots, err := r.kotsAPI.ListVMSnapshots(r.args.vmSnapshotVMID)
-	if errors.Cause(err) == platformclient.ErrForbidden {
-		return ErrCompatibilityMatrixTermsNotAccepted
-	} else if err != nil {
+	if err != nil {
 		return errors.Wrap(err, "list vm snapshots")
 	}
 
