@@ -12,11 +12,14 @@ func (r *runners) InitVMSnapshotRm(parent *cobra.Command) *cobra.Command {
 		Use:     "rm [SNAPSHOT_ID]",
 		Aliases: []string{"delete"},
 		Short:   "Remove a VM snapshot.",
-		Long: `The 'vm snapshot rm' command removes a snapshot from a VM. You must provide the VM ID and either a snapshot ID or the '--all' flag to remove all snapshots for the VM.
+		Long: `The 'vm snapshot rm' command removes a snapshot from a VM. You must provide the VM ID and either a snapshot ID, '--name' to remove by snapshot name, or the '--all' flag to remove all snapshots for the VM.
 
 After removal, the snapshot files will be cleaned up from the host disk.`,
-		Example: `# Remove a snapshot
+		Example: `# Remove a snapshot by ID
 replicated vm snapshot rm --vm-id VM_ID SNAPSHOT_ID
+
+# Remove a snapshot by name
+replicated vm snapshot rm --vm-id VM_ID --name "my-snapshot"
 
 # Remove all snapshots for a VM
 replicated vm snapshot rm --vm-id VM_ID --all`,
@@ -32,17 +35,27 @@ replicated vm snapshot rm --vm-id VM_ID --all`,
 	}
 	cmd.RegisterFlagCompletionFunc("vm-id", r.completeVMIDs)
 	cmd.Flags().BoolVar(&r.args.vmSnapshotRmAll, "all", false, "Remove all snapshots for the VM")
+	cmd.Flags().StringVar(&r.args.vmSnapshotRmName, "name", "", "Remove the snapshot with this name")
 	cmd.ValidArgsFunction = r.completeVMSnapshotIDs
 
 	return cmd
 }
 
 func (r *runners) vmSnapshotRemove(_ *cobra.Command, args []string) error {
-	if len(args) == 0 && !r.args.vmSnapshotRmAll {
-		return errors.New("SNAPSHOT_ID or --all required")
+	byID := len(args) > 0
+	byName := r.args.vmSnapshotRmName != ""
+
+	if !byID && !byName && !r.args.vmSnapshotRmAll {
+		return errors.New("SNAPSHOT_ID, --name, or --all required")
 	}
-	if len(args) > 0 && r.args.vmSnapshotRmAll {
+	if byID && r.args.vmSnapshotRmAll {
 		return errors.New("cannot specify SNAPSHOT_ID and --all")
+	}
+	if byName && r.args.vmSnapshotRmAll {
+		return errors.New("cannot specify --name and --all")
+	}
+	if byID && byName {
+		return errors.New("cannot specify SNAPSHOT_ID and --name")
 	}
 
 	if r.args.vmSnapshotRmAll {
@@ -59,7 +72,30 @@ func (r *runners) vmSnapshotRemove(_ *cobra.Command, args []string) error {
 		return r.w.Flush()
 	}
 
-	snapshotID := args[0]
+	var snapshotID string
+	if byName {
+		snapshots, err := r.kotsAPI.ListVMSnapshots(r.args.vmSnapshotVMID)
+		if err != nil {
+			return errors.Wrap(err, "list vm snapshots")
+		}
+		var matches []string
+		for _, s := range snapshots {
+			if s.Name == r.args.vmSnapshotRmName {
+				matches = append(matches, s.ID)
+			}
+		}
+		switch len(matches) {
+		case 0:
+			return errors.Errorf("no snapshot found with name %q", r.args.vmSnapshotRmName)
+		case 1:
+			snapshotID = matches[0]
+		default:
+			return errors.Errorf("multiple snapshots found with name %q; specify snapshot by ID instead", r.args.vmSnapshotRmName)
+		}
+	} else {
+		snapshotID = args[0]
+	}
+
 	if err := r.kotsAPI.DeleteVMSnapshot(r.args.vmSnapshotVMID, snapshotID); err != nil {
 		return errors.Wrap(err, "remove vm snapshot")
 	}

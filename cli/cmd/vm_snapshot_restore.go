@@ -37,6 +37,7 @@ replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID --output json`,
 	cmd.RegisterFlagCompletionFunc("vm-id", r.completeVMIDs)
 	cmd.ValidArgsFunction = r.completeVMSnapshotIDs
 	cmd.Flags().StringArrayVar(&r.args.vmSnapshotPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.vmSnapshotTTL, "ttl", "", "VM TTL (duration)")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
@@ -54,7 +55,7 @@ func (r *runners) vmSnapshotRestore(_ *cobra.Command, args []string) error {
 		publicKeys = append(publicKeys, publicKey)
 	}
 
-	vm, err := r.kotsAPI.RestoreVMSnapshot(r.args.vmSnapshotVMID, snapshotID, publicKeys)
+	vm, err := r.kotsAPI.RestoreVMSnapshot(r.args.vmSnapshotVMID, snapshotID, publicKeys, r.args.vmSnapshotTTL)
 	if err != nil {
 		if strings.Contains(err.Error(), "no public keys available") {
 			return errors.New("no public keys available; use --ssh-public-key to provide a key or add SSH keys to your team")

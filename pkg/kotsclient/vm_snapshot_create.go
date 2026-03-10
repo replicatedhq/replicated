@@ -8,10 +8,18 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *VendorV3Client) CreateVMSnapshot(vmID string) (*types.VMSnapshot, error) {
+type CreateVMSnapshotRequest struct {
+	Name string `json:"name,omitempty"`
+}
+
+func (c *VendorV3Client) CreateVMSnapshot(vmID, name string) (*types.VMSnapshot, error) {
 	var snapshot types.VMSnapshot
 	endpoint := fmt.Sprintf("/v3/vm/%s/snapshot", vmID)
-	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusCreated, nil, &snapshot)
+	var body interface{}
+	if name != "" {
+		body = CreateVMSnapshotRequest{Name: name}
+	}
+	err := c.DoJSON(context.TODO(), "POST", endpoint, http.StatusCreated, body, &snapshot)
 	if err != nil {
 		return nil, err
 	}

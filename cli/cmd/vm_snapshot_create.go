@@ -18,6 +18,9 @@ The snapshot is created asynchronously. The command returns immediately with the
 		Example: `# Create a snapshot of a VM
 replicated vm snapshot create --vm-id VM_ID
 
+# Create a named snapshot
+replicated vm snapshot create --vm-id VM_ID --name "before-upgrade"
+
 # Create a snapshot and output in JSON format
 replicated vm snapshot create --vm-id VM_ID --output json`,
 		RunE: r.vmSnapshotCreate,
@@ -30,13 +33,14 @@ replicated vm snapshot create --vm-id VM_ID --output json`,
 		panic(err)
 	}
 	cmd.RegisterFlagCompletionFunc("vm-id", r.completeVMIDs)
+	cmd.Flags().StringVar(&r.args.vmSnapshotCreateName, "name", "", "Optional name for the snapshot")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }
 
 func (r *runners) vmSnapshotCreate(_ *cobra.Command, args []string) error {
-	snapshot, err := r.kotsAPI.CreateVMSnapshot(r.args.vmSnapshotVMID)
+	snapshot, err := r.kotsAPI.CreateVMSnapshot(r.args.vmSnapshotVMID, r.args.vmSnapshotCreateName)
 	if err != nil {
 		return errors.Wrap(err, "create vm snapshot")
 	}
