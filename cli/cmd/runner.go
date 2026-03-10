@@ -246,6 +246,7 @@ type runnerArgs struct {
 
 	vmSnapshotVMID       string
 	vmSnapshotPublicKeys []string
+	vmSnapshotWatch      bool
 
 	createNetworkName         string
 	createNetworkTTL          string
