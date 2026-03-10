@@ -20,6 +20,9 @@ replicated vm snapshot create --vm-id VM_ID
 # Remove a snapshot
 replicated vm snapshot rm --vm-id VM_ID SNAPSHOT_ID
 
+# Remove all snapshots for a VM
+replicated vm snapshot rm --vm-id VM_ID --all
+
 # Restore a snapshot (creates a new VM)
 replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID`,
 		SilenceUsage: true,

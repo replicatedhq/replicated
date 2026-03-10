@@ -15,31 +15,11 @@ var vmSnapshotFuncs = template.FuncMap{
 		}
 		return id
 	},
-	"formatBytes": func(b *int64) string {
-		if b == nil {
-			return "-"
-		}
-		const (
-			kb = 1024
-			mb = kb * 1024
-			gb = mb * 1024
-		)
-		switch {
-		case *b >= gb:
-			return fmt.Sprintf("%.1f GB", float64(*b)/float64(gb))
-		case *b >= mb:
-			return fmt.Sprintf("%.1f MB", float64(*b)/float64(mb))
-		case *b >= kb:
-			return fmt.Sprintf("%.1f KB", float64(*b)/float64(kb))
-		default:
-			return fmt.Sprintf("%d B", *b)
-		}
-	},
 }
 
-var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	STATUS	SIZE	CREATED	ERROR`
+var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	NAME	STATUS	CREATED`
 var vmSnapshotsTmplTableRowSrc = `{{ range . -}}
-{{ shortID .ID }}	{{ shortID .VMID }}	{{ padding .Status 12 }}	{{ formatBytes .SizeBytes }}	{{ localeTime .CreatedAt }}	{{ if .Error }}{{ .Error }}{{ else }}-{{ end }}
+{{ shortID .ID }}	{{ shortID .VMID }}	{{ .Name }}	{{ padding .Status 12 }}	{{ localeTime .CreatedAt }}
 {{ end }}`
 
 var vmSnapshotsTmplTableSrc = fmt.Sprintln(vmSnapshotsTmplTableHeaderSrc) + vmSnapshotsTmplTableRowSrc

@@ -245,6 +245,7 @@ type runnerArgs struct {
 	vmPortRemoveAddonID   string
 
 	vmSnapshotVMID       string
+	vmSnapshotRmAll      bool
 	vmSnapshotPublicKeys []string
 	vmSnapshotWatch      bool
 
