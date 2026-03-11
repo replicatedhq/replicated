@@ -13,15 +13,8 @@ type RestoreVMSnapshotRequest struct {
 	TTL        string   `json:"ttl,omitempty"`
 }
 
-func (c *VendorV3Client) RestoreVMSnapshot(vmID, snapshotID string, publicKeys []string, ttl string) (*types.VM, error) {
-	var req *RestoreVMSnapshotRequest
-	if len(publicKeys) > 0 {
-		req = &RestoreVMSnapshotRequest{PublicKeys: publicKeys}
-	}
-
-	if ttl != "" {
-		req.TTL = ttl
-	}
+func (c *VendorV3Client) RestoreVMSnapshot(vmID, snapshotID string, ttl string) (*types.VM, error) {
+	req := RestoreVMSnapshotRequest{TTL: ttl}
 
 	var vm types.VM
 	endpoint := fmt.Sprintf("/v3/vm/%s/snapshot/%s", vmID, snapshotID)

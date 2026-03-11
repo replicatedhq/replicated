@@ -248,7 +248,6 @@ type runnerArgs struct {
 	vmSnapshotCreateName string
 	vmSnapshotRmAll      bool
 	vmSnapshotRmName     string
-	vmSnapshotPublicKeys []string
 	vmSnapshotWatch      bool
 	vmSnapshotTTL        string
 

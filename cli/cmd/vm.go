@@ -66,6 +66,24 @@ func (r *runners) completeVMIDs(cmd *cobra.Command, args []string, toComplete st
 	return vmIDs, cobra.ShellCompDirectiveNoFileComp
 }
 
+func (r *runners) completeTerminatedVMIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	var vmIDs []string
+	vms, err := r.kotsAPI.ListVMs(true, nil, nil)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+
+	for _, vm := range vms {
+		vmIDs = append(vmIDs, vm.ID)
+	}
+	return vmIDs, cobra.ShellCompDirectiveNoFileComp
+}
+
 func (r *runners) completeVMNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	err := r.initVMClient()
 	if err != nil {

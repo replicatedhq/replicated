@@ -38,7 +38,7 @@ replicated vm snapshot ls --vm-id VM_ID --watch`,
 	if err != nil {
 		panic(err)
 	}
-	cmd.RegisterFlagCompletionFunc("vm-id", r.completeVMIDs)
+	cmd.RegisterFlagCompletionFunc("vm-id", r.completeTerminatedVMIDs)
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	cmd.Flags().BoolVarP(&r.args.vmSnapshotWatch, "watch", "w", false, "watch snapshots")
 
