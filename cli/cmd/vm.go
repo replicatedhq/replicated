@@ -184,10 +184,11 @@ func (r *runners) completeVMSnapshotIDsAndNames(cmd *cobra.Command, args []strin
 	}
 	var completions []string
 	for _, s := range snapshots {
-		completions = append(completions, s.ID)
+		shortID := s.ID
 		if len(s.ID) > 8 {
-			completions = append(completions, s.ID[:8])
+			shortID = s.ID[:8]
 		}
+		completions = append(completions, shortID)
 		if s.Name != "" {
 			completions = append(completions, s.Name)
 		}

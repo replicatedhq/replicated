@@ -19,7 +19,7 @@ var vmSnapshotFuncs = template.FuncMap{
 
 var vmSnapshotsTmplTableHeaderSrc = `ID	VM ID	NAME	STATUS	CREATED	EXPIRES`
 var vmSnapshotsTmplTableRowSrc = `{{ range . -}}
-{{ shortID .ID }}	{{ shortID .VMID }}	{{ if .Name }}{{ padding .Name 27 }}{{ else }}{{ padding "-" 27 }}{{ end }}	{{ padding .Status 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 22 }}	{{ if .ExpiresAt.IsZero }}{{ padding "-" 22 }}{{ else }}{{ padding (printf "%s" (localeTime .ExpiresAt)) 22 }}{{ end }}
+{{ shortID .ID }}	{{ shortID .VMID }}	{{ if .Name }}{{ padding .Name 27 }}{{ else }}{{ padding "-" 27 }}{{ end }}	{{ padding .Status 12 }}	{{ padding (printf "%s" (localeTime .CreatedAt)) 22 }}	{{ if .ExpiresAt }}{{ padding (printf "%s" (localeTime .ExpiresAt)) 22 }}{{ else }}{{ padding "-" 22 }}{{ end }}
 {{ end }}`
 
 var vmSnapshotsTmplTableSrc = fmt.Sprintln(vmSnapshotsTmplTableHeaderSrc) + vmSnapshotsTmplTableRowSrc

@@ -60,9 +60,9 @@ func (r *runners) vmSnapshotRemove(_ *cobra.Command, args []string) error {
 		}
 		for _, s := range snapshots {
 			if err := r.kotsAPI.DeleteVMSnapshot(s.ID); err != nil {
-				return errors.Wrapf(err, "remove vm snapshot %s", s.ID)
+				return errors.Wrapf(err, "remove vm snapshot %s", s.ID[:8])
 			}
-			fmt.Fprintf(r.w, "Snapshot %s has been removed\n", s.ID)
+			fmt.Fprintf(r.w, "Snapshot %s has been removed\n", s.ID[:8])
 		}
 		return r.w.Flush()
 	}
