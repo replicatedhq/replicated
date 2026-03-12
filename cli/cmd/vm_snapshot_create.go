@@ -14,7 +14,9 @@ func (r *runners) InitVMSnapshotCreate(parent *cobra.Command) *cobra.Command {
 
 IMPORTANT: The VM will be temporarily paused during snapshot creation. This may result in a brief service interruption or pause in VM activity.
 
-The snapshot is created asynchronously. The command returns immediately with the snapshot in a pending state. Use 'vm snapshot ls' to check the snapshot status.`,
+The snapshot is created asynchronously. The command returns immediately with the snapshot in a pending state. Use 'vm snapshot ls' to check the snapshot status.
+
+VM snapshots are currently an alpha feature.`,
 		Example: `# Create a snapshot of a VM
 replicated vm snapshot create --vm-id VM_ID
 

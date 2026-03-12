@@ -10,5 +10,6 @@ type VMSnapshot struct {
 	TeamID    string     `json:"team_id"`
 	Status    string     `json:"status"`
 	CreatedAt time.Time  `json:"created_at"`
+	ExpiresAt time.Time  `json:"expires_at"`
 	ReadyAt   *time.Time `json:"ready_at,omitempty"`
 }

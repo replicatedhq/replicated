@@ -13,11 +13,11 @@ type RestoreVMSnapshotRequest struct {
 	TTL        string   `json:"ttl,omitempty"`
 }
 
-func (c *VendorV3Client) RestoreVMSnapshot(vmID, snapshotID string, ttl string) (*types.VM, error) {
+func (c *VendorV3Client) RestoreVMSnapshot(snapshotID string, ttl string) (*types.VM, error) {
 	req := RestoreVMSnapshotRequest{TTL: ttl}
 
 	var vm types.VM
-	endpoint := fmt.Sprintf("/v3/vm/%s/snapshot/%s", vmID, snapshotID)
+	endpoint := fmt.Sprintf("/v3/snapshots/%s/restore", snapshotID)
 	err := c.DoJSON(context.TODO(), "PUT", endpoint, http.StatusCreated, req, &vm)
 	if err != nil {
 		return nil, err

@@ -15,30 +15,26 @@ func (r *runners) InitVMSnapshotLs(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "ls",
 		Aliases: []string{"list"},
-		Short:   "List snapshots for a VM.",
-		Long: `The 'vm snapshot ls' command lists all snapshots for a specific VM. You must provide the VM ID using the --vm-id flag.
+		Short:   "List all VM snapshots.",
+		Long: `The 'vm snapshot ls' command lists all snapshots for the team.
 
-This command is useful for viewing existing snapshots, their status, size, and creation time. The output format can be customized using the --output flag.
+This command is useful for viewing existing snapshots, their status, and creation/expiry time. The output format can be customized using the --output flag.
 
-You can use the '--watch' flag to monitor snapshot status continuously. This will refresh the list every 2 seconds.`,
-		Example: `# List snapshots for a VM
-replicated vm snapshot ls --vm-id VM_ID
+You can use the '--watch' flag to monitor snapshot status continuously. This will refresh the list every 2 seconds.
+
+VM snapshots are currently an alpha feature.`,
+		Example: `# List all snapshots
+replicated vm snapshot ls
 
 # List snapshots in JSON format
-replicated vm snapshot ls --vm-id VM_ID --output json
+replicated vm snapshot ls --output json
 
 # Watch snapshot status changes in real-time
-replicated vm snapshot ls --vm-id VM_ID --watch`,
+replicated vm snapshot ls --watch`,
 		RunE: r.vmSnapshotList,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.vmSnapshotVMID, "vm-id", "", "The ID of the VM to list snapshots for (required)")
-	err := cmd.MarkFlagRequired("vm-id")
-	if err != nil {
-		panic(err)
-	}
-	cmd.RegisterFlagCompletionFunc("vm-id", r.completeTerminatedVMIDs)
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	cmd.Flags().BoolVarP(&r.args.vmSnapshotWatch, "watch", "w", false, "watch snapshots")
 
@@ -46,7 +42,7 @@ replicated vm snapshot ls --vm-id VM_ID --watch`,
 }
 
 func (r *runners) vmSnapshotList(_ *cobra.Command, args []string) error {
-	snapshots, err := r.kotsAPI.ListVMSnapshots(r.args.vmSnapshotVMID)
+	snapshots, err := r.kotsAPI.ListVMSnapshots()
 	if err != nil {
 		return errors.Wrap(err, "list vm snapshots")
 	}
@@ -66,7 +62,7 @@ func (r *runners) vmSnapshotList(_ *cobra.Command, args []string) error {
 		}
 
 		for range time.Tick(2 * time.Second) {
-			newSnapshots, err := r.kotsAPI.ListVMSnapshots(r.args.vmSnapshotVMID)
+			newSnapshots, err := r.kotsAPI.ListVMSnapshots()
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					return errors.New("interrupted")

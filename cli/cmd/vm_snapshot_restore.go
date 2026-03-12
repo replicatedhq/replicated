@@ -8,31 +8,27 @@ import (
 
 func (r *runners) InitVMSnapshotRestore(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "restore SNAPSHOT_ID",
+		Use:   "restore [SNAPSHOT_ID]",
 		Short: "Restore a VM from a snapshot.",
 		Long: `The 'vm snapshot restore' command creates a new VM from a snapshot. The new VM is created using the original VM's configuration (distribution, version, instance type, disk size, etc.).
 
-The snapshot must be in a 'ready' state for restore to succeed. The command returns the newly created VM.`,
-		Example: `# Restore a VM from a snapshot
-replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID
+The snapshot must be in a 'ready' state for restore to succeed. The command returns the newly created VM. Provide SNAPSHOT_ID (or short id) or use --name to specify by snapshot name.
 
-# Restore with a custom TTL
-replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID --ttl 2h
+VM snapshots are currently an alpha feature.`,
+		Example: `# Restore a VM from a snapshot
+replicated vm snapshot restore SNAPSHOT_ID
+
+# Restore by name with a custom TTL
+replicated vm snapshot restore --name "my-snapshot" --ttl 2h
 
 # Restore and output in JSON format
-replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID --output json`,
+replicated vm snapshot restore SNAPSHOT_ID --output json`,
 		RunE: r.vmSnapshotRestore,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVar(&r.args.vmSnapshotVMID, "vm-id", "", "The ID of the VM to restore (required)")
-	err := cmd.MarkFlagRequired("vm-id")
-	if err != nil {
-		panic(err)
-	}
-	cmd.RegisterFlagCompletionFunc("vm-id", r.completeTerminatedVMIDs)
-	cmd.ValidArgsFunction = r.completeVMSnapshotIDs
+	cmd.ValidArgsFunction = r.completeVMSnapshotIDsAndNames
 	cmd.Flags().StringVar(&r.args.vmSnapshotTTL, "ttl", "", "VM TTL (duration)")
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
@@ -40,9 +36,12 @@ replicated vm snapshot restore --vm-id VM_ID SNAPSHOT_ID --output json`,
 }
 
 func (r *runners) vmSnapshotRestore(_ *cobra.Command, args []string) error {
-	snapshotID := args[0]
+	snapshotIDOrName, err := r.ensureSnapshotIDArg(args)
+	if err != nil {
+		return err
+	}
 
-	vm, err := r.kotsAPI.RestoreVMSnapshot(r.args.vmSnapshotVMID, snapshotID, r.args.vmSnapshotTTL)
+	vm, err := r.kotsAPI.RestoreVMSnapshot(snapshotIDOrName, r.args.vmSnapshotTTL)
 	if err != nil {
 		return errors.Wrap(err, "restore vm snapshot")
 	}

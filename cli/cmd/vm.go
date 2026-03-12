@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
@@ -160,31 +162,55 @@ func (r *runners) completeVMInstanceTypes(cmd *cobra.Command, args []string, toC
 	return instanceTypes, cobra.ShellCompDirectiveNoFileComp
 }
 
-func (r *runners) completeVMSnapshotIDs(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// ensureSnapshotIDArg returns the snapshot identifier (id, short id, or name) from args or --name flag.
+func (r *runners) ensureSnapshotIDArg(args []string) (string, error) {
+	if len(args) > 0 {
+		return args[0], nil
+	}
+	if r.args.vmSnapshotName != "" {
+		return r.args.vmSnapshotName, nil
+	}
+	return "", errors.New("must provide SNAPSHOT_ID or --name")
+}
+
+func (r *runners) completeVMSnapshotIDsAndNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 	err := r.initVMClient()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
-
-	vmID, _ := cmd.Flags().GetString("vm-id")
-	if vmID == "" {
-		return nil, cobra.ShellCompDirectiveNoFileComp
-	}
-
-	snapshots, err := r.kotsAPI.ListVMSnapshots(vmID)
+	snapshots, err := r.kotsAPI.ListVMSnapshots()
 	if err != nil {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	}
-
-	var snapshotIDs []string
+	var completions []string
 	for _, s := range snapshots {
-		id := s.ID
-		if len(id) > 8 {
-			id = id[:8]
+		completions = append(completions, s.ID)
+		if len(s.ID) > 8 {
+			completions = append(completions, s.ID[:8])
 		}
-		snapshotIDs = append(snapshotIDs, id)
+		if s.Name != "" {
+			completions = append(completions, s.Name)
+		}
 	}
-	return snapshotIDs, cobra.ShellCompDirectiveNoFileComp
+	return completions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func (r *runners) completeVMSnapshotNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := r.initVMClient()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	snapshots, err := r.kotsAPI.ListVMSnapshots()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	var names []string
+	for _, s := range snapshots {
+		if s.Name != "" {
+			names = append(names, s.Name)
+		}
+	}
+	return names, cobra.ShellCompDirectiveNoFileComp
 }
 
 func (r *runners) completeVMIDsAndNames(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

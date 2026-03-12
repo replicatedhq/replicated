@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-func (c *VendorV3Client) DeleteVMSnapshot(vmID, snapshotID string) error {
-	endpoint := fmt.Sprintf("/v3/vm/%s/snapshot/%s", vmID, snapshotID)
+func (c *VendorV3Client) DeleteVMSnapshot(snapshotID string) error {
+	endpoint := fmt.Sprintf("/v3/snapshots/%s", snapshotID)
 	err := c.DoJSON(context.TODO(), "DELETE", endpoint, http.StatusOK, nil, nil)
 	if err != nil {
 		return err

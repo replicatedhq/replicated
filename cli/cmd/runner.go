@@ -247,9 +247,10 @@ type runnerArgs struct {
 	vmSnapshotVMID       string
 	vmSnapshotCreateName string
 	vmSnapshotRmAll      bool
-	vmSnapshotRmName     string
+	vmSnapshotName       string // snapshot id or name for rm, restore, update
 	vmSnapshotWatch      bool
 	vmSnapshotTTL        string
+	vmSnapshotUpdateTTL  string
 
 	createNetworkName         string
 	createNetworkTTL          string

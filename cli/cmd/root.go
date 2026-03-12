@@ -289,6 +289,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	vmSnapshotCmd := runCmds.InitVMSnapshot(vmCmd)
 	runCmds.InitVMSnapshotLs(vmSnapshotCmd)
 	runCmds.InitVMSnapshotCreate(vmSnapshotCmd)
+	runCmds.InitVMSnapshotUpdate(vmSnapshotCmd)
 	runCmds.InitVMSnapshotRm(vmSnapshotCmd)
 	runCmds.InitVMSnapshotRestore(vmSnapshotCmd)
 
