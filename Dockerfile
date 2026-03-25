@@ -1,4 +1,4 @@
-FROM golang:1.24
+FROM golang:1.26
 
 ENV PROJECTPATH=/go/src/github.com/replicatedhq/replicated
 
