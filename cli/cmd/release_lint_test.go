@@ -104,7 +104,7 @@ func TestTarYAMLDir_EmptyDirectory(t *testing.T) {
 	// Should contain only the top-level directory entry
 	entries := readTarEntries(t, data)
 	assert.Len(t, entries, 1)
-	assert.Contains(t, entries, "empty")
+	assert.Contains(t, entries, "empty/")
 }
 
 func TestTarYAMLDir_PreservesTopLevelDirName(t *testing.T) {
@@ -150,7 +150,7 @@ func TestTarYAMLDir_ProducesValidTar(t *testing.T) {
 	}
 
 	sort.Strings(names)
-	expected := []string{"app", "app/root.yaml", "app/sub", "app/sub/child.yaml"}
+	expected := []string{"app/", "app/root.yaml", "app/sub/", "app/sub/child.yaml"}
 	sort.Strings(expected)
 	assert.Equal(t, expected, names)
 }
