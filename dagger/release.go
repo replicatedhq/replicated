@@ -105,13 +105,19 @@ func (r *Replicated) Release(
 	// copy the source that has the tag included in it
 	updatedSource = tagContainer.Directory("/go/src/github.com/replicatedhq/replicated")
 
-	goModCache := dag.CacheVolume("replicated-go-mod-126")
-	goBuildCache := dag.CacheVolume("replicated-go-build-126")
+	image, err := goImage(ctx, updatedSource)
+	if err != nil {
+		return errors.Wrap(err, "failed to detect go version")
+	}
+	goModCache, goBuildCache, err := goCacheVolumes(ctx, updatedSource)
+	if err != nil {
+		return errors.Wrap(err, "failed to create cache volumes")
+	}
 
 	replicatedBinary := dag.Container(dagger.ContainerOpts{
 		Platform: "linux/amd64",
 	}).
-		From("golang:1.26").
+		From(image).
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
 		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").

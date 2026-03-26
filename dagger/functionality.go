@@ -11,12 +11,18 @@ func validateFunctionality(
 	// +defaultPath="./"
 	source *dagger.Directory,
 ) error {
-	goModCache := dag.CacheVolume("replicated-go-mod-126")
-	goBuildCache := dag.CacheVolume("replicated-go-build-126")
+	image, err := goImage(ctx, source)
+	if err != nil {
+		return err
+	}
+	goModCache, goBuildCache, err := goCacheVolumes(ctx, source)
+	if err != nil {
+		return err
+	}
 
 	// unit tests
 	unitTest := dag.Container().
-		From("golang:1.26").
+		From(image).
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).
@@ -25,7 +31,7 @@ func validateFunctionality(
 		WithEnvVariable("GOCACHE", "/go/build-cache").
 		With(CacheBustingExec([]string{"make", "test-unit"}))
 
-	_, err := unitTest.Stderr(ctx)
+	_, err = unitTest.Stderr(ctx)
 	if err != nil {
 		return err
 	}

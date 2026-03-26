@@ -12,13 +12,19 @@ func (r *Replicated) Build(
 	// +defaultPath="./"
 	source *dagger.Directory,
 ) (*dagger.File, error) {
-	goModCache := dag.CacheVolume("replicated-go-mod-126")
-	goBuildCache := dag.CacheVolume("replicated-go-build-126")
+	image, err := goImage(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	goModCache, goBuildCache, err := goCacheVolumes(ctx, source)
+	if err != nil {
+		return nil, err
+	}
 
 	binary := dag.Container(dagger.ContainerOpts{
 		Platform: "linux/amd64",
 	}).
-		From("golang:1.26").
+		From(image).
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
