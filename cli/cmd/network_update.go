@@ -20,19 +20,19 @@ Network policies control network traffic behavior:
   - open: No restrictions on network traffic (default)
   - airgap: Blocks all network egress to simulate air-gapped environments`,
 		Example: `# Set network policy to airgap
-replicated network update <network-id> --policy airgap
+replicated network update NETWORK_ID --policy airgap
 
 # Set network policy to open
-replicated network update <network-id> --policy open
+replicated network update NETWORK_ID --policy open
 
 # Enable network traffic reporting
-replicated network update <network-id> --collect-report
+replicated network update NETWORK_ID --collect-report
 
 # Disable network reporting
-replicated network update <network-id> --collect-report=false
+replicated network update NETWORK_ID --collect-report=false
 
 # Update multiple settings at once
-replicated network update <network-id> --policy airgap --collect-report
+replicated network update NETWORK_ID --policy airgap --collect-report
 `,
 		RunE:              r.updateNetwork,
 		SilenceUsage:      true,
