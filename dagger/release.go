@@ -32,6 +32,11 @@ func (r *Replicated) Release(
 
 	githubToken *dagger.Secret,
 ) error {
+	// Check all required environment variables / secrets before starting work
+	if err := validateReleaseSecrets(ctx, githubToken, onePasswordServiceAccountProduction); err != nil {
+		return err
+	}
+
 	err := checkGitTree(ctx, source, githubToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to check git tree")
@@ -208,6 +213,40 @@ func (r *Replicated) Release(
 		if err != nil {
 			return errors.Wrap(err, "failed to release goreleaser")
 		}
+	}
+
+	return nil
+}
+
+func validateReleaseSecrets(ctx context.Context, githubToken, onePasswordServiceAccountProduction *dagger.Secret) error {
+	var missing []string
+
+	if githubToken == nil {
+		missing = append(missing, "GITHUB_TOKEN")
+	} else {
+		gt, err := githubToken.Plaintext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to read GITHUB_TOKEN secret")
+		}
+		if strings.TrimSpace(gt) == "" {
+			missing = append(missing, "GITHUB_TOKEN")
+		}
+	}
+
+	if onePasswordServiceAccountProduction == nil {
+		missing = append(missing, "OP_SERVICE_ACCOUNT_PRODUCTION")
+	} else {
+		op, err := onePasswordServiceAccountProduction.Plaintext(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to read OP_SERVICE_ACCOUNT_PRODUCTION secret")
+		}
+		if strings.TrimSpace(op) == "" {
+			missing = append(missing, "OP_SERVICE_ACCOUNT_PRODUCTION")
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("required environment variables are not set: %s", strings.Join(missing, ", "))
 	}
 
 	return nil
