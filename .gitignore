@@ -7,5 +7,6 @@ bin/
 vendor/
 .idea
 .vscode
+.claude
 do-not-commit/
 pkg/tools/embedded/
