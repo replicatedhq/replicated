@@ -185,6 +185,9 @@ func tarYAMLDir(yamlDir string) ([]byte, error) {
 			return err
 		}
 		header.Name = filepath.Join(topLevelDir, relPath)
+		if info.IsDir() {
+			header.Name += "/"
+		}
 
 		if err := tw.WriteHeader(header); err != nil {
 			return err
