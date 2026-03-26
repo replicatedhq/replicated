@@ -23,10 +23,16 @@ func (r *Replicated) GenerateDocs(
 	source *dagger.Directory,
 
 	githubToken *dagger.Secret,
+
+	// Skip git tree validation (useful in CI where the checkout is a tag, not main)
+	// +default=false
+	skipValidation bool,
 ) error {
-	err := checkGitTree(ctx, source, githubToken)
-	if err != nil {
-		return errors.Wrap(err, "failed to check git tree")
+	if !skipValidation {
+		err := checkGitTree(ctx, source, githubToken)
+		if err != nil {
+			return errors.Wrap(err, "failed to check git tree")
+		}
 	}
 
 	latestVersion, err := getLatestVersion(ctx, githubToken)

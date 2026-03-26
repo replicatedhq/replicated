@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install Dagger
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR=/usr/local/bin sudo -E sh
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - name: Publish release
+        run: |
+          dagger call publish \
+            --version "${{ steps.version.outputs.version }}" \
+            --one-password-service-account-production env:OP_SERVICE_ACCOUNT_PRODUCTION \
+            --github-token env:GITHUB_TOKEN \
+            --clean \
+            --progress plain
+        env:
+          OP_SERVICE_ACCOUNT_PRODUCTION: ${{ secrets.OP_SERVICE_ACCOUNT_PRODUCTION }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+  docs:
+    runs-on: ubuntu-24.04
+    needs: publish
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dagger
+        run: |
+          curl -fsSL https://dl.dagger.io/dagger/install.sh | BIN_DIR=/usr/local/bin sudo -E sh
+      - name: Generate docs PR
+        run: |
+          dagger call generate-docs \
+            --github-token env:GITHUB_TOKEN \
+            --skip-validation \
+            --progress plain
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}

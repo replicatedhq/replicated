@@ -14,12 +14,16 @@ import (
 
 var goreleaserVersion = "v2.10.2"
 
-func (r *Replicated) Release(
+// Publish builds and publishes the release artifacts (Docker images, GoReleaser)
+// for a version that has already been tagged and pushed. This is intended to be
+// called from CI after the tag is created.
+func (r *Replicated) Publish(
 	ctx context.Context,
 
 	// +defaultPath="./"
 	source *dagger.Directory,
 
+	// The version tag to publish (e.g. "v1.2.3")
 	version string,
 
 	// +default=false
@@ -32,78 +36,22 @@ func (r *Replicated) Release(
 
 	githubToken *dagger.Secret,
 ) error {
-	err := checkGitTree(ctx, source, githubToken)
+	parsedVersion, err := semver.NewVersion(version)
 	if err != nil {
-		return errors.Wrap(err, "failed to check git tree")
+		return errors.Wrapf(err, "failed to parse version %q", version)
 	}
+
+	major := parsedVersion.Major()
+	minor := parsedVersion.Minor()
+	patch := parsedVersion.Patch()
+	nextVersionTag := fmt.Sprintf("v%d.%d.%d", major, minor, patch)
+
+	fmt.Printf("Publishing version %d.%d.%d\n", major, minor, patch)
 
 	previousVersionTag, err := getLatestVersion(ctx, githubToken)
 	if err != nil {
 		return errors.Wrap(err, "failed to get latest version")
 	}
-
-	previousReleaseBranchName, err := getReleaseBranchName(ctx, previousVersionTag)
-	if err != nil {
-		return errors.Wrap(err, "failed to get release branch name")
-	}
-
-	major, minor, patch, err := getNextVersion(ctx, previousVersionTag, version)
-	if err != nil {
-		return errors.Wrap(err, "failed to get next version")
-	}
-
-	fmt.Printf("Releasing as version %d.%d.%d\n", major, minor, patch)
-
-	// replace the version in the Makefile
-	buildFileContent, err := source.File("./pkg/version/build.go").Contents(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get build file contents")
-	}
-	buildFileContent = strings.ReplaceAll(buildFileContent, "const version = \"unknown\"", fmt.Sprintf("const version = \"%d.%d.%d\"", major, minor, patch))
-	updatedSource := source.WithNewFile("./pkg/version/build.go", buildFileContent)
-
-	releaseBranchName := fmt.Sprintf("release-%d.%d.%d", major, minor, patch)
-	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get github token plaintext")
-	}
-
-	// mount that and commit the updated build.go to git (don't push)
-	// so that goreleaser won't have a dirty git tree error
-	gitCommitContainer := dag.Container().
-		From("alpine/git:latest").
-		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
-		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		WithExec([]string{"git", "config", "user.email", "release@replicated.com"}).
-		WithExec([]string{"git", "config", "user.name", "Replicated Release Pipeline"}).
-		WithExec([]string{"git", "remote", "add", "dagger", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
-		WithExec([]string{"git", "checkout", "-b", releaseBranchName}).
-		WithExec([]string{"git", "add", "pkg/version/build.go"}).
-		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)}).
-		WithExec([]string{"git", "push", "dagger", releaseBranchName})
-	_, err = gitCommitContainer.Stdout(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get git commit stdout")
-	}
-	updatedSource = gitCommitContainer.Directory("/go/src/github.com/replicatedhq/replicated")
-
-	nextVersionTag := fmt.Sprintf("v%d.%d.%d", major, minor, patch)
-
-	tagContainer := dag.Container().
-		From("alpine/git:latest").
-		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
-		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
-		With(CacheBustingExec([]string{"git", "tag", nextVersionTag})).
-		With(CacheBustingExec([]string{"git", "push", "dagger", nextVersionTag})).
-		With(CacheBustingExec([]string{"git", "fetch", "dagger", previousReleaseBranchName})).
-		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
-	_, err = tagContainer.Stdout(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get tag stdout")
-	}
-
-	// copy the source that has the tag included in it
-	updatedSource = tagContainer.Directory("/go/src/github.com/replicatedhq/replicated")
 
 	goModCache := dag.CacheVolume("replicated-go-mod-122")
 	goBuildCache := dag.CacheVolume("replicated-go-build-121")
@@ -112,7 +60,7 @@ func (r *Replicated) Release(
 		Platform: "linux/amd64",
 	}).
 		From("golang:1.24").
-		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
+		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).
@@ -182,7 +130,7 @@ func (r *Replicated) Release(
 				Version: goreleaserVersion,
 				Ctr:     goreleaserContainer,
 			}).
-			WithSource(updatedSource).
+			WithSource(source).
 			Snapshot(ctx, dagger.GoreleaserSnapshotOpts{
 				Clean: clean,
 			})
@@ -195,7 +143,7 @@ func (r *Replicated) Release(
 				Version: goreleaserVersion,
 				Ctr:     goreleaserContainer,
 			}).
-			WithSource(updatedSource).
+			WithSource(source).
 			Release(ctx, dagger.GoreleaserReleaseOpts{
 				Clean: clean,
 			})
@@ -205,6 +153,102 @@ func (r *Replicated) Release(
 	}
 
 	return nil
+}
+
+// Release handles git operations (branch, tag, push) and then delegates to
+// Publish for building and publishing artifacts. Prefer using `make release` +
+// CI for new releases, which splits these two phases between local and CI.
+func (r *Replicated) Release(
+	ctx context.Context,
+
+	// +defaultPath="./"
+	source *dagger.Directory,
+
+	version string,
+
+	// +default=false
+	snapshot bool,
+
+	// +default=false
+	clean bool,
+
+	onePasswordServiceAccountProduction *dagger.Secret,
+
+	githubToken *dagger.Secret,
+) error {
+	err := checkGitTree(ctx, source, githubToken)
+	if err != nil {
+		return errors.Wrap(err, "failed to check git tree")
+	}
+
+	previousVersionTag, err := getLatestVersion(ctx, githubToken)
+	if err != nil {
+		return errors.Wrap(err, "failed to get latest version")
+	}
+
+	previousReleaseBranchName, err := getReleaseBranchName(ctx, previousVersionTag)
+	if err != nil {
+		return errors.Wrap(err, "failed to get release branch name")
+	}
+
+	major, minor, patch, err := getNextVersion(ctx, previousVersionTag, version)
+	if err != nil {
+		return errors.Wrap(err, "failed to get next version")
+	}
+
+	fmt.Printf("Releasing as version %d.%d.%d\n", major, minor, patch)
+
+	// replace the version in build.go
+	buildFileContent, err := source.File("./pkg/version/build.go").Contents(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get build file contents")
+	}
+	buildFileContent = strings.ReplaceAll(buildFileContent, "const version = \"unknown\"", fmt.Sprintf("const version = \"%d.%d.%d\"", major, minor, patch))
+	updatedSource := source.WithNewFile("./pkg/version/build.go", buildFileContent)
+
+	releaseBranchName := fmt.Sprintf("release-%d.%d.%d", major, minor, patch)
+	githubTokenPlaintext, err := githubToken.Plaintext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get github token plaintext")
+	}
+
+	// commit the updated build.go to a release branch so goreleaser has a clean tree
+	gitCommitContainer := dag.Container().
+		From("alpine/git:latest").
+		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
+		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
+		WithExec([]string{"git", "config", "user.email", "release@replicated.com"}).
+		WithExec([]string{"git", "config", "user.name", "Replicated Release Pipeline"}).
+		WithExec([]string{"git", "remote", "add", "dagger", fmt.Sprintf("https://%s@github.com/replicatedhq/replicated.git", githubTokenPlaintext)}).
+		WithExec([]string{"git", "checkout", "-b", releaseBranchName}).
+		WithExec([]string{"git", "add", "pkg/version/build.go"}).
+		WithExec([]string{"git", "commit", "-m", fmt.Sprintf("Set version to %d.%d.%d", major, minor, patch)}).
+		WithExec([]string{"git", "push", "dagger", releaseBranchName})
+	_, err = gitCommitContainer.Stdout(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get git commit stdout")
+	}
+	updatedSource = gitCommitContainer.Directory("/go/src/github.com/replicatedhq/replicated")
+
+	nextVersionTag := fmt.Sprintf("v%d.%d.%d", major, minor, patch)
+
+	tagContainer := dag.Container().
+		From("alpine/git:latest").
+		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", updatedSource).
+		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
+		With(CacheBustingExec([]string{"git", "tag", nextVersionTag})).
+		With(CacheBustingExec([]string{"git", "push", "dagger", nextVersionTag})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", previousReleaseBranchName})).
+		With(CacheBustingExec([]string{"git", "fetch", "dagger", "--tags"}))
+	_, err = tagContainer.Stdout(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get tag stdout")
+	}
+
+	updatedSource = tagContainer.Directory("/go/src/github.com/replicatedhq/replicated")
+
+	// Delegate to Publish for building and publishing artifacts
+	return r.Publish(ctx, updatedSource, nextVersionTag, snapshot, clean, onePasswordServiceAccountProduction, githubToken)
 }
 
 func getNextVersion(ctx context.Context, latestVersion string, version string) (int64, int64, int64, error) {
