@@ -22,20 +22,20 @@ func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 		Long: `Get a network report showing detailed network activity for a specified network.
 
 The report shows individual network events including source/destination IPs, ports, protocols,
-pods, processes, and DNS queries. Reports must be enabled with 'replicated network update <network-id> --collect-report'.
+pods, processes, and DNS queries. Reports must be enabled with 'replicated network update NETWORK_ID --collect-report'.
 
 Output formats:
   - Default: Full event details in JSON format
   - --summary: Aggregated statistics with top domains and destinations
   - --watch: Continuous stream of new events in JSON Lines format`,
 		Example: `# Get full network traffic report (external traffic only)
-replicated network report <network-id>
+replicated network report NETWORK_ID
 
 # Get aggregated summary with statistics. Only available for networks that have been terminated.
-replicated network report <network-id> --summary
+replicated network report NETWORK_ID --summary
 
 # Watch for new network events in real-time
-replicated network report <network-id> --watch`,
+replicated network report NETWORK_ID --watch`,
 		RunE:              r.getNetworkReport,
 		ValidArgsFunction: r.completeNetworkIDs,
 		Hidden:            false,
