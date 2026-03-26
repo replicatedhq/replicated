@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"archive/tar"
+	"bytes"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -162,28 +164,57 @@ func shouldFail(lintResult []types.LintMessage, failOn string) bool {
 }
 
 func tarYAMLDir(yamlDir string) ([]byte, error) {
-	archiveDir, err := os.MkdirTemp("", "replicated")
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+	defer tw.Close()
+
+	topLevelDir := filepath.Base(yamlDir)
+
+	err := filepath.Walk(yamlDir, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		relPath, err := filepath.Rel(yamlDir, path)
+		if err != nil {
+			return err
+		}
+
+		header, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		header.Name = filepath.Join(topLevelDir, relPath)
+		if info.IsDir() {
+			header.Name += "/"
+		}
+
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			return nil
+		}
+
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		_, err = io.Copy(tw, f)
+		return err
+	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create temp dir for archive")
-	}
-	defer os.RemoveAll(archiveDir)
-
-	archiveFile := filepath.Join(archiveDir, "kots-release.tar")
-
-	tar := archiver.Tar{
-		ImplicitTopLevelFolder: true,
-	}
-
-	if err := tar.Archive([]string{yamlDir}, archiveFile); err != nil {
 		return nil, errors.Wrap(err, "failed to archive")
 	}
 
-	data, err := os.ReadFile(archiveFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read archive file")
+	if err := tw.Close(); err != nil {
+		return nil, errors.Wrap(err, "failed to close tar writer")
 	}
 
-	return data, nil
+	return buf.Bytes(), nil
 }
 
 func isHelmChartsOnly(yamlDir string) (bool, error) {

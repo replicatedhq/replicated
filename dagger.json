@@ -1,6 +1,6 @@
 {
   "name": "replicated",
-  "engineVersion": "v0.18.9",
+  "engineVersion": "v0.19.9",
   "sdk": {
     "source": "go"
   },
@@ -16,5 +16,6 @@
       "pin": "0b03c8c560c2067f34dab800c92154abc3834841"
     }
   ],
-  "source": "dagger"
+  "source": "dagger",
+  "disableDefaultFunctionCaching": true
 }
