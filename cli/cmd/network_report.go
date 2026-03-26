@@ -17,7 +17,7 @@ import (
 
 func (r *runners) InitNetworkReport(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "report [network-id]",
+		Use:   "report NETWORK_ID",
 		Short: "Get network report",
 		Long: `Get a network report showing detailed network activity for a specified network.
 
