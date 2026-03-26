@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var goreleaserVersion = "v2.10.2"
+var goreleaserVersion = "v2.14.3"
 
 func (r *Replicated) Release(
 	ctx context.Context,
@@ -180,39 +180,68 @@ func (r *Replicated) Release(
 		return errors.Wrap(err, "failed to publish patch docker container")
 	}
 
-	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
-		Version: goreleaserVersion,
-	}).Ctr().
+	args := []string{"goreleaser"}
+	if snapshot {
+		args = append(args, "release", "--snapshot")
+	} else {
+		args = append(args, "release")
+	}
+	if clean {
+		args = append(args, "--clean")
+	}
+
+	ctr := newGoreleaserContainer(ctx, updatedSource).
 		WithSecretVariable("GITHUB_TOKEN", githubToken).
 		WithEnvVariable("GORELEASER_CURRENT_TAG", nextVersionTag).
-		WithEnvVariable("GORELEASER_PREVIOUS_TAG", previousVersionTag)
+		WithEnvVariable("GORELEASER_PREVIOUS_TAG", previousVersionTag).
+		With(CacheBustingExec(args))
 
-	if snapshot {
-		_, err := dag.
-			Goreleaser(dagger.GoreleaserOpts{
-				Version: goreleaserVersion,
-				Ctr:     goreleaserContainer,
-			}).
-			WithSource(updatedSource).
-			Snapshot(ctx, dagger.GoreleaserSnapshotOpts{
-				Clean: clean,
-			})
-		if err != nil {
-			return errors.Wrap(err, "failed to snapshot goreleaser")
-		}
-	} else {
-		_, err := dag.
-			Goreleaser(dagger.GoreleaserOpts{
-				Version: goreleaserVersion,
-				Ctr:     goreleaserContainer,
-			}).
-			WithSource(updatedSource).
-			Release(ctx, dagger.GoreleaserReleaseOpts{
-				Clean: clean,
-			})
-		if err != nil {
-			return errors.Wrap(err, "failed to release goreleaser")
-		}
+	_, err = ctr.Stdout(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to run goreleaser")
+	}
+
+	return nil
+}
+
+// newGoreleaserContainer returns a Go container with goreleaser installed and
+// the source mounted, ready to run goreleaser commands.
+func newGoreleaserContainer(ctx context.Context, source *dagger.Directory) *dagger.Container {
+	image, err := goImage(ctx, source)
+	if err != nil {
+		image = "golang:latest"
+	}
+	goModCache, goBuildCache, err := goCacheVolumes(ctx, source)
+	if err != nil {
+		goModCache = dag.CacheVolume("replicated-go-mod")
+		goBuildCache = dag.CacheVolume("replicated-go-build")
+	}
+
+	return dag.Container().
+		From(image).
+		WithExec([]string{"go", "install", "github.com/goreleaser/goreleaser/v2@" + goreleaserVersion}).
+		WithMountedDirectory("/src", source).
+		WithWorkdir("/src").
+		WithMountedCache("/go/pkg/mod", goModCache).
+		WithEnvVariable("GOMODCACHE", "/go/pkg/mod").
+		WithMountedCache("/go/build-cache", goBuildCache).
+		WithEnvVariable("GOCACHE", "/go/build-cache")
+}
+
+// GoreleaserDryrun runs a goreleaser snapshot build to verify the release
+// configuration works. This is intended to be used as a PR check.
+func (r *Replicated) GoreleaserDryrun(
+	ctx context.Context,
+
+	// +defaultPath="./"
+	source *dagger.Directory,
+) error {
+	ctr := newGoreleaserContainer(ctx, source).
+		With(CacheBustingExec([]string{"goreleaser", "release", "--snapshot", "--clean"}))
+
+	_, err := ctr.Stdout(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to run goreleaser dryrun")
 	}
 
 	return nil
