@@ -95,6 +95,10 @@ build:
 dagger-build:
 	dagger call build --progress plain export --path bin/replicated
 
+.PHONY: dagger-goreleaser-dryrun
+dagger-goreleaser-dryrun:
+	dagger call goreleaser-dryrun --progress plain
+
 .PHONY: release
 release:
 	dagger call release \

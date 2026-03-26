@@ -175,9 +175,7 @@ func (r *Replicated) Release(
 		return errors.Wrap(err, "failed to publish patch docker container")
 	}
 
-	goreleaserContainer := dag.Goreleaser(dagger.GoreleaserOpts{
-		Version: goreleaserVersion,
-	}).Ctr().
+	goreleaserContainer := newGoreleaserContainer().
 		WithSecretVariable("GITHUB_TOKEN", githubToken).
 		WithEnvVariable("GORELEASER_CURRENT_TAG", nextVersionTag).
 		WithEnvVariable("GORELEASER_PREVIOUS_TAG", previousVersionTag)
@@ -208,6 +206,41 @@ func (r *Replicated) Release(
 		if err != nil {
 			return errors.Wrap(err, "failed to release goreleaser")
 		}
+	}
+
+	return nil
+}
+
+// newGoreleaserContainer returns a goreleaser container with GOTOOLCHAIN=auto
+// set so that goreleaser can download the Go version required by go.mod.
+func newGoreleaserContainer() *dagger.Container {
+	return dag.Goreleaser(dagger.GoreleaserOpts{
+		Version: goreleaserVersion,
+	}).Ctr().
+		WithEnvVariable("GOTOOLCHAIN", "auto")
+}
+
+// GoreleaserDryrun runs a goreleaser snapshot build to verify the release
+// configuration works. This is intended to be used as a PR check.
+func (r *Replicated) GoreleaserDryrun(
+	ctx context.Context,
+
+	// +defaultPath="./"
+	source *dagger.Directory,
+) error {
+	goreleaserContainer := newGoreleaserContainer()
+
+	_, err := dag.
+		Goreleaser(dagger.GoreleaserOpts{
+			Version: goreleaserVersion,
+			Ctr:     goreleaserContainer,
+		}).
+		WithSource(source).
+		Snapshot(ctx, dagger.GoreleaserSnapshotOpts{
+			Clean: true,
+		})
+	if err != nil {
+		return errors.Wrap(err, "failed to run goreleaser dryrun")
 	}
 
 	return nil
