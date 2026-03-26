@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var goreleaserVersion = "v2.10.2"
+var goreleaserVersion = "v2.14.3"
 
 func (r *Replicated) Release(
 	ctx context.Context,
@@ -211,13 +211,10 @@ func (r *Replicated) Release(
 	return nil
 }
 
-// newGoreleaserContainer returns a goreleaser container with GOTOOLCHAIN=auto
-// set so that goreleaser can download the Go version required by go.mod.
 func newGoreleaserContainer() *dagger.Container {
 	return dag.Goreleaser(dagger.GoreleaserOpts{
 		Version: goreleaserVersion,
-	}).Ctr().
-		WithEnvVariable("GOTOOLCHAIN", "auto")
+	}).Ctr()
 }
 
 // GoreleaserDryrun runs a goreleaser snapshot build to verify the release
