@@ -89,3 +89,12 @@ jobs:
             ${{ runner.os }}-go-
       - name: make build
         run: make build
+
+  dagger-build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dagger
+        run: curl -fsSL https://dl.dagger.io/dagger/install.sh | sudo BIN_DIR=/usr/local/bin sh
+      - name: Dagger build
+        run: make dagger-build

@@ -5,32 +5,35 @@ import (
 	"dagger/replicated/internal/dagger"
 )
 
-func validateSecurity(
+// Build compiles the replicated CLI binary.
+func (r *Replicated) Build(
 	ctx context.Context,
 
 	// +defaultPath="./"
 	source *dagger.Directory,
-) error {
+) (*dagger.File, error) {
+	image, err := goImage(ctx, source)
+	if err != nil {
+		return nil, err
+	}
 	goModCache, goBuildCache, err := goCacheVolumes(ctx, source)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// run semgrep
-	semgrep := dag.Container().
-		From("returntocorp/semgrep").
+	binary := dag.Container(dagger.ContainerOpts{
+		Platform: "linux/amd64",
+	}).
+		From(image).
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
+		WithoutFile("/go/src/github.com/replicatedhq/replicated/bin/replicated").
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).
 		WithEnvVariable("GOMODCACHE", "/go/pkg/mod").
 		WithMountedCache("/go/build-cache", goBuildCache).
 		WithEnvVariable("GOCACHE", "/go/build-cache").
-		With(CacheBustingExec([]string{"semgrep", "scan", "--config=p/golang", "."}))
+		With(CacheBustingExec([]string{"make", "build"})).
+		File("/go/src/github.com/replicatedhq/replicated/bin/replicated")
 
-	_, err = semgrep.Stderr(ctx)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return binary, nil
 }
