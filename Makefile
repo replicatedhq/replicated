@@ -91,6 +91,10 @@ build:
 		-o bin/replicated \
 		cli/main.go
 
+.PHONY: dagger-build
+dagger-build:
+	dagger call build --progress plain export --path bin/replicated
+
 .PHONY: release
 release:
 	dagger call release \

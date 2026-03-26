@@ -61,12 +61,12 @@ func (r *Replicated) GenerateDocs(
 	}
 
 	// Generate CLI new docs
-	goModCache := dag.CacheVolume("replicated-go-mod-122")
-	goBuildCache := dag.CacheVolume("replicated-go-build-121")
+	goModCache := dag.CacheVolume("replicated-go-mod-126")
+	goBuildCache := dag.CacheVolume("replicated-go-build-126")
 
 	// generate the docs from this current commit
 	docs := dag.Container().
-		From("golang:1.24").
+		From("golang:1.26").
 		WithMountedDirectory("/go/src/github.com/replicatedhq/replicated", source).
 		WithWorkdir("/go/src/github.com/replicatedhq/replicated").
 		WithMountedCache("/go/pkg/mod", goModCache).
