@@ -81,7 +81,7 @@ Notes:
 
 ## Glob Pattern Support
 
-The `replicated lint` command supports glob patterns for discovering files. This allows you to lint multiple charts, preflights, or manifests with a single pattern.
+The `replicated release lint` command supports glob patterns for discovering files. This allows you to lint multiple charts, preflights, or manifests with a single pattern.
 
 ### Supported Patterns
 
