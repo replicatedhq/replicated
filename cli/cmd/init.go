@@ -513,7 +513,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 
 	fmt.Fprintf(r.w, "\nNext steps:\n")
 	if len(config.Charts) > 0 || len(config.Preflights) > 0 {
-		fmt.Fprintf(r.w, "  Run 'replicated lint' to validate your resources\n")
+		fmt.Fprintf(r.w, "  Run 'replicated release lint' to validate your resources\n")
 	}
 	fmt.Fprintf(r.w, "  Run 'replicated release create' to create a release\n")
 

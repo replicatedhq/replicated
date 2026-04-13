@@ -1,6 +1,6 @@
 # Lint Integration Tests
 
-This directory contains integration/e2e tests for the `replicated lint` command.
+This directory contains integration/e2e tests for the `replicated release lint` command.
 
 ## Structure
 
@@ -82,7 +82,7 @@ make test-lint
 This will:
 1. Build the `replicated` binary (if needed)
 2. Find all test cases in `testdata/`
-3. Run `replicated lint` in each test directory
+3. Run `replicated release lint` in each test directory
 4. Compare actual results with `expect.json`
 5. Report pass/fail for each test
 
@@ -100,7 +100,7 @@ make build
 
 ```bash
 cd testdata/chart-with-required-values
-../../bin/replicated lint
+../../bin/replicated release lint
 ```
 
 ## Test Validation
@@ -149,7 +149,7 @@ The test script validates:
 4. Run lint manually to see what messages are produced:
    ```bash
    cd testdata/my-new-test
-   ../../bin/replicated lint
+   ../../bin/replicated release lint
    ```
 
 5. Create `expect.json` based on the output:
