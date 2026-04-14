@@ -70,7 +70,7 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 	cmd.Flags().StringVar(&r.args.createClusterKubernetesVersion, "version", "", "Kubernetes version to provision (format is distribution dependent)")
 	cmd.RegisterFlagCompletionFunc("version", r.completeClusterVersions)
 	cmd.Flags().StringVar(&r.args.createClusterIPFamily, "ip-family", "", "IP Family to use for the cluster (ipv4|ipv6|dual).")
-	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster distribution)")
+	cmd.Flags().StringVar(&r.args.createClusterLicenseID, "license-id", "", "License ID to use for the installation (required for Embedded Cluster v2 distribution)")
 	cmd.Flags().IntVar(&r.args.createClusterNodeCount, "nodes", int(1), "Node count")
 	cmd.Flags().StringVar(&r.args.createClusterMinNodeCount, "min-nodes", "", "Minimum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")
 	cmd.Flags().StringVar(&r.args.createClusterMaxNodeCount, "max-nodes", "", "Maximum Node count (non-negative number) (only for EKS, AKS and GKE clusters).")

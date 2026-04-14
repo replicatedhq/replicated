@@ -15,7 +15,7 @@ func (r *runners) InitVMPortExpose(parent *cobra.Command) *cobra.Command {
 This command supports different protocols including "http", "https", "ws", and "wss" for web traffic and web socket communication.
 
 VMs are currently a beta feature.`,
-		Example: `# Expose port for Embedded Cluster (Port: 30000) with HTTP Protocol
+		Example: `# Expose port for Embedded Cluster v2 (Port: 30000) with HTTP Protocol
 replicated vm port expose VM_ID_OR_NAME --port 30000 --protocol http
 
 # Expose port 8080 with HTTPS protocol
