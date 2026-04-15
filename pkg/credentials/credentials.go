@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/replicatedhq/replicated/pkg/cmxmetadata"
 	"github.com/replicatedhq/replicated/pkg/credentials/types"
 )
 
@@ -54,6 +55,7 @@ func GetCurrentCredentials() (*types.Credentials, error) {
 // 2. Named profile (if profileName is provided)
 // 3. Default profile from config file (if profileName is empty)
 // 4. Legacy single token from config file (backward compatibility)
+// 5. CMX VM metadata service (automatic OIDC auth inside Firecracker VMs)
 func GetCredentialsWithProfile(profileName string) (*types.Credentials, error) {
 	// Priority 1: Check environment variables first
 	envCredentials, err := getEnvCredentials()
@@ -80,6 +82,17 @@ func GetCredentialsWithProfile(profileName string) (*types.Credentials, error) {
 	}
 	if err == nil {
 		return configFileCredentials, nil
+	}
+
+	// Priority 5: CMX VM metadata service (automatic OIDC auth inside Firecracker VMs).
+	// This is last so that any explicitly configured token always takes precedence,
+	// making it easy to override the VM identity during development or testing.
+	vmMeta, err := cmxmetadata.GetVMMetadata()
+	if err == nil {
+		token, err := cmxmetadata.GetAccessToken(vmMeta)
+		if err == nil {
+			return &types.Credentials{APIToken: token, IsCMX: true, APIOrigin: vmMeta.APIURL}, nil
+		}
 	}
 
 	return nil, ErrCredentialsNotFound
