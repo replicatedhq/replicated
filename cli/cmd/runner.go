@@ -222,8 +222,9 @@ type runnerArgs struct {
 	createVMWaitDuration time.Duration
 	createVMTags         []string
 	createVMNetwork      string
-	createVMDryRun       bool
-	createVMPublicKeys   []string
+	createVMDryRun          bool
+	createVMPublicKeys      []string
+	createVMRBACPolicyName  string
 
 	lsVMShowTerminated bool
 	lsVMStartTime      string
@@ -235,7 +236,8 @@ type runnerArgs struct {
 	removeVMNames  []string
 	removeVMDryRun bool
 
-	updateVMTTL string
+	updateVMTTL            string
+	updateVMRBACPolicyName string
 
 	updateVMName string
 	updateVMID   string

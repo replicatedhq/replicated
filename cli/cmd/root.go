@@ -280,6 +280,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
+	runCmds.InitVMUpdateRBACPolicy(vmUpdateCmd)
 
 	vmPortCmd := runCmds.InitVMPort(vmCmd)
 	runCmds.InitVMPortLs(vmPortCmd)
@@ -381,6 +382,16 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 						fmt.Fprintf(os.Stderr, "[DEBUG] Registry origin: %s\n", origins.Registry)
 						fmt.Fprintf(os.Stderr, "[DEBUG] Linter origin: %s\n", origins.Linter)
 					}
+				}
+			}
+
+			// If running inside a CMX VM, use the api_url from the MMDS so the CLI
+			// talks to the same vendor-api instance that issued the token. Only
+			// applies when REPLICATED_API_ORIGIN is not explicitly set by the user.
+			if creds.IsCMX && creds.APIOrigin != "" && os.Getenv("REPLICATED_API_ORIGIN") == "" {
+				platformOrigin = strings.TrimRight(creds.APIOrigin, "/")
+				if debugFlag {
+					fmt.Fprintf(os.Stderr, "[DEBUG] Using CMX MMDS vendor API origin: %s\n", platformOrigin)
 				}
 			}
 

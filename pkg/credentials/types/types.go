@@ -7,6 +7,12 @@ type Credentials struct {
 	IsEnv        bool `json:"-"`
 	IsConfigFile bool `json:"-"`
 	IsProfile    bool `json:"-"`
+	IsCMX        bool `json:"-"`
+
+	// APIOrigin is populated when IsCMX is true. It holds the api_url from the
+	// Firecracker MMDS so the CLI can talk to the same vendor-api instance that
+	// issued the token, without requiring REPLICATED_API_ORIGIN to be set manually.
+	APIOrigin string `json:"-"`
 }
 
 // Profile represents a named authentication profile
