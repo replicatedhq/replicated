@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -147,6 +148,9 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM, error) {
 	vms, ve, err := r.kotsAPI.CreateVM(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return nil, errors.New(err.Error())
+		}
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return nil, errors.Wrap(err, "create vm")
@@ -173,6 +177,11 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM,
 	}
 
 	return vms, nil
+}
+
+func isRBACDeniedError(err error) bool {
+	message := strings.TrimSpace(strings.ToLower(err.Error()))
+	return strings.HasPrefix(message, "access to ") && strings.HasSuffix(message, " is denied")
 }
 
 func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, duration time.Duration) ([]*types.VM, error) {

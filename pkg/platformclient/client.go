@@ -73,6 +73,26 @@ func (e APIError) Error() string {
 	return fmt.Sprintf("%s %s %d: %s", e.Method, e.Endpoint, e.StatusCode, e.Message)
 }
 
+type ForbiddenError struct {
+	Message string
+	Body    []byte
+}
+
+func (e ForbiddenError) Error() string {
+	if strings.TrimSpace(e.Message) != "" {
+		return e.Message
+	}
+	return ErrForbidden.Error()
+}
+
+func (e ForbiddenError) Cause() error {
+	return ErrForbidden
+}
+
+func (e ForbiddenError) Unwrap() error {
+	return ErrForbidden
+}
+
 type AppOptions struct {
 	Name string
 }
@@ -185,25 +205,12 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	}
 	if resp.StatusCode != successStatus {
 		if resp.StatusCode == http.StatusForbidden {
-			// look for a response message in the body
 			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return ErrForbidden
 			}
 
-			// some of the methods in the api have a standardized response for 403
-			type forbiddenResponse struct {
-				Error struct {
-					Code    string `json:"code"`
-					Message string `json:"message"`
-				} `json:"error"`
-			}
-			var fr forbiddenResponse
-			if err := json.Unmarshal(body, &fr); err == nil {
-				return errors.New(fr.Error.Message)
-			}
-
-			return ErrForbidden
+			return parseForbiddenError(body)
 		}
 		body, _ := io.ReadAll(resp.Body)
 		return APIError{
@@ -226,6 +233,32 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	}
 
 	return nil
+}
+
+func parseForbiddenError(body []byte) error {
+	type forbiddenResponse struct {
+		Error struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+
+	var fr forbiddenResponse
+	if err := json.Unmarshal(body, &fr); err == nil && strings.TrimSpace(fr.Error.Message) != "" {
+		return ForbiddenError{
+			Message: fr.Error.Message,
+			Body:    body,
+		}
+	}
+
+	if message := strings.TrimSpace(string(body)); message != "" {
+		return ForbiddenError{
+			Message: message,
+			Body:    body,
+		}
+	}
+
+	return ErrForbidden
 }
 
 func addGitHubActionsHeaders(req *http.Request) error {
