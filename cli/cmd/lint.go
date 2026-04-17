@@ -347,14 +347,19 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "expanding manifest globs for ec lint")
 		}
 
-		ecVersion, err := lint2.DiscoverECVersion(ecPaths)
-		if err != nil {
-			return errors.Wrap(err, "discovering embedded-cluster version")
-		}
-
 		binaryPath := config.ReplLint.Linters.EmbeddedCluster.BinaryPath
 		if val := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_BINARY_PATH"); val != "" {
 			binaryPath = val
+		}
+
+		// Version discovery is only needed when no binary path is provided, since
+		// the version is used solely to download the binary via the resolver.
+		var ecVersion string
+		if binaryPath == "" {
+			ecVersion, err = lint2.DiscoverECVersion(ecPaths)
+			if err != nil {
+				return errors.Wrap(err, "discovering embedded-cluster version")
+			}
 		}
 
 		ecResults, err := r.lintEmbeddedClusterManifests(cmd, ecPaths, ecVersion, binaryPath, config.ReplLint.Linters.EmbeddedCluster.GetDisableChecks())

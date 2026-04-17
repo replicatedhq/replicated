@@ -142,14 +142,20 @@ func parseECVersionFromFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var manifest ecConfigManifest
-	if err := yaml.Unmarshal(data, &manifest); err != nil {
-		return "", nil // not valid YAML or not the right shape; skip
+	// Iterate through all YAML documents in the file (separated by ---).
+	// yaml.Unmarshal only reads the first document, so a multi-document file
+	// would silently miss an EC Config manifest in a non-first document.
+	decoder := yaml.NewDecoder(strings.NewReader(string(data)))
+	for {
+		var manifest ecConfigManifest
+		if err := decoder.Decode(&manifest); err != nil {
+			break // io.EOF or parse error; stop iterating
+		}
+		if manifest.Kind == "Config" && manifest.APIVersion == ecConfigAPIVersion {
+			return manifest.Spec.Version, nil
+		}
 	}
-	if manifest.Kind != "Config" || manifest.APIVersion != ecConfigAPIVersion {
-		return "", nil
-	}
-	return manifest.Spec.Version, nil
+	return "", nil
 }
 
 // LintEmbeddedCluster runs `ec lint --format json <paths...>` and returns structured results.
@@ -170,22 +176,32 @@ func LintEmbeddedCluster(ctx context.Context, paths []string, ecBinaryPath strin
 	outputStr := strings.TrimSpace(string(output))
 
 	// EC lint exits non-zero when lint issues are found; we still parse the output.
+	// The output may have non-JSON text before or after the JSON object (e.g. from stderr
+	// mixed in via CombinedOutput). Scan forward to each '{' and use json.NewDecoder.Decode
+	// which handles trailing non-JSON content gracefully, mirroring parseTroubleshootJSON.
 	var parsed ecLintOutput
-	// The output may have non-JSON text before the opening brace (e.g. error messages);
-	// scan forward to find the JSON object, mirroring parseTroubleshootJSON's approach.
-	startIdx := strings.Index(outputStr, "{")
-	if startIdx == -1 {
+	var jsonErr error
+	searchOffset := 0
+	for {
+		idx := strings.Index(outputStr[searchOffset:], "{")
+		if idx == -1 {
+			break
+		}
+		startIdx := searchOffset + idx
+		decoder := json.NewDecoder(strings.NewReader(outputStr[startIdx:]))
+		if jsonErr = decoder.Decode(&parsed); jsonErr == nil {
+			break
+		}
+		searchOffset = startIdx + 1
+	}
+	if jsonErr != nil || parsed.Results == nil {
 		if err != nil {
 			return nil, fmt.Errorf("ec lint failed: %w\nOutput: %s", err, outputStr)
+		}
+		if jsonErr != nil {
+			return nil, fmt.Errorf("failed to parse ec lint output: %w\nOutput: %s", jsonErr, outputStr)
 		}
 		return nil, fmt.Errorf("no JSON found in ec lint output: %s", outputStr)
-	}
-
-	if jsonErr := json.Unmarshal([]byte(outputStr[startIdx:]), &parsed); jsonErr != nil {
-		if err != nil {
-			return nil, fmt.Errorf("ec lint failed: %w\nOutput: %s", err, outputStr)
-		}
-		return nil, fmt.Errorf("failed to parse ec lint output: %w\nOutput: %s", jsonErr, outputStr)
 	}
 
 	messages := convertECResultToMessages(&parsed)

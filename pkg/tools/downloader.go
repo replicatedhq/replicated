@@ -46,9 +46,13 @@ func NewDownloader() *Downloader {
 // If the requested version fails, it will automatically fallback to latest stable
 // Returns the actual version that was downloaded (may differ from requested version due to fallback)
 func (d *Downloader) Download(ctx context.Context, name, version string) (string, error) {
-	// Try with fallback
-	actualVersion, err := d.DownloadWithFallback(ctx, name, version)
-	return actualVersion, err
+	// EC version is always explicit (auto-discovered from the app manifest);
+	// "latest" resolution via replicated.app/ping is not supported for EC,
+	// so skip the fallback path to avoid a misleading error message.
+	if name == ToolEmbeddedCluster {
+		return version, d.downloadExact(ctx, name, version)
+	}
+	return d.DownloadWithFallback(ctx, name, version)
 }
 
 // downloadExact downloads a specific version without fallback (internal use)
