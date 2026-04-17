@@ -70,6 +70,8 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 		archiveData, checksumURL, checksumFilename, err = d.downloadPreflightArchive(version)
 	case ToolSupportBundle:
 		archiveData, checksumURL, checksumFilename, err = d.downloadSupportBundleArchive(version)
+	case ToolEmbeddedCluster:
+		archiveData, err = d.downloadECArchive(version)
 	default:
 		return fmt.Errorf("unknown tool: %s", name)
 	}
@@ -79,15 +81,17 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 	}
 
 	// Verify checksum
-	if name == ToolHelm {
+	switch name {
+	case ToolHelm:
 		if err := VerifyHelmChecksum(archiveData, checksumURL); err != nil {
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
-	} else {
-		// Troubleshoot tools (preflight, support-bundle)
+	case ToolPreflight, ToolSupportBundle:
 		if err := VerifyTroubleshootChecksum(archiveData, version, checksumFilename); err != nil {
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
+	case ToolEmbeddedCluster:
+		// No checksum verification for EC archives
 	}
 
 	// Extract binary from archive
@@ -110,6 +114,19 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 			binaryData, err = extractFromZip(archiveData, binaryName)
 		} else {
 			binaryData, err = extractFromTarGz(archiveData, binaryName)
+		}
+	case ToolEmbeddedCluster:
+		var ecBinaryName string
+		switch runtime.GOOS {
+		case "darwin":
+			ecBinaryName = "cli-darwin-all"
+			binaryData, err = extractFromTarGz(archiveData, ecBinaryName)
+		case "windows":
+			ecBinaryName = fmt.Sprintf("cli-windows-%s.exe", runtime.GOARCH)
+			binaryData, err = extractFromZip(archiveData, ecBinaryName)
+		default:
+			ecBinaryName = fmt.Sprintf("cli-%s-%s", runtime.GOOS, runtime.GOARCH)
+			binaryData, err = extractFromTarGz(archiveData, ecBinaryName)
 		}
 	}
 
@@ -166,6 +183,10 @@ func getLatestStableVersion(toolName string) (string, error) {
 		versionKey = "preflight"
 	case ToolSupportBundle:
 		versionKey = "support_bundle"
+	case ToolEmbeddedCluster:
+		// EC version resolution is not yet available via replicated.app/ping;
+		// callers must provide an explicit version string.
+		return "", fmt.Errorf("latest version resolution is not supported for %s: specify an explicit version", toolName)
 	default:
 		return "", fmt.Errorf("unknown tool: %s", toolName)
 	}
@@ -330,6 +351,32 @@ func (d *Downloader) downloadSupportBundleArchive(version string) ([]byte, strin
 	checksumURL := fmt.Sprintf("https://github.com/replicatedhq/troubleshoot/releases/download/v%s/troubleshoot_%s_checksums.txt", version, version)
 
 	return data, checksumURL, filename, nil
+}
+
+// downloadECArchive downloads the embedded-cluster CLI archive from S3.
+// URL pattern: https://tf-staging-embedded-cluster-bin.s3.us-east-1.amazonaws.com/releases/{version}-{os}.tgz
+func (d *Downloader) downloadECArchive(version string) ([]byte, error) {
+	archiveName := ecArchiveName(version)
+
+	url := fmt.Sprintf("https://tf-staging-embedded-cluster-bin.s3.us-east-1.amazonaws.com/releases/%s", archiveName)
+
+	data, err := d.downloadWithRetry(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func ecArchiveName(version string) string {
+	switch runtime.GOOS {
+	case "darwin":
+		return fmt.Sprintf("%s-darwin-all.tgz", version)
+	case "windows":
+		return fmt.Sprintf("%s-windows-%s.zip", version, runtime.GOARCH)
+	default:
+		return fmt.Sprintf("%s-%s.tgz", version, runtime.GOOS)
+	}
 }
 
 // extractFromZip extracts a specific file from a zip archive in memory

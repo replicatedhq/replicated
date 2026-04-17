@@ -183,7 +183,7 @@ func (p *ConfigParser) mergeConfigs(configs []*Config) *Config {
 				merged.ReplLint.Linters.Helm = mergeLinterConfig(merged.ReplLint.Linters.Helm, child.ReplLint.Linters.Helm)
 				merged.ReplLint.Linters.Preflight = mergeLinterConfig(merged.ReplLint.Linters.Preflight, child.ReplLint.Linters.Preflight)
 				merged.ReplLint.Linters.SupportBundle = mergeLinterConfig(merged.ReplLint.Linters.SupportBundle, child.ReplLint.Linters.SupportBundle)
-				merged.ReplLint.Linters.EmbeddedCluster = mergeLinterConfig(merged.ReplLint.Linters.EmbeddedCluster, child.ReplLint.Linters.EmbeddedCluster)
+				merged.ReplLint.Linters.EmbeddedCluster = mergeECLinterConfig(merged.ReplLint.Linters.EmbeddedCluster, child.ReplLint.Linters.EmbeddedCluster)
 				merged.ReplLint.Linters.Kots = mergeLinterConfig(merged.ReplLint.Linters.Kots, child.ReplLint.Linters.Kots)
 
 				// Merge tools map (child versions override parent)
@@ -244,11 +244,10 @@ func (p *ConfigParser) DefaultConfig() *Config {
 		ReplLint: &ReplLintConfig{
 			Version: 1,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
+				Helm:          LinterConfig{Disabled: boolPtr(false)},
+				Preflight:     LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
+				// EmbeddedCluster and Kots default to disabled (nil Disabled = disabled for ECLinterConfig)
 			},
 			Tools: make(map[string]string),
 		},
@@ -265,11 +264,10 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 		config.ReplLint = &ReplLintConfig{
 			Version: 1,
 			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)},
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: LinterConfig{Disabled: boolPtr(true)},
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
+				Helm:          LinterConfig{Disabled: boolPtr(false)},
+				Preflight:     LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
+				// EmbeddedCluster and Kots default to disabled (nil Disabled = disabled for ECLinterConfig)
 			},
 			Tools: make(map[string]string),
 		}
@@ -452,6 +450,22 @@ func mergeLinterConfig(parent, child LinterConfig) LinterConfig {
 	// Override disabled if child explicitly sets it
 	if child.Disabled != nil {
 		result.Disabled = child.Disabled
+	}
+
+	return result
+}
+
+func mergeECLinterConfig(parent, child ECLinterConfig) ECLinterConfig {
+	result := parent
+
+	if child.Disabled != nil {
+		result.Disabled = child.Disabled
+	}
+	if len(child.DisableChecks) > 0 {
+		result.DisableChecks = child.DisableChecks
+	}
+	if child.BinaryPath != "" {
+		result.BinaryPath = child.BinaryPath
 	}
 
 	return result
