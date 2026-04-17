@@ -244,11 +244,11 @@ func (p *ConfigParser) DefaultConfig() *Config {
 		ReplLint: &ReplLintConfig{
 			Version: 1,
 			Linters: LintersConfig{
-				Helm:          LinterConfig{Disabled: boolPtr(false)},
-				Preflight:     LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
-				Kots:          LinterConfig{Disabled: boolPtr(true)},
-				// EmbeddedCluster defaults to disabled via ECLinterConfig.IsEnabled() (nil = disabled)
+				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: ECLinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		},
@@ -265,11 +265,11 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 		config.ReplLint = &ReplLintConfig{
 			Version: 1,
 			Linters: LintersConfig{
-				Helm:          LinterConfig{Disabled: boolPtr(false)},
-				Preflight:     LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
-				Kots:          LinterConfig{Disabled: boolPtr(true)},
-				// EmbeddedCluster defaults to disabled via ECLinterConfig.IsEnabled() (nil = disabled)
+				Helm:            LinterConfig{Disabled: boolPtr(false)},
+				Preflight:       LinterConfig{Disabled: boolPtr(false)},
+				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
+				EmbeddedCluster: ECLinterConfig{Disabled: boolPtr(true)},
+				Kots:            LinterConfig{Disabled: boolPtr(true)},
 			},
 			Tools: make(map[string]string),
 		}
