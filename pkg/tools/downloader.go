@@ -95,7 +95,8 @@ func (d *Downloader) downloadExact(ctx context.Context, name, version string) er
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
 	case ToolEmbeddedCluster:
-		// No checksum verification for EC archives
+		// TODO: add checksum verification once the EC release process publishes
+		// per-archive checksum files to S3 alongside the .tgz archives.
 	}
 
 	// Extract binary from archive
