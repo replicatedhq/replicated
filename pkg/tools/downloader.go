@@ -354,11 +354,11 @@ func (d *Downloader) downloadSupportBundleArchive(version string) ([]byte, strin
 }
 
 // downloadECArchive downloads the embedded-cluster CLI archive from S3.
-// URL pattern: https://tf-embedded-cluster-bin.s3.us-east-1.amazonaws.com/releases/{version}-{os}.tgz
+// URL pattern: https://tf-embedded-cluster-binaries.s3.us-east-1.amazonaws.com/releases/{version}-{os}.tgz
 func (d *Downloader) downloadECArchive(version string) ([]byte, error) {
 	archiveName := ecArchiveName(version)
 
-	url := fmt.Sprintf("https://tf-embedded-cluster-bin.s3.us-east-1.amazonaws.com/releases/%s", archiveName)
+	url := fmt.Sprintf("https://tf-embedded-cluster-binaries.s3.us-east-1.amazonaws.com/releases/%s", archiveName)
 
 	data, err := d.downloadWithRetry(url)
 	if err != nil {
