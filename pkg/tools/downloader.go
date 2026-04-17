@@ -375,7 +375,7 @@ func ecArchiveName(version string) string {
 	case "windows":
 		return fmt.Sprintf("%s-windows-%s.zip", version, runtime.GOARCH)
 	default:
-		return fmt.Sprintf("%s-%s.tgz", version, runtime.GOOS)
+		return fmt.Sprintf("%s-%s-%s.tgz", version, runtime.GOOS, runtime.GOARCH)
 	}
 }
 
