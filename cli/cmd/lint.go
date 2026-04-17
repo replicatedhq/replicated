@@ -197,8 +197,9 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
 		r.w.Flush()
 
-		// If nothing was found, exit early
-		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+		// If nothing was found and EC linting is not enabled, exit early.
+		// EC linting runs after this block, so don't bail out when it's enabled.
+		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 && !config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
 			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
 			r.w.Flush()
 			return nil
