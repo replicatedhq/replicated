@@ -247,7 +247,8 @@ func (p *ConfigParser) DefaultConfig() *Config {
 				Helm:          LinterConfig{Disabled: boolPtr(false)},
 				Preflight:     LinterConfig{Disabled: boolPtr(false)},
 				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
-				// EmbeddedCluster and Kots default to disabled (nil Disabled = disabled for ECLinterConfig)
+				Kots:          LinterConfig{Disabled: boolPtr(true)},
+				// EmbeddedCluster defaults to disabled via ECLinterConfig.IsEnabled() (nil = disabled)
 			},
 			Tools: make(map[string]string),
 		},
@@ -267,10 +268,16 @@ func (p *ConfigParser) ApplyDefaults(config *Config) {
 				Helm:          LinterConfig{Disabled: boolPtr(false)},
 				Preflight:     LinterConfig{Disabled: boolPtr(false)},
 				SupportBundle: LinterConfig{Disabled: boolPtr(false)},
-				// EmbeddedCluster and Kots default to disabled (nil Disabled = disabled for ECLinterConfig)
+				Kots:          LinterConfig{Disabled: boolPtr(true)},
+				// EmbeddedCluster defaults to disabled via ECLinterConfig.IsEnabled() (nil = disabled)
 			},
 			Tools: make(map[string]string),
 		}
+	}
+
+	// Kots is opt-in: default to disabled when not explicitly configured
+	if config.ReplLint.Linters.Kots.Disabled == nil {
+		config.ReplLint.Linters.Kots.Disabled = boolPtr(true)
 	}
 
 	// Default version
