@@ -12,6 +12,53 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ExpandManifestGlobs expands a list of manifest glob patterns to the set of
+// matching YAML files, applying the same gitignore and hidden-path filtering
+// used by the other linters. All YAML files are returned (no kind filtering).
+func ExpandManifestGlobs(manifestPatterns []string) ([]string, error) {
+	gitignoreChecker, _ := NewGitignoreChecker(".")
+
+	seen := make(map[string]bool)
+	var files []string
+
+	for _, pattern := range manifestPatterns {
+		cleanPattern := filepath.Clean(pattern)
+		skipHidden := !patternTargetsHiddenPath(cleanPattern)
+
+		var checker *GitignoreChecker
+		if gitignoreChecker != nil && !gitignoreChecker.PathMatchesIgnoredPattern(cleanPattern) {
+			checker = gitignoreChecker
+		}
+
+		yamlPatterns, err := buildYAMLPatterns(cleanPattern)
+		if err != nil {
+			// pattern doesn't end in a recognized suffix; skip it
+			continue
+		}
+
+		for _, p := range yamlPatterns {
+			var matches []string
+			if checker != nil {
+				matches, _ = GlobFiles(p, WithGitignoreChecker(checker))
+			} else {
+				matches, _ = GlobFiles(p)
+			}
+
+			for _, m := range matches {
+				if skipHidden && isHiddenPath(m) {
+					continue
+				}
+				if !seen[m] {
+					seen[m] = true
+					files = append(files, m)
+				}
+			}
+		}
+	}
+
+	return files, nil
+}
+
 // ecLintIssue is an issue from the EC CLI lint output.
 // It satisfies TroubleshootIssue so we can reuse the common conversion helpers.
 type ecLintIssue struct {

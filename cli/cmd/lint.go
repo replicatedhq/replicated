@@ -337,15 +337,14 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 
 	// Lint Embedded Cluster manifests if enabled
 	if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
-		// Determine which paths to pass to the EC CLI
-		var ecPaths []string
+		// Expand manifest glob patterns to the actual YAML files to pass to the EC CLI
+		manifestPatterns := config.Manifests
 		if autoDiscoveryMode {
-			ecPaths = []string{"."}
-		} else {
-			ecPaths = manifestBaseDirs(config.Manifests)
-			if len(ecPaths) == 0 {
-				ecPaths = []string{"."}
-			}
+			manifestPatterns = []string{"./**"}
+		}
+		ecPaths, err := lint2.ExpandManifestGlobs(manifestPatterns)
+		if err != nil {
+			return errors.Wrap(err, "expanding manifest globs for ec lint")
 		}
 
 		ecVersion, err := lint2.DiscoverECVersion(ecPaths)
@@ -847,31 +846,6 @@ func (r *runners) displayLintResults(
 	}
 
 	return nil
-}
-
-// resolveECBinaryPath returns the path to the EC CLI binary.
-// It checks (in order): the explicit flag value, then PATH for "ec".
-// Returns an empty string if not found.
-// manifestBaseDirs extracts unique base directories from manifest glob patterns.
-// E.g. "./manifests/**/*.yaml" → "./manifests", "./**" → "."
-func manifestBaseDirs(manifests []string) []string {
-	seen := make(map[string]bool)
-	var dirs []string
-	for _, m := range manifests {
-		// Walk backwards through path components until we hit a glob character.
-		base := m
-		for strings.ContainsAny(filepath.Base(base), "*?[{") {
-			base = filepath.Dir(base)
-		}
-		if base == "" {
-			base = "."
-		}
-		if !seen[base] {
-			seen[base] = true
-			dirs = append(dirs, base)
-		}
-	}
-	return dirs
 }
 
 // lintEmbeddedClusterManifests runs the EC CLI lint tool against the provided paths.
