@@ -188,7 +188,7 @@ func TestParsePreflightOutput(t *testing.T) {
       "filePath": "/tmp/spec-with-info.yaml",
       "errors": [],
       "warnings": [],
-      "infos": [
+      "info": [
         {
           "line": 3,
           "column": 0,
@@ -325,9 +325,9 @@ func TestFormatPreflightMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatTroubleshootMessage(tt.issue)
+			result := formatLintMessage(tt.issue)
 			if result != tt.expected {
-				t.Errorf("formatTroubleshootMessage() = %q, want %q", result, tt.expected)
+				t.Errorf("formatLintMessage() = %q, want %q", result, tt.expected)
 			}
 		})
 	}

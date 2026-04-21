@@ -14,18 +14,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// PreflightLintResult represents the JSON output from preflight lint
-type PreflightLintResult struct {
-	Results []PreflightFileResult `json:"results"`
-}
-
-type PreflightFileResult struct {
-	FilePath string               `json:"filePath"`
-	Errors   []PreflightLintIssue `json:"errors"`
-	Warnings []PreflightLintIssue `json:"warnings"`
-	Infos    []PreflightLintIssue `json:"infos"`
-}
-
 type PreflightLintIssue struct {
 	Line    int    `json:"line"`
 	Column  int    `json:"column"`
@@ -174,9 +162,9 @@ func isPreflightV1Beta3(specPath string) (bool, error) {
 // parsePreflightOutput parses preflight lint JSON output into structured messages.
 // Uses the common troubleshoot.sh JSON parsing infrastructure.
 func parsePreflightOutput(output string) ([]LintMessage, error) {
-	result, err := parseTroubleshootJSON[PreflightLintIssue](output)
+	result, err := parseLintJSON[PreflightLintIssue](output)
 	if err != nil {
 		return nil, err
 	}
-	return convertTroubleshootResultToMessages(result), nil
+	return convertLintOutputToMessages(result), nil
 }

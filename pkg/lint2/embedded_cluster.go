@@ -2,7 +2,6 @@ package lint2
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -59,8 +58,7 @@ func ExpandManifestGlobs(manifestPatterns []string) ([]string, error) {
 	return files, nil
 }
 
-// ecLintIssue is an issue from the EC CLI lint output.
-// It satisfies TroubleshootIssue so we can reuse the common conversion helpers.
+// ecLintIssue is an issue from the EC CLI lint output. It implements LintIssue.
 type ecLintIssue struct {
 	Line    int    `json:"line"`
 	Column  int    `json:"column"`
@@ -72,20 +70,6 @@ func (i ecLintIssue) GetLine() int       { return i.Line }
 func (i ecLintIssue) GetColumn() int     { return i.Column }
 func (i ecLintIssue) GetMessage() string { return i.Message }
 func (i ecLintIssue) GetField() string   { return i.Field }
-
-// ecFileResult mirrors TroubleshootFileResult but uses the EC CLI's "info" key
-// (rather than the troubleshoot.sh tools' "infos" key).
-type ecFileResult struct {
-	FilePath string        `json:"filePath"`
-	Errors   []ecLintIssue `json:"errors"`
-	Warnings []ecLintIssue `json:"warnings"`
-	Infos    []ecLintIssue `json:"info"` // EC CLI uses "info" not "infos"
-}
-
-// ecLintOutput is the top-level JSON structure returned by `ec lint --format json`.
-type ecLintOutput struct {
-	Results []ecFileResult `json:"results"`
-}
 
 const ecConfigAPIVersion = "embeddedcluster.replicated.com/v1beta1"
 
@@ -176,35 +160,16 @@ func LintEmbeddedCluster(ctx context.Context, paths []string, ecBinaryPath strin
 	outputStr := strings.TrimSpace(string(output))
 
 	// EC lint exits non-zero when lint issues are found; we still parse the output.
-	// The output may have non-JSON text before or after the JSON object (e.g. from stderr
-	// mixed in via CombinedOutput). Scan forward to each '{' and use json.NewDecoder.Decode
-	// which handles trailing non-JSON content gracefully, mirroring parseTroubleshootJSON.
-	var parsed ecLintOutput
-	var jsonErr error
-	searchOffset := 0
-	for {
-		idx := strings.Index(outputStr[searchOffset:], "{")
-		if idx == -1 {
-			break
-		}
-		startIdx := searchOffset + idx
-		decoder := json.NewDecoder(strings.NewReader(outputStr[startIdx:]))
-		if jsonErr = decoder.Decode(&parsed); jsonErr == nil {
-			break
-		}
-		searchOffset = startIdx + 1
-	}
-	if jsonErr != nil || parsed.Results == nil {
+	// parseLintJSON handles stderr mixed into CombinedOutput and trailing non-JSON content.
+	parsed, jsonErr := parseLintJSON[ecLintIssue](outputStr)
+	if jsonErr != nil {
 		if err != nil {
 			return nil, fmt.Errorf("ec lint failed: %w\nOutput: %s", err, outputStr)
 		}
-		if jsonErr != nil {
-			return nil, fmt.Errorf("failed to parse ec lint output: %w\nOutput: %s", jsonErr, outputStr)
-		}
-		return nil, fmt.Errorf("no JSON found in ec lint output: %s", outputStr)
+		return nil, fmt.Errorf("failed to parse ec lint output: %w\nOutput: %s", jsonErr, outputStr)
 	}
 
-	messages := convertECResultToMessages(&parsed)
+	messages := convertLintOutputToMessages(parsed)
 
 	// Success = no ERROR-severity messages
 	success := true
@@ -219,35 +184,4 @@ func LintEmbeddedCluster(ctx context.Context, paths []string, ecBinaryPath strin
 		Success:  success,
 		Messages: messages,
 	}, nil
-}
-
-// convertECResultToMessages converts EC CLI lint output into LintMessages.
-func convertECResultToMessages(result *ecLintOutput) []LintMessage {
-	var messages []LintMessage
-
-	for _, fileResult := range result.Results {
-		for _, issue := range fileResult.Errors {
-			messages = append(messages, LintMessage{
-				Severity: "ERROR",
-				Path:     fileResult.FilePath,
-				Message:  formatTroubleshootMessage(issue),
-			})
-		}
-		for _, issue := range fileResult.Warnings {
-			messages = append(messages, LintMessage{
-				Severity: "WARNING",
-				Path:     fileResult.FilePath,
-				Message:  formatTroubleshootMessage(issue),
-			})
-		}
-		for _, issue := range fileResult.Infos {
-			messages = append(messages, LintMessage{
-				Severity: "INFO",
-				Path:     fileResult.FilePath,
-				Message:  formatTroubleshootMessage(issue),
-			})
-		}
-	}
-
-	return messages
 }
