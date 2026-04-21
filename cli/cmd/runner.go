@@ -281,6 +281,10 @@ type runnerArgs struct {
 	unDemoteReleaseSequence int64
 	unDemoteChannelSequence int64
 
+	// Enterprise portal preview
+	enterprisePortalPreviewPort  int
+	enterprisePortalPreviewImage string
+
 	// Profile management
 	profileAddToken           string
 	profileAddAPIOrigin       string
