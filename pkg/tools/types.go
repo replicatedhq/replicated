@@ -44,13 +44,15 @@ type LintersConfig struct {
 	Kots            LinterConfig   `yaml:"kots"`
 }
 
-// LinterConfig represents the configuration for a single linter
+// LinterConfig represents the configuration for a single linter.
+// nil Disabled is a transient parse state — ApplyDefaults always fills it in
+// before IsEnabled is called.
 type LinterConfig struct {
-	Disabled *bool `yaml:"disabled,omitempty"` // pointer allows nil = not set
+	Disabled *bool `yaml:"disabled,omitempty"`
 }
 
-// IsEnabled returns true if the linter is not disabled
-// nil Disabled means not set, defaults to enabled (false = not disabled)
+// IsEnabled returns true if the linter is not disabled.
+// nil is treated as enabled; in practice ApplyDefaults always sets an explicit value.
 func (c LinterConfig) IsEnabled() bool {
 	return c.Disabled == nil || !*c.Disabled
 }
@@ -59,17 +61,11 @@ func (c LinterConfig) IsEnabled() bool {
 var DefaultECDisableChecks = []string{"helmchart-archive", "ecconfig-helmchart-archive"}
 
 // ECLinterConfig is the linter config for the Embedded Cluster linter.
-// It is disabled by default (opt-in), unlike LinterConfig which defaults to enabled.
+// It embeds LinterConfig and adds EC-specific fields.
 type ECLinterConfig struct {
-	Disabled      *bool    `yaml:"disabled,omitempty"`
+	LinterConfig  `yaml:",inline"`
 	DisableChecks []string `yaml:"disable-checks,omitempty"`
 	BinaryPath    string   `yaml:"binary-path,omitempty"`
-}
-
-// IsEnabled returns true only when explicitly enabled (disabled: false).
-// nil Disabled means not configured, which defaults to disabled.
-func (c ECLinterConfig) IsEnabled() bool {
-	return c.Disabled != nil && !*c.Disabled
 }
 
 // GetDisableChecks returns the checks to disable. If DisableChecks is not set,

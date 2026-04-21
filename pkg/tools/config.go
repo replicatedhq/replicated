@@ -240,20 +240,7 @@ func (p *ConfigParser) ParseConfig(data []byte) (*Config, error) {
 
 // DefaultConfig returns a config with default values
 func (p *ConfigParser) DefaultConfig() *Config {
-	config := &Config{
-		ReplLint: &ReplLintConfig{
-			Version: 1,
-			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)}, // disabled: false = enabled
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: ECLinterConfig{Disabled: boolPtr(true)}, // disabled: true = disabled
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
-			},
-			Tools: make(map[string]string),
-		},
-	}
-
+	config := &Config{}
 	p.ApplyDefaults(config)
 	return config
 }
@@ -262,22 +249,26 @@ func (p *ConfigParser) DefaultConfig() *Config {
 func (p *ConfigParser) ApplyDefaults(config *Config) {
 	// Initialize lint config if nil
 	if config.ReplLint == nil {
-		config.ReplLint = &ReplLintConfig{
-			Version: 1,
-			Linters: LintersConfig{
-				Helm:            LinterConfig{Disabled: boolPtr(false)},
-				Preflight:       LinterConfig{Disabled: boolPtr(false)},
-				SupportBundle:   LinterConfig{Disabled: boolPtr(false)},
-				EmbeddedCluster: ECLinterConfig{Disabled: boolPtr(true)},
-				Kots:            LinterConfig{Disabled: boolPtr(true)},
-			},
-			Tools: make(map[string]string),
-		}
+		config.ReplLint = &ReplLintConfig{}
 	}
 
-	// Kots is opt-in: default to disabled when not explicitly configured
+	// Fill in default Disabled values for every linter. nil is a transient parse
+	// state; after this block IsEnabled() never sees nil. This is the single
+	// source of truth for which linters are on or off by default.
+	if config.ReplLint.Linters.Helm.Disabled == nil {
+		config.ReplLint.Linters.Helm.Disabled = boolPtr(false) // on by default
+	}
+	if config.ReplLint.Linters.Preflight.Disabled == nil {
+		config.ReplLint.Linters.Preflight.Disabled = boolPtr(false) // on by default
+	}
+	if config.ReplLint.Linters.SupportBundle.Disabled == nil {
+		config.ReplLint.Linters.SupportBundle.Disabled = boolPtr(false) // on by default
+	}
+	if config.ReplLint.Linters.EmbeddedCluster.Disabled == nil {
+		config.ReplLint.Linters.EmbeddedCluster.Disabled = boolPtr(true) // off by default (opt-in)
+	}
 	if config.ReplLint.Linters.Kots.Disabled == nil {
-		config.ReplLint.Linters.Kots.Disabled = boolPtr(true)
+		config.ReplLint.Linters.Kots.Disabled = boolPtr(true) // off by default (opt-in)
 	}
 
 	// Default version
@@ -464,10 +455,8 @@ func mergeLinterConfig(parent, child LinterConfig) LinterConfig {
 
 func mergeECLinterConfig(parent, child ECLinterConfig) ECLinterConfig {
 	result := parent
+	result.LinterConfig = mergeLinterConfig(parent.LinterConfig, child.LinterConfig)
 
-	if child.Disabled != nil {
-		result.Disabled = child.Disabled
-	}
 	if len(child.DisableChecks) > 0 {
 		result.DisableChecks = child.DisableChecks
 	}
@@ -477,6 +466,7 @@ func mergeECLinterConfig(parent, child ECLinterConfig) ECLinterConfig {
 
 	return result
 }
+
 
 // boolPtr returns a pointer to a boolean value
 // Helper for creating pointer booleans in config defaults
