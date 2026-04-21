@@ -875,8 +875,18 @@ func (r *runners) lintEmbeddedClusterManifests(cmd *cobra.Command, paths []strin
 		return nil, errors.Wrap(err, "failed to run ec lint")
 	}
 
-	// We treat the entire run as one result (EC lint scans across files itself)
-	pathLabel := strings.Join(paths, ", ")
+	// We treat the entire run as one result (EC lint scans across files itself).
+	// Individual messages carry their own file path from the EC lint output,
+	// so we use a short summary label here rather than joining all paths.
+	var pathLabel string
+	switch len(paths) {
+	case 0:
+		pathLabel = "embedded-cluster"
+	case 1:
+		pathLabel = paths[0]
+	default:
+		pathLabel = fmt.Sprintf("%d manifest files", len(paths))
+	}
 	ecResult := EmbeddedClusterLintResult{
 		Path:     pathLabel,
 		Success:  lint2Result.Success,
