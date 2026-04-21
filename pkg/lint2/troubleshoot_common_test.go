@@ -25,7 +25,7 @@ func TestParseTroubleshootJSON_Preflight(t *testing.T) {
         }
       ],
       "warnings": [],
-      "infos": []
+      "info": []
     }
   ]
 }`,
@@ -40,7 +40,7 @@ func TestParseTroubleshootJSON_Preflight(t *testing.T) {
       "filePath": "/tmp/test.yaml",
       "errors": [],
       "warnings": [],
-      "infos": []
+      "info": []
     }
   ]
 }`,
@@ -60,22 +60,22 @@ func TestParseTroubleshootJSON_Preflight(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := parseTroubleshootJSON[PreflightLintIssue](tt.output)
+			result, err := parseLintJSON[PreflightLintIssue](tt.output)
 
 			if tt.wantErr {
 				if err == nil {
-					t.Errorf("parseTroubleshootJSON() expected error, got nil")
+					t.Errorf("parseLintJSON() expected error, got nil")
 				}
 				return
 			}
 
 			if err != nil {
-				t.Errorf("parseTroubleshootJSON() unexpected error: %v", err)
+				t.Errorf("parseLintJSON() unexpected error: %v", err)
 				return
 			}
 
 			if result == nil {
-				t.Errorf("parseTroubleshootJSON() returned nil result")
+				t.Errorf("parseLintJSON() returned nil result")
 			}
 		})
 	}
@@ -95,14 +95,14 @@ func TestParseTroubleshootJSON_SupportBundle(t *testing.T) {
         }
       ],
       "warnings": [],
-      "infos": []
+      "info": []
     }
   ]
 }`
 
-	result, err := parseTroubleshootJSON[SupportBundleLintIssue](output)
+	result, err := parseLintJSON[SupportBundleLintIssue](output)
 	if err != nil {
-		t.Fatalf("parseTroubleshootJSON() unexpected error: %v", err)
+		t.Fatalf("parseLintJSON() unexpected error: %v", err)
 	}
 
 	if len(result.Results) != 1 {
@@ -157,9 +157,9 @@ func TestFormatTroubleshootMessage_Preflight(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := formatTroubleshootMessage(tt.issue)
+			result := formatLintMessage(tt.issue)
 			if result != tt.expected {
-				t.Errorf("formatTroubleshootMessage() = %q, want %q", result, tt.expected)
+				t.Errorf("formatLintMessage() = %q, want %q", result, tt.expected)
 			}
 		})
 	}
@@ -174,16 +174,16 @@ func TestFormatTroubleshootMessage_SupportBundle(t *testing.T) {
 	}
 
 	expected := "line 15: Support bundle error (field: spec)"
-	result := formatTroubleshootMessage(issue)
+	result := formatLintMessage(issue)
 
 	if result != expected {
-		t.Errorf("formatTroubleshootMessage() = %q, want %q", result, expected)
+		t.Errorf("formatLintMessage() = %q, want %q", result, expected)
 	}
 }
 
 func TestConvertTroubleshootResultToMessages_Preflight(t *testing.T) {
-	result := &TroubleshootLintResult[PreflightLintIssue]{
-		Results: []TroubleshootFileResult[PreflightLintIssue]{
+	result := &LintOutput[PreflightLintIssue]{
+		Results: []FileLintResult[PreflightLintIssue]{
 			{
 				FilePath: "/tmp/test.yaml",
 				Errors: []PreflightLintIssue{
@@ -192,14 +192,14 @@ func TestConvertTroubleshootResultToMessages_Preflight(t *testing.T) {
 				Warnings: []PreflightLintIssue{
 					{Line: 5, Message: "Warning message"},
 				},
-				Infos: []PreflightLintIssue{
+				Info: []PreflightLintIssue{
 					{Message: "Info message"},
 				},
 			},
 		},
 	}
 
-	messages := convertTroubleshootResultToMessages(result)
+	messages := convertLintOutputToMessages(result)
 
 	if len(messages) != 3 {
 		t.Fatalf("Expected 3 messages, got %d", len(messages))
@@ -225,20 +225,20 @@ func TestConvertTroubleshootResultToMessages_Preflight(t *testing.T) {
 }
 
 func TestConvertTroubleshootResultToMessages_SupportBundle(t *testing.T) {
-	result := &TroubleshootLintResult[SupportBundleLintIssue]{
-		Results: []TroubleshootFileResult[SupportBundleLintIssue]{
+	result := &LintOutput[SupportBundleLintIssue]{
+		Results: []FileLintResult[SupportBundleLintIssue]{
 			{
 				FilePath: "/tmp/support-bundle.yaml",
 				Errors: []SupportBundleLintIssue{
 					{Line: 8, Message: "Missing collectors", Field: "spec.collectors"},
 				},
 				Warnings: []SupportBundleLintIssue{},
-				Infos:    []SupportBundleLintIssue{},
+				Info:    []SupportBundleLintIssue{},
 			},
 		},
 	}
 
-	messages := convertTroubleshootResultToMessages(result)
+	messages := convertLintOutputToMessages(result)
 
 	if len(messages) != 1 {
 		t.Fatalf("Expected 1 message, got %d", len(messages))
@@ -254,7 +254,7 @@ func TestConvertTroubleshootResultToMessages_SupportBundle(t *testing.T) {
 	}
 }
 
-func TestTroubleshootIssueInterface_Preflight(t *testing.T) {
+func TestLintIssueInterface_Preflight(t *testing.T) {
 	issue := PreflightLintIssue{
 		Line:    10,
 		Column:  5,
@@ -263,7 +263,7 @@ func TestTroubleshootIssueInterface_Preflight(t *testing.T) {
 	}
 
 	// Test interface implementation
-	var _ TroubleshootIssue = issue
+	var _ LintIssue = issue
 
 	if issue.GetLine() != 10 {
 		t.Errorf("GetLine() = %d, want 10", issue.GetLine())
@@ -279,7 +279,7 @@ func TestTroubleshootIssueInterface_Preflight(t *testing.T) {
 	}
 }
 
-func TestTroubleshootIssueInterface_SupportBundle(t *testing.T) {
+func TestLintIssueInterface_SupportBundle(t *testing.T) {
 	issue := SupportBundleLintIssue{
 		Line:    15,
 		Column:  2,
@@ -288,7 +288,7 @@ func TestTroubleshootIssueInterface_SupportBundle(t *testing.T) {
 	}
 
 	// Test interface implementation
-	var _ TroubleshootIssue = issue
+	var _ LintIssue = issue
 
 	if issue.GetLine() != 15 {
 		t.Errorf("GetLine() = %d, want 15", issue.GetLine())

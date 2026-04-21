@@ -9,12 +9,13 @@ import (
 
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
-	Metadata             LintMetadata              `json:"metadata"`
-	HelmResults          *HelmLintResults          `json:"helm_results,omitempty"`
-	PreflightResults     *PreflightLintResults     `json:"preflight_results,omitempty"`
-	SupportBundleResults *SupportBundleLintResults `json:"support_bundle_results,omitempty"`
-	Summary              LintSummary               `json:"summary"`
-	Images               *ImageExtractResults      `json:"images,omitempty"` // Only if --verbose
+	Metadata                LintMetadata                 `json:"metadata"`
+	HelmResults             *HelmLintResults             `json:"helm_results,omitempty"`
+	PreflightResults        *PreflightLintResults        `json:"preflight_results,omitempty"`
+	SupportBundleResults    *SupportBundleLintResults    `json:"support_bundle_results,omitempty"`
+	EmbeddedClusterResults  *EmbeddedClusterLintResults  `json:"embedded_cluster_results,omitempty"`
+	Summary                 LintSummary                  `json:"summary"`
+	Images                  *ImageExtractResults         `json:"images,omitempty"` // Only if --verbose
 }
 
 // LintMetadata contains execution context and environment information
@@ -68,6 +69,26 @@ type SupportBundleLintResult struct {
 	Messages []LintMessage   `json:"messages"`
 	Summary  ResourceSummary `json:"summary"`
 }
+
+// EmbeddedClusterLintResults contains all Embedded Cluster lint results
+type EmbeddedClusterLintResults struct {
+	Enabled bool                        `json:"enabled"`
+	Specs   []EmbeddedClusterLintResult `json:"specs"`
+}
+
+// EmbeddedClusterLintResult represents lint results for a single path linted by the EC CLI
+type EmbeddedClusterLintResult struct {
+	Path     string          `json:"path"`
+	Success  bool            `json:"success"`
+	Messages []LintMessage   `json:"messages"`
+	Summary  ResourceSummary `json:"summary"`
+}
+
+// Implement LintableResult interface for EmbeddedClusterLintResult
+func (e EmbeddedClusterLintResult) GetPath() string             { return e.Path }
+func (e EmbeddedClusterLintResult) GetSuccess() bool            { return e.Success }
+func (e EmbeddedClusterLintResult) GetMessages() []LintMessage  { return e.Messages }
+func (e EmbeddedClusterLintResult) GetSummary() ResourceSummary { return e.Summary }
 
 // LintMessage represents a single lint issue (wraps lint2.LintMessage with JSON tags)
 type LintMessage struct {
