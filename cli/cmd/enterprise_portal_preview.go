@@ -22,7 +22,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultPreviewImage = "registry.replicated.com/library/ep-preview:latest"
+const defaultPreviewImage = "registry.replicated.com/library/enterprise-portal-vendor-preview:latest"
 
 // Bind the host port to 127.0.0.1 so the preview (including the customer
 // dropdown) isn't reachable from the local network — otherwise anyone on the
