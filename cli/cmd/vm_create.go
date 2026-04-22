@@ -75,6 +75,8 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.createVMRBACPolicyName, "rbac-policy-name", "", "(alpha) Name of the RBAC policy to assign to the VM (enables automatic vendor-api authentication inside the VM)")
+	cmd.Flags().MarkHidden("rbac-policy-name")
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
@@ -104,6 +106,15 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 		publicKeys = append(publicKeys, publicKey)
 	}
 
+	var rbacPolicyID string
+	if r.args.createVMRBACPolicyName != "" {
+		p, err := r.kotsAPI.GetPolicyByName(r.args.createVMRBACPolicyName)
+		if err != nil {
+			return errors.Wrap(err, "get rbac policy")
+		}
+		rbacPolicyID = p.ID
+	}
+
 	opts := kotsclient.CreateVMOpts{
 		Name:         r.args.createVMName,
 		Distribution: r.args.createVMDistribution,
@@ -116,6 +127,7 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 		Tags:         tags,
 		PublicKeys:   publicKeys,
 		DryRun:       r.args.createVMDryRun,
+		RBACPolicyID: rbacPolicyID,
 	}
 
 	vms, err := r.createAndWaitForVM(opts)
