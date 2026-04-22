@@ -10,3 +10,4 @@ vendor/
 .claude
 do-not-commit/
 pkg/tools/embedded/
+CLAUDE.md
