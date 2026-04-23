@@ -193,7 +193,7 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM,
 
 func isRBACDeniedError(err error) bool {
 	message := strings.TrimSpace(strings.ToLower(err.Error()))
-	return strings.HasPrefix(message, "access to ") && strings.HasSuffix(message, " is denied")
+	return strings.Contains(message, "access to ") && strings.HasSuffix(message, " is denied")
 }
 
 func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, duration time.Duration) ([]*types.VM, error) {
