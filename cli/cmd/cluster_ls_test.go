@@ -19,9 +19,9 @@ func TestListClusters_ForbiddenErrors(t *testing.T) {
 		expectedError string
 	}{
 		{
-			name:          "rbac denial returns server message",
-			body:          `access to "kots/cluster/list" is denied`,
-			contentType:   "text/plain",
+			name:        "rbac denial returns server message",
+			body:        `access to "kots/cluster/list" is denied`,
+			contentType: "text/plain",
 			// ListClusters wraps the error with "list clusters page %d", so the RBAC
 			// message arrives wrapped at the cmd layer.
 			expectedError: `list clusters page 0: access to "kots/cluster/list" is denied`,
