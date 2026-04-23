@@ -188,11 +188,11 @@ func (c *Client) ChannelReleaseUnDemote(appID string, appType string, channelID 
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) ListChannelReleases(appID string, appType string, channelID string) ([]*types.ChannelRelease, error) {
+func (c *Client) ListChannelReleases(appID string, appType string, channelID string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
 	if appType == "platform" {
 		return nil, errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
-		return c.KotsClient.ListChannelReleases(appID, channelID)
+		return c.KotsClient.ListChannelReleases(appID, channelID, includeInstallerImages)
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
@@ -210,7 +210,7 @@ func (c *Client) GetCustomHostnames(appID string, appType string, channelID stri
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelID string) (*types.ChannelRelease, string, error) {
+func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelID string, includeInstallerImages string) (*types.ChannelRelease, string, error) {
 	if appType == "platform" {
 		return nil, "", errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
@@ -251,7 +251,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 		}
 
 		// Fallback to the existing approach if releases aren't included
-		releases, err := c.KotsClient.ListChannelReleases(appID, channelID)
+		releases, err := c.KotsClient.ListChannelReleases(appID, channelID, includeInstallerImages)
 		if err != nil {
 			return nil, "", err
 		}
