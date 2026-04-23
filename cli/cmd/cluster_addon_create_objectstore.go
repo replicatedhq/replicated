@@ -92,6 +92,9 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 func (r *runners) createAndWaitForClusterAddonCreateObjectStore(opts kotsclient.CreateClusterAddonObjectStoreOpts, waitDuration time.Duration) (*types.ClusterAddon, error) {
 	addon, err := r.kotsAPI.CreateClusterAddonObjectStore(opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return nil, errors.New(err.Error())
+		}
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return nil, errors.Wrap(err, "create cluster addon object store")

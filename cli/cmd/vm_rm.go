@@ -161,6 +161,9 @@ func removeVM(r *runners, vmID string) error {
 	}
 	err := r.kotsAPI.RemoveVM(vmID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "remove vm")

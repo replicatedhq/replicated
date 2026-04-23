@@ -39,6 +39,9 @@ func (r *runners) updateClusterTTL(cmd *cobra.Command, args []string) error {
 	}
 	cl, err := r.kotsAPI.UpdateClusterTTL(r.args.updateClusterID, opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "update cluster ttl")

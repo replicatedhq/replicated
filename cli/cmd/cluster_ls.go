@@ -72,6 +72,9 @@ func (r *runners) listClusters(_ *cobra.Command, args []string) error {
 
 	clusters, err := r.kotsAPI.ListClusters(r.args.lsClusterShowTerminated, startTime, endTime)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "list clusters")

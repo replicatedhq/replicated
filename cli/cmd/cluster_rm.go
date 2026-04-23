@@ -155,6 +155,9 @@ func removeCuster(r *runners, clusterID string) error {
 	}
 	err := r.kotsAPI.RemoveCluster(clusterID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "remove cluster")

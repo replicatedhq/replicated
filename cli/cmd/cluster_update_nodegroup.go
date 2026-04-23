@@ -87,6 +87,9 @@ func (r *runners) updateClusterNodegroup(cmd *cobra.Command, args []string) erro
 
 	cl, ve, err := r.kotsAPI.UpdateClusterNodegroup(r.args.updateClusterID, nodeGroupID, opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "update cluster nodegroup")
