@@ -66,8 +66,8 @@ func TestCreateAndWaitForVM_ForbiddenErrors(t *testing.T) {
 
 func TestCreateVM_OverlayFSRequestBody(t *testing.T) {
 	tests := []struct {
-		name              string
-		overlayFS         bool
+		name               string
+		overlayFS          bool
 		expectFieldPresent bool
 		expectFieldValue   bool
 	}{
