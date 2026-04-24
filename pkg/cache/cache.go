@@ -10,22 +10,31 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-const cacheFileName = "replicated.cache"
+const (
+	legacyCacheFileName = "replicated.cache"
+	cacheFileNameFormat = "replicated-%s.cache" // profile-specific cache
+)
 
 type Cache struct {
 	DefaultApp string `json:"default_app"`
 
 	LastAppRefresh *time.Time  `json:"last_app_refresh"`
 	Apps           []types.App `json:"apps"`
+
+	// profileName is the profile this cache is associated with
+	// Empty string means legacy/no profile
+	profileName string
 }
 
-func InitCache() (*Cache, error) {
+// InitCache creates or loads a cache for the given profile name.
+// If profileName is empty, uses legacy cache file.
+func InitCache(profileName string) (*Cache, error) {
 	cacheDir, err := getCacheDir()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cache directory")
 	}
 
-	cacheFilePath := filepath.Join(cacheDir, cacheFileName)
+	cacheFilePath := getCacheFilePath(cacheDir, profileName)
 
 	// Try to load existing cache
 	cache, err := loadCache(cacheFilePath)
@@ -36,6 +45,7 @@ func InitCache() (*Cache, error) {
 				Apps:           []types.App{},
 				LastAppRefresh: nil,
 				DefaultApp:     "",
+				profileName:    profileName,
 			}
 
 			// save it
@@ -46,9 +56,20 @@ func InitCache() (*Cache, error) {
 		} else {
 			return nil, errors.Wrap(err, "failed to load cache")
 		}
+	} else {
+		// Set the profile name on loaded cache
+		cache.profileName = profileName
 	}
 
 	return cache, nil
+}
+
+// getCacheFilePath returns the cache file path for the given profile
+func getCacheFilePath(cacheDir, profileName string) string {
+	if profileName == "" {
+		return filepath.Join(cacheDir, legacyCacheFileName)
+	}
+	return filepath.Join(cacheDir, filepath.Clean(profileName)+".cache")
 }
 
 func (c *Cache) Save() error {
@@ -57,7 +78,7 @@ func (c *Cache) Save() error {
 		return errors.Wrap(err, "failed to get cache directory")
 	}
 
-	cacheFilePath := filepath.Join(cacheDir, cacheFileName)
+	cacheFilePath := getCacheFilePath(cacheDir, c.profileName)
 
 	data, err := json.Marshal(c)
 	if err != nil {
@@ -134,6 +155,61 @@ func (c *Cache) ClearDefault(defaultType string) error {
 
 	if err := c.Save(); err != nil {
 		return errors.Wrap(err, "failed to save cache")
+	}
+
+	return nil
+}
+
+// ClearAll removes all cached data from the current cache
+func (c *Cache) ClearAll() error {
+	c.Apps = []types.App{}
+	c.DefaultApp = ""
+	c.LastAppRefresh = nil
+	return c.Save()
+}
+
+// DeleteCacheFile deletes the cache file for a specific profile
+func DeleteCacheFile(profileName string) error {
+	cacheDir, err := getCacheDir()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cache directory")
+	}
+
+	cacheFilePath := getCacheFilePath(cacheDir, profileName)
+
+	// It's not an error if the file doesn't exist
+	if err := os.Remove(cacheFilePath); err != nil && !os.IsNotExist(err) {
+		return errors.Wrap(err, "failed to delete cache file")
+	}
+
+	return nil
+}
+
+// DeleteAllCacheFiles removes all cache files (for logout)
+func DeleteAllCacheFiles() error {
+	cacheDir, err := getCacheDir()
+	if err != nil {
+		return errors.Wrap(err, "failed to get cache directory")
+	}
+
+	// Read all files in cache directory
+	files, err := os.ReadDir(cacheDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil // Cache directory doesn't exist, nothing to delete
+		}
+		return errors.Wrap(err, "failed to read cache directory")
+	}
+
+	// Delete all .cache files
+	for _, file := range files {
+		if !file.IsDir() && filepath.Ext(file.Name()) == ".cache" {
+			filePath := filepath.Join(cacheDir, file.Name())
+			if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+				// Log but don't fail on individual file deletion errors
+				continue
+			}
+		}
 	}
 
 	return nil

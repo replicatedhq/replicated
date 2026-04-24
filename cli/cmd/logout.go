@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/spf13/cobra"
 )
@@ -32,6 +36,12 @@ func (r *runners) logout(_ *cobra.Command, _ []string) error {
 
 	if err = credentials.RemoveCurrentCredentials(); err != nil {
 		return err
+	}
+
+	// Clear all cache files on logout
+	if err = replicatedcache.DeleteAllCacheFiles(); err != nil {
+		// Don't fail logout if cache clear fails, just warn
+		fmt.Fprintf(os.Stderr, "Warning: failed to clear cache: %v\n", err)
 	}
 
 	return nil
