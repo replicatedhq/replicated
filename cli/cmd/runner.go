@@ -225,6 +225,7 @@ type runnerArgs struct {
 	createVMDryRun          bool
 	createVMPublicKeys      []string
 	createVMRBACPolicyName  string
+	createVMOverlayFS       bool
 
 	lsVMShowTerminated bool
 	lsVMStartTime      string
