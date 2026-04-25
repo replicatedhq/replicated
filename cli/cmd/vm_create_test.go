@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -78,6 +79,7 @@ func TestCreateVM_OverlayFSRequestBody(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var capturedBody map[string]any
+			var handlerErr error
 
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path != "/v3/vm" || r.Method != http.MethodPost {
@@ -86,8 +88,16 @@ func TestCreateVM_OverlayFSRequestBody(t *testing.T) {
 				}
 
 				bodyBytes, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
-				require.NoError(t, json.Unmarshal(bodyBytes, &capturedBody))
+				if err != nil {
+					handlerErr = fmt.Errorf("read body: %w", err)
+					http.Error(w, handlerErr.Error(), http.StatusInternalServerError)
+					return
+				}
+				if err := json.Unmarshal(bodyBytes, &capturedBody); err != nil {
+					handlerErr = fmt.Errorf("unmarshal body: %w", err)
+					http.Error(w, handlerErr.Error(), http.StatusInternalServerError)
+					return
+				}
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusCreated)
@@ -107,6 +117,7 @@ func TestCreateVM_OverlayFSRequestBody(t *testing.T) {
 				Count:        1,
 				OverlayFS:    tt.overlayFS,
 			})
+			require.NoError(t, handlerErr, "handler failed to capture request body")
 			require.NoError(t, err)
 
 			val, ok := capturedBody["overlayfs"]
