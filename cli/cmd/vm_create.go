@@ -76,7 +76,7 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
 	cmd.Flags().StringVar(&r.args.createVMRBACPolicyName, "rbac-policy-name", "", "(alpha) Name of the RBAC policy to assign to the VM (enables automatic vendor-api authentication inside the VM)")
 	cmd.Flags().MarkHidden("rbac-policy-name")
-	cmd.Flags().BoolVar(&r.args.createVMOverlayFS, "overlayfs", false, "(alpha) Use overlayfs-backed rootfs management for the VM (requires server-side cmx_overlayfs feature flag)")
+	cmd.Flags().BoolVar(&r.args.createVMOverlayFS, "overlayfs", false, "(alpha) Use overlayfs-backed rootfs management for the VM")
 	cmd.Flags().MarkHidden("overlayfs")
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
