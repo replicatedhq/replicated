@@ -6,10 +6,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+// k8sVersionRegex matches the k8s version suffix in EC versions.
+// Format: +k8s-<major>.<minor> always at the end
+// Examples: "3.0.0+k8s-1.31", "3.0.0-rc0-35-g9b94-v3+k8s-1.33"
+var k8sVersionRegex = regexp.MustCompile(`\+k8s-(\d+\.\d+)$`)
 
 // ExpandManifestGlobs expands a list of manifest glob patterns to the set of
 // matching YAML files, applying the same gitignore and hidden-path filtering
@@ -136,7 +142,7 @@ func parseECVersionFromFile(path string) (string, error) {
 			break // io.EOF or parse error; stop iterating
 		}
 		if manifest.Kind == "Config" && manifest.APIVersion == ecConfigAPIVersion {
-			return manifest.Spec.Version, nil
+			return k8sVersionRegex.ReplaceAllString(manifest.Spec.Version, ""), nil
 		}
 	}
 	return "", nil
