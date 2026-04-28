@@ -498,6 +498,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
 
+	policyCmd := runCmds.InitPolicyCommand(runCmds.rootCmd)
+	runCmds.InitPolicyList(policyCmd)
+	runCmds.InitPolicyGet(policyCmd)
+	runCmds.InitPolicyCreate(policyCmd)
+	runCmds.InitPolicyUpdate(policyCmd)
+	runCmds.InitPolicyRm(policyCmd)
+	policyCmd.PersistentPreRunE = preRunSetupAPIs
+
 	// Add config command with init subcommand
 	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)
 	runCmds.InitInitCommand(configCmd)
