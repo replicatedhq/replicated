@@ -34,6 +34,9 @@ replicated cluster versions --output json`,
 func (r *runners) listClusterVersions(_ *cobra.Command, args []string) error {
 	cv, err := r.kotsAPI.ListClusterVersions()
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "list cluster versions")

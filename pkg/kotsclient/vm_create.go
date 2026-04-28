@@ -23,6 +23,8 @@ type CreateVMRequest struct {
 	InstanceType  string      `json:"instance_type"`
 	Tags          []types.Tag `json:"tags"`
 	PublicKeys    []string    `json:"public_keys,omitempty"`
+	RBACPolicyID  string      `json:"rbac_policy_id,omitempty"`
+	OverlayFS     bool        `json:"overlayfs,omitempty"`
 }
 
 type CreateVMResponse struct {
@@ -50,6 +52,8 @@ type CreateVMOpts struct {
 	Tags          []types.Tag
 	PublicKeys    []string
 	DryRun        bool
+	RBACPolicyID  string
+	OverlayFS     bool
 }
 
 type CreateVMErrorResponse struct {
@@ -80,6 +84,8 @@ func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErro
 		InstanceType:  opts.InstanceType,
 		Tags:          opts.Tags,
 		PublicKeys:    opts.PublicKeys,
+		RBACPolicyID:  opts.RBACPolicyID,
+		OverlayFS:     opts.OverlayFS,
 	}
 
 	if opts.DryRun {

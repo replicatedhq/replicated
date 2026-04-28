@@ -9,20 +9,6 @@ import (
 	"github.com/replicatedhq/replicated/pkg/tools"
 )
 
-// SupportBundleLintResult represents the JSON output from support-bundle lint
-// This structure mirrors PreflightLintResult since both tools come from the same
-// troubleshoot repository and share the same validation infrastructure.
-type SupportBundleLintResult struct {
-	Results []SupportBundleFileResult `json:"results"`
-}
-
-type SupportBundleFileResult struct {
-	FilePath string                   `json:"filePath"`
-	Errors   []SupportBundleLintIssue `json:"errors"`
-	Warnings []SupportBundleLintIssue `json:"warnings"`
-	Infos    []SupportBundleLintIssue `json:"infos"`
-}
-
 type SupportBundleLintIssue struct {
 	Line    int    `json:"line"`
 	Column  int    `json:"column"`
@@ -83,9 +69,9 @@ func LintSupportBundle(ctx context.Context, specPath string, sbVersion string) (
 // parseSupportBundleOutput parses support-bundle lint JSON output into structured messages.
 // Uses the common troubleshoot.sh JSON parsing infrastructure.
 func parseSupportBundleOutput(output string) ([]LintMessage, error) {
-	result, err := parseTroubleshootJSON[SupportBundleLintIssue](output)
+	result, err := parseLintJSON[SupportBundleLintIssue](output)
 	if err != nil {
 		return nil, err
 	}
-	return convertTroubleshootResultToMessages(result), nil
+	return convertLintOutputToMessages(result), nil
 }

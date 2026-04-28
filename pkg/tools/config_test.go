@@ -1449,6 +1449,130 @@ func TestFindAndParseConfigWithMinimalConfig(t *testing.T) {
 	}
 }
 
+func TestApplyDefaults_LinterDefaults(t *testing.T) {
+	parser := NewConfigParser()
+
+	t.Run("default config has correct linter on/off defaults", func(t *testing.T) {
+		config := parser.DefaultConfig()
+
+		if !config.ReplLint.Linters.Helm.IsEnabled() {
+			t.Error("Helm should be enabled by default")
+		}
+		if !config.ReplLint.Linters.Preflight.IsEnabled() {
+			t.Error("Preflight should be enabled by default")
+		}
+		if !config.ReplLint.Linters.SupportBundle.IsEnabled() {
+			t.Error("SupportBundle should be enabled by default")
+		}
+		if config.ReplLint.Linters.Kots.IsEnabled() {
+			t.Error("Kots should be disabled by default (opt-in)")
+		}
+		if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+			t.Error("EmbeddedCluster should be disabled by default (opt-in)")
+		}
+	})
+
+	t.Run("ApplyDefaults fills linter defaults on existing repl-lint with no linters set", func(t *testing.T) {
+		config := &Config{
+			ReplLint: &ReplLintConfig{Version: 1},
+		}
+		parser.ApplyDefaults(config)
+
+		if !config.ReplLint.Linters.Helm.IsEnabled() {
+			t.Error("Helm should be enabled by default")
+		}
+		if config.ReplLint.Linters.Kots.IsEnabled() {
+			t.Error("Kots should be disabled by default")
+		}
+		if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+			t.Error("EmbeddedCluster should be disabled by default")
+		}
+	})
+
+	t.Run("ApplyDefaults does not override explicit user settings", func(t *testing.T) {
+		falseVal := false
+		trueVal := true
+		config := &Config{
+			ReplLint: &ReplLintConfig{
+				Linters: LintersConfig{
+					Helm:            LinterConfig{Disabled: &trueVal},  // user disabled helm
+					Kots:            LinterConfig{Disabled: &falseVal}, // user enabled kots
+					EmbeddedCluster: ECLinterConfig{LinterConfig: LinterConfig{Disabled: &falseVal}}, // user enabled EC
+				},
+			},
+		}
+		parser.ApplyDefaults(config)
+
+		if config.ReplLint.Linters.Helm.IsEnabled() {
+			t.Error("Helm should remain disabled (user set disabled: true)")
+		}
+		if !config.ReplLint.Linters.Kots.IsEnabled() {
+			t.Error("Kots should be enabled (user set disabled: false)")
+		}
+		if !config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+			t.Error("EmbeddedCluster should be enabled (user set disabled: false)")
+		}
+	})
+}
+
+func TestMergeECLinterConfig(t *testing.T) {
+	boolPtr := func(b bool) *bool { return &b }
+
+	t.Run("child Disabled overrides parent", func(t *testing.T) {
+		parent := ECLinterConfig{LinterConfig: LinterConfig{Disabled: boolPtr(true)}}
+		child := ECLinterConfig{LinterConfig: LinterConfig{Disabled: boolPtr(false)}}
+		result := mergeECLinterConfig(parent, child)
+		if result.IsEnabled() != true {
+			t.Error("child disabled:false should override parent disabled:true")
+		}
+	})
+
+	t.Run("nil child Disabled preserves parent", func(t *testing.T) {
+		parent := ECLinterConfig{LinterConfig: LinterConfig{Disabled: boolPtr(true)}}
+		child := ECLinterConfig{}
+		result := mergeECLinterConfig(parent, child)
+		if result.IsEnabled() != false {
+			t.Error("nil child Disabled should not override parent disabled:true")
+		}
+	})
+
+	t.Run("child DisableChecks overrides parent", func(t *testing.T) {
+		parent := ECLinterConfig{DisableChecks: []string{"check-a"}}
+		child := ECLinterConfig{DisableChecks: []string{"check-b", "check-c"}}
+		result := mergeECLinterConfig(parent, child)
+		if len(result.DisableChecks) != 2 || result.DisableChecks[0] != "check-b" {
+			t.Errorf("DisableChecks = %v, want [check-b check-c]", result.DisableChecks)
+		}
+	})
+
+	t.Run("empty child DisableChecks preserves parent", func(t *testing.T) {
+		parent := ECLinterConfig{DisableChecks: []string{"check-a"}}
+		child := ECLinterConfig{}
+		result := mergeECLinterConfig(parent, child)
+		if len(result.DisableChecks) != 1 || result.DisableChecks[0] != "check-a" {
+			t.Errorf("DisableChecks = %v, want [check-a]", result.DisableChecks)
+		}
+	})
+
+	t.Run("child BinaryPath overrides parent", func(t *testing.T) {
+		parent := ECLinterConfig{BinaryPath: "/old/path"}
+		child := ECLinterConfig{BinaryPath: "/new/path"}
+		result := mergeECLinterConfig(parent, child)
+		if result.BinaryPath != "/new/path" {
+			t.Errorf("BinaryPath = %q, want /new/path", result.BinaryPath)
+		}
+	})
+
+	t.Run("empty child BinaryPath preserves parent", func(t *testing.T) {
+		parent := ECLinterConfig{BinaryPath: "/old/path"}
+		child := ECLinterConfig{}
+		result := mergeECLinterConfig(parent, child)
+		if result.BinaryPath != "/old/path" {
+			t.Errorf("BinaryPath = %q, want /old/path", result.BinaryPath)
+		}
+	})
+}
+
 // TestValidateConfig_PreflightWithoutChart tests that preflights without chart references are valid
 func TestValidateConfig_PreflightWithoutChart(t *testing.T) {
 	tmpDir := t.TempDir()

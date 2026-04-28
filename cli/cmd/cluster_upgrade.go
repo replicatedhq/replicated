@@ -73,6 +73,9 @@ func (r *runners) upgradeCluster(cmd *cobra.Command, args []string) error {
 func (r *runners) upgradeAndWaitForCluster(clusterID string, opts kotsclient.UpgradeClusterOpts) (*types.Cluster, error) {
 	cl, ve, err := r.kotsAPI.UpgradeCluster(clusterID, opts)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return nil, errors.New(err.Error())
+		}
 		return nil, ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return nil, errors.Wrap(err, "upgrade cluster")

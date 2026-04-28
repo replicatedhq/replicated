@@ -212,19 +212,21 @@ type runnerArgs struct {
 	compatibilityFailure                bool
 	compatibilityNotes                  string
 
-	createVMName          string
-	createVMDistribution  string
-	createVMVersion       string
-	createVMCount         int
-	createVMDiskGiB       int64
-	createVMTTL           string
-	createVMInstanceType  string
-	createVMWaitDuration  time.Duration
-	createVMTags          []string
-	createVMNetwork       string
-	createVMNetworkPolicy string
-	createVMDryRun        bool
-	createVMPublicKeys    []string
+	createVMName           string
+	createVMDistribution   string
+	createVMVersion        string
+	createVMCount          int
+	createVMDiskGiB        int64
+	createVMTTL            string
+	createVMInstanceType   string
+	createVMWaitDuration   time.Duration
+	createVMTags           []string
+	createVMNetwork        string
+	createVMNetworkPolicy  string
+	createVMDryRun         bool
+	createVMPublicKeys     []string
+	createVMRBACPolicyName string
+	createVMOverlayFS      bool
 
 	lsVMShowTerminated bool
 	lsVMStartTime      string
@@ -236,7 +238,8 @@ type runnerArgs struct {
 	removeVMNames  []string
 	removeVMDryRun bool
 
-	updateVMTTL string
+	updateVMTTL            string
+	updateVMRBACPolicyName string
 
 	updateVMName string
 	updateVMID   string
@@ -280,6 +283,10 @@ type runnerArgs struct {
 	demoteChannelSequence   int64
 	unDemoteReleaseSequence int64
 	unDemoteChannelSequence int64
+
+	// Enterprise portal preview
+	enterprisePortalPreviewPort  int
+	enterprisePortalPreviewImage string
 
 	// Profile management
 	profileAddToken           string

@@ -214,6 +214,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitEnterprisePortalInviteCmd(enterprisePortalCmd)
 	enterprisePortalUserCmd := runCmds.InitEnterprisePortalUserCmd(enterprisePortalCmd)
 	runCmds.InitEnterprisePortalUserLsCmd(enterprisePortalUserCmd)
+	runCmds.InitEnterprisePortalPreviewCmd(enterprisePortalCmd)
 
 	registryCmd := runCmds.InitRegistryCommand(runCmds.rootCmd)
 	runCmds.InitRegistryList(registryCmd)
@@ -280,6 +281,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	vmUpdateCmd := runCmds.InitVMUpdateCommand(vmCmd)
 	runCmds.InitVMUpdateTTL(vmUpdateCmd)
+	runCmds.InitVMUpdateRBACPolicy(vmUpdateCmd)
 
 	vmPortCmd := runCmds.InitVMPort(vmCmd)
 	runCmds.InitVMPortLs(vmPortCmd)
@@ -384,6 +386,16 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 				}
 			}
 
+			// If running inside a CMX VM, use the api_url from the MMDS so the CLI
+			// talks to the same vendor-api instance that issued the token. Only
+			// applies when REPLICATED_API_ORIGIN is not explicitly set by the user.
+			if creds.IsCMX && creds.APIOrigin != "" && os.Getenv("REPLICATED_API_ORIGIN") == "" {
+				platformOrigin = strings.TrimRight(creds.APIOrigin, "/")
+				if debugFlag {
+					fmt.Fprintf(os.Stderr, "[DEBUG] Using CMX MMDS vendor API origin: %s\n", platformOrigin)
+				}
+			}
+
 			if debugFlag {
 				fmt.Fprintf(os.Stderr, "[DEBUG] Platform API origin: %s\n", platformOrigin)
 			}
@@ -485,6 +497,14 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	networkCmd.PersistentPreRunE = preRunSetupAPIs
 	apiCmd.PersistentPreRunE = preRunSetupAPIs
 	modelCmd.PersistentPreRunE = preRunSetupAPIs
+
+	policyCmd := runCmds.InitPolicyCommand(runCmds.rootCmd)
+	runCmds.InitPolicyList(policyCmd)
+	runCmds.InitPolicyGet(policyCmd)
+	runCmds.InitPolicyCreate(policyCmd)
+	runCmds.InitPolicyUpdate(policyCmd)
+	runCmds.InitPolicyRm(policyCmd)
+	policyCmd.PersistentPreRunE = preRunSetupAPIs
 
 	// Add config command with init subcommand
 	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)

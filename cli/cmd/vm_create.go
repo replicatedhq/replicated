@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/moby/moby/pkg/namesgenerator"
@@ -76,6 +75,10 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
+	cmd.Flags().StringVar(&r.args.createVMRBACPolicyName, "rbac-policy-name", "", "(alpha) Name of the RBAC policy to assign to the VM (enables automatic vendor-api authentication inside the VM)")
+	cmd.Flags().MarkHidden("rbac-policy-name")
+	cmd.Flags().BoolVar(&r.args.createVMOverlayFS, "overlayfs", false, "(alpha) Use overlayfs-backed rootfs management for the VM")
+	cmd.Flags().MarkHidden("overlayfs")
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
@@ -109,6 +112,15 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 		return errors.New("cannot specify both --network and --network-policy")
 	}
 
+	var rbacPolicyID string
+	if r.args.createVMRBACPolicyName != "" {
+		p, err := r.kotsAPI.GetPolicyByName(r.args.createVMRBACPolicyName)
+		if err != nil {
+			return errors.Wrap(err, "get rbac policy")
+		}
+		rbacPolicyID = p.ID
+	}
+
 	opts := kotsclient.CreateVMOpts{
 		Name:          r.args.createVMName,
 		Distribution:  r.args.createVMDistribution,
@@ -122,6 +134,8 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 		Tags:          tags,
 		PublicKeys:    publicKeys,
 		DryRun:        r.args.createVMDryRun,
+		RBACPolicyID:  rbacPolicyID,
+		OverlayFS:     r.args.createVMOverlayFS,
 	}
 
 	vms, err := r.createAndWaitForVM(opts)
@@ -183,11 +197,6 @@ func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM,
 	}
 
 	return vms, nil
-}
-
-func isRBACDeniedError(err error) bool {
-	message := strings.TrimSpace(strings.ToLower(err.Error()))
-	return strings.HasPrefix(message, "access to ") && strings.HasSuffix(message, " is denied")
 }
 
 func waitForVMs(kotsRestClient *kotsclient.VendorV3Client, vms []*types.VM, duration time.Duration) ([]*types.VM, error) {

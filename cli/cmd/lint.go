@@ -197,8 +197,9 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
 		r.w.Flush()
 
-		// If nothing was found, exit early
-		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 {
+		// If nothing was found and EC linting is not enabled, exit early.
+		// EC linting runs after this block, so don't bail out when it's enabled.
+		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 && !config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
 			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
 			r.w.Flush()
 			return nil
@@ -332,6 +333,45 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		output.SupportBundleResults = &SupportBundleLintResults{Enabled: false, Specs: []SupportBundleLintResult{}}
 		if r.outputFormat == "table" {
 			fmt.Fprintf(r.w, "Support Bundle linting is disabled in .replicated config\n\n")
+		}
+	}
+
+	// Lint Embedded Cluster manifests if enabled
+	if config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
+		// Expand manifest glob patterns to the actual YAML files to pass to the EC CLI
+		manifestPatterns := config.Manifests
+		if autoDiscoveryMode {
+			manifestPatterns = []string{"./**"}
+		}
+		ecPaths, err := lint2.ExpandManifestGlobs(manifestPatterns)
+		if err != nil {
+			return errors.Wrap(err, "expanding manifest globs for ec lint")
+		}
+
+		binaryPath := config.ReplLint.Linters.EmbeddedCluster.BinaryPath
+		if val := os.Getenv("REPLICATED_EMBEDDED_CLUSTER_BINARY_PATH"); val != "" {
+			binaryPath = val
+		}
+
+		// Version discovery is only needed when no binary path is provided, since
+		// the version is used solely to download the binary via the resolver.
+		var ecVersion string
+		if binaryPath == "" {
+			ecVersion, err = lint2.DiscoverECVersion(ecPaths)
+			if err != nil {
+				return errors.Wrap(err, "discovering embedded-cluster version")
+			}
+		}
+
+		ecResults, err := r.lintEmbeddedClusterManifests(cmd, ecPaths, ecVersion, binaryPath, config.ReplLint.Linters.EmbeddedCluster.GetDisableChecks())
+		if err != nil {
+			return err
+		}
+		output.EmbeddedClusterResults = ecResults
+	} else {
+		output.EmbeddedClusterResults = &EmbeddedClusterLintResults{Enabled: false, Specs: []EmbeddedClusterLintResult{}}
+		if r.outputFormat == "table" {
+			fmt.Fprintf(r.w, "Embedded Cluster linting is disabled in .replicated config\n\n")
 		}
 	}
 
@@ -721,6 +761,15 @@ func (r *runners) calculateOverallSummary(output *JSONLintOutput) LintSummary {
 		accumulateSummary(&summary, results)
 	}
 
+	// Accumulate from Embedded Cluster results
+	if output.EmbeddedClusterResults != nil {
+		results := make([]LintableResult, len(output.EmbeddedClusterResults.Specs))
+		for i, spec := range output.EmbeddedClusterResults.Specs {
+			results[i] = spec
+		}
+		accumulateSummary(&summary, results)
+	}
+
 	summary.OverallSuccess = summary.FailedResources == 0
 
 	return summary
@@ -803,6 +852,57 @@ func (r *runners) displayLintResults(
 	}
 
 	return nil
+}
+
+// lintEmbeddedClusterManifests runs the EC CLI lint tool against the provided paths.
+func (r *runners) lintEmbeddedClusterManifests(cmd *cobra.Command, paths []string, ecVersion string, ecBinaryPath string, disableChecks []string) (*EmbeddedClusterLintResults, error) {
+	results := &EmbeddedClusterLintResults{
+		Enabled: true,
+		Specs:   []EmbeddedClusterLintResult{},
+	}
+
+	if ecBinaryPath == "" {
+		resolver := tools.NewResolver()
+		var err error
+		ecBinaryPath, err = resolver.Resolve(cmd.Context(), tools.ToolEmbeddedCluster, ecVersion)
+		if err != nil {
+			return nil, errors.Wrap(err, "resolving embedded-cluster binary")
+		}
+	}
+
+	lint2Result, err := lint2.LintEmbeddedCluster(cmd.Context(), paths, ecBinaryPath, disableChecks)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to run ec lint")
+	}
+
+	// We treat the entire run as one result (EC lint scans across files itself).
+	// Individual messages carry their own file path from the EC lint output,
+	// so we use a short summary label here rather than joining all paths.
+	var pathLabel string
+	switch len(paths) {
+	case 0:
+		pathLabel = "embedded-cluster"
+	case 1:
+		pathLabel = paths[0]
+	default:
+		pathLabel = fmt.Sprintf("%d manifest files", len(paths))
+	}
+	ecResult := EmbeddedClusterLintResult{
+		Path:     pathLabel,
+		Success:  lint2Result.Success,
+		Messages: convertLint2Messages(lint2Result.Messages),
+		Summary:  calculateResourceSummary(lint2Result.Messages),
+	}
+	results.Specs = append(results.Specs, ecResult)
+
+	if r.outputFormat == "table" {
+		lintableResults := []LintableResult{ecResult}
+		if err := r.displayLintResults("EMBEDDED CLUSTER", "embedded cluster path", "paths", lintableResults); err != nil {
+			return nil, errors.Wrap(err, "failed to display embedded cluster results")
+		}
+	}
+
+	return results, nil
 }
 
 // findConfigFilePath finds the .replicated config file path

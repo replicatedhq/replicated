@@ -39,6 +39,9 @@ replicated vm versions --output json`,
 func (r *runners) listVMVersions(_ *cobra.Command, args []string) error {
 	vmVersions, err := r.kotsAPI.ListVMVersions()
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "list vm versions")

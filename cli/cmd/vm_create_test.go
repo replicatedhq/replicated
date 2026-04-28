@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -72,4 +75,70 @@ func TestCreateVMNetworkAndNetworkPolicyAreMutuallyExclusive(t *testing.T) {
 
 	err := runner.createVM(&cobra.Command{}, nil)
 	require.ErrorContains(t, err, "cannot specify both --network and --network-policy")
+}
+
+func TestCreateVM_OverlayFSRequestBody(t *testing.T) {
+	tests := []struct {
+		name               string
+		overlayFS          bool
+		expectFieldPresent bool
+		expectFieldValue   bool
+	}{
+		{name: "overlayfs true sends overlayfs:true", overlayFS: true, expectFieldPresent: true, expectFieldValue: true},
+		{name: "overlayfs false omits the field", overlayFS: false, expectFieldPresent: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var capturedBody map[string]any
+			var handlerErr error
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != "/v3/vm" || r.Method != http.MethodPost {
+					http.NotFound(w, r)
+					return
+				}
+
+				bodyBytes, err := io.ReadAll(r.Body)
+				if err != nil {
+					handlerErr = fmt.Errorf("read body: %w", err)
+					http.Error(w, handlerErr.Error(), http.StatusInternalServerError)
+					return
+				}
+				if err := json.Unmarshal(bodyBytes, &capturedBody); err != nil {
+					handlerErr = fmt.Errorf("unmarshal body: %w", err)
+					http.Error(w, handlerErr.Error(), http.StatusInternalServerError)
+					return
+				}
+
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusCreated)
+				_, _ = w.Write([]byte(`{"vms":[{"id":"vm-1","status":"assigned"}]}`))
+			}))
+			defer server.Close()
+
+			httpClient := platformclient.NewHTTPClient(server.URL, "fake-api-key")
+			runner := &runners{
+				kotsAPI: &kotsclient.VendorV3Client{HTTPClient: *httpClient},
+			}
+
+			_, err := runner.createAndWaitForVM(kotsclient.CreateVMOpts{
+				Name:         "test-vm",
+				Distribution: "ubuntu",
+				Version:      "24.04",
+				Count:        1,
+				OverlayFS:    tt.overlayFS,
+			})
+			require.NoError(t, handlerErr, "handler failed to capture request body")
+			require.NoError(t, err)
+
+			val, ok := capturedBody["overlayfs"]
+			if tt.expectFieldPresent {
+				require.True(t, ok, "expected overlayfs field in request body")
+				require.Equal(t, tt.expectFieldValue, val)
+			} else {
+				require.False(t, ok, "expected overlayfs field to be omitted from request body")
+			}
+		})
+	}
 }

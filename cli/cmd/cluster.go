@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
@@ -179,6 +180,9 @@ func (r *runners) getClusterIDFromArg(arg string) (string, error) {
 
 	clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return "", errors.New(err.Error())
+		}
 		return "", ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return "", errors.Wrap(err, "list clusters")

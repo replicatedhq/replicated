@@ -68,6 +68,9 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 	} else if r.args.shellClusterName != "" {
 		clusters, err := r.kotsAPI.ListClusters(false, nil, nil)
 		if errors.Cause(err) == platformclient.ErrForbidden {
+			if isRBACDeniedError(err) {
+				return errors.New(err.Error())
+			}
 			return ErrCompatibilityMatrixTermsNotAccepted
 		} else if err != nil {
 			return errors.Wrap(err, "list clusters")
@@ -86,6 +89,9 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 
 	cluster, err := r.kotsAPI.GetCluster(clusterID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "get cluster")
@@ -97,6 +103,9 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 
 	kubeconfig, err := r.kotsAPI.GetClusterKubeconfig(clusterID)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return errors.New(err.Error())
+		}
 		return ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return errors.Wrap(err, "get cluster kubeconfig")

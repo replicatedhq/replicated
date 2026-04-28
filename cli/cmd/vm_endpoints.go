@@ -192,6 +192,9 @@ func (r *runners) getVMIDFromArg(arg string) (string, error) {
 
 	vms, err := r.kotsAPI.ListVMs(false, nil, nil)
 	if errors.Cause(err) == platformclient.ErrForbidden {
+		if isRBACDeniedError(err) {
+			return "", errors.New(err.Error())
+		}
 		return "", ErrCompatibilityMatrixTermsNotAccepted
 	} else if err != nil {
 		return "", errors.Wrap(err, "list vms")
