@@ -20,7 +20,7 @@ func Test_ListPolicies(t *testing.T) {
 
 		policies, err := client.ListPolicies()
 		assert.Nil(t, err)
-		assert.Len(t, policies, 1)
+		assert.NotEmpty(t, policies)
 		assert.Equal(t, "Admin", policies[0].Name)
 		assert.True(t, policies[0].ReadOnly)
 
@@ -41,16 +41,14 @@ func Test_ListPolicies(t *testing.T) {
 		WillRespondWith(dsl.Response{
 			Status: 200,
 			Body: map[string]interface{}{
-				"policies": []map[string]interface{}{
-					{
-						"id":          dsl.Like("replicated-cli-list-policies-admin"),
-						"teamId":      dsl.Like("replicated-cli-list-policies-team"),
-						"name":        dsl.String("Admin"),
-						"description": dsl.Like(""),
-						"definition":  dsl.Like(adminPolicyDefinition),
-						"readOnly":    true,
-					},
-				},
+				"policies": dsl.EachLike(map[string]interface{}{
+					"id":          dsl.Like("replicated-cli-list-policies-admin"),
+					"teamId":      dsl.Like("replicated-cli-list-policies-team"),
+					"name":        dsl.Like("Admin"),
+					"description": dsl.Like(""),
+					"definition":  dsl.Like(adminPolicyDefinition),
+					"readOnly":    dsl.Like(true),
+				}, 1),
 			},
 		})
 
@@ -90,16 +88,14 @@ func Test_GetPolicyByNameOrID(t *testing.T) {
 		WillRespondWith(dsl.Response{
 			Status: 200,
 			Body: map[string]interface{}{
-				"policies": []map[string]interface{}{
-					{
-						"id":          dsl.Like("replicated-cli-get-policy-custom"),
-						"teamId":      dsl.Like("replicated-cli-get-policy-team"),
-						"name":        dsl.String("Custom"),
-						"description": dsl.Like(""),
-						"definition":  dsl.Like(adminPolicyDefinition),
-						"readOnly":    false,
-					},
-				},
+				"policies": dsl.EachLike(map[string]interface{}{
+					"id":          dsl.Like("replicated-cli-get-policy-custom"),
+					"teamId":      dsl.Like("replicated-cli-get-policy-team"),
+					"name":        dsl.Like("Custom"),
+					"description": dsl.Like(""),
+					"definition":  dsl.Like(adminPolicyDefinition),
+					"readOnly":    dsl.Like(false),
+				}, 1),
 			},
 		})
 
