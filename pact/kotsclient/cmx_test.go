@@ -32,6 +32,7 @@ func Test_CreateVM(t *testing.T) {
 			NetworkPolicy: "airgap",
 			TTL:           "2h",
 			InstanceType:  "r1.small",
+			PublicKeys:    []string{"c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSVBNUWJqZUdIcWNiaWRjTmc1T3NSRWZZbDExOG9OT1F3Rml5V2cvZzZ3ZmkgdmFuZG9vci1wYWN0QGV4YW1wbGUuY29t"},
 			Tags:          []types.Tag{{Key: "test", Value: "pact"}},
 		})
 		require.NoError(t, err)
@@ -62,6 +63,7 @@ func Test_CreateVM(t *testing.T) {
 				"network_policy": "airgap",
 				"ttl":            "2h",
 				"instance_type":  "r1.small",
+				"public_keys":    []string{"c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSVBNUWJqZUdIcWNiaWRjTmc1T3NSRWZZbDExOG9OT1F3Rml5V2cvZzZ3ZmkgdmFuZG9vci1wYWN0QGV4YW1wbGUuY29t"},
 				"tags":           []map[string]interface{}{{"key": "test", "value": "pact"}},
 			},
 		}).

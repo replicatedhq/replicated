@@ -435,6 +435,9 @@
           "name": "vxlan-vm",
           "network_id": "",
           "network_policy": "airgap",
+          "public_keys": [
+            "c3NoLWVkMjU1MTkgQUFBQUMzTnphQzFsWkRJMU5URTVBQUFBSVBNUWJqZUdIcWNiaWRjTmc1T3NSRWZZbDExOG9OT1F3Rml5V2cvZzZ3ZmkgdmFuZG9vci1wYWN0QGV4YW1wbGUuY29t"
+          ],
           "tags": [
             {
               "key": "test",
