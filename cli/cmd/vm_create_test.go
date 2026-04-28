@@ -7,6 +7,7 @@ import (
 
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,4 +61,15 @@ func TestCreateAndWaitForVM_ForbiddenErrors(t *testing.T) {
 			require.Equal(t, tt.expectedError, err.Error())
 		})
 	}
+}
+
+func TestCreateVMNetworkAndNetworkPolicyAreMutuallyExclusive(t *testing.T) {
+	runner := &runners{}
+	runner.args.createVMName = "test-vm"
+	runner.args.createVMDistribution = "ubuntu"
+	runner.args.createVMNetwork = "network-id"
+	runner.args.createVMNetworkPolicy = "airgap"
+
+	err := runner.createVM(&cobra.Command{}, nil)
+	require.ErrorContains(t, err, "cannot specify both --network and --network-policy")
 }

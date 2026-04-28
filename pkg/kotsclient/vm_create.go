@@ -12,16 +12,17 @@ import (
 )
 
 type CreateVMRequest struct {
-	Name         string      `json:"name"`
-	Distribution string      `json:"distribution"`
-	Version      string      `json:"version"`
-	Count        int         `json:"count"`
-	DiskGiB      int64       `json:"disk_gib"`
-	NetworkID    string      `json:"network_id"`
-	TTL          string      `json:"ttl"`
-	InstanceType string      `json:"instance_type"`
-	Tags         []types.Tag `json:"tags"`
-	PublicKeys   []string    `json:"public_keys,omitempty"`
+	Name          string      `json:"name"`
+	Distribution  string      `json:"distribution"`
+	Version       string      `json:"version"`
+	Count         int         `json:"count"`
+	DiskGiB       int64       `json:"disk_gib"`
+	NetworkID     string      `json:"network_id"`
+	NetworkPolicy string      `json:"network_policy,omitempty"`
+	TTL           string      `json:"ttl"`
+	InstanceType  string      `json:"instance_type"`
+	Tags          []types.Tag `json:"tags"`
+	PublicKeys    []string    `json:"public_keys,omitempty"`
 }
 
 type CreateVMResponse struct {
@@ -37,17 +38,18 @@ type CreateVMDryRunResponse struct {
 }
 
 type CreateVMOpts struct {
-	Name         string
-	Distribution string
-	Version      string
-	Count        int
-	DiskGiB      int64
-	Network      string
-	TTL          string
-	InstanceType string
-	Tags         []types.Tag
-	PublicKeys   []string
-	DryRun       bool
+	Name          string
+	Distribution  string
+	Version       string
+	Count         int
+	DiskGiB       int64
+	Network       string
+	NetworkPolicy string
+	TTL           string
+	InstanceType  string
+	Tags          []types.Tag
+	PublicKeys    []string
+	DryRun        bool
 }
 
 type CreateVMErrorResponse struct {
@@ -67,16 +69,17 @@ type VMValidationError struct {
 
 func (c *VendorV3Client) CreateVM(opts CreateVMOpts) ([]*types.VM, *CreateVMErrorError, error) {
 	req := CreateVMRequest{
-		Name:         opts.Name,
-		Distribution: opts.Distribution,
-		Version:      opts.Version,
-		Count:        opts.Count,
-		DiskGiB:      opts.DiskGiB,
-		NetworkID:    opts.Network,
-		TTL:          opts.TTL,
-		InstanceType: opts.InstanceType,
-		Tags:         opts.Tags,
-		PublicKeys:   opts.PublicKeys,
+		Name:          opts.Name,
+		Distribution:  opts.Distribution,
+		Version:       opts.Version,
+		Count:         opts.Count,
+		DiskGiB:       opts.DiskGiB,
+		NetworkID:     opts.Network,
+		NetworkPolicy: opts.NetworkPolicy,
+		TTL:           opts.TTL,
+		InstanceType:  opts.InstanceType,
+		Tags:          opts.Tags,
+		PublicKeys:    opts.PublicKeys,
 	}
 
 	if opts.DryRun {
