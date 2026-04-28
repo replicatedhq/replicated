@@ -424,14 +424,14 @@
         "method": "POST",
         "path": "/v3/vm",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-create-vm-token",
           "Content-Type": "application/json"
         },
         "body": {
           "count": 1,
           "disk_gib": 25,
           "distribution": "ubuntu",
-          "instance_type": "standard",
+          "instance_type": "r1.small",
           "name": "vxlan-vm",
           "network_id": "",
           "network_policy": "airgap",
@@ -498,9 +498,9 @@
       "providerState": "Get CMX VM",
       "request": {
         "method": "GET",
-        "path": "/v3/vm/ebc40fe9",
+        "path": "/v3/vm/cli-get-vm-id",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-get-vm-token",
           "Content-Type": "application/json"
         }
       },
@@ -511,7 +511,7 @@
         "body": {
           "vm": {
             "distribution": "ubuntu",
-            "id": "ebc40fe9",
+            "id": "cli-get-vm-id",
             "name": "vxlan-vm",
             "network_id": "befee8ca",
             "status": "running",
@@ -551,7 +551,7 @@
         "method": "POST",
         "path": "/v3/cluster",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-create-cluster-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -626,9 +626,9 @@
       "providerState": "Get CMX cluster",
       "request": {
         "method": "GET",
-        "path": "/v3/cluster/0fed1234",
+        "path": "/v3/cluster/cli-get-cluster-id",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-get-cluster-token",
           "Content-Type": "application/json"
         }
       },
@@ -638,7 +638,7 @@
         },
         "body": {
           "cluster": {
-            "id": "0fed1234",
+            "id": "cli-get-cluster-id",
             "kubernetes_distribution": "fake",
             "kubernetes_version": "1.25",
             "name": "vxlan-cluster",
@@ -679,7 +679,7 @@
         "method": "POST",
         "path": "/v3/network",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-create-network-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -725,9 +725,9 @@
       "providerState": "Get CMX network",
       "request": {
         "method": "GET",
-        "path": "/v3/network/0fed1234",
+        "path": "/v3/network/cli-get-network-id",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-get-network-token",
           "Content-Type": "application/json"
         }
       },
@@ -737,7 +737,7 @@
         },
         "body": {
           "network": {
-            "id": "0fed1234",
+            "id": "cli-get-network-id",
             "name": "team-cmx-network",
             "policy": "airgap",
             "status": "running",
@@ -768,9 +768,9 @@
       "providerState": "Update CMX network policy",
       "request": {
         "method": "PUT",
-        "path": "/v3/network/0fed1234/update",
+        "path": "/v3/network/cli-update-network-id/update",
         "headers": {
-          "Authorization": "team-cmx-token",
+          "Authorization": "cli-update-network-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -783,50 +783,7 @@
         },
         "body": {
           "network": {
-            "id": "0fed1234",
-            "name": "team-cmx-network",
-            "policy": "airgap",
-            "status": "running",
-            "ttl": "2h"
-          }
-        },
-        "matchingRules": {
-          "$.body.network.id": {
-            "match": "type"
-          },
-          "$.body.network.name": {
-            "match": "type"
-          },
-          "$.body.network.policy": {
-            "match": "type"
-          },
-          "$.body.network.status": {
-            "match": "type"
-          },
-          "$.body.network.ttl": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get an updated CMX network",
-      "providerState": "Get updated CMX network",
-      "request": {
-        "method": "GET",
-        "path": "/v3/network/0fed1234",
-        "headers": {
-          "Authorization": "team-cmx-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "network": {
-            "id": "0fed1234",
+            "id": "cli-update-network-id",
             "name": "team-cmx-network",
             "policy": "airgap",
             "status": "running",
@@ -874,6 +831,195 @@
           "installer": {
             "appId": "repl-cli-create-installer-app"
           }
+        }
+      }
+    },
+    {
+      "description": "A request to list team RBAC policies",
+      "providerState": "List team RBAC policies",
+      "request": {
+        "method": "GET",
+        "path": "/v3/policies",
+        "headers": {
+          "Authorization": "replicated-cli-list-policies-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "policies": [
+            {
+              "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+              "description": "",
+              "id": "replicated-cli-list-policies-admin",
+              "name": "Admin",
+              "readOnly": true,
+              "teamId": "replicated-cli-list-policies-team"
+            }
+          ]
+        },
+        "matchingRules": {
+          "$.body.policies[0].definition": {
+            "match": "type"
+          },
+          "$.body.policies[0].description": {
+            "match": "type"
+          },
+          "$.body.policies[0].id": {
+            "match": "type"
+          },
+          "$.body.policies[0].teamId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to list policies in order to resolve one by name",
+      "providerState": "Get team RBAC policy by name",
+      "request": {
+        "method": "GET",
+        "path": "/v3/policies",
+        "headers": {
+          "Authorization": "replicated-cli-get-policy-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "policies": [
+            {
+              "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+              "description": "",
+              "id": "replicated-cli-get-policy-custom",
+              "name": "Custom",
+              "readOnly": false,
+              "teamId": "replicated-cli-get-policy-team"
+            }
+          ]
+        },
+        "matchingRules": {
+          "$.body.policies[0].definition": {
+            "match": "type"
+          },
+          "$.body.policies[0].description": {
+            "match": "type"
+          },
+          "$.body.policies[0].id": {
+            "match": "type"
+          },
+          "$.body.policies[0].teamId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to create a team RBAC policy",
+      "providerState": "Create a team RBAC policy",
+      "request": {
+        "method": "POST",
+        "path": "/v3/policy",
+        "headers": {
+          "Authorization": "replicated-cli-create-policy-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+          "description": "A test policy",
+          "name": "New Policy"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "policy": {
+            "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+            "description": "A test policy",
+            "id": "replicated-cli-create-policy-new",
+            "name": "New Policy",
+            "readOnly": false,
+            "teamId": "replicated-cli-create-policy-team"
+          }
+        },
+        "matchingRules": {
+          "$.body.policy.definition": {
+            "match": "type"
+          },
+          "$.body.policy.id": {
+            "match": "type"
+          },
+          "$.body.policy.teamId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to update a team RBAC policy",
+      "providerState": "Update a team RBAC policy",
+      "request": {
+        "method": "PUT",
+        "path": "/v3/policy/replicated-cli-update-policy-id",
+        "headers": {
+          "Authorization": "replicated-cli-update-policy-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+          "description": "Updated description",
+          "name": "Renamed Policy"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "policy": {
+            "definition": "{\"v1\":{\"name\":\"Admin\",\"resources\":{\"allowed\":[\"**/*\"],\"denied\":[]}}}",
+            "description": "Updated description",
+            "id": "replicated-cli-update-policy-id",
+            "name": "Renamed Policy",
+            "readOnly": false,
+            "teamId": "replicated-cli-update-policy-team"
+          }
+        },
+        "matchingRules": {
+          "$.body.policy.definition": {
+            "match": "type"
+          },
+          "$.body.policy.id": {
+            "match": "type"
+          },
+          "$.body.policy.teamId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to delete a team RBAC policy",
+      "providerState": "Delete a team RBAC policy",
+      "request": {
+        "method": "DELETE",
+        "path": "/v3/policy/replicated-cli-delete-policy-id",
+        "headers": {
+          "Authorization": "replicated-cli-delete-policy-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
         }
       }
     },

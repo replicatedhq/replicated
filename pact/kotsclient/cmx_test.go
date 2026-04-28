@@ -11,18 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	cmxToken     = "team-cmx-token"
-	cmxVMID      = "ebc40fe9"
-	cmxClusterID = "0fed1234"
-	cmxNetworkID = "0fed1234"
-)
+// Each interaction below uses a dedicated team + token fixture on the provider
+// side so that the tests do not chain state with one another. This mirrors the
+// pattern used by the policy pact tests and matches what
+// pact-provider-verifier actually does (every interaction is replayed
+// independently — there is no Create→Get plumbing).
 
-func Test_CreateGetVM(t *testing.T) {
-	var test = func() error {
+func Test_CreateVM(t *testing.T) {
+	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-
-		api := platformclient.NewHTTPClient(u, cmxToken)
+		api := platformclient.NewHTTPClient(u, "cli-create-vm-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		vms, ve, err := client.CreateVM(realkotsclient.CreateVMOpts{
@@ -33,17 +31,13 @@ func Test_CreateGetVM(t *testing.T) {
 			DiskGiB:       25,
 			NetworkPolicy: "airgap",
 			TTL:           "2h",
-			InstanceType:  "standard",
+			InstanceType:  "r1.small",
 			Tags:          []types.Tag{{Key: "test", Value: "pact"}},
 		})
 		require.NoError(t, err)
 		require.Nil(t, ve)
 		require.Len(t, vms, 1)
-		require.Equal(t, cmxVMID, vms[0].ID)
-
-		vm, err := client.GetVM(cmxVMID)
-		require.NoError(t, err)
-		require.Equal(t, "vxlan-vm", vm.Name)
+		require.Equal(t, "vxlan-vm", vms[0].Name)
 
 		return nil
 	}
@@ -55,7 +49,7 @@ func Test_CreateGetVM(t *testing.T) {
 			Method: "POST",
 			Path:   dsl.String("/v3/vm"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-create-vm-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -67,7 +61,7 @@ func Test_CreateGetVM(t *testing.T) {
 				"network_id":     "",
 				"network_policy": "airgap",
 				"ttl":            "2h",
-				"instance_type":  "standard",
+				"instance_type":  "r1.small",
 				"tags":           []map[string]interface{}{{"key": "test", "value": "pact"}},
 			},
 		}).
@@ -76,7 +70,7 @@ func Test_CreateGetVM(t *testing.T) {
 			Body: map[string]interface{}{
 				"vms": []map[string]interface{}{
 					{
-						"id":           dsl.Like(cmxVMID),
+						"id":           dsl.Like("ebc40fe9"),
 						"name":         dsl.Like("vxlan-vm"),
 						"distribution": dsl.Like("ubuntu"),
 						"version":      dsl.Like("22.04"),
@@ -89,14 +83,34 @@ func Test_CreateGetVM(t *testing.T) {
 			},
 		})
 
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
+func Test_GetVM(t *testing.T) {
+	const vmID = "cli-get-vm-id"
+
+	test := func() error {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+		api := platformclient.NewHTTPClient(u, "cli-get-vm-token")
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
+
+		vm, err := client.GetVM(vmID)
+		require.NoError(t, err)
+		require.Equal(t, "vxlan-vm", vm.Name)
+
+		return nil
+	}
+
 	pact.AddInteraction().
 		Given("Get CMX VM").
 		UponReceiving("A request to get a CMX VM").
 		WithRequest(dsl.Request{
 			Method: "GET",
-			Path:   dsl.String("/v3/vm/" + cmxVMID),
+			Path:   dsl.String("/v3/vm/" + vmID),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-get-vm-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
@@ -104,7 +118,7 @@ func Test_CreateGetVM(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"vm": map[string]interface{}{
-					"id":           dsl.Like(cmxVMID),
+					"id":           dsl.Like(vmID),
 					"name":         dsl.Like("vxlan-vm"),
 					"distribution": dsl.Like("ubuntu"),
 					"version":      dsl.Like("22.04"),
@@ -120,11 +134,10 @@ func Test_CreateGetVM(t *testing.T) {
 	}
 }
 
-func Test_CreateGetCluster(t *testing.T) {
-	var test = func() error {
+func Test_CreateCluster(t *testing.T) {
+	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-
-		api := platformclient.NewHTTPClient(u, cmxToken)
+		api := platformclient.NewHTTPClient(u, "cli-create-cluster-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		cluster, ve, err := client.CreateCluster(realkotsclient.CreateClusterOpts{
@@ -139,10 +152,6 @@ func Test_CreateGetCluster(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Nil(t, ve)
-		require.Equal(t, cmxClusterID, cluster.ID)
-
-		cluster, err = client.GetCluster(cmxClusterID)
-		require.NoError(t, err)
 		require.Equal(t, "vxlan-cluster", cluster.Name)
 
 		return nil
@@ -155,7 +164,7 @@ func Test_CreateGetCluster(t *testing.T) {
 			Method: "POST",
 			Path:   dsl.String("/v3/cluster"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-create-cluster-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -178,7 +187,7 @@ func Test_CreateGetCluster(t *testing.T) {
 			Status: 201,
 			Body: map[string]interface{}{
 				"cluster": map[string]interface{}{
-					"id":                      dsl.Like(cmxClusterID),
+					"id":                      dsl.Like("0fed1234"),
 					"name":                    dsl.Like("vxlan-cluster"),
 					"kubernetes_distribution": dsl.Like("fake"),
 					"kubernetes_version":      dsl.Like("1.25"),
@@ -190,14 +199,34 @@ func Test_CreateGetCluster(t *testing.T) {
 			},
 		})
 
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
+func Test_GetCluster(t *testing.T) {
+	const clusterID = "cli-get-cluster-id"
+
+	test := func() error {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+		api := platformclient.NewHTTPClient(u, "cli-get-cluster-token")
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
+
+		cluster, err := client.GetCluster(clusterID)
+		require.NoError(t, err)
+		require.Equal(t, "vxlan-cluster", cluster.Name)
+
+		return nil
+	}
+
 	pact.AddInteraction().
 		Given("Get CMX cluster").
 		UponReceiving("A request to get a CMX cluster").
 		WithRequest(dsl.Request{
 			Method: "GET",
-			Path:   dsl.String("/v3/cluster/" + cmxClusterID),
+			Path:   dsl.String("/v3/cluster/" + clusterID),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-get-cluster-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
@@ -205,7 +234,7 @@ func Test_CreateGetCluster(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"cluster": map[string]interface{}{
-					"id":                      dsl.Like(cmxClusterID),
+					"id":                      dsl.Like(clusterID),
 					"name":                    dsl.Like("vxlan-cluster"),
 					"kubernetes_distribution": dsl.Like("fake"),
 					"kubernetes_version":      dsl.Like("1.25"),
@@ -221,11 +250,10 @@ func Test_CreateGetCluster(t *testing.T) {
 	}
 }
 
-func Test_CreateGetNetwork(t *testing.T) {
-	var test = func() error {
+func Test_CreateNetwork(t *testing.T) {
+	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-
-		api := platformclient.NewHTTPClient(u, cmxToken)
+		api := platformclient.NewHTTPClient(u, "cli-create-network-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		network, ve, err := client.CreateNetwork(realkotsclient.CreateNetworkOpts{
@@ -235,11 +263,7 @@ func Test_CreateGetNetwork(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Nil(t, ve)
-		require.Equal(t, cmxNetworkID, network.ID)
-
-		network, err = client.GetNetwork(cmxNetworkID)
-		require.NoError(t, err)
-		require.Equal(t, "airgap", network.Policy)
+		require.Equal(t, "team-cmx-network", network.Name)
 
 		return nil
 	}
@@ -251,7 +275,7 @@ func Test_CreateGetNetwork(t *testing.T) {
 			Method: "POST",
 			Path:   dsl.String("/v3/network"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-create-network-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -264,7 +288,7 @@ func Test_CreateGetNetwork(t *testing.T) {
 			Status: 201,
 			Body: map[string]interface{}{
 				"network": map[string]interface{}{
-					"id":     dsl.Like(cmxNetworkID),
+					"id":     dsl.Like("0fed1234"),
 					"name":   dsl.Like("team-cmx-network"),
 					"status": dsl.Like("queued"),
 					"ttl":    dsl.Like("2h"),
@@ -273,14 +297,34 @@ func Test_CreateGetNetwork(t *testing.T) {
 			},
 		})
 
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
+func Test_GetNetwork(t *testing.T) {
+	const networkID = "cli-get-network-id"
+
+	test := func() error {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+		api := platformclient.NewHTTPClient(u, "cli-get-network-token")
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
+
+		network, err := client.GetNetwork(networkID)
+		require.NoError(t, err)
+		require.Equal(t, "airgap", network.Policy)
+
+		return nil
+	}
+
 	pact.AddInteraction().
 		Given("Get CMX network").
 		UponReceiving("A request to get a CMX network").
 		WithRequest(dsl.Request{
 			Method: "GET",
-			Path:   dsl.String("/v3/network/" + cmxNetworkID),
+			Path:   dsl.String("/v3/network/" + networkID),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-get-network-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
@@ -288,7 +332,7 @@ func Test_CreateGetNetwork(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"network": map[string]interface{}{
-					"id":     dsl.Like(cmxNetworkID),
+					"id":     dsl.Like(networkID),
 					"name":   dsl.Like("team-cmx-network"),
 					"status": dsl.Like("running"),
 					"ttl":    dsl.Like("2h"),
@@ -302,20 +346,17 @@ func Test_CreateGetNetwork(t *testing.T) {
 	}
 }
 
-func Test_UpdateGetNetwork(t *testing.T) {
-	var test = func() error {
-		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+func Test_UpdateNetwork(t *testing.T) {
+	const networkID = "cli-update-network-id"
 
-		api := platformclient.NewHTTPClient(u, cmxToken)
+	test := func() error {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+		api := platformclient.NewHTTPClient(u, "cli-update-network-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		network, err := client.UpdateNetwork(cmxNetworkID, realkotsclient.UpdateNetworkOpts{
+		network, err := client.UpdateNetwork(networkID, realkotsclient.UpdateNetworkOpts{
 			Policy: "airgap",
 		})
-		require.NoError(t, err)
-		require.Equal(t, "airgap", network.Policy)
-
-		network, err = client.GetNetwork(cmxNetworkID)
 		require.NoError(t, err)
 		require.Equal(t, "airgap", network.Policy)
 
@@ -327,9 +368,9 @@ func Test_UpdateGetNetwork(t *testing.T) {
 		UponReceiving("A request to update a CMX network policy").
 		WithRequest(dsl.Request{
 			Method: "PUT",
-			Path:   dsl.String("/v3/network/" + cmxNetworkID + "/update"),
+			Path:   dsl.String("/v3/network/" + networkID + "/update"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
+				"Authorization": dsl.String("cli-update-network-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -340,31 +381,7 @@ func Test_UpdateGetNetwork(t *testing.T) {
 			Status: 200,
 			Body: map[string]interface{}{
 				"network": map[string]interface{}{
-					"id":     dsl.Like(cmxNetworkID),
-					"name":   dsl.Like("team-cmx-network"),
-					"status": dsl.Like("running"),
-					"ttl":    dsl.Like("2h"),
-					"policy": dsl.Like("airgap"),
-				},
-			},
-		})
-
-	pact.AddInteraction().
-		Given("Get updated CMX network").
-		UponReceiving("A request to get an updated CMX network").
-		WithRequest(dsl.Request{
-			Method: "GET",
-			Path:   dsl.String("/v3/network/" + cmxNetworkID),
-			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String(cmxToken),
-				"Content-Type":  dsl.String("application/json"),
-			},
-		}).
-		WillRespondWith(dsl.Response{
-			Status: 200,
-			Body: map[string]interface{}{
-				"network": map[string]interface{}{
-					"id":     dsl.Like(cmxNetworkID),
+					"id":     dsl.Like(networkID),
 					"name":   dsl.Like("team-cmx-network"),
 					"status": dsl.Like("running"),
 					"ttl":    dsl.Like("2h"),
