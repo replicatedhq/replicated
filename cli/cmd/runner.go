@@ -130,6 +130,7 @@ type runnerArgs struct {
 	createClusterNodeGroups             []string
 	createClusterTags                   []string
 	createClusterAddons                 []string
+	createClusterNetworkPolicy          string
 
 	upgradeClusterKubernetesVersion string
 	upgradeClusterDryRun            bool

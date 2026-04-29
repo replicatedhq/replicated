@@ -1417,6 +1417,84 @@
           }
         }
       }
+    },
+    {
+      "description": "A request to create a CMX cluster with a network policy",
+      "providerState": "Create CMX cluster",
+      "request": {
+        "method": "POST",
+        "path": "/v3/cluster",
+        "headers": {
+          "Authorization": "cli-create-cluster-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "disk_gib": 50,
+          "instance_type": "r1.small",
+          "ip_family": "",
+          "kubernetes_distribution": "fake",
+          "kubernetes_version": "1.25",
+          "license_id": "",
+          "max_node_count": null,
+          "min_node_count": null,
+          "name": "vxlan-cluster-airgap",
+          "network_policy": "airgap",
+          "node_count": 1,
+          "node_groups": null,
+          "tags": [
+            {
+              "key": "test",
+              "value": "pact"
+            }
+          ],
+          "ttl": "2h"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "cluster": {
+            "id": "0fed1234",
+            "kubernetes_distribution": "fake",
+            "kubernetes_version": "1.25",
+            "name": "vxlan-cluster-airgap",
+            "network_id": "befee8ca",
+            "status": "queued",
+            "tags": [
+              {
+                "key": "test",
+                "value": "pact"
+              }
+            ],
+            "ttl": "2h"
+          }
+        },
+        "matchingRules": {
+          "$.body.cluster.id": {
+            "match": "type"
+          },
+          "$.body.cluster.kubernetes_distribution": {
+            "match": "type"
+          },
+          "$.body.cluster.kubernetes_version": {
+            "match": "type"
+          },
+          "$.body.cluster.name": {
+            "match": "type"
+          },
+          "$.body.cluster.network_id": {
+            "match": "type"
+          },
+          "$.body.cluster.status": {
+            "match": "type"
+          },
+          "$.body.cluster.ttl": {
+            "match": "type"
+          }
+        }
+      }
     }
   ],
   "metadata": {

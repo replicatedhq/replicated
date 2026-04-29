@@ -206,6 +206,78 @@ func Test_CreateCluster(t *testing.T) {
 	}
 }
 
+func Test_CreateClusterWithNetworkPolicy(t *testing.T) {
+	test := func() error {
+		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
+		api := platformclient.NewHTTPClient(u, "cli-create-cluster-token")
+		client := realkotsclient.VendorV3Client{HTTPClient: *api}
+
+		cluster, ve, err := client.CreateCluster(realkotsclient.CreateClusterOpts{
+			Name:                   "vxlan-cluster-airgap",
+			KubernetesDistribution: "fake",
+			KubernetesVersion:      "1.25",
+			NodeCount:              1,
+			DiskGiB:                50,
+			TTL:                    "2h",
+			InstanceType:           "r1.small",
+			NetworkPolicy:          "airgap",
+			Tags:                   []types.Tag{{Key: "test", Value: "pact"}},
+		})
+		require.NoError(t, err)
+		require.Nil(t, ve)
+		require.Equal(t, "vxlan-cluster-airgap", cluster.Name)
+
+		return nil
+	}
+
+	pact.AddInteraction().
+		Given("Create CMX cluster").
+		UponReceiving("A request to create a CMX cluster with a network policy").
+		WithRequest(dsl.Request{
+			Method: "POST",
+			Path:   dsl.String("/v3/cluster"),
+			Headers: dsl.MapMatcher{
+				"Authorization": dsl.String("cli-create-cluster-token"),
+				"Content-Type":  dsl.String("application/json"),
+			},
+			Body: map[string]interface{}{
+				"name":                    "vxlan-cluster-airgap",
+				"kubernetes_distribution": "fake",
+				"kubernetes_version":      "1.25",
+				"ip_family":               "",
+				"license_id":              "",
+				"node_count":              1,
+				"min_node_count":          nil,
+				"max_node_count":          nil,
+				"disk_gib":                50,
+				"ttl":                     "2h",
+				"node_groups":             nil,
+				"instance_type":           "r1.small",
+				"tags":                    []map[string]interface{}{{"key": "test", "value": "pact"}},
+				"network_policy":          "airgap",
+			},
+		}).
+		WillRespondWith(dsl.Response{
+			Status: 201,
+			Body: map[string]interface{}{
+				"cluster": map[string]interface{}{
+					"id":                      dsl.Like("0fed1234"),
+					"name":                    dsl.Like("vxlan-cluster-airgap"),
+					"kubernetes_distribution": dsl.Like("fake"),
+					"kubernetes_version":      dsl.Like("1.25"),
+					"network_id":              dsl.Like("befee8ca"),
+					"status":                  dsl.Like("queued"),
+					"ttl":                     dsl.Like("2h"),
+					"tags":                    []map[string]interface{}{{"key": "test", "value": "pact"}},
+				},
+			},
+		})
+
+	if err := pact.Verify(test); err != nil {
+		t.Fatalf("Error on Verify: %v", err)
+	}
+}
+
 // Test_GetCluster is disabled because cluster fixtures defined in
 // migrations/fixtures/fixtures/*.yaml don't currently load into the test
 // database during init (a pre-existing bug — `vm`, `network`, etc. fixtures

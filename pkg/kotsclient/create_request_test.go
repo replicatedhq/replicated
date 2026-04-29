@@ -68,3 +68,32 @@ func TestCreateVMIncludesNetworkPolicy(t *testing.T) {
 	require.Equal(t, "network-id", requestBody["network_id"])
 	require.Equal(t, "airgap", requestBody["network_policy"])
 }
+
+func TestCreateClusterIncludesNetworkPolicy(t *testing.T) {
+	var requestBody map[string]interface{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v3/cluster", r.URL.Path)
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&requestBody))
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, _ = w.Write([]byte(`{"cluster":{"id":"cluster-id"}}`))
+	}))
+	defer server.Close()
+
+	httpClient := platformclient.NewHTTPClient(server.URL, "fake-api-key")
+	client := &VendorV3Client{HTTPClient: *httpClient}
+
+	_, ve, err := client.CreateCluster(CreateClusterOpts{
+		Name:                   "test-cluster",
+		KubernetesDistribution: "k3s",
+		KubernetesVersion:      "1.31",
+		NodeCount:              1,
+		NetworkPolicy:          "airgap",
+	})
+	require.NoError(t, err)
+	require.Nil(t, ve)
+	require.Equal(t, "test-cluster", requestBody["name"])
+	require.Equal(t, "airgap", requestBody["network_policy"])
+}
