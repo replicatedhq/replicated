@@ -39,20 +39,28 @@ By default, the command provisions one VM, but you can customize the number of V
 The command also supports a "--wait" flag to wait for the VMs to be ready before returning control, with a customizable timeout duration.
 
 VMs are currently a beta feature.`,
-		Example: `# Create a single Ubuntu 20.04 VM
-replicated vm create --distribution ubuntu --version 20.04
+		Example: `# Create a single Ubuntu 22.04 VM
+replicated vm create --distribution ubuntu --version 22.04
 
 # Create 3 Ubuntu 22.04 VMs
 replicated vm create --distribution ubuntu --version 22.04 --count 3
 
 # Create 5 Ubuntu VMs with a custom instance type and disk size
-replicated vm create --distribution ubuntu --version 20.04 --count 5 --instance-type r1.medium --disk 100
+replicated vm create --distribution ubuntu --version 22.04 --count 5 --instance-type r1.medium --disk 100
 
 # Create a VM with an SSH public key
-replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.ssh/id_rsa.pub
+replicated vm create --distribution ubuntu --version 22.04 --ssh-public-key ~/.ssh/id_rsa.pub
 
 # Create a VM with multiple SSH public keys
-replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.ssh/id_rsa.pub --ssh-public-key ~/.ssh/id_ed25519.pub`,
+replicated vm create --distribution ubuntu --version 22.04 --ssh-public-key ~/.ssh/id_rsa.pub --ssh-public-key ~/.ssh/id_ed25519.pub
+
+# Create a VM with an SSH public key, then SSH in.
+# The Linux user provisioned on the VM is taken from the part of the key's
+# comment before the first '@'. A key with comment "ci@host" creates user "ci",
+# so pass --username to vm ssh-endpoint to connect as that user.
+ssh-keygen -t ed25519 -C ci@host -f /tmp/ci_key -N ""
+replicated vm create --distribution ubuntu --ssh-public-key /tmp/ci_key.pub --name my-vm --wait 5m
+ssh -i /tmp/ci_key $(replicated vm ssh-endpoint my-vm --username ci)`,
 		SilenceUsage: true,
 		RunE:         r.createVM,
 		Args:         cobra.NoArgs,
@@ -73,7 +81,7 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 	cmd.Flags().StringVar(&r.args.createVMNetwork, "network", "", "The network to use for the VM(s). If not supplied, create a new network")
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
-	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
+	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times). The Linux user that receives the key is derived from the key's comment: the portion before the first '@'. For example, a comment of 'runner@host' creates a user named 'runner'; pass that name via 'replicated vm ssh-endpoint --username runner' to connect.")
 	cmd.Flags().StringVar(&r.args.createVMRBACPolicyName, "rbac-policy-name", "", "(alpha) Name of the RBAC policy to assign to the VM (enables automatic vendor-api authentication inside the VM)")
 	cmd.Flags().MarkHidden("rbac-policy-name")
 	cmd.Flags().BoolVar(&r.args.createVMOverlayFS, "overlayfs", false, "(alpha) Use overlayfs-backed rootfs management for the VM")
