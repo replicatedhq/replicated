@@ -85,6 +85,7 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 
 	cmd.Flags().StringArrayVar(&r.args.createClusterAddons, "addon", []string{}, "Addons to install on the cluster (can be specified multiple times)")
 	cmd.Flags().StringVar(&r.args.clusterAddonCreateObjectStoreBucket, "bucket-prefix", "", "A prefix for the bucket name to be created (required by '--addon object-store')")
+	cmd.Flags().StringVar(&r.args.createClusterNetworkPolicy, "network-policy", "", "The network policy to use for the cluster")
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
@@ -143,6 +144,7 @@ func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 		InstanceType:           r.args.createClusterInstanceType,
 		NodeGroups:             nodeGroups,
 		Tags:                   tags,
+		NetworkPolicy:          r.args.createClusterNetworkPolicy,
 		DryRun:                 r.args.createClusterDryRun,
 	}
 	if r.args.createClusterMinNodeCount != "" {

@@ -25,6 +25,7 @@ type CreateClusterRequest struct {
 	NodeGroups             []NodeGroup `json:"node_groups"`
 	InstanceType           string      `json:"instance_type"`
 	Tags                   []types.Tag `json:"tags"`
+	NetworkPolicy          string      `json:"network_policy,omitempty"`
 }
 
 type CreateClusterResponse struct {
@@ -53,6 +54,7 @@ type CreateClusterOpts struct {
 	InstanceType           string
 	NodeGroups             []NodeGroup
 	Tags                   []types.Tag
+	NetworkPolicy          string
 	DryRun                 bool
 }
 
@@ -98,6 +100,7 @@ func (c *VendorV3Client) CreateCluster(opts CreateClusterOpts) (*types.Cluster, 
 		InstanceType:           opts.InstanceType,
 		NodeGroups:             opts.NodeGroups,
 		Tags:                   opts.Tags,
+		NetworkPolicy:          opts.NetworkPolicy,
 	}
 
 	if opts.DryRun {
