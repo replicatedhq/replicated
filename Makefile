@@ -12,7 +12,7 @@ test-unit:
 
 .PHONY: test-pact
 test-pact:
-	go test -v ./pact/... -tags "$(BUILDTAGS)"
+	go test -count=1 -p 1 -v ./pact/... -tags "$(BUILDTAGS)"
 
 .PHONY: test-integration
 test-integration: build

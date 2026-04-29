@@ -71,6 +71,7 @@ replicated vm create --distribution ubuntu --version 20.04 --ssh-public-key ~/.s
 	cmd.Flags().StringVar(&r.args.createVMInstanceType, "instance-type", "", "The type of instance to use (e.g. r1.medium)")
 	cmd.RegisterFlagCompletionFunc("instance-type", r.completeVMInstanceTypes)
 	cmd.Flags().StringVar(&r.args.createVMNetwork, "network", "", "The network to use for the VM(s). If not supplied, create a new network")
+	cmd.Flags().StringVar(&r.args.createVMNetworkPolicy, "network-policy", "", "The network policy to use for the VM(s)")
 
 	cmd.Flags().StringArrayVar(&r.args.createVMTags, "tag", []string{}, "Tag to apply to the VM (key=value format, can be specified multiple times)")
 	cmd.Flags().StringArrayVar(&r.args.createVMPublicKeys, "ssh-public-key", []string{}, "Path to SSH public key file to add to the VM (can be specified multiple times)")
@@ -107,6 +108,10 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 		publicKeys = append(publicKeys, publicKey)
 	}
 
+	if r.args.createVMNetwork != "" && r.args.createVMNetworkPolicy != "" {
+		return errors.New("cannot specify both --network and --network-policy")
+	}
+
 	var rbacPolicyID string
 	if r.args.createVMRBACPolicyName != "" {
 		p, err := r.kotsAPI.GetPolicyByName(r.args.createVMRBACPolicyName)
@@ -117,19 +122,20 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 	}
 
 	opts := kotsclient.CreateVMOpts{
-		Name:         r.args.createVMName,
-		Distribution: r.args.createVMDistribution,
-		Version:      r.args.createVMVersion,
-		Count:        r.args.createVMCount,
-		DiskGiB:      r.args.createVMDiskGiB,
-		Network:      r.args.createVMNetwork,
-		TTL:          r.args.createVMTTL,
-		InstanceType: r.args.createVMInstanceType,
-		Tags:         tags,
-		PublicKeys:   publicKeys,
-		DryRun:       r.args.createVMDryRun,
-		RBACPolicyID: rbacPolicyID,
-		OverlayFS:    r.args.createVMOverlayFS,
+		Name:          r.args.createVMName,
+		Distribution:  r.args.createVMDistribution,
+		Version:       r.args.createVMVersion,
+		Count:         r.args.createVMCount,
+		DiskGiB:       r.args.createVMDiskGiB,
+		Network:       r.args.createVMNetwork,
+		NetworkPolicy: r.args.createVMNetworkPolicy,
+		TTL:           r.args.createVMTTL,
+		InstanceType:  r.args.createVMInstanceType,
+		Tags:          tags,
+		PublicKeys:    publicKeys,
+		DryRun:        r.args.createVMDryRun,
+		RBACPolicyID:  rbacPolicyID,
+		OverlayFS:     r.args.createVMOverlayFS,
 	}
 
 	vms, err := r.createAndWaitForVM(opts)

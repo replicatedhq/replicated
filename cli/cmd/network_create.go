@@ -27,6 +27,7 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().StringVar(&r.args.createNetworkName, "name", "", "Network name (defaults to random name)")
 	cmd.Flags().StringVar(&r.args.createNetworkTTL, "ttl", "", "Network TTL (duration, max 48h)")
+	cmd.Flags().StringVarP(&r.args.createNetworkPolicy, "policy", "p", "", "Network policy setting")
 	cmd.Flags().DurationVar(&r.args.createNetworkWaitDuration, "wait", time.Second*0, "Wait duration for Network to be ready (leave empty to not wait)")
 
 	cmd.Flags().BoolVar(&r.args.createNetworkDryRun, "dry-run", false, "Dry run")
@@ -44,6 +45,7 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 	opts := kotsclient.CreateNetworkOpts{
 		Name:   r.args.createNetworkName,
 		TTL:    r.args.createNetworkTTL,
+		Policy: r.args.createNetworkPolicy,
 		DryRun: r.args.createNetworkDryRun,
 	}
 

@@ -212,20 +212,21 @@ type runnerArgs struct {
 	compatibilityFailure                bool
 	compatibilityNotes                  string
 
-	createVMName         string
-	createVMDistribution string
-	createVMVersion      string
-	createVMCount        int
-	createVMDiskGiB      int64
-	createVMTTL          string
-	createVMInstanceType string
-	createVMWaitDuration time.Duration
-	createVMTags         []string
-	createVMNetwork      string
-	createVMDryRun          bool
-	createVMPublicKeys      []string
-	createVMRBACPolicyName  string
-	createVMOverlayFS       bool
+	createVMName           string
+	createVMDistribution   string
+	createVMVersion        string
+	createVMCount          int
+	createVMDiskGiB        int64
+	createVMTTL            string
+	createVMInstanceType   string
+	createVMWaitDuration   time.Duration
+	createVMTags           []string
+	createVMNetwork        string
+	createVMNetworkPolicy  string
+	createVMDryRun         bool
+	createVMPublicKeys     []string
+	createVMRBACPolicyName string
+	createVMOverlayFS      bool
 
 	lsVMShowTerminated bool
 	lsVMStartTime      string
@@ -249,6 +250,7 @@ type runnerArgs struct {
 
 	createNetworkName         string
 	createNetworkTTL          string
+	createNetworkPolicy       string
 	createNetworkWaitDuration time.Duration
 	createNetworkDryRun       bool
 
