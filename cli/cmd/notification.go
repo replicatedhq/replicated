@@ -299,7 +299,7 @@ func (r *runners) InitNotificationEventTypeList(parent *cobra.Command) *cobra.Co
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&query, "q", "", "Search query")
-	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum results to request from the API")
+	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum results to request from the API (0 means no limit)")
 	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
