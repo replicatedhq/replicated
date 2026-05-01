@@ -154,7 +154,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.New("no app specified")
 	}
 
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 
 	release, err := prepareRelease(r, log)
 	if err != nil {

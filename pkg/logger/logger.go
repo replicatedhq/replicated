@@ -18,6 +18,7 @@ type Logger struct {
 	spinnerArgs   []interface{}
 	isSilent      bool
 	isVerbose     bool
+	isTerminal    *bool
 }
 
 func NewLogger(writer io.Writer) *Logger {
@@ -26,7 +27,21 @@ func NewLogger(writer io.Writer) *Logger {
 	}
 }
 
+// SetIsTerminal lets callers override TTY detection. Useful when the
+// logger writes through a wrapper (e.g. tabwriter) that hides the
+// underlying file descriptor.
+func (l *Logger) SetIsTerminal(isTerminal bool) *Logger {
+	if l == nil {
+		return l
+	}
+	l.isTerminal = &isTerminal
+	return l
+}
+
 func (l *Logger) isTTY() bool {
+	if l.isTerminal != nil {
+		return *l.isTerminal
+	}
 	if f, ok := l.w.(*os.File); ok {
 		return isatty.IsTerminal(f.Fd())
 	}

@@ -79,7 +79,7 @@ replicated app hostname ls --app myapp --output json`,
 func (r *runners) listAppHostnames(ctx context.Context, outputFormat string) error {
 	// Only show spinners for table output
 	showSpinners := outputFormat == "table"
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 
 	// Resolve app ID from slug or ID
 	appSlugOrID := r.appSlug

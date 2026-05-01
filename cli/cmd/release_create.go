@@ -230,7 +230,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 		printIfError(cmd, err)
 	}()
 
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 	if r.outputFormat == "json" {
 		// suppress log lines for machine-readable output
 		log.Silence()

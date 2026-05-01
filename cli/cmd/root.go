@@ -9,6 +9,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/Masterminds/sprig/v3"
+	"github.com/mattn/go-isatty"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/client"
 	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
@@ -104,11 +105,17 @@ Use "{{.CommandPath}} [command] --help" for more information about a command.{{e
 func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
 	w := tabwriter.NewWriter(stdout, minWidth, tabWidth, padding, padChar, tabwriter.TabIndent)
 
+	stdoutIsTTY := false
+	if f, ok := stdout.(*os.File); ok {
+		stdoutIsTTY = isatty.IsTerminal(f.Fd())
+	}
+
 	// get api client and app ID after flags are parsed
 	runCmds := &runners{
-		rootCmd: rootCmd,
-		stdin:   stdin,
-		w:       w,
+		rootCmd:     rootCmd,
+		stdin:       stdin,
+		w:           w,
+		stdoutIsTTY: stdoutIsTTY,
 	}
 	if runCmds.rootCmd == nil {
 		runCmds.rootCmd = GetRootCmd()

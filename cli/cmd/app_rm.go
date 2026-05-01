@@ -54,7 +54,7 @@ replicated app delete "Custom App" --output json`,
 }
 
 func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 	showSpinners := outputFormat == "table"
 
 	if showSpinners {
