@@ -511,6 +511,84 @@
       }
     },
     {
+      "description": "A request to create a CMX cluster with a network policy",
+      "providerState": "Create CMX cluster",
+      "request": {
+        "method": "POST",
+        "path": "/v3/cluster",
+        "headers": {
+          "Authorization": "cli-create-cluster-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "disk_gib": 50,
+          "instance_type": "r1.small",
+          "ip_family": "",
+          "kubernetes_distribution": "fake",
+          "kubernetes_version": "1.25",
+          "license_id": "",
+          "max_node_count": null,
+          "min_node_count": null,
+          "name": "vxlan-cluster-airgap",
+          "network_policy": "airgap",
+          "node_count": 1,
+          "node_groups": null,
+          "tags": [
+            {
+              "key": "test",
+              "value": "pact"
+            }
+          ],
+          "ttl": "2h"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "cluster": {
+            "id": "0fed1234",
+            "kubernetes_distribution": "fake",
+            "kubernetes_version": "1.25",
+            "name": "vxlan-cluster-airgap",
+            "network_id": "befee8ca",
+            "status": "queued",
+            "tags": [
+              {
+                "key": "test",
+                "value": "pact"
+              }
+            ],
+            "ttl": "2h"
+          }
+        },
+        "matchingRules": {
+          "$.body.cluster.id": {
+            "match": "type"
+          },
+          "$.body.cluster.kubernetes_distribution": {
+            "match": "type"
+          },
+          "$.body.cluster.kubernetes_version": {
+            "match": "type"
+          },
+          "$.body.cluster.name": {
+            "match": "type"
+          },
+          "$.body.cluster.network_id": {
+            "match": "type"
+          },
+          "$.body.cluster.status": {
+            "match": "type"
+          },
+          "$.body.cluster.ttl": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
       "description": "A request to create a CMX network",
       "providerState": "Create CMX network",
       "request": {
@@ -668,6 +746,446 @@
         "body": {
           "installer": {
             "appId": "repl-cli-create-installer-app"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to list notification subscriptions",
+      "providerState": "List notification subscriptions",
+      "request": {
+        "method": "GET",
+        "path": "/v3/notification_subscriptions",
+        "query": "search=release&type=team",
+        "headers": {
+          "Authorization": "replicated-cli-list-notifications-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "subscriptions": [
+            {
+              "eventConfigs": [
+                {
+                  "eventType": "release.promoted",
+                  "filters": {
+        }
+                }
+              ],
+              "id": "notif-sub-1",
+              "isEnabled": true,
+              "name": "Release webhook",
+              "teamId": "team-1",
+              "userId": "user-1",
+              "webhookUrl": "https://example.com/hook"
+            }
+          ],
+          "totalCount": 1
+        },
+        "matchingRules": {
+          "$.body.subscriptions[0].id": {
+            "match": "type"
+          },
+          "$.body.subscriptions[0].teamId": {
+            "match": "type"
+          },
+          "$.body.subscriptions[0].userId": {
+            "match": "type"
+          },
+          "$.body.totalCount": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to create a notification subscription",
+      "providerState": "Create notification subscription",
+      "request": {
+        "method": "POST",
+        "path": "/v3/notification_subscription",
+        "headers": {
+          "Authorization": "replicated-cli-subscription-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "eventConfigs": [
+            {
+              "eventType": "release.promoted",
+              "filters": {
+        }
+            }
+          ],
+          "isEnabled": true,
+          "name": "Release webhook",
+          "webhookUrl": "https://example.com/hook"
+        }
+      },
+      "response": {
+        "status": 201,
+        "headers": {
+        },
+        "body": {
+          "eventConfigs": [
+            {
+              "eventType": "release.promoted",
+              "filters": {
+        }
+            }
+          ],
+          "id": "notif-sub-1",
+          "isEnabled": true,
+          "name": "Release webhook",
+          "teamId": "team-1",
+          "userId": "user-1",
+          "webhookUrl": "https://example.com/hook"
+        },
+        "matchingRules": {
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.teamId": {
+            "match": "type"
+          },
+          "$.body.userId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to get a notification subscription",
+      "providerState": "Get notification subscription",
+      "request": {
+        "method": "GET",
+        "path": "/v3/notification_subscription/notif-sub-1",
+        "headers": {
+          "Authorization": "replicated-cli-subscription-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "eventConfigs": [
+            {
+              "eventType": "release.promoted",
+              "filters": {
+        }
+            }
+          ],
+          "id": "notif-sub-1",
+          "isEnabled": true,
+          "name": "Release webhook",
+          "teamId": "team-1",
+          "userId": "user-1",
+          "webhookUrl": "https://example.com/hook"
+        },
+        "matchingRules": {
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.teamId": {
+            "match": "type"
+          },
+          "$.body.userId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to update a notification subscription",
+      "providerState": "Update notification subscription",
+      "request": {
+        "method": "PUT",
+        "path": "/v3/notification_subscription/notif-sub-1",
+        "headers": {
+          "Authorization": "replicated-cli-subscription-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "isEnabled": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "eventConfigs": [
+            {
+              "eventType": "release.promoted",
+              "filters": {
+        }
+            }
+          ],
+          "id": "notif-sub-1",
+          "isEnabled": false,
+          "name": "Release webhook",
+          "teamId": "team-1",
+          "userId": "user-1",
+          "webhookUrl": "https://example.com/hook"
+        },
+        "matchingRules": {
+          "$.body.id": {
+            "match": "type"
+          },
+          "$.body.teamId": {
+            "match": "type"
+          },
+          "$.body.userId": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to delete a notification subscription",
+      "providerState": "Delete notification subscription",
+      "request": {
+        "method": "DELETE",
+        "path": "/v3/notification_subscription/notif-sub-1",
+        "headers": {
+          "Authorization": "replicated-cli-subscription-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+        }
+      }
+    },
+    {
+      "description": "A request to list notification events",
+      "providerState": "List notification events",
+      "request": {
+        "method": "GET",
+        "path": "/v3/notification_events",
+        "query": "pageSize=20&status=failed&subscription_id=notif-sub-1",
+        "headers": {
+          "Authorization": "replicated-cli-events-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "events": [
+            {
+              "attempts": [
+        ],
+              "eventData": {
+                "releaseId": "rel-1"
+              },
+              "eventType": "release.promoted",
+              "id": "evt-1",
+              "payload": {
+                "event": "release.promoted"
+              },
+              "payloadType": "webhook",
+              "retryCount": 8,
+              "status": "failed",
+              "subscriptionId": "notif-sub-1"
+            }
+          ],
+          "totalCount": 1
+        },
+        "matchingRules": {
+          "$.body.events[0].id": {
+            "match": "type"
+          },
+          "$.body.events[0].retryCount": {
+            "match": "type"
+          },
+          "$.body.events[0].subscriptionId": {
+            "match": "type"
+          },
+          "$.body.totalCount": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to list notification event types",
+      "providerState": "List notification event types",
+      "request": {
+        "method": "GET",
+        "path": "/v3/notification_event_types",
+        "query": "limit=20&q=release",
+        "headers": {
+          "Authorization": "replicated-cli-events-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "eventTypes": [
+            {
+              "category": "Release",
+              "description": "A release was promoted.",
+              "displayName": "Release Promoted",
+              "key": "release.promoted"
+            }
+          ],
+          "total": 1
+        },
+        "matchingRules": {
+          "$.body.eventTypes": {
+            "min": 1
+          },
+          "$.body.eventTypes[*].*": {
+            "match": "type"
+          },
+          "$.body.eventTypes[*].category": {
+            "match": "type"
+          },
+          "$.body.eventTypes[*].description": {
+            "match": "type"
+          },
+          "$.body.eventTypes[*].displayName": {
+            "match": "type"
+          },
+          "$.body.eventTypes[*].key": {
+            "match": "type"
+          },
+          "$.body.total": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to retry a notification event",
+      "providerState": "Retry notification event",
+      "request": {
+        "method": "POST",
+        "path": "/v3/notification_event/evt-1/retry",
+        "headers": {
+          "Authorization": "replicated-cli-notification-actions-token",
+          "Content-Type": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "message": "Notification event queued for retry",
+          "success": true
+        },
+        "matchingRules": {
+          "$.body.success": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to resend notification verification email",
+      "providerState": "Resend notification verification email",
+      "request": {
+        "method": "POST",
+        "path": "/v3/notification_email/resend_verification",
+        "headers": {
+          "Authorization": "replicated-cli-notification-actions-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "emailAddress": "alerts@example.com"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "message": "Verification email sent successfully",
+          "success": true
+        },
+        "matchingRules": {
+          "$.body.success": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to verify notification email",
+      "providerState": "Verify notification email",
+      "request": {
+        "method": "POST",
+        "path": "/v3/notification_email/verify",
+        "headers": {
+          "Authorization": "replicated-cli-notification-actions-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "emailAddress": "alerts@example.com",
+          "verificationCode": "123456"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "message": "Email address verified successfully",
+          "success": true
+        },
+        "matchingRules": {
+          "$.body.success": {
+            "match": "type"
+          }
+        }
+      }
+    },
+    {
+      "description": "A request to test notification webhook",
+      "providerState": "Test notification webhook",
+      "request": {
+        "method": "POST",
+        "path": "/v3/notification_webhook/test",
+        "headers": {
+          "Authorization": "replicated-cli-notification-actions-token",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "eventType": "release.promoted",
+          "webhookUrl": "https://example.com/hook"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+        },
+        "body": {
+          "durationMs": 15,
+          "statusCode": 200,
+          "success": true
+        },
+        "matchingRules": {
+          "$.body.durationMs": {
+            "match": "type"
+          },
+          "$.body.statusCode": {
+            "match": "type"
+          },
+          "$.body.success": {
+            "match": "type"
           }
         }
       }
@@ -1298,621 +1816,6 @@
         },
         "matchingRules": {
           "$.body.totalClusters": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to create a new release for cli-create-release-app-id",
-      "providerState": "Create a release for cli-create-release-app-id",
-      "request": {
-        "method": "POST",
-        "path": "/v1/app/cli-create-release-app-id/release",
-        "headers": {
-          "Authorization": "cli-create-release-auth",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "source": "latest",
-          "sourcedata": 0
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "Config": "",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 10
-        },
-        "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
-            "match": "type"
-          },
-          "$.body.Sequence": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "An empty request to create a new release for cli-create-release-app-id",
-      "providerState": "Empty create a release for cli-create-release-app-id",
-      "request": {
-        "method": "POST",
-        "path": "/v1/app/cli-create-release-app-id/release",
-        "headers": {
-          "Authorization": "cli-create-release-auth"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "Config": "",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 10
-        },
-        "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
-            "match": "type"
-          },
-          "$.body.Sequence": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get an existing release for cli-create-release-app-id",
-      "providerState": "Get a release for cli-create-release-app-id",
-      "request": {
-        "method": "GET",
-        "path": "/v1/app/cli-create-release-app-id/2/properties",
-        "headers": {
-          "Authorization": "cli-create-release-auth"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "Config": "there might be a config here",
-          "CreatedAt": "2006-01-02T15:04:05Z",
-          "Editable": true,
-          "EditedAt": "2006-01-02T15:04:05Z",
-          "Sequence": 2
-        },
-        "matchingRules": {
-          "$.body.Config": {
-            "match": "type"
-          },
-          "$.body.CreatedAt": {
-            "match": "type"
-          },
-          "$.body.EditedAt": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to create a CMX cluster with a network policy",
-      "providerState": "Create CMX cluster",
-      "request": {
-        "method": "POST",
-        "path": "/v3/cluster",
-        "headers": {
-          "Authorization": "cli-create-cluster-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "disk_gib": 50,
-          "instance_type": "r1.small",
-          "ip_family": "",
-          "kubernetes_distribution": "fake",
-          "kubernetes_version": "1.25",
-          "license_id": "",
-          "max_node_count": null,
-          "min_node_count": null,
-          "name": "vxlan-cluster-airgap",
-          "network_policy": "airgap",
-          "node_count": 1,
-          "node_groups": null,
-          "tags": [
-            {
-              "key": "test",
-              "value": "pact"
-            }
-          ],
-          "ttl": "2h"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "cluster": {
-            "id": "0fed1234",
-            "kubernetes_distribution": "fake",
-            "kubernetes_version": "1.25",
-            "name": "vxlan-cluster-airgap",
-            "network_id": "befee8ca",
-            "status": "queued",
-            "tags": [
-              {
-                "key": "test",
-                "value": "pact"
-              }
-            ],
-            "ttl": "2h"
-          }
-        },
-        "matchingRules": {
-          "$.body.cluster.id": {
-            "match": "type"
-          },
-          "$.body.cluster.kubernetes_distribution": {
-            "match": "type"
-          },
-          "$.body.cluster.kubernetes_version": {
-            "match": "type"
-          },
-          "$.body.cluster.name": {
-            "match": "type"
-          },
-          "$.body.cluster.network_id": {
-            "match": "type"
-          },
-          "$.body.cluster.status": {
-            "match": "type"
-          },
-          "$.body.cluster.ttl": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list notification subscriptions",
-      "providerState": "List notification subscriptions",
-      "request": {
-        "method": "GET",
-        "path": "/v3/notification_subscriptions",
-        "query": "search=release&type=team",
-        "headers": {
-          "Authorization": "replicated-cli-list-notifications-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "subscriptions": [
-            {
-              "eventConfigs": [
-                {
-                  "eventType": "release.promoted",
-                  "filters": {
-        }
-                }
-              ],
-              "id": "notif-sub-1",
-              "isEnabled": true,
-              "name": "Release webhook",
-              "teamId": "team-1",
-              "userId": "user-1",
-              "webhookUrl": "https://example.com/hook"
-            }
-          ],
-          "totalCount": 1
-        },
-        "matchingRules": {
-          "$.body.subscriptions[0].id": {
-            "match": "type"
-          },
-          "$.body.subscriptions[0].teamId": {
-            "match": "type"
-          },
-          "$.body.subscriptions[0].userId": {
-            "match": "type"
-          },
-          "$.body.totalCount": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to create a notification subscription",
-      "providerState": "Create notification subscription",
-      "request": {
-        "method": "POST",
-        "path": "/v3/notification_subscription",
-        "headers": {
-          "Authorization": "replicated-cli-subscription-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "eventConfigs": [
-            {
-              "eventType": "release.promoted",
-              "filters": {
-        }
-            }
-          ],
-          "isEnabled": true,
-          "name": "Release webhook",
-          "webhookUrl": "https://example.com/hook"
-        }
-      },
-      "response": {
-        "status": 201,
-        "headers": {
-        },
-        "body": {
-          "eventConfigs": [
-            {
-              "eventType": "release.promoted",
-              "filters": {
-        }
-            }
-          ],
-          "id": "notif-sub-1",
-          "isEnabled": true,
-          "name": "Release webhook",
-          "teamId": "team-1",
-          "userId": "user-1",
-          "webhookUrl": "https://example.com/hook"
-        },
-        "matchingRules": {
-          "$.body.id": {
-            "match": "type"
-          },
-          "$.body.teamId": {
-            "match": "type"
-          },
-          "$.body.userId": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to get a notification subscription",
-      "providerState": "Get notification subscription",
-      "request": {
-        "method": "GET",
-        "path": "/v3/notification_subscription/notif-sub-1",
-        "headers": {
-          "Authorization": "replicated-cli-subscription-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "eventConfigs": [
-            {
-              "eventType": "release.promoted",
-              "filters": {
-        }
-            }
-          ],
-          "id": "notif-sub-1",
-          "isEnabled": true,
-          "name": "Release webhook",
-          "teamId": "team-1",
-          "userId": "user-1",
-          "webhookUrl": "https://example.com/hook"
-        },
-        "matchingRules": {
-          "$.body.id": {
-            "match": "type"
-          },
-          "$.body.teamId": {
-            "match": "type"
-          },
-          "$.body.userId": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to update a notification subscription",
-      "providerState": "Update notification subscription",
-      "request": {
-        "method": "PUT",
-        "path": "/v3/notification_subscription/notif-sub-1",
-        "headers": {
-          "Authorization": "replicated-cli-subscription-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "isEnabled": false
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "eventConfigs": [
-            {
-              "eventType": "release.promoted",
-              "filters": {
-        }
-            }
-          ],
-          "id": "notif-sub-1",
-          "isEnabled": false,
-          "name": "Release webhook",
-          "teamId": "team-1",
-          "userId": "user-1",
-          "webhookUrl": "https://example.com/hook"
-        },
-        "matchingRules": {
-          "$.body.id": {
-            "match": "type"
-          },
-          "$.body.teamId": {
-            "match": "type"
-          },
-          "$.body.userId": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to delete a notification subscription",
-      "providerState": "Delete notification subscription",
-      "request": {
-        "method": "DELETE",
-        "path": "/v3/notification_subscription/notif-sub-1",
-        "headers": {
-          "Authorization": "replicated-cli-subscription-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 204,
-        "headers": {
-        }
-      }
-    },
-    {
-      "description": "A request to list notification events",
-      "providerState": "List notification events",
-      "request": {
-        "method": "GET",
-        "path": "/v3/notification_events",
-        "query": "pageSize=20&status=failed&subscription_id=notif-sub-1",
-        "headers": {
-          "Authorization": "replicated-cli-events-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "events": [
-            {
-              "attempts": [
-        ],
-              "eventData": {
-                "releaseId": "rel-1"
-              },
-              "eventType": "release.promoted",
-              "id": "evt-1",
-              "payload": {
-                "event": "release.promoted"
-              },
-              "payloadType": "webhook",
-              "retryCount": 8,
-              "status": "failed",
-              "subscriptionId": "notif-sub-1"
-            }
-          ],
-          "totalCount": 1
-        },
-        "matchingRules": {
-          "$.body.events[0].id": {
-            "match": "type"
-          },
-          "$.body.events[0].retryCount": {
-            "match": "type"
-          },
-          "$.body.events[0].subscriptionId": {
-            "match": "type"
-          },
-          "$.body.totalCount": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to list notification event types",
-      "providerState": "List notification event types",
-      "request": {
-        "method": "GET",
-        "path": "/v3/notification_event_types",
-        "query": "limit=20&q=release",
-        "headers": {
-          "Authorization": "replicated-cli-events-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "eventTypes": [
-            {
-              "category": "Release",
-              "description": "A release was promoted.",
-              "displayName": "Release Promoted",
-              "filters": [
-        ],
-              "key": "release.promoted"
-            }
-          ],
-          "total": 1
-        },
-        "matchingRules": {
-          "$.body.total": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to retry a notification event",
-      "providerState": "Retry notification event",
-      "request": {
-        "method": "POST",
-        "path": "/v3/notification_event/evt-1/retry",
-        "headers": {
-          "Authorization": "replicated-cli-notification-actions-token",
-          "Content-Type": "application/json"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "message": "Notification event queued for retry",
-          "success": true
-        },
-        "matchingRules": {
-          "$.body.success": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to resend notification verification email",
-      "providerState": "Resend notification verification email",
-      "request": {
-        "method": "POST",
-        "path": "/v3/notification_email/resend_verification",
-        "headers": {
-          "Authorization": "replicated-cli-notification-actions-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "emailAddress": "alerts@example.com"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "message": "Verification email sent successfully",
-          "success": true
-        },
-        "matchingRules": {
-          "$.body.success": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to verify notification email",
-      "providerState": "Verify notification email",
-      "request": {
-        "method": "POST",
-        "path": "/v3/notification_email/verify",
-        "headers": {
-          "Authorization": "replicated-cli-notification-actions-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "emailAddress": "alerts@example.com",
-          "verificationCode": "123456"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "message": "Email address verified successfully",
-          "success": true
-        },
-        "matchingRules": {
-          "$.body.success": {
-            "match": "type"
-          }
-        }
-      }
-    },
-    {
-      "description": "A request to test notification webhook",
-      "providerState": "Test notification webhook",
-      "request": {
-        "method": "POST",
-        "path": "/v3/notification_webhook/test",
-        "headers": {
-          "Authorization": "replicated-cli-notification-actions-token",
-          "Content-Type": "application/json"
-        },
-        "body": {
-          "eventType": "release.promoted",
-          "webhookUrl": "https://example.com/hook"
-        }
-      },
-      "response": {
-        "status": 200,
-        "headers": {
-        },
-        "body": {
-          "durationMs": 15,
-          "statusCode": 200,
-          "success": true
-        },
-        "matchingRules": {
-          "$.body.durationMs": {
-            "match": "type"
-          },
-          "$.body.statusCode": {
-            "match": "type"
-          },
-          "$.body.success": {
             "match": "type"
           }
         }
