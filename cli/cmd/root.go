@@ -518,6 +518,30 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitPolicyRm(policyCmd)
 	policyCmd.PersistentPreRunE = preRunSetupAPIs
 
+	notificationCmd := runCmds.InitNotificationCommand(runCmds.rootCmd)
+	notificationSubscriptionCmd := runCmds.InitNotificationSubscriptionCommand(notificationCmd)
+	runCmds.InitNotificationSubscriptionList(notificationSubscriptionCmd)
+	runCmds.InitNotificationSubscriptionGet(notificationSubscriptionCmd)
+	runCmds.InitNotificationSubscriptionCreate(notificationSubscriptionCmd)
+	runCmds.InitNotificationSubscriptionUpdate(notificationSubscriptionCmd)
+	runCmds.InitNotificationSubscriptionRemove(notificationSubscriptionCmd)
+	runCmds.InitNotificationSubscriptionEvents(notificationSubscriptionCmd)
+
+	notificationEventCmd := runCmds.InitNotificationEventCommand(notificationCmd)
+	runCmds.InitNotificationEventList(notificationEventCmd)
+	runCmds.InitNotificationEventRetry(notificationEventCmd)
+
+	notificationEventTypeCmd := runCmds.InitNotificationEventTypeCommand(notificationCmd)
+	runCmds.InitNotificationEventTypeList(notificationEventTypeCmd)
+
+	notificationEmailCmd := runCmds.InitNotificationEmailCommand(notificationCmd)
+	runCmds.InitNotificationEmailResendVerification(notificationEmailCmd)
+	runCmds.InitNotificationEmailVerify(notificationEmailCmd)
+
+	notificationWebhookCmd := runCmds.InitNotificationWebhookCommand(notificationCmd)
+	runCmds.InitNotificationWebhookTest(notificationWebhookCmd)
+	notificationCmd.PersistentPreRunE = preRunSetupAPIs
+
 	// Add config command with init subcommand
 	configCmd := runCmds.InitConfigCommand(runCmds.rootCmd)
 	runCmds.InitInitCommand(configCmd)
