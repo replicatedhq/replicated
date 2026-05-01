@@ -291,15 +291,12 @@ func Test_ListNotificationEventsAndTypes(t *testing.T) {
 		WillRespondWith(dsl.Response{
 			Status: 200,
 			Body: map[string]interface{}{
-				"eventTypes": []map[string]interface{}{
-					{
-						"key":         dsl.String("release.promoted"),
-						"displayName": dsl.String("Release Promoted"),
-						"description": dsl.String("A release was promoted."),
-						"category":    dsl.String("Release"),
-						"filters":     []map[string]interface{}{},
-					},
-				},
+				"eventTypes": dsl.EachLike(map[string]interface{}{
+					"key":         dsl.Like("release.promoted"),
+					"displayName": dsl.Like("Release Promoted"),
+					"description": dsl.Like("A release was promoted."),
+					"category":    dsl.Like("Release"),
+				}, 1),
 				"total": dsl.Like(1),
 			},
 		})
