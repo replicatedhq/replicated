@@ -105,7 +105,7 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 		return r.releaseInspect(command, args)
 	}
 
-	log := logger.NewLogger(os.Stdout)
+	log := logger.NewLogger(os.Stderr)
 
 	// Determine sequence to download
 	var seq int64
@@ -280,7 +280,7 @@ func (r *runners) downloadReleaseArchive(seq int64, dest string) error {
 	}
 	defer os.RemoveAll(tempDir)
 
-	log := logger.NewLogger(os.Stdout)
+	log := logger.NewLogger(os.Stderr)
 	if err := kotsrelease.Save(tempDir, release, log); err != nil {
 		return errors.Wrap(err, "save release to temp dir")
 	}

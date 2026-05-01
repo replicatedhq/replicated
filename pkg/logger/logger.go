@@ -18,12 +18,34 @@ type Logger struct {
 	spinnerArgs   []interface{}
 	isSilent      bool
 	isVerbose     bool
+	isTerminal    *bool
 }
 
 func NewLogger(writer io.Writer) *Logger {
 	return &Logger{
 		w: writer,
 	}
+}
+
+// SetIsTerminal lets callers override TTY detection. Useful when the
+// logger writes through a wrapper (e.g. tabwriter) that hides the
+// underlying file descriptor.
+func (l *Logger) SetIsTerminal(isTerminal bool) *Logger {
+	if l == nil {
+		return l
+	}
+	l.isTerminal = &isTerminal
+	return l
+}
+
+func (l *Logger) isTTY() bool {
+	if l.isTerminal != nil {
+		return *l.isTerminal
+	}
+	if f, ok := l.w.(*os.File); ok {
+		return isatty.IsTerminal(f.Fd())
+	}
+	return false
 }
 
 func (l *Logger) Silence() {
@@ -107,7 +129,7 @@ func (l *Logger) ActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Fprintf(l.w, "  • ")
 	fmt.Fprintf(l.w, msg, args...)
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if l.isTTY() {
 		s := spin.New()
 
 		fmt.Fprintf(l.w, " %s", s.Next())
@@ -140,7 +162,7 @@ func (l *Logger) ChildActionWithSpinner(msg string, args ...interface{}) {
 	fmt.Fprintf(l.w, "    • ")
 	fmt.Fprintf(l.w, msg, args...)
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if l.isTTY() {
 		s := spin.New()
 
 		fmt.Fprintf(l.w, " %s", s.Next())
@@ -178,7 +200,7 @@ func (l *Logger) FinishChildSpinner() {
 	green.Fprintf(l.w, " ✓")
 	fmt.Fprintf(l.w, "  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if l.isTTY() {
 		l.spinnerStopCh <- true
 		close(l.spinnerStopCh)
 	}
@@ -207,7 +229,7 @@ func (l *Logger) FinishSpinner() {
 	green.Fprintf(l.w, " ✓")
 	fmt.Fprintf(l.w, "  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if l.isTTY() {
 		l.spinnerStopCh <- true
 		close(l.spinnerStopCh)
 	}
@@ -226,7 +248,7 @@ func (l *Logger) FinishSpinnerWithError() {
 	red.Fprintf(l.w, " ✗")
 	fmt.Fprintf(l.w, "  \n")
 
-	if isatty.IsTerminal(os.Stdout.Fd()) {
+	if l.isTTY() {
 		l.spinnerStopCh <- true
 		close(l.spinnerStopCh)
 	}

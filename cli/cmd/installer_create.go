@@ -58,7 +58,7 @@ func (r *runners) installerCreate(_ *cobra.Command, _ []string) error {
 		return errors.Errorf("Installer specs are only supported for KOTS applications, app %q has type %q", r.appID, r.appType)
 	}
 
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 	if r.args.createInstallerAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
 		err := r.setKOTSDefaultInstallerParams()

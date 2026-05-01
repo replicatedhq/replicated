@@ -108,7 +108,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if r.args.kubeconfigStdout {
-		fmt.Println(string(kubeconfig))
+		fmt.Print(string(kubeconfig))
 		return nil
 	}
 
@@ -123,7 +123,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 			return errors.Wrap(err, "write kubeconfig")
 		}
 
-		fmt.Printf("kubeconfig written to %s\n", r.args.kubeconfigPath)
+		fmt.Fprintf(os.Stderr, "kubeconfig written to %s\n", r.args.kubeconfigPath)
 		return nil
 	}
 
@@ -180,7 +180,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		for _, backupPath := range backupPaths {
 			err := os.Remove(backupPath)
 			if err != nil {
-				fmt.Printf("failed to remove backup kubeconfig: %s\n", err.Error())
+				fmt.Fprintf(os.Stderr, "failed to remove backup kubeconfig: %s\n", err.Error())
 			}
 		}
 	}()
@@ -215,7 +215,7 @@ func (r *runners) kubeconfigCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "write kubeconfig")
 	}
 
-	fmt.Printf(" ✓  Updated kubernetes context '%s' in '%s'\n", mergedConfig.CurrentContext, kubeconfigPaths[0])
+	fmt.Fprintf(os.Stderr, " ✓  Updated kubernetes context '%s' in '%s'\n", mergedConfig.CurrentContext, kubeconfigPaths[0])
 
 	return nil
 }

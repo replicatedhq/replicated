@@ -24,6 +24,7 @@ type runners struct {
 	stdin        io.Reader
 	outputFormat string
 	w            *tabwriter.Writer
+	stdoutIsTTY  bool
 
 	rootCmd *cobra.Command
 	args    runnerArgs

@@ -54,15 +54,22 @@ replicated app delete "Custom App" --output json`,
 }
 
 func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
-	log := logger.NewLogger(r.w)
+	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
+	showSpinners := outputFormat == "table"
 
-	log.ActionWithSpinner("Fetching App")
+	if showSpinners {
+		log.ActionWithSpinner("Fetching App")
+	}
 	app, err := r.kotsAPI.GetApp(ctx, appName, true)
 	if err != nil {
-		log.FinishSpinnerWithError()
+		if showSpinners {
+			log.FinishSpinnerWithError()
+		}
 		return errors.Wrap(err, "list apps")
 	}
-	log.FinishSpinner()
+	if showSpinners {
+		log.FinishSpinner()
+	}
 
 	apps := []types.AppAndChannels{
 		{
@@ -86,13 +93,19 @@ func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName str
 		}
 	}
 
-	log.ActionWithSpinner("Deleting App")
+	if showSpinners {
+		log.ActionWithSpinner("Deleting App")
+	}
 	err = r.kotsAPI.DeleteKOTSApp(ctx, app.ID)
 	if err != nil {
-		log.FinishSpinnerWithError()
+		if showSpinners {
+			log.FinishSpinnerWithError()
+		}
 		return errors.Wrap(err, "delete app")
 	}
-	log.FinishSpinner()
+	if showSpinners {
+		log.FinishSpinner()
+	}
 
 	return nil
 }
