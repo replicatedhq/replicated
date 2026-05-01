@@ -56,7 +56,7 @@ func (r *runners) channelReleaseDemote(cmd *cobra.Command, args []string) error 
 
 	channelSequence := r.args.demoteChannelSequence
 	if r.args.demoteReleaseSequence != 0 {
-		kotsChannel, err := r.api.KotsClient.GetKotsChannel(r.appID, foundChannel.ID)
+		kotsChannel, err := r.api.KotsClient.GetKotsChannel(r.appID, foundChannel.ID, "")
 		if err != nil {
 			return err
 		}

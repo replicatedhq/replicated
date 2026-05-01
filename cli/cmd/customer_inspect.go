@@ -92,7 +92,7 @@ func (r *runners) customerChannel(customer *types.Customer) (*types.KotsChannel,
 	}
 	ch = &customer.Channels[0]
 
-	channel, err := r.kotsAPI.GetKotsChannel(r.appID, ch.ID)
+	channel, err := r.kotsAPI.GetKotsChannel(r.appID, ch.ID, "")
 	if err != nil {
 		return nil, errors.Wrapf(err, "list channels for customer %q", customer.Name)
 	}
