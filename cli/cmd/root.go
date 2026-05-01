@@ -116,8 +116,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	if stderr != nil {
 		runCmds.rootCmd.SetErr(stderr)
 	}
-	if stdout != nil {
-		runCmds.rootCmd.SetOut(stdout)
+	if stderr != nil {
+		runCmds.rootCmd.SetOut(stderr)
 	}
 
 	// Setup PersistentPreRun to handle --debug flag
