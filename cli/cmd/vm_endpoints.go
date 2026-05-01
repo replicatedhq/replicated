@@ -68,6 +68,8 @@ The output will be in the format: %s
 
 You can identify the VM either by its unique ID or by its name.
 
+By default, the username in the endpoint is the GitHub username linked to your Vendor Portal account. If the VM was created with 'replicated vm create --ssh-public-key', the Linux user on the VM is derived from the key's comment (the portion before the first '@') instead — pass that username via --username so the endpoint matches the user the key was added to.
+
 Note: %s endpoints can only be retrieved from VMs in the "running" state.
 
 VMs are currently a beta feature.`, protocol, outputFormat, protocol)
@@ -94,7 +96,7 @@ replicated vm %s-endpoint my-test-vm --username custom-user
 		Annotations:       map[string]string{"endpointType": endpointType},
 	}
 
-	cmd.Flags().String("username", "", fmt.Sprintf("Custom username to use in %s endpoint instead of the GitHub username set in Vendor Portal", protocol))
+	cmd.Flags().String("username", "", fmt.Sprintf("Custom username to use in %s endpoint instead of the GitHub username set in Vendor Portal. If the VM was created with 'replicated vm create --ssh-public-key', set this to the username derived from the key's comment (the portion before the first '@') so the endpoint matches the user the key was added to.", protocol))
 
 	parent.AddCommand(cmd)
 
