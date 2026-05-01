@@ -147,8 +147,12 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 	autoDiscoveryMode := len(config.Charts) == 0 && len(config.Preflights) == 0 && len(config.Manifests) == 0
 
 	if autoDiscoveryMode {
-		fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
-		r.w.Flush()
+		showAutoDiscoveryMessages := r.outputFormat == "table"
+
+		if showAutoDiscoveryMessages {
+			fmt.Fprintf(r.w, "No .replicated config found. Auto-discovering lintable resources in current directory...\n\n")
+			r.w.Flush()
+		}
 
 		// Auto-discover Helm charts (for counting and display)
 		chartPaths, err := lint2.DiscoverChartPaths(filepath.Join(".", "**"))
@@ -190,18 +194,28 @@ func (r *runners) runLint(cmd *cobra.Command, args []string) error {
 		}
 
 		// Print what was discovered
-		fmt.Fprintf(r.w, "Discovered resources:\n")
-		fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
-		fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
-		fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n", len(sbPaths))
-		fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
-		r.w.Flush()
+		if showAutoDiscoveryMessages {
+			fmt.Fprintf(r.w, "Discovered resources:\n")
+			fmt.Fprintf(r.w, "  - %d Helm chart(s)\n", len(chartPaths))
+			fmt.Fprintf(r.w, "  - %d Preflight spec(s)\n", len(preflightPaths))
+			fmt.Fprintf(r.w, "  - %d Support Bundle spec(s)\n", len(sbPaths))
+			fmt.Fprintf(r.w, "  - %d HelmChart manifest(s)\n\n", len(helmChartPaths))
+			r.w.Flush()
+		}
 
 		// If nothing was found and EC linting is not enabled, exit early.
 		// EC linting runs after this block, so don't bail out when it's enabled.
 		if len(chartPaths) == 0 && len(preflightPaths) == 0 && len(sbPaths) == 0 && !config.ReplLint.Linters.EmbeddedCluster.IsEnabled() {
-			fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
-			r.w.Flush()
+			if showAutoDiscoveryMessages {
+				fmt.Fprintf(r.w, "No lintable resources found in current directory.\n")
+				r.w.Flush()
+			}
+			if r.outputFormat == "json" {
+				output.Summary = r.calculateOverallSummary(output)
+				if err := print.LintResults(r.outputFormat, r.w, output); err != nil {
+					return errors.Wrap(err, "failed to print JSON output to stdout")
+				}
+			}
 			return nil
 		}
 	}
