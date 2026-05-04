@@ -23,10 +23,18 @@ func (c *VendorV3Client) GetEnterprisePortalStatus(appID string) (string, error)
 	return response.Status, nil
 }
 
+type UpdateEnterprisePortalStatusRequest struct {
+	Status string `json:"status"`
+}
+
 func (c *VendorV3Client) UpdateEnterprisePortalStatus(appID string, status string) (string, error) {
 	var response = GetEnterprisePortalStatusResponse{}
 
-	err := c.DoJSON(context.TODO(), "PUT", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, status, &response)
+	req := UpdateEnterprisePortalStatusRequest{
+		Status: status,
+	}
+
+	err := c.DoJSON(context.TODO(), "PUT", fmt.Sprintf("/v3/app/%s/enterprise-portal/status", appID), http.StatusOK, req, &response)
 	if err != nil {
 		return "", errors.Wrap(err, "update enterprise portal status")
 	}
