@@ -20,8 +20,7 @@ func (r *runners) InitEnterprisePortalStatusUpdateCmd(parent *cobra.Command) *co
 		Long: `Update the current status of the Enterprise Portal for the specified application.
 
 This command allows you to change the status of the Enterprise Portal associated
-with the current application. You can use this to activate, deactivate, or set
-any other valid status for the Enterprise Portal.
+with the current application. Valid statuses are: active, inactive, pending.
 
 If no application is specified, the command will use the default application
 set in your configuration.
@@ -44,7 +43,7 @@ replicated enterprise-portal status update --status active --output table`,
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVar(&opts.status, "status", "", "The status to set for the enterprise portal")
+	cmd.Flags().StringVar(&opts.status, "status", "", "The status to set for the enterprise portal (active|inactive|pending)")
 	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("status")
