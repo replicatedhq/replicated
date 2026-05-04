@@ -24,6 +24,7 @@ func (r *runners) InitPolicyCreate(parent *cobra.Command) *cobra.Command {
 		Long: `Create a new RBAC policy from a JSON definition file.
 
 The definition file must be valid JSON in the following format:
+  ` + "```json" + `
   {
     "v1": {
       "name": "My Policy",
@@ -33,6 +34,7 @@ The definition file must be valid JSON in the following format:
       }
     }
   }
+  ` + "```" + `
 
 Vendors not on an enterprise plan cannot create policies.`,
 		Example: `  # Create a policy from a definition file
