@@ -9,7 +9,7 @@ import (
 
 func (r *runners) InitChannelRemove(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:     "rm CHANNEL_ID",
+		Use:     "rm CHANNEL_ID_OR_NAME",
 		Aliases: []string{"delete"},
 		Short:   "Remove (archive) a channel",
 		Long:    "Remove (archive) a channel",
@@ -24,16 +24,21 @@ func (r *runners) channelRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	if len(args) != 1 {
-		return errors.New("channel ID is required")
+		return errors.New("channel name or ID is required")
 	}
-	chanID := args[0]
 
-	if err := r.api.ArchiveChannel(r.appID, r.appType, chanID); err != nil {
+	channelNameOrID := args[0]
+	channel, err := r.api.GetChannelByName(r.appID, r.appType, channelNameOrID)
+	if err != nil {
+		return err
+	}
+
+	if err := r.api.ArchiveChannel(r.appID, r.appType, channel.ID); err != nil {
 		return err
 	}
 
 	// ignore the error since operation was successful
-	fmt.Fprintf(r.w, "Channel %s successfully archived\n", chanID)
+	fmt.Fprintf(r.w, "Channel %s successfully archived\n", channelNameOrID)
 	r.w.Flush()
 
 	return nil
