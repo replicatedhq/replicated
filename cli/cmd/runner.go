@@ -91,6 +91,8 @@ type runnerArgs struct {
 
 	createReleaseAutoDefaults       bool
 	createReleaseAutoDefaultsAccept bool
+	createReleaseOutputDir          string
+	createReleaseNoUpload           bool
 
 	releaseDownloadDest               string
 	releaseDownloadChannel            string

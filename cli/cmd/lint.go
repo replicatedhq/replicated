@@ -21,16 +21,6 @@ import (
 // release-validation-v2 feature flag. The runLint function below is still used
 // internally by the release lint command.
 
-// getToolVersion extracts a tool version from config, defaulting to "latest" if not found.
-func getToolVersion(config *tools.Config, tool string) string {
-	if config.ReplLint.Tools != nil {
-		if v, ok := config.ReplLint.Tools[tool]; ok {
-			return v
-		}
-	}
-	return "latest"
-}
-
 // resolveToolVersion extracts and resolves a tool version from config.
 // If the version is "latest" or empty, it resolves to an actual version using the resolver.
 // Falls back to the provided default version if resolution fails.

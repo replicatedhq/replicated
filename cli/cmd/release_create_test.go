@@ -281,3 +281,90 @@ func TestRequiredFlagRequiresPromoteInConfigBasedFlow(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "--required can only be used with --promote")
 }
+
+func TestNoUploadRejectsPromote(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleaseNoUpload: true,
+			createReleasePromote:  "Unstable",
+			createReleaseYamlDir:  "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--no-upload cannot be used with --promote")
+}
+
+func TestNoUploadRejectsEnsureChannel(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleaseNoUpload:             true,
+			createReleasePromoteEnsureChannel: true,
+			createReleaseYamlDir:              "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--no-upload cannot be used with --ensure-channel")
+}
+
+func TestNoUploadRejectsRequired(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleaseNoUpload:        true,
+			createReleasePromoteRequired: true,
+			createReleasePromote:         "Unstable",
+			createReleaseYamlDir:         "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "--no-upload cannot be used with --promote")
+}
+
+func TestNoUploadAloneIsValid(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleaseNoUpload: true,
+			createReleaseYamlDir:  "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.NoError(t, err)
+}
+
+func TestOutputDirAloneIsValid(t *testing.T) {
+	r := &runners{
+		args: runnerArgs{
+			createReleaseOutputDir: "./out",
+			createReleaseYamlDir:   "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.NoError(t, err)
+}
+
+func TestOutputDirWithPromoteIsValid(t *testing.T) {
+	// --output-dir on its own is orthogonal to upload; it must coexist with --promote.
+	r := &runners{
+		args: runnerArgs{
+			createReleaseOutputDir: "./out",
+			createReleasePromote:   "Unstable",
+			createReleaseYamlDir:   "./manifests",
+		},
+		appType: "kots",
+	}
+
+	err := r.validateReleaseCreateParams()
+	assert.NoError(t, err)
+}
