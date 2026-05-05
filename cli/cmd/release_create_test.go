@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestUseConfigFlow_WithAutoFlag tests that --auto flag prevents config-based flow
@@ -352,6 +355,49 @@ func TestOutputDirAloneIsValid(t *testing.T) {
 
 	err := r.validateReleaseCreateParams()
 	assert.NoError(t, err)
+}
+
+func TestResetOutputDirCreatesMissingDir(t *testing.T) {
+	tmp := t.TempDir()
+	target := filepath.Join(tmp, "out")
+
+	err := resetOutputDir(target)
+	require.NoError(t, err)
+
+	info, err := os.Stat(target)
+	require.NoError(t, err)
+	assert.True(t, info.IsDir(), "expected %s to be a directory", target)
+
+	entries, err := os.ReadDir(target)
+	require.NoError(t, err)
+	assert.Empty(t, entries, "expected freshly created output-dir to be empty")
+}
+
+func TestResetOutputDirClearsExistingContents(t *testing.T) {
+	tmp := t.TempDir()
+	target := filepath.Join(tmp, "out")
+	require.NoError(t, os.MkdirAll(filepath.Join(target, "nested"), 0755))
+	stale := filepath.Join(target, "stale.txt")
+	require.NoError(t, os.WriteFile(stale, []byte("old"), 0644))
+
+	err := resetOutputDir(target)
+	require.NoError(t, err)
+
+	info, err := os.Stat(target)
+	require.NoError(t, err)
+	assert.True(t, info.IsDir())
+
+	entries, err := os.ReadDir(target)
+	require.NoError(t, err)
+	assert.Empty(t, entries, "expected output-dir contents to be cleared before each run")
+
+	_, err = os.Stat(stale)
+	assert.True(t, os.IsNotExist(err), "expected previous file %s to be removed", stale)
+}
+
+func TestResetOutputDirRejectsEmptyPath(t *testing.T) {
+	err := resetOutputDir("")
+	assert.Error(t, err)
 }
 
 func TestOutputDirWithPromoteIsValid(t *testing.T) {
