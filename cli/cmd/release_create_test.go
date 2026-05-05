@@ -315,22 +315,6 @@ func TestNoUploadRejectsEnsureChannel(t *testing.T) {
 	assert.Contains(t, err.Error(), "--no-upload cannot be used with --ensure-channel")
 }
 
-func TestNoUploadRejectsRequired(t *testing.T) {
-	r := &runners{
-		args: runnerArgs{
-			createReleaseNoUpload:        true,
-			createReleasePromoteRequired: true,
-			createReleasePromote:         "Unstable",
-			createReleaseYamlDir:         "./manifests",
-		},
-		appType: "kots",
-	}
-
-	err := r.validateReleaseCreateParams()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "--no-upload cannot be used with --promote")
-}
-
 func TestNoUploadAloneIsValid(t *testing.T) {
 	r := &runners{
 		args: runnerArgs{

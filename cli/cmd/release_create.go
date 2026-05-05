@@ -518,9 +518,6 @@ func (r *runners) validateReleaseCreateParams() error {
 		if r.args.createReleasePromoteEnsureChannel {
 			return errors.New("--no-upload cannot be used with --ensure-channel (no release is uploaded)")
 		}
-		if r.args.createReleasePromoteRequired {
-			return errors.New("--no-upload cannot be used with --required (no release is uploaded)")
-		}
 	}
 
 	// If no sources specified, config-based flow will be used (validated elsewhere)
