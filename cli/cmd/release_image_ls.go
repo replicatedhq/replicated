@@ -37,6 +37,7 @@ replicated release image ls --channel Stable --keep-proxy`,
 	lsCmd.Flags().StringVar(&r.args.releaseImageLSChannel, "channel", "", "The channel name, slug, or ID (required)")
 	lsCmd.Flags().StringVar(&r.args.releaseImageLSVersion, "version", "", "The specific semver version to get images for (optional, defaults to current release)")
 	lsCmd.Flags().BoolVar(&r.args.releaseImageLSKeepProxy, "keep-proxy", false, "Keep proxy registry domain in image names instead of stripping it")
+	lsCmd.Flags().StringVar(&r.args.releaseImageLSIncludeInstallerImages, "include-installer-images", "", "Include installer images in the output (valid values: online, airgap)")
 	lsCmd.MarkFlagRequired("channel")
 
 	parent.AddCommand(imageCmd)
@@ -64,7 +65,7 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 
 	if r.args.releaseImageLSVersion != "" {
 		// For specific versions, we need to get all releases
-		channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID)
+		channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID, r.args.releaseImageLSIncludeInstallerImages)
 		if err != nil {
 			return fmt.Errorf("failed to list channel releases: %w", err)
 		}
@@ -99,7 +100,7 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	} else {
 		// For current release, use optimized method that tries to avoid extra API call
 		var err error
-		targetRelease, proxyDomain, err = r.api.GetCurrentChannelRelease(r.appID, r.appType, channel.ID)
+		targetRelease, proxyDomain, err = r.api.GetCurrentChannelRelease(r.appID, r.appType, channel.ID, r.args.releaseImageLSIncludeInstallerImages)
 		if err != nil {
 			return fmt.Errorf("failed to get current channel release: %w", err)
 		}

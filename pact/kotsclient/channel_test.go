@@ -114,7 +114,7 @@ func Test_GetChannel(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-get-channel-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		channel, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable")
+		channel, err := client.GetChannel("replicated-cli-get-channel-app", "replicated-cli-get-channel-unstable", "")
 		assert.Nil(t, err)
 
 		assert.Equal(t, "Unstable", channel.Name)

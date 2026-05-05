@@ -38,7 +38,7 @@ func (c *Client) ListChannels(appID string, appType string, channelName string) 
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) GetChannel(appID string, appType string, channelID string) (*types.Channel, error) {
+func (c *Client) GetChannel(appID string, appType string, channelID string, includeInstallerImages string) (*types.Channel, error) {
 	if appType == "platform" {
 		platformChannel, _, err := c.PlatformClient.GetChannel(appID, channelID)
 		if err != nil {
@@ -53,7 +53,7 @@ func (c *Client) GetChannel(appID string, appType string, channelID string) (*ty
 		}
 		return &channel, nil
 	} else if appType == "kots" {
-		return c.KotsClient.GetChannel(appID, channelID)
+		return c.KotsClient.GetChannel(appID, channelID, includeInstallerImages)
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
@@ -100,7 +100,7 @@ func (c *Client) GetOrCreateChannelByName(opts GetOrCreateChannelOptions) (*type
 	// in some rbac configurations, we get a 403 instead of a 404 when a channel name is passed
 	// even if the user has access to the channel id. In exchange for still getting a early return
 	// when we're passed a channel id that exists and is accessible we need to fall through in both cases.
-	channel, err := c.GetChannel(opts.AppID, opts.AppType, opts.NameOrID)
+	channel, err := c.GetChannel(opts.AppID, opts.AppType, opts.NameOrID, "")
 	if err == nil {
 		return channel, nil
 	} else if !strings.Contains(err.Error(), gqlNotFoundErr) && !errors.Is(err, platformclient.ErrNotFound) && !errors.Is(err, platformclient.ErrForbidden) {
@@ -159,7 +159,7 @@ func (c *Client) UpdateSemanticVersioningForChannel(appType string, appID string
 	if appType == "platform" {
 		return errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
-		channel, err := c.KotsClient.GetChannel(appID, chanID)
+		channel, err := c.KotsClient.GetChannel(appID, chanID, "")
 		if err != nil {
 			return err
 		}
@@ -188,11 +188,11 @@ func (c *Client) ChannelReleaseUnDemote(appID string, appType string, channelID 
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) ListChannelReleases(appID string, appType string, channelID string) ([]*types.ChannelRelease, error) {
+func (c *Client) ListChannelReleases(appID string, appType string, channelID string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
 	if appType == "platform" {
 		return nil, errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
-		return c.KotsClient.ListChannelReleases(appID, channelID)
+		return c.KotsClient.ListChannelReleases(appID, channelID, includeInstallerImages)
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
@@ -201,7 +201,7 @@ func (c *Client) GetCustomHostnames(appID string, appType string, channelID stri
 	if appType == "platform" {
 		return nil, errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
-		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID)
+		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID, "")
 		if err != nil {
 			return nil, err
 		}
@@ -210,11 +210,11 @@ func (c *Client) GetCustomHostnames(appID string, appType string, channelID stri
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelID string) (*types.ChannelRelease, string, error) {
+func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelID string, includeInstallerImages string) (*types.ChannelRelease, string, error) {
 	if appType == "platform" {
 		return nil, "", errors.New("This feature is not currently supported for Platform applications.")
 	} else if appType == "kots" {
-		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID)
+		kotsChannel, err := c.KotsClient.GetKotsChannel(appID, channelID, includeInstallerImages)
 		if err != nil {
 			return nil, "", err
 		}
@@ -251,7 +251,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 		}
 
 		// Fallback to the existing approach if releases aren't included
-		releases, err := c.KotsClient.ListChannelReleases(appID, channelID)
+		releases, err := c.KotsClient.ListChannelReleases(appID, channelID, includeInstallerImages)
 		if err != nil {
 			return nil, "", err
 		}
