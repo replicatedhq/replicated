@@ -315,7 +315,7 @@ func parseECConfigHelmCharts(path string) ([]*HelmChartManifest, error) {
 			return nil, fmt.Errorf("failed to parse YAML: %w", err)
 		}
 
-		if ecConfig.Kind != "Config" || ecConfig.APIVersion != "embeddedcluster.replicated.com/v1beta1" {
+		if ecConfig.Kind != "Config" || ecConfig.APIVersion != ecConfigAPIVersion {
 			continue
 		}
 

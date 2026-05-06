@@ -467,7 +467,7 @@ func TestLintValidation_ECConfigMissingArchive(t *testing.T) {
 	}
 
 	if len(result.Warnings) != 1 {
-		t.Errorf("expected 1 warning for orphaned EC Config manifest, got %d: %v", len(result.Warnings), result.Warnings)
+		t.Fatalf("expected 1 warning for orphaned EC Config manifest, got %d: %v", len(result.Warnings), result.Warnings)
 	}
 
 	// Verify the warning mentions the orphaned EC Config chart
