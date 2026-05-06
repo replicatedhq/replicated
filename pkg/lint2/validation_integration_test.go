@@ -423,7 +423,7 @@ func TestLintValidation_ECConfigHelmCharts(t *testing.T) {
 	}
 }
 
-	// TestLintValidation_ECConfigMissingArchive tests warning when EC Config helmCharts has no matching chart.
+// TestLintValidation_ECConfigMissingArchive tests warning when EC Config helmCharts has no matching chart.
 func TestLintValidation_ECConfigMissingArchive(t *testing.T) {
 	testDir := filepath.Join("testdata", "validation", "scenario-8-ec-config-missing-archive")
 
