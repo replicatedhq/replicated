@@ -231,25 +231,23 @@ func parseHelmChartManifest(path string) (*HelmChartManifest, error) {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	// Parse the full HelmChart structure
-	// Support both v1beta1 and v1beta2 - they have the same structure for fields we need
-	var helmChart struct {
-		APIVersion string `yaml:"apiVersion"`
-		Kind       string `yaml:"kind"`
-		Spec       struct {
-			Chart struct {
-				Name         string `yaml:"name"`
-				ChartVersion string `yaml:"chartVersion"`
-			} `yaml:"chart"`
-			Builder map[string]interface{} `yaml:"builder"`
-		} `yaml:"spec"`
-	}
-
 	// Use yaml.NewDecoder to handle multi-document files
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 
 	// Find the first HelmChart document
 	for {
+		var helmChart struct {
+			APIVersion string `yaml:"apiVersion"`
+			Kind       string `yaml:"kind"`
+			Spec       struct {
+				Chart struct {
+					Name         string `yaml:"name"`
+					ChartVersion string `yaml:"chartVersion"`
+				} `yaml:"chart"`
+				Builder map[string]interface{} `yaml:"builder"`
+			} `yaml:"spec"`
+		}
+
 		err := decoder.Decode(&helmChart)
 		if err != nil {
 			if err == io.EOF {
@@ -259,28 +257,26 @@ func parseHelmChartManifest(path string) (*HelmChartManifest, error) {
 		}
 
 		if helmChart.Kind == "HelmChart" {
-			break
+			// Validate required fields
+			if helmChart.Spec.Chart.Name == "" {
+				return nil, fmt.Errorf("spec.chart.name is required but not found")
+			}
+			if helmChart.Spec.Chart.ChartVersion == "" {
+				return nil, fmt.Errorf("spec.chart.chartVersion is required but not found")
+			}
+
+			// Note: We don't validate apiVersion here - discovery is permissive.
+			// The preflight linter will validate apiVersion when it processes the HelmChart.
+			// This allows future apiVersions to work without code changes.
+
+			return &HelmChartManifest{
+				Name:          helmChart.Spec.Chart.Name,
+				ChartVersion:  helmChart.Spec.Chart.ChartVersion,
+				BuilderValues: helmChart.Spec.Builder, // Can be nil or empty - that's valid
+				FilePath:      path,
+			}, nil
 		}
 	}
-
-	// Validate required fields
-	if helmChart.Spec.Chart.Name == "" {
-		return nil, fmt.Errorf("spec.chart.name is required but not found")
-	}
-	if helmChart.Spec.Chart.ChartVersion == "" {
-		return nil, fmt.Errorf("spec.chart.chartVersion is required but not found")
-	}
-
-	// Note: We don't validate apiVersion here - discovery is permissive.
-	// The preflight linter will validate apiVersion when it processes the HelmChart.
-	// This allows future apiVersions to work without code changes.
-
-	return &HelmChartManifest{
-		Name:          helmChart.Spec.Chart.Name,
-		ChartVersion:  helmChart.Spec.Chart.ChartVersion,
-		BuilderValues: helmChart.Spec.Builder, // Can be nil or empty - that's valid
-		FilePath:      path,
-	}, nil
 }
 
 // parseECConfigHelmCharts reads a YAML file and extracts helm chart declarations from
@@ -292,25 +288,25 @@ func parseECConfigHelmCharts(path string) ([]*HelmChartManifest, error) {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	var ecConfig struct {
-		APIVersion string `yaml:"apiVersion"`
-		Kind       string `yaml:"kind"`
-		Spec       struct {
-			Extensions struct {
-				HelmCharts []struct {
-					Chart struct {
-						Name         string `yaml:"name"`
-						ChartVersion string `yaml:"chartVersion"`
-					} `yaml:"chart"`
-				} `yaml:"helmCharts"`
-			} `yaml:"extensions"`
-		} `yaml:"spec"`
-	}
-
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	var manifests []*HelmChartManifest
 
 	for {
+		var ecConfig struct {
+			APIVersion string `yaml:"apiVersion"`
+			Kind       string `yaml:"kind"`
+			Spec       struct {
+				Extensions struct {
+					HelmCharts []struct {
+						Chart struct {
+							Name         string `yaml:"name"`
+							ChartVersion string `yaml:"chartVersion"`
+						} `yaml:"chart"`
+					} `yaml:"helmCharts"`
+				} `yaml:"extensions"`
+			} `yaml:"spec"`
+		}
+
 		err := decoder.Decode(&ecConfig)
 		if err != nil {
 			if err == io.EOF {
