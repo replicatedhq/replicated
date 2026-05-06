@@ -1,0 +1,11 @@
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: ec-app
+          chartVersion: 1.0.0

@@ -754,3 +754,232 @@ spec:
 		}
 	})
 }
+
+func TestDiscoverECConfigHelmCharts(t *testing.T) {
+	t.Run("empty manifests list returns empty map", func(t *testing.T) {
+		manifests, err := DiscoverECConfigHelmCharts([]string{})
+		if err != nil {
+			t.Fatalf("unexpected error for empty manifests list: %v", err)
+		}
+		if manifests == nil {
+			t.Fatal("expected non-nil map, got nil")
+		}
+		if len(manifests) != 0 {
+			t.Errorf("expected empty map, got %d manifests", len(manifests))
+		}
+	})
+
+	t.Run("single valid EC Config helm chart", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		ecFile := filepath.Join(tmpDir, "ec.yaml")
+		content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: my-app
+          chartVersion: 1.2.3
+`
+		if err := os.WriteFile(ecFile, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		manifests, err := DiscoverECConfigHelmCharts([]string{pattern})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(manifests) != 1 {
+			t.Fatalf("expected 1 manifest, got %d", len(manifests))
+		}
+
+		key := "my-app:1.2.3"
+		manifest, found := manifests[key]
+		if !found {
+			t.Fatalf("expected manifest with key %q not found", key)
+		}
+		if manifest.Name != "my-app" {
+			t.Errorf("expected name 'my-app', got %q", manifest.Name)
+		}
+		if manifest.ChartVersion != "1.2.3" {
+			t.Errorf("expected chartVersion '1.2.3', got %q", manifest.ChartVersion)
+		}
+		if manifest.FilePath != ecFile {
+			t.Errorf("expected filePath %q, got %q", ecFile, manifest.FilePath)
+		}
+	})
+
+	t.Run("multiple EC Config helm charts", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		ecFile := filepath.Join(tmpDir, "ec.yaml")
+		content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: app-one
+          chartVersion: 1.0.0
+      - chart:
+          name: app-two
+          chartVersion: 2.0.0
+`
+		if err := os.WriteFile(ecFile, []byte(content), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		manifests, err := DiscoverECConfigHelmCharts([]string{pattern})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(manifests) != 2 {
+			t.Fatalf("expected 2 manifests, got %d", len(manifests))
+		}
+
+		if _, found := manifests["app-one:1.0.0"]; !found {
+			t.Error("expected app-one:1.0.0 not found")
+		}
+		if _, found := manifests["app-two:2.0.0"]; !found {
+			t.Error("expected app-two:2.0.0 not found")
+		}
+	})
+
+	t.Run("duplicate EC Config helm charts returns error", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		ecFile1 := filepath.Join(tmpDir, "ec1.yaml")
+		content1 := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec1
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: my-app
+          chartVersion: 1.0.0
+`
+		if err := os.WriteFile(ecFile1, []byte(content1), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		ecFile2 := filepath.Join(tmpDir, "ec2.yaml")
+		content2 := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec2
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: my-app
+          chartVersion: 1.0.0
+`
+		if err := os.WriteFile(ecFile2, []byte(content2), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		_, err := DiscoverECConfigHelmCharts([]string{pattern})
+		if err == nil {
+			t.Fatal("expected error for duplicate EC Config helm chart, got nil")
+		}
+
+		dupErr, ok := err.(*DuplicateHelmChartError)
+		if !ok {
+			t.Fatalf("expected DuplicateHelmChartError, got %T", err)
+		}
+		if dupErr.ChartKey != "my-app:1.0.0" {
+			t.Errorf("expected ChartKey 'my-app:1.0.0', got %q", dupErr.ChartKey)
+		}
+	})
+
+	t.Run("non-EC Config files skipped", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		kotsConfig := filepath.Join(tmpDir, "config.yaml")
+		kotsContent := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config
+spec:
+  groups: []
+`
+		if err := os.WriteFile(kotsConfig, []byte(kotsContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		manifests, err := DiscoverECConfigHelmCharts([]string{pattern})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(manifests) != 0 {
+			t.Errorf("expected 0 manifests, got %d", len(manifests))
+		}
+	})
+
+	t.Run("merged with kots HelmCharts in DiscoverHelmChartManifests", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		helmChartFile := filepath.Join(tmpDir, "helmchart.yaml")
+		helmContent := `apiVersion: kots.io/v1beta1
+kind: HelmChart
+metadata:
+  name: kots-chart
+spec:
+  chart:
+    name: kots-app
+    chartVersion: 1.0.0
+`
+		if err := os.WriteFile(helmChartFile, []byte(helmContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		ecFile := filepath.Join(tmpDir, "ec.yaml")
+		ecContent := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: ec-app
+          chartVersion: 2.0.0
+`
+		if err := os.WriteFile(ecFile, []byte(ecContent), 0644); err != nil {
+			t.Fatal(err)
+		}
+
+		pattern := filepath.Join(tmpDir, "*.yaml")
+		manifests, err := DiscoverHelmChartManifests([]string{pattern})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if len(manifests) != 2 {
+			t.Fatalf("expected 2 manifests (1 kots + 1 EC), got %d", len(manifests))
+		}
+
+		if _, found := manifests["kots-app:1.0.0"]; !found {
+			t.Error("expected kots-app:1.0.0 not found")
+		}
+		if _, found := manifests["ec-app:2.0.0"]; !found {
+			t.Error("expected ec-app:2.0.0 not found")
+		}
+	})
+}

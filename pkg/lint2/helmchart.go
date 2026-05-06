@@ -121,6 +121,22 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 		}
 	}
 
+	// Discover EC Config helm charts and merge
+	ecHelmCharts, err := DiscoverECConfigHelmCharts(manifestGlobs)
+	if err != nil {
+		return nil, err
+	}
+	for key, manifest := range ecHelmCharts {
+		if existing, found := helmCharts[key]; found {
+			return nil, &DuplicateHelmChartError{
+				ChartKey:   key,
+				FirstFile:  existing.FilePath,
+				SecondFile: manifest.FilePath,
+			}
+		}
+		helmCharts[key] = manifest
+	}
+
 	// Return empty map if no HelmCharts found - validation layer will check if charts need HelmCharts
 	// Discovery is lenient - validation happens later in the flow
 	if len(helmCharts) == 0 {
@@ -134,6 +150,71 @@ func DiscoverHelmChartManifests(manifestGlobs []string) (map[string]*HelmChartMa
 // This is a thin wrapper around hasKind for backward compatibility.
 func isHelmChartManifest(path string) (bool, error) {
 	return hasKind(path, "HelmChart")
+}
+
+// DiscoverECConfigHelmCharts scans manifest glob patterns and extracts helm chart
+// declarations from embeddedcluster.replicated.com/v1beta1 Config manifests.
+// It returns a map keyed by "name:chartVersion" for efficient lookup during validation.
+//
+// Silently skips:
+//   - Files that can't be read
+//   - Files that aren't valid YAML
+//   - Files that don't contain an EC Config with extensions.helmCharts
+//   - Hidden directories (.git, .github, etc.)
+func DiscoverECConfigHelmCharts(manifestGlobs []string) (map[string]*HelmChartManifest, error) {
+	if len(manifestGlobs) == 0 {
+		return make(map[string]*HelmChartManifest), nil
+	}
+
+	helmCharts := make(map[string]*HelmChartManifest)
+	seenFiles := make(map[string]bool)
+
+	for _, pattern := range manifestGlobs {
+		matches, err := GlobFiles(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to expand manifest pattern %s: %w", pattern, err)
+		}
+
+		for _, path := range matches {
+			if isHiddenPath(path) {
+				continue
+			}
+			if seenFiles[path] {
+				continue
+			}
+			seenFiles[path] = true
+
+			// Quick kind check before parsing
+			isConfig, err := hasKind(path, "Config")
+			if err != nil || !isConfig {
+				continue
+			}
+
+			// Parse EC Config helm charts
+			manifests, err := parseECConfigHelmCharts(path)
+			if err != nil {
+				continue
+			}
+
+			for _, manifest := range manifests {
+				key := fmt.Sprintf("%s:%s", manifest.Name, manifest.ChartVersion)
+				if existing, found := helmCharts[key]; found {
+					return nil, &DuplicateHelmChartError{
+						ChartKey:   key,
+						FirstFile:  existing.FilePath,
+						SecondFile: manifest.FilePath,
+					}
+				}
+				helmCharts[key] = manifest
+			}
+		}
+	}
+
+	if len(helmCharts) == 0 {
+		return make(map[string]*HelmChartManifest), nil
+	}
+
+	return helmCharts, nil
 }
 
 // parseHelmChartManifest parses a HelmChart manifest and extracts the fields needed for preflight rendering.
@@ -200,4 +281,59 @@ func parseHelmChartManifest(path string) (*HelmChartManifest, error) {
 		BuilderValues: helmChart.Spec.Builder, // Can be nil or empty - that's valid
 		FilePath:      path,
 	}, nil
+}
+
+// parseECConfigHelmCharts reads a YAML file and extracts helm chart declarations from
+// any embeddedcluster.replicated.com/v1beta1 Config documents.
+// It returns a slice of HelmChartManifest (without BuilderValues, as EC Config doesn't have them).
+func parseECConfigHelmCharts(path string) ([]*HelmChartManifest, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	var ecConfig struct {
+		APIVersion string `yaml:"apiVersion"`
+		Kind       string `yaml:"kind"`
+		Spec       struct {
+			Extensions struct {
+				HelmCharts []struct {
+					Chart struct {
+						Name         string `yaml:"name"`
+						ChartVersion string `yaml:"chartVersion"`
+					} `yaml:"chart"`
+				} `yaml:"helmCharts"`
+			} `yaml:"extensions"`
+		} `yaml:"spec"`
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	var manifests []*HelmChartManifest
+
+	for {
+		err := decoder.Decode(&ecConfig)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, fmt.Errorf("failed to parse YAML: %w", err)
+		}
+
+		if ecConfig.Kind != "Config" || ecConfig.APIVersion != "embeddedcluster.replicated.com/v1beta1" {
+			continue
+		}
+
+		for _, hc := range ecConfig.Spec.Extensions.HelmCharts {
+			if hc.Chart.Name == "" || hc.Chart.ChartVersion == "" {
+				continue
+			}
+			manifests = append(manifests, &HelmChartManifest{
+				Name:         hc.Chart.Name,
+				ChartVersion: hc.Chart.ChartVersion,
+				FilePath:     path,
+			})
+		}
+	}
+
+	return manifests, nil
 }
