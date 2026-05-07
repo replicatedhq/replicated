@@ -7,12 +7,13 @@ import (
 	"testing"
 
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestEnterprisePortalClient(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		require.Equal(t, "test-token", r.Header.Get("Authorization"))
+		assert.Equal(t, "test-token", r.Header.Get("Authorization"))
 
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/v3/app/test-app/enterprise-portal/status":
@@ -21,16 +22,16 @@ func TestEnterprisePortalClient(t *testing.T) {
 			})
 		case r.Method == http.MethodPut && r.URL.Path == "/v3/app/test-app/enterprise-portal/status":
 			var body UpdateEnterprisePortalStatusRequest
-			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-			require.Equal(t, "inactive", body.Status)
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, "inactive", body.Status)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"status": "inactive",
 			})
 		case r.Method == http.MethodPost && r.URL.Path == "/v3/app/test-app/enterprise-portal/customer-user":
 			var body InviteEnterprisePortalRequest
-			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
-			require.Equal(t, "cus-123", body.CustomerID)
-			require.Equal(t, "user@example.com", body.EmailAddress)
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			assert.Equal(t, "cus-123", body.CustomerID)
+			assert.Equal(t, "user@example.com", body.EmailAddress)
 			w.WriteHeader(http.StatusCreated)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"url": "https://enterprise.example.com/invite/abc123",
