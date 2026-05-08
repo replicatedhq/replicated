@@ -2676,3 +2676,143 @@ func TestDiscoverSupportBundlePaths_ExplicitBypass(t *testing.T) {
 		t.Errorf("Expected bundle in dist/, got: %s", bundles[0])
 	}
 }
+
+// Phase 9 Tests: hasAPIVersionKind
+
+func TestHasAPIVersionKind_ECConfigMatch(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "ec.yaml")
+	content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if !got {
+		t.Errorf("hasAPIVersionKind() = false, want true for EC Config")
+	}
+}
+
+func TestHasAPIVersionKind_KOTSConfigMismatch(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "config.yaml")
+	content := `apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if got {
+		t.Errorf("hasAPIVersionKind() = true, want false for KOTS Config")
+	}
+}
+
+func TestHasAPIVersionKind_MultiDocumentWithECConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "multi.yaml")
+	content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm
+---
+apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if !got {
+		t.Errorf("hasAPIVersionKind() = false, want true for multi-doc with EC Config")
+	}
+}
+
+func TestHasAPIVersionKind_MultiDocumentWithoutECConfig(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "multi.yaml")
+	content := `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm
+---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: config
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if got {
+		t.Errorf("hasAPIVersionKind() = true, want false for multi-doc without EC Config")
+	}
+}
+
+func TestHasAPIVersionKind_EmptyFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "empty.yaml")
+	if err := os.WriteFile(path, []byte(""), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if got {
+		t.Errorf("hasAPIVersionKind() = true, want false for empty file")
+	}
+}
+
+func TestHasAPIVersionKind_InvalidYAMLRegexFallback(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "invalid.yaml")
+	content := `apiVersion: embeddedcluster.replicated.com/v1beta1
+kind: Config
+metadata:
+  name: ec
+spec:
+  version: 3.0.0
+  extensions:
+    helmCharts:
+      - chart:
+          name: my-app
+          chartVersion: 1.2.3
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := hasAPIVersionKind(path, "embeddedcluster.replicated.com/v1beta1", "Config")
+	if err != nil {
+		t.Fatalf("hasAPIVersionKind() error = %v", err)
+	}
+	if !got {
+		t.Errorf("hasAPIVersionKind() = false, want true for valid EC Config")
+	}
+}
