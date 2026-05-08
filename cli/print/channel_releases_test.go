@@ -65,6 +65,11 @@ func TestKotsChannelReleases_JSON(t *testing.T) {
 	require.Len(t, decoded, 1)
 	assert.Equal(t, "1.2.0", decoded[0].Semver)
 	assert.Equal(t, int32(12), decoded[0].Sequence)
+
+	// isDemoted and demotedAt must always appear so agents can do
+	// `release.isDemoted === false` instead of seeing undefined.
+	assert.Contains(t, out.String(), `"isDemoted": false`)
+	assert.Contains(t, out.String(), `"demotedAt": null`)
 }
 
 func TestKotsChannelReleases_Empty(t *testing.T) {
