@@ -9,18 +9,14 @@ import (
 
 func (r *runners) InitChannelReleases(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:     "releases CHANNEL_ID_OR_NAME",
-		Aliases: []string{"history"},
-		Short:   "List all releases in a channel",
-		Long:    "List all releases promoted to a channel, including demoted releases. Accepts a channel ID or name.",
+		Use:   "releases CHANNEL_ID_OR_NAME",
+		Short: "List all releases in a channel",
+		Long:  "List all releases promoted to a channel, including demoted releases. Accepts a channel ID or name.",
 		Example: `# List releases for a channel by name
 replicated channel releases Stable
 
 # List releases for a channel by ID
 replicated channel releases 2abc123
-
-# Same data via the "history" alias
-replicated channel history Stable
 
 # JSON output for scripting or AI agents
 replicated channel releases Stable --output json
