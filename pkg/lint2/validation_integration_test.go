@@ -374,3 +374,105 @@ func TestLintValidation_AutoDiscovery(t *testing.T) {
 
 	t.Log("Auto-discovery successfully found and validated chart with HelmChart manifest")
 }
+
+// TestLintValidation_ECConfigHelmCharts tests validation with EC Config helmCharts that match a chart.
+func TestLintValidation_ECConfigHelmCharts(t *testing.T) {
+	testDir := filepath.Join("testdata", "validation", "scenario-7-ec-config-helmcharts")
+
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(originalWd)
+
+	if err := os.Chdir(testDir); err != nil {
+		t.Fatalf("failed to change to test directory: %v", err)
+	}
+
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	charts, err := GetChartsWithMetadataFromConfig(config)
+	if err != nil {
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	if len(charts) != 1 {
+		t.Fatalf("expected 1 chart, got %d", len(charts))
+	}
+
+	helmCharts, err := DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("DiscoverHelmChartManifests failed: %v", err)
+	}
+
+	if len(helmCharts) != 1 {
+		t.Fatalf("expected 1 HelmChart manifest discovered from EC Config, got %d", len(helmCharts))
+	}
+
+	result, err := ValidateChartToHelmChartMapping(charts, helmCharts)
+	if err != nil {
+		t.Fatalf("validation failed: %v", err)
+	}
+
+	if len(result.Warnings) != 0 {
+		t.Errorf("expected no warnings, got %d: %v", len(result.Warnings), result.Warnings)
+	}
+}
+
+// TestLintValidation_ECConfigMissingArchive tests warning when EC Config helmCharts has no matching chart.
+func TestLintValidation_ECConfigMissingArchive(t *testing.T) {
+	testDir := filepath.Join("testdata", "validation", "scenario-8-ec-config-missing-archive")
+
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(originalWd)
+
+	if err := os.Chdir(testDir); err != nil {
+		t.Fatalf("failed to change to test directory: %v", err)
+	}
+
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		t.Fatalf("failed to load config: %v", err)
+	}
+
+	charts, err := GetChartsWithMetadataFromConfig(config)
+	if err != nil {
+		t.Fatalf("GetChartsWithMetadataFromConfig failed: %v", err)
+	}
+
+	if len(charts) != 1 {
+		t.Fatalf("expected 1 chart, got %d", len(charts))
+	}
+
+	helmCharts, err := DiscoverHelmChartManifests(config.Manifests)
+	if err != nil {
+		t.Fatalf("DiscoverHelmChartManifests failed: %v", err)
+	}
+
+	if len(helmCharts) != 2 {
+		t.Fatalf("expected 2 manifests (1 kots + 1 EC), got %d", len(helmCharts))
+	}
+
+	result, err := ValidateChartToHelmChartMapping(charts, helmCharts)
+	if err != nil {
+		t.Fatalf("validation failed: %v", err)
+	}
+
+	if len(result.Warnings) != 1 {
+		t.Fatalf("expected 1 warning for orphaned EC Config manifest, got %d: %v", len(result.Warnings), result.Warnings)
+	}
+
+	// Verify the warning mentions the orphaned EC Config chart
+	warning := result.Warnings[0]
+	if !strings.Contains(warning, "missing-chart") {
+		t.Errorf("warning should mention orphaned chart 'missing-chart': %s", warning)
+	}
+}

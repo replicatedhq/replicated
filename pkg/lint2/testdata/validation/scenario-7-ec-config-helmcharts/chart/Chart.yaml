@@ -1,0 +1,4 @@
+apiVersion: v2
+name: ec-app
+version: 1.0.0
+description: Test chart for EC Config validation scenario
