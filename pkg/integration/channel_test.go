@@ -25,6 +25,7 @@ func TestChannelReleases(t *testing.T) {
 		wantOutput  string                       // when set, asserted exactly
 		wantContain []string                     // substrings the output must contain
 		wantQuery   map[string]string            // query params asserted on the releases request
+		wantExit    int                          // expected non-zero exit; 0 means must succeed
 		assertJSON  func(t *testing.T, raw []byte)
 	}{
 		{
@@ -44,6 +45,33 @@ func TestChannelReleases(t *testing.T) {
 				"1.2.0", "active",
 				"1.1.0", "demoted",
 			},
+		},
+		{
+			// Exercises GetChannelByName's fallthrough: GET /v3/app/.../channel/Stable
+			// returns 404 (not an ID), then GET /v3/app/.../channels?channelName=Stable
+			// returns the list, and we match by name.
+			name:    "kots channel releases by name resolves through ListChannels",
+			cliArgs: []string{"channel", "releases", "Stable"},
+			appType: "kots",
+			channels: []map[string]interface{}{
+				{"id": "chan-1", "name": "Stable", "channelSlug": "stable"},
+			},
+			releases: []map[string]interface{}{
+				{"channelSequence": 1, "sequence": 1, "semver": "1.0.0"},
+			},
+			wantFormat:  FormatTable,
+			wantContain: []string{"1.0.0", "active"},
+		},
+		{
+			name:    "--page without --page-size errors",
+			cliArgs: []string{"channel", "releases", "chan-1", "--page", "2"},
+			appType: "kots",
+			channels: []map[string]interface{}{
+				{"id": "chan-1", "name": "Stable", "channelSlug": "stable"},
+			},
+			releases:    []map[string]interface{}{},
+			wantExit:    1,
+			wantContain: []string{"--page requires --page-size"},
 		},
 		{
 			name:    "kots channel releases JSON includes isDemoted/demotedAt",
@@ -134,6 +162,13 @@ func TestChannelReleases(t *testing.T) {
 			cmd.Env = append(cmd.Env, "REPLICATED_APP=test-app", "HOME="+t.TempDir())
 
 			out, err := cmd.CombinedOutput()
+			if tt.wantExit != 0 {
+				assert.Error(t, err, "expected non-zero exit; output:\n%s", string(out))
+				for _, want := range tt.wantContain {
+					assert.Contains(t, string(out), want)
+				}
+				return
+			}
 			assert.NoError(t, err, "cli failed: %s", string(out))
 
 			if tt.wantOutput != "" {
@@ -179,7 +214,8 @@ func setupChannelTestServer(t *testing.T, appType string, channels []map[string]
 			w.Write([]byte(`{"apps":[{"id":"app-123","name":"Test App","slug":"test-app"}]}`))
 		})
 
-		// GetChannelByName first tries GetChannel by ID; for our tests the arg is the ID, so this returns the channel.
+		// GetChannelByName first tries GetChannel by ID. Returns the channel if the
+		// arg matches a known ID, else 404 to trigger the ListChannels fallthrough.
 		r.Methods(http.MethodGet).Path("/v3/app/{appID}/channel/{channelID}").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			vars := mux.Vars(req)
 			for _, c := range channels {
@@ -191,6 +227,15 @@ func setupChannelTestServer(t *testing.T, appType string, channels []map[string]
 				}
 			}
 			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"error":"not found"}`))
+		})
+
+		// ListChannels — fallthrough path when GetChannel-by-ID returned 404 because
+		// the arg was actually a name.
+		r.Methods(http.MethodGet).Path("/v3/app/{appID}/channels").HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			body, _ := json.Marshal(map[string]interface{}{"channels": channels})
+			w.WriteHeader(http.StatusOK)
+			w.Write(body)
 		})
 
 		r.Methods(http.MethodGet).Path("/v3/app/{appID}/channel/{channelID}/releases").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

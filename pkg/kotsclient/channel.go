@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
@@ -171,8 +172,8 @@ func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string
 	// alongside it (0-indexed, matching the API and other callers like
 	// ListReleases). page is only meaningful when pageSize is set.
 	if pageSize > 0 {
-		v.Set("currentPage", fmt.Sprintf("%d", page))
-		v.Set("pageSize", fmt.Sprintf("%d", pageSize))
+		v.Set("currentPage", strconv.Itoa(page))
+		v.Set("pageSize", strconv.Itoa(pageSize))
 	}
 
 	reqURL := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))

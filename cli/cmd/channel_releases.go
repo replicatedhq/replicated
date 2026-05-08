@@ -25,8 +25,8 @@ replicated channel history Stable
 # JSON output for scripting or AI agents
 replicated channel releases Stable --output json
 
-# Paginate
-replicated channel releases Stable --page 0 --page-size 50`,
+# Paginate (second page of 50)
+replicated channel releases Stable --page 1 --page-size 50`,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
@@ -45,6 +45,10 @@ func (r *runners) channelReleases(cmd *cobra.Command, args []string) error {
 		return errors.New("channel name or ID is required")
 	}
 	channelNameOrID := args[0]
+
+	if r.args.channelReleasesPage != 0 && r.args.channelReleasesPageSize == 0 {
+		return errors.New("--page requires --page-size")
+	}
 
 	channel, err := r.api.GetChannelByName(r.appID, r.appType, channelNameOrID)
 	if err != nil {
