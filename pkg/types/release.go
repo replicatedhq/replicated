@@ -118,5 +118,6 @@ type AppRelease struct {
 	Sequence             int64                 `json:"sequence,omitempty"`
 	Charts               []Chart               `json:"charts,omitempty"`
 	CompatibilityResults []CompatibilityResult `json:"compatibilityResults,omitempty"`
+	Channels             []*Channel            `json:"channels,omitempty"`
 	IsHelmOnly           bool                  `json:"isHelmOnly,omitempty"`
 }

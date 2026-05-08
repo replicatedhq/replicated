@@ -12,7 +12,8 @@ import (
 var releaseTmplSrc = `SEQUENCE:	{{ .Sequence }}
 CREATED:	{{ time .CreatedAt }}
 EDITED:	{{ time .EditedAt }}
-{{if .CompatibilityResults}}COMPATIBILITY RESULTS:
+{{if .Channels}}CHANNELS:	{{ range $i, $c := .Channels }}{{if $i}}, {{end}}{{ $c.Name }}{{ end }}
+{{end}}{{if .CompatibilityResults}}COMPATIBILITY RESULTS:
 	DISTRIBUTION	VERSION	SUCCESS_AT	SUCCESS_NOTES	FAILURE_AT	FAILURE_NOTES
 	{{ range .CompatibilityResults -}}
 	{{ .Distribution }}	{{ .Version }}	{{if .SuccessAt}}{{ time .SuccessAt }}{{else}}-{{end}}	{{ .SuccessNotes }}	{{if .FailureAt}}{{ time .FailureAt }}{{else}}-{{end}}	{{ .FailureNotes }}

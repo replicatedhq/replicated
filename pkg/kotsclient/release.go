@@ -61,6 +61,7 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*types.AppRel
 		Sequence:             resp.Release.Sequence,
 		Charts:               resp.Release.Charts,
 		CompatibilityResults: resp.Release.CompatibilityResults,
+		Channels:             resp.Release.Channels,
 		IsHelmOnly:           resp.Release.IsHelmOnly,
 	}
 

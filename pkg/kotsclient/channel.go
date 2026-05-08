@@ -154,14 +154,29 @@ func (c *VendorV3Client) UnDemoteChannelRelease(appID string, channelID string, 
 }
 
 func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
+	return c.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, 0, 0)
+}
+
+func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
 	type listChannelReleasesResponse struct {
 		Releases []*types.ChannelRelease `json:"releases"`
 	}
 
 	response := listChannelReleasesResponse{}
-	reqURL := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))
+	v := url.Values{}
 	if includeInstallerImages != "" {
-		reqURL = fmt.Sprintf("%s?includeInstallerImages=%s", reqURL, url.QueryEscape(includeInstallerImages))
+		v.Set("includeInstallerImages", includeInstallerImages)
+	}
+	if page > 0 {
+		v.Set("currentPage", fmt.Sprintf("%d", page))
+	}
+	if pageSize > 0 {
+		v.Set("pageSize", fmt.Sprintf("%d", pageSize))
+	}
+
+	reqURL := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))
+	if encoded := v.Encode(); encoded != "" {
+		reqURL = fmt.Sprintf("%s?%s", reqURL, encoded)
 	}
 	err := c.DoJSON(context.TODO(), "GET", reqURL, http.StatusOK, nil, &response)
 	if err != nil {

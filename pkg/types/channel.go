@@ -78,6 +78,8 @@ type ChannelRelease struct {
 	Semver              string            `json:"semver,omitempty"`
 	Sequence            int32             `json:"sequence,omitempty"`
 	Updated             time.Time         `json:"updated,omitempty"`
+	IsDemoted           bool              `json:"isDemoted,omitempty"`
+	DemotedAt           *time.Time        `json:"demotedAt,omitempty"`
 	InstallationTypes   InstallationTypes `json:"installationTypes,omitempty"`
 }
 
