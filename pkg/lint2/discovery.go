@@ -174,6 +174,44 @@ func hasKind(path string, kind string) (bool, error) {
 	return false, nil
 }
 
+// hasAPIVersionKind checks if a YAML file contains a specific apiVersion and kind.
+// Handles multi-document YAML files properly using yaml.NewDecoder.
+// For files with syntax errors, falls back to simple regex matching to detect both apiVersion and kind.
+func hasAPIVersionKind(path string, apiVersion string, kind string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+
+	for {
+		var doc struct {
+			Kind       string `yaml:"kind"`
+			APIVersion string `yaml:"apiVersion"`
+		}
+
+		err := decoder.Decode(&doc)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			// Parse error - fall back to regex matching
+			kindPattern := fmt.Sprintf(`(?m)^kind:\s+%s\s*$`, regexp.QuoteMeta(kind))
+			apiPattern := fmt.Sprintf(`(?m)^apiVersion:\s+%s\s*$`, regexp.QuoteMeta(apiVersion))
+			kindMatched, _ := regexp.Match(kindPattern, data)
+			apiMatched, _ := regexp.Match(apiPattern, data)
+			return kindMatched && apiMatched, nil
+		}
+
+		if doc.Kind == kind && doc.APIVersion == apiVersion {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // discoverPreflightPaths discovers Preflight spec files from a glob pattern.
 // This is a thin wrapper around discoverYAMLsByKind for backward compatibility.
 //

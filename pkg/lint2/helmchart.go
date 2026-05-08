@@ -184,9 +184,9 @@ func DiscoverECConfigHelmCharts(manifestGlobs []string) (map[string]*HelmChartMa
 			}
 			seenFiles[path] = true
 
-			// Quick kind check before parsing
-			isConfig, err := hasKind(path, "Config")
-			if err != nil || !isConfig {
+			// Quick apiVersion+kind check before parsing to avoid matching KOTS Config
+			isECConfig, err := hasAPIVersionKind(path, ecConfigAPIVersion, "Config")
+			if err != nil || !isECConfig {
 				continue
 			}
 
