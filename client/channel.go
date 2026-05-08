@@ -197,6 +197,15 @@ func (c *Client) ListChannelReleases(appID string, appType string, channelID str
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
+func (c *Client) ListChannelReleasesPaged(appID string, appType string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
+	if appType == "platform" {
+		return nil, errors.New("This feature is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, page, pageSize)
+	}
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
 func (c *Client) GetCustomHostnames(appID string, appType string, channelID string) (*types.CustomHostNameOverrides, error) {
 	if appType == "platform" {
 		return nil, errors.New("This feature is not currently supported for Platform applications.")

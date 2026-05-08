@@ -78,6 +78,11 @@ type ChannelRelease struct {
 	Semver              string            `json:"semver,omitempty"`
 	Sequence            int32             `json:"sequence,omitempty"`
 	Updated             time.Time         `json:"updated,omitempty"`
+	// IsDemoted and DemotedAt intentionally omit `omitempty`: agents consuming
+	// the JSON need to distinguish "explicitly not demoted" from "field absent",
+	// and Go's omitempty on a bool would drop `false`.
+	IsDemoted bool       `json:"isDemoted"`
+	DemotedAt *time.Time `json:"demotedAt"`
 	InstallationTypes   InstallationTypes `json:"installationTypes,omitempty"`
 }
 

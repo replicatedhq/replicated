@@ -41,6 +41,9 @@ type runnerArgs struct {
 	channelCreateName        string
 	channelCreateDescription string
 
+	channelReleasesPage     int
+	channelReleasesPageSize int
+
 	releaseImageLSChannel                string
 	releaseImageLSVersion                string
 	releaseImageLSKeepProxy              bool
