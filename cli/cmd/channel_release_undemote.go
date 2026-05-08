@@ -14,10 +14,10 @@ func (r *runners) InitChannelReleaseUnDemote(parent *cobra.Command) {
 		Short: "Un-demote a release from a channel",
 		Long:  "Un-demote a channel release from a channel using a channel sequence or release sequence.",
 		Example: `  # Un-demote a release from a channel by channel sequence
-  replicated channel release un-demote Beta --channel-sequence 15
+  replicated channel un-demote Beta --channel-sequence 15
 
   # Un-demote a release from a channel by release sequence
-  replicated channel release un-demote Beta --release-sequence 12`,
+  replicated channel un-demote Beta --release-sequence 12`,
 		Args: cobra.ExactArgs(1),
 	}
 
