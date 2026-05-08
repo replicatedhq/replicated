@@ -167,10 +167,11 @@ func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string
 	if includeInstallerImages != "" {
 		v.Set("includeInstallerImages", includeInstallerImages)
 	}
-	if page > 0 {
-		v.Set("currentPage", fmt.Sprintf("%d", page))
-	}
+	// Pagination is opt-in via pageSize. Once enabled, currentPage is sent
+	// alongside it (0-indexed, matching the API and other callers like
+	// ListReleases). page is only meaningful when pageSize is set.
 	if pageSize > 0 {
+		v.Set("currentPage", fmt.Sprintf("%d", page))
 		v.Set("pageSize", fmt.Sprintf("%d", pageSize))
 	}
 
