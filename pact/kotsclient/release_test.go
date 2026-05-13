@@ -197,7 +197,7 @@ func Test_PromoteRelease(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-promote-release-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		err = client.PromoteRelease("replicated-cli-promote-release-app", 1, "v0.0.1", "releasenotes", false, "replicated-cli-promote-release-unstable")
+		_, err = client.PromoteRelease("replicated-cli-promote-release-app", 1, "v0.0.1", "releasenotes", false, "replicated-cli-promote-release-unstable")
 		assert.NoError(t, err)
 
 		return nil
@@ -226,6 +226,13 @@ func Test_PromoteRelease(t *testing.T) {
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 200,
+			Body: map[string]interface{}{
+				"release": map[string]interface{}{
+					"appId":    "replicated-cli-promote-release-app",
+					"sequence": int64(1),
+				},
+				"airgapBuilds": []interface{}{},
+			},
 		})
 
 	if err := pact.Verify(test); err != nil {

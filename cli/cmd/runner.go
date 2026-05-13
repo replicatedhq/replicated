@@ -66,19 +66,21 @@ type runnerArgs struct {
 	createReleasePromoteVersion       string
 	createReleasePromoteEnsureChannel bool
 	// Add Create Release Lint
-	createReleaseLint     bool
-	lintReleaseYamlDir    string
-	lintReleaseChart      string
-	lintReleaseFailOn     string
-	lintVerbose           bool
-	releaseOptional       bool
-	releaseRequired       bool
-	releaseNotes          string
-	releaseVersion        string
-	updateReleaseYaml     string
-	updateReleaseYamlDir  string
-	updateReleaseYamlFile string
-	updateReleaseChart    string
+	createReleaseLint                  bool
+	lintReleaseYamlDir                 string
+	lintReleaseChart                   string
+	lintReleaseFailOn                  string
+	lintVerbose                        bool
+	releaseOptional                    bool
+	releaseRequired                    bool
+	releaseNotes                       string
+	releaseVersion                     string
+	releasePromoteWaitForAirgap        bool
+	releasePromoteWaitForAirgapTimeout time.Duration
+	updateReleaseYaml                  string
+	updateReleaseYamlDir               string
+	updateReleaseYamlFile              string
+	updateReleaseChart                 string
 
 	instanceInspectCustomer string
 	instanceInspectInstance string
@@ -93,10 +95,12 @@ type runnerArgs struct {
 	createInstallerPromote              string
 	createInstallerPromoteEnsureChannel bool
 
-	createReleaseAutoDefaults       bool
-	createReleaseAutoDefaultsAccept bool
-	createReleaseOutputDir          string
-	createReleaseNoUpload           bool
+	createReleaseAutoDefaults                bool
+	createReleaseAutoDefaultsAccept          bool
+	createReleaseOutputDir                   string
+	createReleaseNoUpload                    bool
+	createReleasePromoteWaitForAirgap        bool
+	createReleasePromoteWaitForAirgapTimeout time.Duration
 
 	releaseDownloadDest               string
 	releaseDownloadChannel            string

@@ -17,6 +17,11 @@ EDITED:	{{ time .EditedAt }}
 	DISTRIBUTION	VERSION	SUCCESS_AT	SUCCESS_NOTES	FAILURE_AT	FAILURE_NOTES
 	{{ range .CompatibilityResults -}}
 	{{ .Distribution }}	{{ .Version }}	{{if .SuccessAt}}{{ time .SuccessAt }}{{else}}-{{end}}	{{ .SuccessNotes }}	{{if .FailureAt}}{{ time .FailureAt }}{{else}}-{{end}}	{{ .FailureNotes }}
+	{{ end }}{{end}}{{if .AirgapBuilds}}
+AIRGAP BUNDLES:
+	CHANNEL	STATUS	ERROR
+	{{ range .AirgapBuilds -}}
+	{{ .ChannelName }}	{{ .AirgapBuildStatus }}	{{if .AirgapBuildError}}{{ .AirgapBuildError }}{{else}}-{{end}}
 	{{ end }}{{end}}
 CONFIG:
 {{ .Config }}

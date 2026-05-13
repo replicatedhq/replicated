@@ -74,6 +74,24 @@ type KotsPromoteReleaseRequest struct {
 	OmitDetailsInResponse bool `json:"omitDetailsInResponse"`
 }
 
+type AirgapBuildSummary struct {
+	ChannelID         string `json:"channelId"`
+	ChannelSequence   int64  `json:"channelSequence"`
+	ChannelName       string `json:"channelName"`
+	AirgapBuildStatus string `json:"airgapBuildStatus"`
+	AirgapBuildError  string `json:"airgapBuildError,omitempty"`
+	// FullAirgapBuild is true when the channel has automatic airgap builds enabled
+	// (the worker will produce a full bundle). When false, the worker still runs
+	// metadata generation for the channel-release and that step can fail — so
+	// callers should still surface this entry's status to vendors.
+	FullAirgapBuild bool `json:"fullAirgapBuild"`
+}
+
+type PromoteReleaseResponse struct {
+	Release      KotsAppRelease       `json:"release"`
+	AirgapBuilds []AirgapBuildSummary `json:"airgapBuilds"`
+}
+
 type KotsAppRelease struct {
 	AppID                string                `json:"appId"`
 	Sequence             int64                 `json:"sequence"`
@@ -86,6 +104,7 @@ type KotsAppRelease struct {
 	Charts               []Chart               `json:"charts"`
 	CompatibilityResults []CompatibilityResult `json:"compatibilityResults"`
 	IsHelmOnly           bool                  `json:"isHelmOnly"`
+	AirgapBuilds         []AirgapBuildSummary  `json:"airgapBuilds,omitempty"`
 }
 
 type Chart struct {
@@ -120,4 +139,5 @@ type AppRelease struct {
 	CompatibilityResults []CompatibilityResult `json:"compatibilityResults,omitempty"`
 	Channels             []*Channel            `json:"channels,omitempty"`
 	IsHelmOnly           bool                  `json:"isHelmOnly,omitempty"`
+	AirgapBuilds         []AirgapBuildSummary  `json:"airgapBuilds,omitempty"`
 }
