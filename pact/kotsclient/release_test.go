@@ -231,7 +231,13 @@ func Test_PromoteRelease(t *testing.T) {
 					"appId":    "replicated-cli-promote-release-app",
 					"sequence": int64(1),
 				},
-				"airgapBuilds": []interface{}{},
+				"airgapBuilds": dsl.EachLike(map[string]interface{}{
+					"channelId":         dsl.Like("replicated-cli-promote-release-unstable"),
+					"channelSequence":   dsl.Like(int64(0)),
+					"channelName":       dsl.Like("Unstable"),
+					"airgapBuildStatus": dsl.Like("pending"),
+					"fullAirgapBuild":   dsl.Like(true),
+				}, 1),
 			},
 		})
 
