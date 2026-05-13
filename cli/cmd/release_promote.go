@@ -115,13 +115,10 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 }
 
 func (r *runners) waitForAirgapBuilds(promoteResp *types.PromoteReleaseResponse, timeout time.Duration, log *logger.Logger) error {
-	// The vandoor API always returns airgapBuilds[] for promoted channels (metadata
-	// generation runs for every channel-release). This branch fires when talking to
-	// an older server that did not populate the field, or if the response object is
-	// nil for any reason — both must short-circuit before the range below to avoid
-	// a nil-pointer dereference.
+	// Short-circuit before the range below if the response is nil or carries no
+	// airgap builds — both would otherwise nil-pointer-deref or no-op the loop.
 	if promoteResp == nil || len(promoteResp.AirgapBuilds) == 0 {
-		log.ActionWithoutSpinner("No airgap build status reported by the API (older server, or no channels were promoted)")
+		log.ActionWithoutSpinner("No airgap builds reported for this promotion")
 		return nil
 	}
 
