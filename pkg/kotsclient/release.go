@@ -63,6 +63,7 @@ func (c *VendorV3Client) GetRelease(appID string, sequence int64) (*types.AppRel
 		CompatibilityResults: resp.Release.CompatibilityResults,
 		Channels:             resp.Release.Channels,
 		IsHelmOnly:           resp.Release.IsHelmOnly,
+		AirgapBuilds:         resp.Release.AirgapBuilds,
 	}
 
 	return &appRelease, nil
@@ -174,7 +175,7 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	return allReleases, nil
 }
 
-func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) error {
+func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) (*types.PromoteReleaseResponse, error) {
 	request := types.KotsPromoteReleaseRequest{
 		ReleaseNotes:          notes,
 		VersionLabel:          label,
@@ -183,11 +184,26 @@ func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label stri
 		OmitDetailsInResponse: true,
 	}
 
+	resp := types.PromoteReleaseResponse{}
 	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, sequence)
-	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, request, nil)
+	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, request, &resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &resp, nil
+}
+
+// GetAirgapBuildStatus polls the dedicated airgap build status endpoint for a
+// single channel-release. The server returns "pending" (synthesized) until the
+// airgap-builder writes its first row, real status after that, and 404 if the
+// channel-release does not exist.
+func (c *VendorV3Client) GetAirgapBuildStatus(appID string, channelID string, channelSequence int64) (*types.AirgapBuildSummary, error) {
+	resp := types.AirgapBuildSummary{}
+	path := fmt.Sprintf("/v3/app/%s/channel/%s/release/%d/airgap/status", appID, channelID, channelSequence)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get airgap build status")
+	}
+	return &resp, nil
 }

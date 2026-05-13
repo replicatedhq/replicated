@@ -71,10 +71,12 @@ type runnerArgs struct {
 	lintReleaseChart      string
 	lintReleaseFailOn     string
 	lintVerbose           bool
-	releaseOptional       bool
-	releaseRequired       bool
-	releaseNotes          string
-	releaseVersion        string
+	releaseOptional                    bool
+	releaseRequired                    bool
+	releaseNotes                       string
+	releaseVersion                     string
+	releasePromoteWaitForAirgap      bool
+	releasePromoteWaitForAirgapTimeout time.Duration
 	updateReleaseYaml     string
 	updateReleaseYamlDir  string
 	updateReleaseYamlFile string
@@ -97,6 +99,8 @@ type runnerArgs struct {
 	createReleaseAutoDefaultsAccept bool
 	createReleaseOutputDir          string
 	createReleaseNoUpload           bool
+	createReleasePromoteWaitForAirgap      bool
+	createReleasePromoteWaitForAirgapTimeout time.Duration
 
 	releaseDownloadDest               string
 	releaseDownloadChannel            string

@@ -40,9 +40,9 @@ func ChannelReleases(outputFormat string, w *tabwriter.Writer, releases []channe
 	return w.Flush()
 }
 
-var kotsChannelReleasesTmplSrc = `CHANNEL_SEQUENCE	RELEASE_SEQUENCE	VERSION	CREATED	RELEASED	STATE
+var kotsChannelReleasesTmplSrc = `CHANNEL_SEQUENCE	RELEASE_SEQUENCE	VERSION	CREATED	RELEASED	STATE	AIRGAP_STATUS	AIRGAP_ERROR
 {{ range . -}}
-{{ .ChannelSequence }}	{{ .Sequence }}	{{ .Semver }}	{{ time .Created }}	{{ time .ReleasedAt }}	{{ .State }}
+{{ .ChannelSequence }}	{{ .Sequence }}	{{ .Semver }}	{{ time .Created }}	{{ time .ReleasedAt }}	{{ .State }}	{{ .AirgapBuildStatus }}	{{ .AirgapBuildError }}
 {{ end }}`
 
 var kotsChannelReleasesTmpl = template.Must(template.New("KotsChannelReleases").Funcs(funcs).Parse(kotsChannelReleasesTmplSrc))
@@ -70,12 +70,14 @@ func KotsChannelReleases(outputFormat string, w *tabwriter.Writer, releases []*t
 			state = "demoted"
 		}
 		rows[i] = map[string]interface{}{
-			"ChannelSequence": r.ChannelSequence,
-			"Sequence":        r.Sequence,
-			"Semver":          r.Semver,
-			"Created":         r.Created,
-			"ReleasedAt":      r.ReleasedAt,
-			"State":           state,
+			"ChannelSequence":   r.ChannelSequence,
+			"Sequence":          r.Sequence,
+			"Semver":            r.Semver,
+			"Created":           r.Created,
+			"ReleasedAt":        r.ReleasedAt,
+			"State":             state,
+			"AirgapBuildStatus": r.AirgapBuildStatus,
+			"AirgapBuildError":  r.AirgapBuildError,
 		}
 	}
 
