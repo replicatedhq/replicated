@@ -1771,10 +1771,40 @@
         },
         "body": {
           "airgapBuilds": [
-        ],
+            {
+              "airgapBuildStatus": "pending",
+              "channelId": "replicated-cli-promote-release-unstable",
+              "channelName": "Unstable",
+              "channelSequence": 0,
+              "fullAirgapBuild": true
+            }
+          ],
           "release": {
             "appId": "replicated-cli-promote-release-app",
             "sequence": 1
+          }
+        },
+        "matchingRules": {
+          "$.body.airgapBuilds": {
+            "min": 1
+          },
+          "$.body.airgapBuilds[*].*": {
+            "match": "type"
+          },
+          "$.body.airgapBuilds[*].airgapBuildStatus": {
+            "match": "type"
+          },
+          "$.body.airgapBuilds[*].channelId": {
+            "match": "type"
+          },
+          "$.body.airgapBuilds[*].channelName": {
+            "match": "type"
+          },
+          "$.body.airgapBuilds[*].channelSequence": {
+            "match": "type"
+          },
+          "$.body.airgapBuilds[*].fullAirgapBuild": {
+            "match": "type"
           }
         }
       }
