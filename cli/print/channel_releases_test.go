@@ -72,6 +72,39 @@ func TestKotsChannelReleases_JSON(t *testing.T) {
 	assert.Contains(t, out.String(), `"demotedAt": null`)
 }
 
+func TestKotsChannelReleases_AirgapColumns(t *testing.T) {
+	releases := []*types.ChannelRelease{
+		{
+			ChannelSequence:   5,
+			Sequence:          12,
+			Semver:            "1.2.0",
+			Created:           time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC),
+			ReleasedAt:        time.Date(2026, 2, 2, 0, 0, 0, 0, time.UTC),
+			AirgapBuildStatus: "failed",
+			AirgapBuildError:  "unauthorized to pull image nginx:latest",
+		},
+		{
+			ChannelSequence:   4,
+			Sequence:          11,
+			Semver:            "1.1.0",
+			Created:           time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC),
+			ReleasedAt:        time.Date(2026, 1, 16, 0, 0, 0, 0, time.UTC),
+			AirgapBuildStatus: "built",
+		},
+	}
+
+	var out bytes.Buffer
+	w := tabwriter.NewWriter(&out, 0, 8, 4, ' ', tabwriter.TabIndent)
+	require.NoError(t, KotsChannelReleases("table", w, releases))
+
+	got := out.String()
+	assert.Contains(t, got, "AIRGAP_STATUS")
+	assert.Contains(t, got, "AIRGAP_ERROR")
+	assert.Contains(t, got, "failed")
+	assert.Contains(t, got, "unauthorized to pull image nginx:latest")
+	assert.Contains(t, got, "built")
+}
+
 func TestKotsChannelReleases_Empty(t *testing.T) {
 	var out bytes.Buffer
 	w := tabwriter.NewWriter(&out, 0, 8, 4, ' ', tabwriter.TabIndent)

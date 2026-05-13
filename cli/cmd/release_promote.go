@@ -42,21 +42,24 @@ var inFlightAirgapStates = map[string]bool{
 }
 
 // terminalFailureStates are the airgap-build outcomes that should fail the
-// --wait-for-airgap waiter. "warn" is included because the airgap-builder uses
-// it for builds that completed with non-fatal warnings vendors still need to
-// see — silently treating it as success would reproduce the misleading-success
-// bug this feature is meant to fix.
+// --wait-for-airgap waiter. "warn" is NOT a failure — the bundle exists with
+// soft warnings about unresolvable image references — and falls through to
+// the success path.
 var terminalFailureStates = map[string]bool{
 	"failed":               true,
 	"failed_with_metadata": true,
 	"cancelled":            true,
-	"warn":                 true,
 }
 
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) {
 	defer func() {
 		printIfError(cmd, err)
 	}()
+	// Flush the tabwriter on every return path. Without this, returning early
+	// from waitForAirgapBuilds (e.g. on terminal failure) would discard the
+	// "Channel successfully set" line and the per-channel failure messages
+	// the waiter wrote, leaving the user with only the generic error output.
+	defer r.w.Flush()
 
 	if !r.hasApp() {
 		return errors.New("no app specified")
@@ -107,16 +110,16 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		}
 	}
 
-	r.w.Flush()
-
 	return nil
 }
 
 func (r *runners) waitForAirgapBuilds(promoteResp *types.PromoteReleaseResponse, timeout time.Duration, log *logger.Logger) error {
 	// The vandoor API always returns airgapBuilds[] for promoted channels (metadata
-	// generation runs for every channel-release). This branch only fires when talking
-	// to an older server that did not populate the field.
-	if promoteResp != nil && len(promoteResp.AirgapBuilds) == 0 {
+	// generation runs for every channel-release). This branch fires when talking to
+	// an older server that did not populate the field, or if the response object is
+	// nil for any reason — both must short-circuit before the range below to avoid
+	// a nil-pointer dereference.
+	if promoteResp == nil || len(promoteResp.AirgapBuilds) == 0 {
 		log.ActionWithoutSpinner("No airgap build status reported by the API (older server, or no channels were promoted)")
 		return nil
 	}
@@ -135,17 +138,23 @@ func (r *runners) waitForAirgapBuilds(promoteResp *types.PromoteReleaseResponse,
 
 		allTerminal := true
 		var failures []string
+		var warnings []string
 		for _, build := range promoteResp.AirgapBuilds {
 			status, err := r.kotsAPI.GetAirgapBuildStatus(r.appID, build.ChannelID, build.ChannelSequence)
 			if err != nil {
-				log.FinishSpinnerWithError()
-				return errors.Wrapf(err, "failed to get airgap build status for channel %s", build.ChannelName)
+				// Log the error but continue polling other channels — one channel's
+				// transient API failure shouldn't mask the status of the rest.
+				log.ChildActionWithoutSpinner("Warning: could not check airgap status for channel %s: %v", build.ChannelName, err)
+				allTerminal = false
+				continue
 			}
 
 			if inFlightAirgapStates[status.AirgapBuildStatus] {
 				allTerminal = false
 			} else if terminalFailureStates[status.AirgapBuildStatus] {
 				failures = append(failures, fmt.Sprintf("channel %s (%s): %s", status.ChannelName, status.AirgapBuildStatus, status.AirgapBuildError))
+			} else if status.AirgapBuildStatus == "warn" {
+				warnings = append(warnings, fmt.Sprintf("channel %s (warn): %s", status.ChannelName, status.AirgapBuildError))
 			}
 		}
 
@@ -158,6 +167,11 @@ func (r *runners) waitForAirgapBuilds(promoteResp *types.PromoteReleaseResponse,
 				return errors.New("one or more airgap builds failed")
 			}
 			log.FinishSpinner()
+			if len(warnings) > 0 {
+				for _, w := range warnings {
+					log.ChildActionWithoutSpinner("%s", w)
+				}
+			}
 			log.ChildActionWithoutSpinner("Airgap builds complete")
 			return nil
 		}

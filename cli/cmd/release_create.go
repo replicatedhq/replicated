@@ -233,6 +233,9 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 	defer func() {
 		printIfError(cmd, err)
 	}()
+	// Flush the tabwriter on every return path so buffered output (including
+	// airgap waiter messages on the error path) actually reaches stdout.
+	defer r.w.Flush()
 
 	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 	if r.outputFormat == "json" {

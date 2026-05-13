@@ -226,6 +226,13 @@ func Test_PromoteRelease(t *testing.T) {
 		}).
 		WillRespondWith(dsl.Response{
 			Status: 200,
+			Body: map[string]interface{}{
+				"release": map[string]interface{}{
+					"appId":    "replicated-cli-promote-release-app",
+					"sequence": int64(1),
+				},
+				"airgapBuilds": []interface{}{},
+			},
 		})
 
 	if err := pact.Verify(test); err != nil {
