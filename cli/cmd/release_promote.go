@@ -42,12 +42,14 @@ var inFlightAirgapStates = map[string]bool{
 }
 
 // terminalFailureStates are the airgap-build outcomes that should fail the
-// --wait-for-airgap waiter.
+// --wait-for-airgap waiter. "warn" is intentionally NOT in this map — the
+// bundle still exists, just with soft warnings about unresolvable image
+// references; the waiter surfaces those messages but exits 0. See the
+// dedicated "warn" branch in waitForAirgapBuilds.
 var terminalFailureStates = map[string]bool{
 	"failed":               true,
 	"failed_with_metadata": true,
 	"cancelled":            true,
-	"warn":                 true,
 }
 
 func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) {
