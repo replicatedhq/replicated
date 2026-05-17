@@ -29,7 +29,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string, showPro
 	}
 	defer file.Close()
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/blobs/uploads/", repoURL), nil)
+	req, err := http.NewRequestWithContext(ctx, "POST", fmt.Sprintf("%s/blobs/uploads/", repoURL), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string, showPro
 		chunk := bytes.NewReader(buf[:n])
 		contentRange := fmt.Sprintf("bytes %d-%d/%d", totalSize-int64(n), totalSize-1, totalSize)
 
-		req, err := http.NewRequest("PATCH", uploadURL, chunk)
+		req, err := http.NewRequestWithContext(ctx, "PATCH", uploadURL, chunk)
 		if err != nil {
 			return nil, err
 		}
@@ -135,7 +135,7 @@ func uploadBlob(ctx context.Context, filePath, repoURL, jwtToken string, showPro
 
 	digest := fmt.Sprintf("sha256:%s", hex.EncodeToString(hasher.Sum(nil)))
 
-	req, err = http.NewRequest("PUT", uploadURL+"?digest="+digest, nil)
+	req, err = http.NewRequestWithContext(ctx, "PUT", uploadURL+"?digest="+digest, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -176,7 +176,10 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 			return err
 		}
 	}
-	req, err := http.NewRequest(method, endpoint, &buf)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, &buf)
 	if err != nil {
 		return err
 	}
