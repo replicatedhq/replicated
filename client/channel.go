@@ -230,12 +230,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 
 		// If the channel has releases data, find the current one
 		if len(kotsChannel.Releases) > 0 {
-			var currentRelease *types.ChannelRelease
-			for _, release := range kotsChannel.Releases {
-				if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
-					currentRelease = &release
-				}
-			}
+			currentRelease := currentChannelRelease(kotsChannel.Releases)
 			if currentRelease != nil {
 				proxyDomain := currentRelease.ProxyRegistryDomain
 				if proxyDomain == "" && kotsChannel.CustomHostNameOverrides.Proxy.Hostname != "" {
@@ -257,6 +252,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 				}
 				return currentRelease, proxyDomain, nil
 			}
+			return nil, "", errors.New("no active releases found in channel")
 		}
 
 		// Fallback to the existing approach if releases aren't included
@@ -269,11 +265,9 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 			return nil, "", errors.New("no releases found in channel")
 		}
 
-		var currentRelease *types.ChannelRelease
-		for _, release := range releases {
-			if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
-				currentRelease = release
-			}
+		currentRelease := currentChannelReleasePtrs(releases)
+		if currentRelease == nil {
+			return nil, "", errors.New("no active releases found in channel")
 		}
 
 		proxyDomain := currentRelease.ProxyRegistryDomain
@@ -298,6 +292,32 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 		return currentRelease, proxyDomain, nil
 	}
 	return nil, "", errors.Errorf("unknown app type %q", appType)
+}
+
+func currentChannelRelease(releases []types.ChannelRelease) *types.ChannelRelease {
+	var currentRelease *types.ChannelRelease
+	for i := range releases {
+		if releases[i].IsDemoted {
+			continue
+		}
+		if currentRelease == nil || releases[i].ChannelSequence > currentRelease.ChannelSequence {
+			currentRelease = &releases[i]
+		}
+	}
+	return currentRelease
+}
+
+func currentChannelReleasePtrs(releases []*types.ChannelRelease) *types.ChannelRelease {
+	var currentRelease *types.ChannelRelease
+	for _, release := range releases {
+		if release == nil || release.IsDemoted {
+			continue
+		}
+		if currentRelease == nil || release.ChannelSequence > currentRelease.ChannelSequence {
+			currentRelease = release
+		}
+	}
+	return currentRelease
 }
 
 // GetDefaultProxyHostname gets the default proxy hostname from the app's custom hostnames
