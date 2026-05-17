@@ -36,25 +36,24 @@ func (r *runners) InitReleaseCreate(parent *cobra.Command) error {
 		Use:   "create",
 		Short: "Create a new release",
 		Long: `Create a new release by providing application manifests for the next release in
-  your sequence.
+your sequence.
 
-  If no flags are provided, the command will automatically use the configuration from
-  .replicated file in the current directory (or parent directories). The config should
-  specify charts and manifests to include. Charts will be automatically packaged using
-  helm, and manifests will be collected using glob patterns.
+If no flags are provided, the command will automatically use the configuration from
+.replicated file in the current directory (or parent directories). The config should
+specify charts and manifests to include. Charts will be automatically packaged using
+helm, and manifests will be collected using glob patterns.`,
+       Example: `# .replicated config:
+appSlug: "my-app"
+  charts:
+    - path: ./chart
+  manifests:
+    - ./manifests/*.yaml
 
-  Example .replicated config:
-    appSlug: "my-app"
-    charts:
-      - path: ./chart
-    manifests:
-      - ./manifests/*.yaml
+# With this config, simply run:
+replicated release create --version 1.0.0 --promote Unstable
 
-  With this config, simply run:
-    replicated release create --version 1.0.0 --promote Unstable
-
-  To mark a release as required during upgrades:
-    replicated release create --version 1.0.0 --promote Unstable --required`,
+# To mark a release as required during upgrades:
+replicated release create --version 1.0.0 --promote Unstable --required`,
 		SilenceUsage:  false,
 		SilenceErrors: true, // this command uses custom error printing
 	}
