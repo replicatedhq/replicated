@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	releaseTypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
@@ -52,11 +53,16 @@ func writeReleaseFiles(dstDir string, specs []releaseTypes.KotsSingleSpec, log *
 func writeReleaseDirectory(dstDir string, spec releaseTypes.KotsSingleSpec, log *logger.Logger) error {
 	log.ChildActionWithoutSpinner("%s", spec.Path)
 
-	if err := os.Mkdir(filepath.Join(dstDir, spec.Path), 0755); err != nil && !os.IsExist(err) {
+	path, err := resolveReleasePath(dstDir, spec.Path)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Mkdir(path, 0755); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "create directory")
 	}
 
-	err := writeReleaseFiles(dstDir, spec.Children, log)
+	err = writeReleaseFiles(dstDir, spec.Children, log)
 	if err != nil {
 		return errors.Wrap(err, "write children")
 	}
@@ -82,10 +88,38 @@ func writeReleaseFile(dstDir string, spec releaseTypes.KotsSingleSpec, log *logg
 		content = []byte(spec.Content)
 	}
 
-	err := ioutil.WriteFile(filepath.Join(dstDir, spec.Path), content, 0644)
+	path, err := resolveReleasePath(dstDir, spec.Path)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(path, content, 0644)
 	if err != nil {
 		return errors.Wrap(err, "write file")
 	}
 
 	return nil
+}
+
+func resolveReleasePath(dstDir string, releasePath string) (string, error) {
+	cleanReleasePath := filepath.Clean(releasePath)
+	if filepath.IsAbs(releasePath) ||
+		cleanReleasePath == "." ||
+		cleanReleasePath == ".." ||
+		strings.HasPrefix(cleanReleasePath, ".."+string(filepath.Separator)) {
+		return "", errors.Errorf("invalid release path %q", releasePath)
+	}
+
+	cleanDstDir := filepath.Clean(dstDir)
+	path := filepath.Join(cleanDstDir, cleanReleasePath)
+
+	rel, err := filepath.Rel(cleanDstDir, path)
+	if err != nil {
+		return "", errors.Wrap(err, "get relative release path")
+	}
+	if rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", errors.Errorf("release path escapes destination %q", releasePath)
+	}
+
+	return path, nil
 }
