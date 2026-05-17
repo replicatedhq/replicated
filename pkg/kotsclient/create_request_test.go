@@ -97,3 +97,49 @@ func TestCreateClusterIncludesNetworkPolicy(t *testing.T) {
 	require.Equal(t, "test-cluster", requestBody["name"])
 	require.Equal(t, "airgap", requestBody["network_policy"])
 }
+
+func TestCreateClusterDryRunReturnsValidationErrorWithoutMessage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v3/cluster", r.URL.Path)
+		require.Equal(t, "dry-run=true", r.URL.RawQuery)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"error":{"validationError":{"errors":["bad version"]}}}`))
+	}))
+	defer server.Close()
+
+	httpClient := platformclient.NewHTTPClient(server.URL, "fake-api-key")
+	client := &VendorV3Client{HTTPClient: *httpClient}
+
+	cluster, ve, err := client.CreateCluster(CreateClusterOpts{DryRun: true})
+	require.NoError(t, err)
+	require.Nil(t, cluster)
+	require.NotNil(t, ve)
+	require.NotNil(t, ve.ValidationError)
+	require.Equal(t, []string{"bad version"}, ve.ValidationError.Errors)
+}
+
+func TestCreateVMDryRunReturnsValidationErrorWithoutMessage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		require.Equal(t, http.MethodPost, r.Method)
+		require.Equal(t, "/v3/vm", r.URL.Path)
+		require.Equal(t, "dry-run=true", r.URL.RawQuery)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"error":{"validationError":{"errors":["bad version"]}}}`))
+	}))
+	defer server.Close()
+
+	httpClient := platformclient.NewHTTPClient(server.URL, "fake-api-key")
+	client := &VendorV3Client{HTTPClient: *httpClient}
+
+	vms, ve, err := client.CreateVM(CreateVMOpts{DryRun: true})
+	require.NoError(t, err)
+	require.Nil(t, vms)
+	require.NotNil(t, ve)
+	require.NotNil(t, ve.ValidationError)
+	require.Equal(t, []string{"bad version"}, ve.ValidationError.Errors)
+}
