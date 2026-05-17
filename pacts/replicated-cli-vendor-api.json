@@ -28,11 +28,11 @@
           "app": {
             "channels": [
               {
-        },
+              },
               {
-        },
+              },
               {
-        }
+              }
             ],
             "created": "2000-02-01T12:30:00Z",
             "description": "",
@@ -83,7 +83,7 @@
             {
               "channels": [
                 {
-        }
+                }
               ],
               "id": "replicated-cli-list-apps-app",
               "name": "Replicated CLI List Apps App",
@@ -223,7 +223,8 @@
             "id": "replicated-cli-get-channel-unstable",
             "name": "Unstable",
             "releases": [
-        ]
+
+            ]
           }
         },
         "matchingRules": {
@@ -773,7 +774,7 @@
                 {
                   "eventType": "release.promoted",
                   "filters": {
-        }
+                  }
                 }
               ],
               "id": "notif-sub-1",
@@ -817,7 +818,7 @@
             {
               "eventType": "release.promoted",
               "filters": {
-        }
+              }
             }
           ],
           "isEnabled": true,
@@ -834,7 +835,7 @@
             {
               "eventType": "release.promoted",
               "filters": {
-        }
+              }
             }
           ],
           "id": "notif-sub-1",
@@ -877,7 +878,7 @@
             {
               "eventType": "release.promoted",
               "filters": {
-        }
+              }
             }
           ],
           "id": "notif-sub-1",
@@ -923,7 +924,7 @@
             {
               "eventType": "release.promoted",
               "filters": {
-        }
+              }
             }
           ],
           "id": "notif-sub-1",
@@ -983,7 +984,8 @@
           "events": [
             {
               "attempts": [
-        ],
+
+              ],
               "eventData": {
                 "releaseId": "rel-1"
               },
@@ -1720,7 +1722,8 @@
         },
         "body": {
           "releases": [
-        ]
+
+          ]
         }
       }
     },
