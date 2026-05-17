@@ -49,7 +49,7 @@ func uploadManifest(ctx context.Context, blobs []*Blob, configBlob *Blob, repoUR
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/manifests/%s", repoURL, tag), bytes.NewReader(manifestBytes))
+	req, err := http.NewRequestWithContext(ctx, "PUT", fmt.Sprintf("%s/manifests/%s", repoURL, tag), bytes.NewReader(manifestBytes))
 	if err != nil {
 		return err
 	}
