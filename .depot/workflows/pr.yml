@@ -39,6 +39,8 @@ jobs:
       - name: Build binary (needed for lint tests)
         run: make build
       - name: Run lint tests
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
         run: make test-lint
 
   unit-tests:
