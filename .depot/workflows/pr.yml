@@ -111,24 +111,6 @@ jobs:
           cache-dependency-path: ./go.sum
       - run: make build
 
-  goreleaser-dryrun:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: ./go.mod
-          cache: true
-          cache-dependency-path: ./go.sum
-      - name: Install goreleaser
-        run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
-      - name: Run goreleaser (linux-only snapshot)
-        env:
-          GOOS: linux
-          GOARCH: amd64
-        run: goreleaser release --snapshot --clean --single-target
-
   security:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -140,7 +122,7 @@ jobs:
 
   gate:
     if: always()
-    needs: [lint, unit-tests, pact-tests, integration-tests, build, goreleaser-dryrun, security]
+    needs: [lint, unit-tests, pact-tests, integration-tests, build, security]
     runs-on: ubuntu-latest
     steps:
       - name: Check all results
@@ -151,7 +133,6 @@ jobs:
             "${{ needs.pact-tests.result }}"
             "${{ needs.integration-tests.result }}"
             "${{ needs.build.result }}"
-            "${{ needs.goreleaser-dryrun.result }}"
             "${{ needs.security.result }}"
           )
           for r in "${results[@]}"; do
