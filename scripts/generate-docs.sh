@@ -70,7 +70,7 @@ let sidebar = fs.readFileSync('sidebars.js', 'utf8');
 // Find the Replicated CLI section and replace its items
 const cliItems = ['reference/replicated-cli-installing'];
 const files = fs.readdirSync('docs/reference')
-    .filter(f => f.startsWith('replicated-cli-') && f !== 'replicated-cli-installing.mdx')
+    .filter(f => (f === 'replicated.mdx' || f.startsWith('replicated-cli-')) && f !== 'replicated-cli-installing.mdx')
     .map(f => 'reference/' + f.replace('.mdx', ''))
     .sort();
 cliItems.push(...files);

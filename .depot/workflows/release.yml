@@ -60,7 +60,7 @@ jobs:
       - name: Build binary with version
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          LDFLAGS="-X github.com/replicatedhq/replicated/pkg/version.version=${VERSION}"
+          LDFLAGS="-ldflags \"-X github.com/replicatedhq/replicated/pkg/version.version=${VERSION}\""
           make build LDFLAGS="${LDFLAGS}"
       - name: Build Docker image
         run: |
