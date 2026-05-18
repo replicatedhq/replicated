@@ -230,7 +230,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 
 		// If the channel has releases data, find the current one
 		if len(kotsChannel.Releases) > 0 {
-			currentRelease := currentChannelRelease(kotsChannel.Releases)
+			currentRelease := currentChannelRelease(kotsChannel.Releases, kotsChannel.ChannelSequence)
 			if currentRelease != nil {
 				proxyDomain := currentRelease.ProxyRegistryDomain
 				if proxyDomain == "" && kotsChannel.CustomHostNameOverrides.Proxy.Hostname != "" {
@@ -265,7 +265,7 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 			return nil, "", errors.New("no releases found in channel")
 		}
 
-		currentRelease := currentChannelReleasePtrs(releases)
+		currentRelease := currentChannelReleasePtrs(releases, kotsChannel.ChannelSequence)
 		if currentRelease == nil {
 			return nil, "", errors.New("no active releases found in channel")
 		}
@@ -294,7 +294,17 @@ func (c *Client) GetCurrentChannelRelease(appID string, appType string, channelI
 	return nil, "", errors.Errorf("unknown app type %q", appType)
 }
 
-func currentChannelRelease(releases []types.ChannelRelease) *types.ChannelRelease {
+// currentChannelRelease returns the release matching channelSequence (the server's
+// authoritative current sequence). Falls back to the highest non-demoted sequence
+// when channelSequence is 0 (not returned by the API).
+func currentChannelRelease(releases []types.ChannelRelease, channelSequence int32) *types.ChannelRelease {
+	if channelSequence > 0 {
+		for i := range releases {
+			if releases[i].ChannelSequence == channelSequence {
+				return &releases[i]
+			}
+		}
+	}
 	var currentRelease *types.ChannelRelease
 	for i := range releases {
 		if releases[i].IsDemoted {
@@ -307,7 +317,14 @@ func currentChannelRelease(releases []types.ChannelRelease) *types.ChannelReleas
 	return currentRelease
 }
 
-func currentChannelReleasePtrs(releases []*types.ChannelRelease) *types.ChannelRelease {
+func currentChannelReleasePtrs(releases []*types.ChannelRelease, channelSequence int32) *types.ChannelRelease {
+	if channelSequence > 0 {
+		for _, release := range releases {
+			if release != nil && release.ChannelSequence == channelSequence {
+				return release
+			}
+		}
+	}
 	var currentRelease *types.ChannelRelease
 	for _, release := range releases {
 		if release == nil || release.IsDemoted {
