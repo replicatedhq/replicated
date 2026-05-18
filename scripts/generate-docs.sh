@@ -90,7 +90,7 @@ git commit -m "Update Replicated CLI docs for ${VERSION}"
 git push origin "${BRANCH_NAME}"
 
 # Open PR
-curl -s -X POST \
+response=$(curl -s -f -X POST \
     -H "Authorization: Bearer ${GITHUB_TOKEN}" \
     -H "Accept: application/vnd.github+json" \
     -H "X-GitHub-Api-Version: 2022-11-28" \
@@ -99,4 +99,5 @@ curl -s -X POST \
         \"title\": \"Update Replicated CLI docs for ${VERSION}\",
         \"head\": \"${BRANCH_NAME}\",
         \"base\": \"main\"
-    }" | jq -r '.html_url // .message'
+    }")
+echo "${response}" | jq -r '.html_url'
