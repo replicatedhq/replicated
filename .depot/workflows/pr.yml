@@ -5,8 +5,143 @@ on:
 
 name: "depot: PR"
 
+concurrency:
+  group: depot-pr-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
-  noop:
+
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum || {
+            echo "::error::Please run 'go mod tidy' and commit changes"
+            exit 1
+          }
+      - name: Check go fmt
+        run: |
+          gofmt -d -s . | grep -q . && {
+            echo "::error::Please run 'gofmt -w .' and commit changes"
+            exit 1
+          }
+      - name: Build binary (needed for lint tests)
+        run: make build
+      - name: Run lint tests
+        run: make test-lint
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - run: make test-unit
+
+  pact-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - uses: replicatedhq/action-install-pact@v1
+      - name: Setup pact environment
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "PACT_VERSION=${{ github.sha }}" >> "$GITHUB_ENV"
+          echo "PACT_BROKER_BASE_URL=${{ secrets.PACT_BROKER_BASE_URL }}" >> "$GITHUB_ENV"
+          echo "PACT_BROKER_TOKEN=${{ secrets.PACT_BROKER_TOKEN }}" >> "$GITHUB_ENV"
+      - run: make test-pact
+      - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+        run: make publish-pact
+      - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
+        run: make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - run: make build
+      - run: make test-integration
+
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - run: make build
+
+  goreleaser-dryrun:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Install goreleaser
+        run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
+      - run: goreleaser release --snapshot --clean
+
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run semgrep
+        run: |
+          docker run --rm -v "${PWD}:/src" returntocorp/semgrep semgrep scan --config=p/golang /src
+
+  gate:
+    if: always()
+    needs: [lint, unit-tests, pact-tests, integration-tests, build, goreleaser-dryrun, security]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Depot PR workflow registered"
+      - name: Check all results
+        run: |
+          results=(
+            "${{ needs.lint.result }}"
+            "${{ needs.unit-tests.result }}"
+            "${{ needs.pact-tests.result }}"
+            "${{ needs.integration-tests.result }}"
+            "${{ needs.build.result }}"
+            "${{ needs.goreleaser-dryrun.result }}"
+            "${{ needs.security.result }}"
+          )
+          for r in "${results[@]}"; do
+            if [[ "$r" == "failure" || "$r" == "cancelled" ]]; then
+              echo "::error::Job failed: $r"
+              exit 1
+            fi
+          done
+          echo "All checks passed"

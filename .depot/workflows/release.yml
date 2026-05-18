@@ -1,0 +1,90 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+name: "depot: Release"
+
+jobs:
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - run: make test-unit
+      - run: make test-pact
+      - run: make build
+
+  release:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Install goreleaser
+        run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
+      - name: Run goreleaser
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean
+
+  docker-publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Build binary
+        run: make build
+      - name: Build Docker image
+        run: |
+          docker build -t replicated/vendor-cli:${GITHUB_REF_NAME} .
+          docker tag replicated/vendor-cli:${GITHUB_REF_NAME} replicated/vendor-cli:latest
+          VERSION=${GITHUB_REF_NAME#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f1,2)
+          docker tag replicated/vendor-cli:${GITHUB_REF_NAME} replicated/vendor-cli:${MAJOR}
+          docker tag replicated/vendor-cli:${GITHUB_REF_NAME} replicated/vendor-cli:${MINOR}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push images
+        run: |
+          docker push replicated/vendor-cli:${GITHUB_REF_NAME}
+          docker push replicated/vendor-cli:latest
+          docker push replicated/vendor-cli:${MAJOR}
+          docker push replicated/vendor-cli:${MINOR}
+
+  docs:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Build binary
+        run: make build
+      - name: Generate and publish docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./scripts/generate-docs.sh
