@@ -63,7 +63,14 @@ jobs:
           go-version-file: ./go.mod
           cache: true
           cache-dependency-path: ./go.sum
-      - uses: replicatedhq/action-install-pact@v1
+      - name: Install pact
+        run: |
+          curl -L -o /tmp/pact.tar.gz https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v2.0.0/pact-2.0.0-linux-x86_64.tar.gz
+          echo "94ea52ef7d6c9dacf431dde7138717d96714131a  /tmp/pact.tar.gz" | shasum -c -
+          mkdir -p /tmp/pact-standalone
+          tar -C /tmp/pact-standalone --strip-components=1 -xzf /tmp/pact.tar.gz
+          echo "/tmp/pact-standalone/bin" >> "$GITHUB_PATH"
+          rm /tmp/pact.tar.gz
       - name: Setup pact environment
         if: github.ref == 'refs/heads/main'
         run: |
