@@ -12,7 +12,7 @@ BRANCH_NAME="update-cli-docs-${VERSION}-$(date +%Y-%m-%d-%H%M%S)"
 
 # Build the binary and generate docs
 cd "${REPO_ROOT}"
-go run ./docs/gen.go
+go run -tags "containers_image_ostree_stub exclude_graphdriver_devicemapper exclude_graphdriver_btrfs containers_image_openpgp" ./docs/gen.go
 
 # Clone replicated-docs
 DOCS_DIR="/tmp/replicated-docs"
