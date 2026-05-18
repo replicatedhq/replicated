@@ -44,7 +44,7 @@ jobs:
         run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
       - name: Run goreleaser
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: goreleaser release --clean
 
   docker-publish:
