@@ -61,8 +61,6 @@ func (c *Client) GetApp(appID string) (interface{}, error) {
 
 func (c *Client) CreateApp(appOptions interface{}) (interface{}, error) {
 	switch opts := appOptions.(type) {
-	case string:
-		return c.KotsClient.CreateKOTSApp(context.TODO(), opts)
 	case kotsclient.CreateKOTSAppRequest:
 		return c.KotsClient.CreateKOTSApp(context.TODO(), opts.Name)
 	case *kotsclient.CreateKOTSAppRequest:
