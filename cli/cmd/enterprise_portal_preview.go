@@ -241,48 +241,48 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 // the /enterprise-portal/license envelope. Kept in sync with the LicenseResponse
 // struct in handlers/market-api/enterpriseportal/license.go.
 type previewLicense struct {
-	ID                                string                   `json:"id"`
-	AppID                             string                   `json:"appId"`
-	AppName                           string                   `json:"appName"`
-	AppIcon                           *string                  `json:"appIcon"`
-	Channels                          []previewLicenseChannel  `json:"channels"`
-	CustomerID                        string                   `json:"customerId"`
-	CustomerName                      string                   `json:"customerName"`
-	CustomerEmail                     string                   `json:"customerEmail"`
-	CreatedAt                         string                   `json:"createdAt"`
-	UpdatedAt                         string                   `json:"updatedAt"`
-	ExpireAt                          *string                  `json:"expireAt"`
-	IsExpired                         bool                     `json:"isExpired"`
-	IsArchived                        bool                     `json:"isArchived"`
-	LicenseType                       string                   `json:"licenseType"`
-	Sequence                          int64                    `json:"sequence"`
-	IsAirgapSupported                 bool                     `json:"isAirgapSupported"`
-	IsGitopsSupported                 bool                     `json:"isGitopsSupported"`
-	IsIdentityServiceSupported        bool                     `json:"isIdentityServiceSupported"`
-	IsGeoaxisSupported                bool                     `json:"isGeoaxisSupported"`
-	IsSnapshotSupported               bool                     `json:"isSnapshotSupported"`
-	IsDisasterRecoverySupported       bool                     `json:"isDisasterRecoverySupported"`
-	IsSupportBundleUploadSupported    bool                     `json:"isSupportBundleUploadSupported"`
-	IsEmbeddedClusterDownloadEnabled  bool                     `json:"isEmbeddedClusterDownloadEnabled"`
-	IsEmbeddedClusterMultiNodeEnabled bool                     `json:"isEmbeddedClusterMultiNodeEnabled"`
-	IsKotsInstallEnabled              bool                     `json:"isKotsInstallEnabled"`
-	IsHelmInstallEnabled              bool                     `json:"isHelmInstallEnabled"`
-	IsKurlInstallEnabled              bool                     `json:"isKurlInstallEnabled"`
-	IsHelmAirgapEnabled               bool                     `json:"isHelmAirgapEnabled"`
+	ID                                string                    `json:"id"`
+	AppID                             string                    `json:"appId"`
+	AppName                           string                    `json:"appName"`
+	AppIcon                           *string                   `json:"appIcon"`
+	Channels                          []previewLicenseChannel   `json:"channels"`
+	CustomerID                        string                    `json:"customerId"`
+	CustomerName                      string                    `json:"customerName"`
+	CustomerEmail                     string                    `json:"customerEmail"`
+	CreatedAt                         string                    `json:"createdAt"`
+	UpdatedAt                         string                    `json:"updatedAt"`
+	ExpireAt                          *string                   `json:"expireAt"`
+	IsExpired                         bool                      `json:"isExpired"`
+	IsArchived                        bool                      `json:"isArchived"`
+	LicenseType                       string                    `json:"licenseType"`
+	Sequence                          int64                     `json:"sequence"`
+	IsAirgapSupported                 bool                      `json:"isAirgapSupported"`
+	IsGitopsSupported                 bool                      `json:"isGitopsSupported"`
+	IsIdentityServiceSupported        bool                      `json:"isIdentityServiceSupported"`
+	IsGeoaxisSupported                bool                      `json:"isGeoaxisSupported"`
+	IsSnapshotSupported               bool                      `json:"isSnapshotSupported"`
+	IsDisasterRecoverySupported       bool                      `json:"isDisasterRecoverySupported"`
+	IsSupportBundleUploadSupported    bool                      `json:"isSupportBundleUploadSupported"`
+	IsEmbeddedClusterDownloadEnabled  bool                      `json:"isEmbeddedClusterDownloadEnabled"`
+	IsEmbeddedClusterMultiNodeEnabled bool                      `json:"isEmbeddedClusterMultiNodeEnabled"`
+	IsKotsInstallEnabled              bool                      `json:"isKotsInstallEnabled"`
+	IsHelmInstallEnabled              bool                      `json:"isHelmInstallEnabled"`
+	IsKurlInstallEnabled              bool                      `json:"isKurlInstallEnabled"`
+	IsHelmAirgapEnabled               bool                      `json:"isHelmAirgapEnabled"`
 	EntitlementFields                 []previewEntitlementField `json:"entitlementFields"`
 	EntitlementValues                 []previewEntitlementValue `json:"entitlementValues"`
 }
 
 type previewLicenseChannel struct {
-	AppID                 string  `json:"appId"`
-	LicenseID             string  `json:"licenseId"`
-	ChannelID             string  `json:"channelId"`
-	ChannelName           string  `json:"channelName"`
-	ChannelSlug           string  `json:"channelSlug"`
-	IsSemverRequired      int     `json:"isSemverRequired"`
-	IsDefault             int     `json:"isDefault"`
-	PinnedChannelSequence *int64  `json:"pinnedChannelSequence"`
-	HasKurlInstaller      bool    `json:"hasKurlInstaller"`
+	AppID                 string `json:"appId"`
+	LicenseID             string `json:"licenseId"`
+	ChannelID             string `json:"channelId"`
+	ChannelName           string `json:"channelName"`
+	ChannelSlug           string `json:"channelSlug"`
+	IsSemverRequired      int    `json:"isSemverRequired"`
+	IsDefault             int    `json:"isDefault"`
+	PinnedChannelSequence *int64 `json:"pinnedChannelSequence"`
+	HasKurlInstaller      bool   `json:"hasKurlInstaller"`
 }
 
 type previewEntitlementField struct {
@@ -418,7 +418,7 @@ func portBusy(p int) bool {
 
 // escapeComposeScalar escapes a string for use as a YAML single-quoted scalar
 // inside a docker-compose file. Two layers:
-//   - YAML single-quote: ' → ''
+//   - YAML single-quote: ' → ”
 //   - docker-compose variable interpolation: $ → $$. Compose interpolates $vars
 //     over the whole file before YAML parsing, single-quoted strings included,
 //     so a path like /Users/ca$h/repo would otherwise have "$h" treated as a

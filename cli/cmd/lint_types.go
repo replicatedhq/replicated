@@ -9,13 +9,13 @@ import (
 
 // JSONLintOutput represents the complete JSON output structure for lint results
 type JSONLintOutput struct {
-	Metadata                LintMetadata                 `json:"metadata"`
-	HelmResults             *HelmLintResults             `json:"helm_results,omitempty"`
-	PreflightResults        *PreflightLintResults        `json:"preflight_results,omitempty"`
-	SupportBundleResults    *SupportBundleLintResults    `json:"support_bundle_results,omitempty"`
-	EmbeddedClusterResults  *EmbeddedClusterLintResults  `json:"embedded_cluster_results,omitempty"`
-	Summary                 LintSummary                  `json:"summary"`
-	Images                  *ImageExtractResults         `json:"images,omitempty"` // Only if --verbose
+	Metadata               LintMetadata                `json:"metadata"`
+	HelmResults            *HelmLintResults            `json:"helm_results,omitempty"`
+	PreflightResults       *PreflightLintResults       `json:"preflight_results,omitempty"`
+	SupportBundleResults   *SupportBundleLintResults   `json:"support_bundle_results,omitempty"`
+	EmbeddedClusterResults *EmbeddedClusterLintResults `json:"embedded_cluster_results,omitempty"`
+	Summary                LintSummary                 `json:"summary"`
+	Images                 *ImageExtractResults        `json:"images,omitempty"` // Only if --verbose
 }
 
 // LintMetadata contains execution context and environment information

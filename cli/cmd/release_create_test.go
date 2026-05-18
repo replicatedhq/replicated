@@ -125,9 +125,9 @@ func TestSetKOTSDefaultReleaseParams_WithExistingYamlDir(t *testing.T) {
 // TestSetKOTSDefaultReleaseParams_PromoteMapsMainToUnstable tests branch name mapping
 func TestSetKOTSDefaultReleaseParams_PromoteMapsMainToUnstable(t *testing.T) {
 	tests := []struct {
-		name         string
-		branch       string
-		wantPromote  string
+		name        string
+		branch      string
+		wantPromote string
 	}{
 		{
 			name:        "main branch maps to Unstable",

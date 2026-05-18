@@ -1,0 +1,104 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+name: "depot: Release"
+
+jobs:
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - run: make test-unit
+      - name: Install pact
+        run: |
+          curl -L -o /tmp/pact.tar.gz https://github.com/pact-foundation/pact-ruby-standalone/releases/download/v2.0.0/pact-2.0.0-linux-x86_64.tar.gz
+          echo "94ea52ef7d6c9dacf431dde7138717d96714131a  /tmp/pact.tar.gz" | shasum -c -
+          mkdir -p /tmp/pact-standalone
+          tar -C /tmp/pact-standalone --strip-components=1 -xzf /tmp/pact.tar.gz
+          echo "/tmp/pact-standalone/bin" >> "$GITHUB_PATH"
+          rm /tmp/pact.tar.gz
+      - run: make test-pact
+      - run: make build
+
+  release:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Install goreleaser
+        run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
+      - name: Run goreleaser
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: goreleaser release --clean
+
+  docker-publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Build binary with version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          LDFLAGS="-ldflags \"-X github.com/replicatedhq/replicated/pkg/version.version=${VERSION}\""
+          make build LDFLAGS="${LDFLAGS}"
+      - name: Build Docker image
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f1,2)
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "MAJOR=${MAJOR}" >> "$GITHUB_ENV"
+          echo "MINOR=${MINOR}" >> "$GITHUB_ENV"
+          docker build -f Dockerfile.release -t replicated/vendor-cli:${VERSION} .
+          docker tag replicated/vendor-cli:${VERSION} replicated/vendor-cli:latest
+          docker tag replicated/vendor-cli:${VERSION} replicated/vendor-cli:${MAJOR}
+          docker tag replicated/vendor-cli:${VERSION} replicated/vendor-cli:${MINOR}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push images
+        run: |
+          docker push replicated/vendor-cli:${VERSION}
+          docker push replicated/vendor-cli:latest
+          docker push replicated/vendor-cli:${MAJOR}
+          docker push replicated/vendor-cli:${MINOR}
+
+  docs:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+          cache: true
+          cache-dependency-path: ./go.sum
+      - name: Build binary
+        run: make build
+      - name: Generate and publish docs
+        env:
+          GITHUB_TOKEN: ${{ secrets.DOCS_REPO_TOKEN }}
+        run: ./scripts/generate-docs.sh

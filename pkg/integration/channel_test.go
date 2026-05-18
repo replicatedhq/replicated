@@ -22,10 +22,10 @@ func TestChannelReleases(t *testing.T) {
 		releases    interface{}
 		wantFormat  format
 		wantLines   int
-		wantOutput  string                       // when set, asserted exactly
-		wantContain []string                     // substrings the output must contain
-		wantQuery   map[string]string            // query params asserted on the releases request
-		wantExit    int                          // expected non-zero exit; 0 means must succeed
+		wantOutput  string            // when set, asserted exactly
+		wantContain []string          // substrings the output must contain
+		wantQuery   map[string]string // query params asserted on the releases request
+		wantExit    int               // expected non-zero exit; 0 means must succeed
 		assertJSON  func(t *testing.T, raw []byte)
 	}{
 		{
@@ -117,9 +117,9 @@ func TestChannelReleases(t *testing.T) {
 			channels: []map[string]interface{}{
 				{"id": "chan-1", "name": "Stable", "channelSlug": "stable"},
 			},
-			releases:    []map[string]interface{}{},
-			wantFormat:  FormatTable,
-			wantOutput:  "No releases in channel\n",
+			releases:   []map[string]interface{}{},
+			wantFormat: FormatTable,
+			wantOutput: "No releases in channel\n",
 		},
 		{
 			name:    "platform channel releases table — legacy app regression guard",

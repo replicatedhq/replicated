@@ -63,27 +63,27 @@ type CustomerAdoption struct {
 }
 
 type ChannelRelease struct {
-	AirgapBuildError    string            `json:"airgapBuildError,omitempty"`
-	AirgapBuildStatus   string            `json:"airgapBuildStatus,omitempty"`
-	AirgapBundleImages  []string          `json:"airgapBundleImages,omitempty"`
-	ChannelIcon         string            `json:"channelIcon,omitempty"`
-	ChannelId           string            `json:"channelId,omitempty"`
-	ChannelName         string            `json:"channelName,omitempty"`
-	ChannelSequence     int32             `json:"channelSequence,omitempty"`
-	Created             time.Time         `json:"created,omitempty"`
-	ProxyRegistryDomain string            `json:"proxyRegistryDomain,omitempty"`
-	RegistrySecret      string            `json:"registrySecret,omitempty"`
-	ReleaseNotes        string            `json:"releaseNotes,omitempty"`
-	ReleasedAt          time.Time         `json:"releasedAt,omitempty"`
-	Semver              string            `json:"semver,omitempty"`
-	Sequence            int32             `json:"sequence,omitempty"`
-	Updated             time.Time         `json:"updated,omitempty"`
+	AirgapBuildError    string    `json:"airgapBuildError,omitempty"`
+	AirgapBuildStatus   string    `json:"airgapBuildStatus,omitempty"`
+	AirgapBundleImages  []string  `json:"airgapBundleImages,omitempty"`
+	ChannelIcon         string    `json:"channelIcon,omitempty"`
+	ChannelId           string    `json:"channelId,omitempty"`
+	ChannelName         string    `json:"channelName,omitempty"`
+	ChannelSequence     int32     `json:"channelSequence,omitempty"`
+	Created             time.Time `json:"created,omitempty"`
+	ProxyRegistryDomain string    `json:"proxyRegistryDomain,omitempty"`
+	RegistrySecret      string    `json:"registrySecret,omitempty"`
+	ReleaseNotes        string    `json:"releaseNotes,omitempty"`
+	ReleasedAt          time.Time `json:"releasedAt,omitempty"`
+	Semver              string    `json:"semver,omitempty"`
+	Sequence            int32     `json:"sequence,omitempty"`
+	Updated             time.Time `json:"updated,omitempty"`
 	// IsDemoted and DemotedAt intentionally omit `omitempty`: agents consuming
 	// the JSON need to distinguish "explicitly not demoted" from "field absent",
 	// and Go's omitempty on a bool would drop `false`.
-	IsDemoted bool       `json:"isDemoted"`
-	DemotedAt *time.Time `json:"demotedAt"`
-	InstallationTypes   InstallationTypes `json:"installationTypes,omitempty"`
+	IsDemoted         bool              `json:"isDemoted"`
+	DemotedAt         *time.Time        `json:"demotedAt"`
+	InstallationTypes InstallationTypes `json:"installationTypes,omitempty"`
 }
 
 type CreateChannelRequest struct {

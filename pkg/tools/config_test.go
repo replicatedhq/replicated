@@ -1495,8 +1495,8 @@ func TestApplyDefaults_LinterDefaults(t *testing.T) {
 		config := &Config{
 			ReplLint: &ReplLintConfig{
 				Linters: LintersConfig{
-					Helm:            LinterConfig{Disabled: &trueVal},  // user disabled helm
-					Kots:            LinterConfig{Disabled: &falseVal}, // user enabled kots
+					Helm:            LinterConfig{Disabled: &trueVal},                                // user disabled helm
+					Kots:            LinterConfig{Disabled: &falseVal},                               // user enabled kots
 					EmbeddedCluster: ECLinterConfig{LinterConfig: LinterConfig{Disabled: &falseVal}}, // user enabled EC
 				},
 			},
