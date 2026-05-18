@@ -2,6 +2,8 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
 
 name: "depot: PR"
 
@@ -30,10 +32,10 @@ jobs:
           }
       - name: Check go fmt
         run: |
-          gofmt -d -s . | grep -q . && {
+          if gofmt -d -s . | grep -q .; then
             echo "::error::Please run 'gofmt -w .' and commit changes"
             exit 1
-          }
+          fi
       - name: Build binary (needed for lint tests)
         run: make build
       - name: Run lint tests
@@ -72,7 +74,8 @@ jobs:
       - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
         run: make publish-pact
       - if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository))
-        run: make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
+        run: |
+          make can-i-deploy || echo "::warning:: can-i-deploy says no; provider(s) must successfully verify before release"
 
   integration-tests:
     runs-on: ubuntu-latest

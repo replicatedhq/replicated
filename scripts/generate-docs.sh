@@ -48,7 +48,7 @@ for f in gen/docs/*.md; do
     
     # Fix header level
     if [[ "$content" == "## "* ]]; then
-        content="#${content:1}"
+        content="${content:1}"
     fi
     
     # Replace internal links
