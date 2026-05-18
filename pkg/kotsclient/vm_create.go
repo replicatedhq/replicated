@@ -125,8 +125,11 @@ func (c *VendorV3Client) doCreateVMDryRunRequest(req CreateVMRequest) ([]*types.
 		return nil, nil, err
 	}
 
-	if resp.Error.Message != "" {
+	if resp.Error.Message != "" || resp.Error.ValidationError != nil || resp.Error.MaxDiskGiB != 0 {
 		return nil, &resp.Error, nil
+	}
+	if resp.TotalCost == nil || resp.TTL == nil {
+		return nil, nil, fmt.Errorf("create vm dry-run response missing total_cost or ttl")
 	}
 	vms := []*types.VM{
 		{

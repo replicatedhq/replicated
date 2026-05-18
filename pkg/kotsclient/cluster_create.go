@@ -140,8 +140,11 @@ func (c *VendorV3Client) doCreateClusterDryRunRequest(req CreateClusterRequest) 
 		return nil, nil, err
 	}
 
-	if resp.Error.Message != "" {
+	if resp.Error.Message != "" || resp.Error.ValidationError != nil || resp.Error.MaxDiskGiB != 0 || resp.Error.MaxEKS != 0 || resp.Error.MaxGKE != 0 || resp.Error.MaxAKS != 0 {
 		return nil, &resp.Error, nil
+	}
+	if resp.TotalCost == nil || resp.TTL == nil {
+		return nil, nil, fmt.Errorf("create cluster dry-run response missing total_cost or ttl")
 	}
 	cl := &types.Cluster{
 		EstimatedCost: *resp.TotalCost,
