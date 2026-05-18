@@ -4,6 +4,8 @@ charts: [
     path: "./charts/broken-chart"
   },
 ]
+manifests:
+  - "./manifests/*.yaml"
 repl-lint:
   version: 1
   linters:
@@ -13,4 +15,3 @@ repl-lint:
       disabled: false
     support-bundle:
       disabled: true
-

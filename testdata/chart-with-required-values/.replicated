@@ -4,6 +4,8 @@ charts: [
     path: "./charts/required-values"
   },
 ]
+manifests:
+  - "./manifests/*.yaml"
 repl-lint:
   version: 1
   linters:
