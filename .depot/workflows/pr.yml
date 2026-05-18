@@ -8,7 +8,7 @@ on:
 name: "depot: PR"
 
 concurrency:
-  group: depot-pr-${{ github.head_ref }}
+  group: depot-pr-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:

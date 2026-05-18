@@ -55,7 +55,7 @@ for f in gen/docs/*.md; do
     for ref in gen/docs/*.md; do
         ref_name=$(basename "$ref" .md)
         dest_ref=$(echo "$ref_name" | sed 's/replicated_/replicated-cli-/g; s/_/-/g')
-        content="${content//${ref_name}/${dest_ref}}"
+        content="${content//${ref_name}.md/${dest_ref}}"
     done
     
     echo "$content" > "${DOCS_DIR}/docs/reference/${dest_name}"

@@ -57,8 +57,11 @@ jobs:
           go-version-file: ./go.mod
           cache: true
           cache-dependency-path: ./go.sum
-      - name: Build binary
-        run: make build
+      - name: Build binary with version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          LDFLAGS="-X github.com/replicatedhq/replicated/pkg/version.version=${VERSION}"
+          make build LDFLAGS="${LDFLAGS}"
       - name: Build Docker image
         run: |
           VERSION=${GITHUB_REF_NAME#v}
