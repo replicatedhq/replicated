@@ -45,7 +45,7 @@ jobs:
       - name: Run goreleaser
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: goreleaser release --clean --parallelism 4
+        run: goreleaser release --clean
 
   docker-publish:
     needs: build-and-test

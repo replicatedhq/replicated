@@ -125,8 +125,8 @@ jobs:
         run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
       - name: Run goreleaser (linux-only snapshot)
         env:
-          GGOOS: linux
-          GGOARCH: amd64
+          GOOS: linux
+          GOARCH: amd64
         run: goreleaser release --snapshot --clean --single-target
 
   security:
