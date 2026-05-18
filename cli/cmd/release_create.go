@@ -42,7 +42,7 @@ If no flags are provided, the command will automatically use the configuration f
 .replicated file in the current directory (or parent directories). The config should
 specify charts and manifests to include. Charts will be automatically packaged using
 helm, and manifests will be collected using glob patterns.`,
-       Example: `# .replicated config:
+		Example: `# .replicated config:
 appSlug: "my-app"
   charts:
     - path: ./chart

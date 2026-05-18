@@ -467,7 +467,6 @@ func mergeECLinterConfig(parent, child ECLinterConfig) ECLinterConfig {
 	return result
 }
 
-
 // boolPtr returns a pointer to a boolean value
 // Helper for creating pointer booleans in config defaults
 func boolPtr(b bool) *bool {

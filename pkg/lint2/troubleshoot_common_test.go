@@ -233,7 +233,7 @@ func TestConvertTroubleshootResultToMessages_SupportBundle(t *testing.T) {
 					{Line: 8, Message: "Missing collectors", Field: "spec.collectors"},
 				},
 				Warnings: []SupportBundleLintIssue{},
-				Info:    []SupportBundleLintIssue{},
+				Info:     []SupportBundleLintIssue{},
 			},
 		},
 	}
