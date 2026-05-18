@@ -42,9 +42,15 @@ jobs:
           cache-dependency-path: ./go.sum
       - name: Install goreleaser
         run: go install github.com/goreleaser/goreleaser/v2@v2.14.3
+      - name: Check token
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          echo "HOMEBREW_TAP_GITHUB_TOKEN length: ${#HOMEBREW_TAP_GITHUB_TOKEN}"
+          echo "HOMEBREW_TAP_GITHUB_TOKEN first 4: ${HOMEBREW_TAP_GITHUB_TOKEN:0:4}"
       - name: Run goreleaser
         env:
-          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: goreleaser release --clean
 
   docker-publish:
