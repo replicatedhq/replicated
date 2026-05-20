@@ -79,7 +79,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
 	cmd.Flags().BoolVar(&opts.IsSnapshotSupported, "snapshot", false, "If set, the license will allow Snapshots.")
 	cmd.Flags().BoolVar(&opts.IsKotsInstallEnabled, "kots-install", true, "If set, the license will allow KOTS install. Otherwise license will allow Helm CLI installs only.")
-	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs.")
+	cmd.Flags().BoolVar(&opts.IsHelmInstallEnabled, "helm-install", false, "If set, the license will allow Helm installs. Requires --email.")
 	cmd.Flags().BoolVar(&opts.IsKurlInstallEnabled, "kurl-install", false, "If set, the license will allow kURL installs.")
 	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterDownloadEnabled, "embedded-cluster-download", false, "If set, the license will allow Embedded Cluster downloads.")
 	cmd.Flags().BoolVar(&opts.IsEmbeddedClusterMultinodeEnabled, "embedded-cluster-multinode", true, "If set, users can add nodes to Embedded Cluster instances.")
