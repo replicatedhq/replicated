@@ -59,6 +59,18 @@ func TestGetShellSetupCommand(t *testing.T) {
 			kubeconfigPath: "/tmp/test",
 			want:           "$env.KUBECONFIG = \"/tmp/test\"\n",
 		},
+		{
+			name:           "shell ending in nu but not nushell (e.g., gnu)",
+			shellCmd:       "/usr/bin/gnu",
+			kubeconfigPath: "/tmp/test",
+			want:           "export KUBECONFIG=/tmp/test\n",
+		},
+		{
+			name:           "menu shell falls back to posix",
+			shellCmd:       "/usr/bin/menu",
+			kubeconfigPath: "/tmp/test",
+			want:           "export KUBECONFIG=/tmp/test\n",
+		},
 	}
 
 	for _, tt := range tests {

@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/creack/pty"
@@ -181,7 +180,7 @@ func getShellSetupCommand(shellCmd, kubeconfigPath string) string {
 	shellName := filepath.Base(shellCmd)
 
 	// Nushell uses $env.VAR = "value" syntax
-	if strings.HasSuffix(shellName, "nu") {
+	if shellName == "nu" {
 		return fmt.Sprintf("$env.KUBECONFIG = \"%s\"\n", kubeconfigPath)
 	}
 
