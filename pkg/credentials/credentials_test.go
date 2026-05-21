@@ -38,6 +38,7 @@ func TestConfigFilePath_XDGCompliant(t *testing.T) {
 	defer func() {
 		os.Setenv("HOME", originalHome)
 		os.Setenv("XDG_CONFIG_HOME", originalXDGConfigHome)
+		xdg.Reload()
 	}()
 	os.Setenv("HOME", tempHome)
 	os.Setenv("XDG_CONFIG_HOME", filepath.Join(tempHome, ".config"))
@@ -64,6 +65,7 @@ func TestSetCurrentCredentials_XDGPath(t *testing.T) {
 	defer func() {
 		os.Setenv("HOME", originalHome)
 		os.Setenv("XDG_CONFIG_HOME", originalXDGConfigHome)
+		xdg.Reload()
 	}()
 	os.Setenv("HOME", tempHome)
 	os.Setenv("XDG_CONFIG_HOME", filepath.Join(tempHome, ".config"))
