@@ -16,8 +16,8 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/tools"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
 )
