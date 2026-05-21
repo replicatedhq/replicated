@@ -13,10 +13,10 @@ import (
 
 func Test_CustomerAttrs_JSON_IsHelmInstallEnabled(t *testing.T) {
 	tests := []struct {
-		name                 string
-		customer             *types.Customer
-		wantHelmInstall      bool
-		wantHelmVMDownload   bool
+		name               string
+		customer           *types.Customer
+		wantHelmInstall    bool
+		wantHelmVMDownload bool
 	}{
 		{
 			name: "isHelmInstallEnabled true in JSON output",
