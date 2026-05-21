@@ -8,9 +8,8 @@ import (
 
 func (r *runners) InitCustomersLSCommand(parent *cobra.Command) *cobra.Command {
 	var (
-		appVersion   string
-		includeTest  bool
-		outputFormat string
+		appVersion  string
+		includeTest bool
 	)
 
 	customersLsCmd := &cobra.Command{
@@ -34,19 +33,18 @@ replicated customer ls --app myapp --output json
 # Combine multiple flags
 replicated customer ls --app myapp --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.listCustomers(appVersion, includeTest, outputFormat)
+			return r.listCustomers(appVersion, includeTest)
 		},
 	}
 
 	parent.AddCommand(customersLsCmd)
 	customersLsCmd.Flags().StringVar(&appVersion, "app-version", "", "Filter customers by a specific app version")
 	customersLsCmd.Flags().BoolVar(&includeTest, "include-test", false, "Include test customers in the results")
-	customersLsCmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return customersLsCmd
 }
 
-func (r *runners) listCustomers(appVersion string, includeTest bool, outputFormat string) error {
+func (r *runners) listCustomers(appVersion string, includeTest bool) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
@@ -56,14 +54,14 @@ func (r *runners) listCustomers(appVersion string, includeTest bool, outputForma
 		if err != nil {
 			return errors.Wrap(err, "list customers")
 		}
-		return print.Customers(outputFormat, r.w, customers)
+		return print.Customers(r.outputFormat, r.w, customers)
 	} else {
 		customers, err := r.api.ListCustomersByAppAndVersion(r.appID, appVersion, r.appType)
-		if err != nil && outputFormat == "json" {
-			return print.CustomersWithInstances(outputFormat, r.w, customers)
+		if err != nil && r.outputFormat == "json" {
+			return print.CustomersWithInstances(r.outputFormat, r.w, customers)
 		} else if err != nil {
 			return errors.Wrap(err, "list customers by app and app version")
 		}
-		return print.CustomersWithInstances(outputFormat, r.w, customers)
+		return print.CustomersWithInstances(r.outputFormat, r.w, customers)
 	}
 }

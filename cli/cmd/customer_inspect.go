@@ -13,8 +13,7 @@ import (
 
 func (r *runners) InitCustomersInspectCommand(parent *cobra.Command) *cobra.Command {
 	var (
-		customer     string
-		outputFormat string
+		customer string
 	)
 	cmd := &cobra.Command{
 		Use:   "inspect [flags]",
@@ -38,20 +37,19 @@ replicated customer inspect --customer cus_abcdef123456 --output json
 # Inspect a customer for a specific app (if you have multiple apps)
 replicated customer inspect --app myapp --customer "Acme Inc"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.inspectCustomer(cmd, customer, outputFormat)
+			return r.inspectCustomer(cmd, customer)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("customer")
 
 	return cmd
 }
 
-func (r *runners) inspectCustomer(cmd *cobra.Command, customer string, outputFormat string) error {
+func (r *runners) inspectCustomer(cmd *cobra.Command, customer string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
@@ -75,7 +73,7 @@ func (r *runners) inspectCustomer(cmd *cobra.Command, customer string, outputFor
 		return errors.Wrapf(err, "get registry hostname for customer %q", customer)
 	}
 
-	if err = print.CustomerAttrs(outputFormat, r.w, r.appType, r.appSlug, ch, regHost, c); err != nil {
+	if err = print.CustomerAttrs(r.outputFormat, r.w, r.appType, r.appSlug, ch, regHost, c); err != nil {
 		return errors.Wrap(err, "print customer attrs")
 	}
 

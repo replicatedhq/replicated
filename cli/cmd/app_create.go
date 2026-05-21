@@ -16,8 +16,6 @@ type createAppOpts struct {
 
 func (r *runners) InitAppCreate(parent *cobra.Command) *cobra.Command {
 	opts := createAppOpts{}
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "create NAME",
 		Short: "Create a new application",
@@ -44,17 +42,15 @@ replicated app create "Custom App" --output table`,
 				return errors.New("missing app name")
 			}
 			opts.name = args[0]
-			return r.createApp(ctx, cmd, opts, outputFormat)
+			return r.createApp(ctx, cmd, opts)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
 	return cmd
 }
 
-func (r *runners) createApp(ctx context.Context, cmd *cobra.Command, opts createAppOpts, outputFormat string) error {
+func (r *runners) createApp(ctx context.Context, cmd *cobra.Command, opts createAppOpts) error {
 	kotsRestClient := kotsclient.VendorV3Client{
 		HTTPClient: *r.platformAPI,
 	}
@@ -75,5 +71,5 @@ func (r *runners) createApp(ctx context.Context, cmd *cobra.Command, opts create
 		},
 	}
 
-	return print.Apps(outputFormat, r.w, apps)
+	return print.Apps(r.outputFormat, r.w, apps)
 }

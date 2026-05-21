@@ -11,7 +11,6 @@ import (
 
 func (r *runners) InitEnterprisePortalInviteCmd(parent *cobra.Command) *cobra.Command {
 	var customer string
-	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "invite [EMAIL_ADDRESSES...]",
@@ -36,21 +35,20 @@ replicated enterprise-portal invite --customer "ACME Inc" --output json user@exa
 # Invite users to the Enterprise Portal for a specific app (if you have multiple apps)
 replicated enterprise-portal invite --app myapp --customer "ACME Inc" user1@example.com user2@example.com`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.enterprisePortalInvite(cmd, r.appID, customer, args, outputFormat)
+			return r.enterprisePortalInvite(cmd, r.appID, customer, args)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().StringVar(&customer, "customer", "", "The customer name or ID to invite")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("customer")
 
 	return cmd
 }
 
-func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, customer string, emailAddresses []string, outputFormat string) error {
+func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, customer string, emailAddresses []string) error {
 	var c *types.Customer
 
 	// try to get the customer as if we have an id first

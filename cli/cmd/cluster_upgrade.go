@@ -36,7 +36,6 @@ replicated cluster upgrade CLUSTER_ID_OR_NAME --version 1.31 --wait 30m`,
 	cmd.Flags().BoolVar(&r.args.upgradeClusterDryRun, "dry-run", false, "Dry run")
 	cmd.Flags().DurationVar(&r.args.upgradeClusterWaitDuration, "wait", 0, "Wait duration for cluster to be ready (leave empty to not wait)")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	_ = cmd.MarkFlagRequired("version")
 

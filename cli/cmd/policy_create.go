@@ -15,7 +15,6 @@ func (r *runners) InitPolicyCreate(parent *cobra.Command) *cobra.Command {
 		name           string
 		description    string
 		definitionFile string
-		outputFormat   string
 	)
 
 	cmd := &cobra.Command{
@@ -43,7 +42,7 @@ Vendors not on an enterprise plan cannot create policies.`,
   # Create a policy with a description
   replicated policy create --name "My Policy" --description "Custom access policy" --definition policy.json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.policyCreate(name, description, definitionFile, outputFormat)
+			return r.policyCreate(name, description, definitionFile)
 		},
 		SilenceUsage: true,
 	}
@@ -51,14 +50,13 @@ Vendors not on an enterprise plan cannot create policies.`,
 	cmd.Flags().StringVar(&name, "name", "", "Name of the policy")
 	cmd.Flags().StringVar(&description, "description", "", "Description of the policy")
 	cmd.Flags().StringVar(&definitionFile, "definition", "", "Path to the JSON file containing the policy definition")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	cmd.MarkFlagRequired("name")
 	cmd.MarkFlagRequired("definition")
 
 	return cmd
 }
 
-func (r *runners) policyCreate(name, description, definitionFile, outputFormat string) error {
+func (r *runners) policyCreate(name, description, definitionFile string) error {
 	definition, err := readPolicyDefinition(definitionFile)
 	if err != nil {
 		return errors.Wrap(err, "read policy definition")
@@ -72,7 +70,7 @@ func (r *runners) policyCreate(name, description, definitionFile, outputFormat s
 		return errors.Wrap(err, "create policy")
 	}
 
-	return print.Policy(outputFormat, r.w, policy)
+	return print.Policy(r.outputFormat, r.w, policy)
 }
 
 func readPolicyDefinition(path string) (string, error) {

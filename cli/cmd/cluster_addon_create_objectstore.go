@@ -61,7 +61,6 @@ func (r *runners) clusterAddonCreateObjectStoreFlags(cmd *cobra.Command) error {
 	}
 	cmd.Flags().DurationVar(&r.args.clusterAddonCreateObjectStoreDuration, "wait", 0, "Wait duration for add-on to be ready before exiting (leave empty to not wait)")
 	cmd.Flags().BoolVar(&r.args.clusterAddonCreateObjectStoreDryRun, "dry-run", false, "Simulate creation to verify that your inputs are valid without actually creating an add-on")
-	cmd.Flags().StringVarP(&r.args.clusterAddonCreateObjectStoreOutput, "output", "o", "table", "The output format to use. One of: json|table|wide")
 	return nil
 }
 
@@ -86,7 +85,7 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 		return err
 	}
 
-	return print.Addon(r.args.clusterAddonCreateObjectStoreOutput, r.w, addon)
+	return print.Addon(r.outputFormat, r.w, addon)
 }
 
 func (r *runners) createAndWaitForClusterAddonCreateObjectStore(opts kotsclient.CreateClusterAddonObjectStoreOpts, waitDuration time.Duration) (*types.ClusterAddon, error) {

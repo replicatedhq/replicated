@@ -9,9 +9,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/version"
 )
 
-func Version() *cobra.Command {
-	var versionJson bool
-
+func (r *runners) Version() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the current version and exit",
@@ -36,7 +34,7 @@ func Version() *cobra.Command {
 			// Now get the (potentially updated) build info
 			build := version.GetBuild()
 
-			if !versionJson {
+			if r.outputFormat != "json" {
 				// Special handling for development/unknown version when printing
 				if currentVersion == "unknown" || currentVersion == "development" {
 					fmt.Printf("replicated version %s (development build)\n", currentVersion)
@@ -62,8 +60,6 @@ func Version() *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().BoolVar(&versionJson, "json", false, "output version info in json")
 
 	cmd.AddCommand(versionUpgradeCmd())
 

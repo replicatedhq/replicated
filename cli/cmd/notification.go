@@ -69,7 +69,7 @@ func (r *runners) InitNotificationWebhookCommand(parent *cobra.Command) *cobra.C
 }
 
 func (r *runners) InitNotificationSubscriptionList(parent *cobra.Command) *cobra.Command {
-	var outputFormat, search, subscriptionType string
+	var search, subscriptionType string
 
 	cmd := &cobra.Command{
 		Use:     "ls",
@@ -81,22 +81,19 @@ func (r *runners) InitNotificationSubscriptionList(parent *cobra.Command) *cobra
 				return errors.Wrap(err, "list notification subscriptions")
 			}
 			if len(resp.Subscriptions) == 0 {
-				return print.NoNotifications(outputFormat, r.w)
+				return print.NoNotifications(r.outputFormat, r.w)
 			}
-			return print.Notifications(outputFormat, r.w, resp.Subscriptions)
+			return print.Notifications(r.outputFormat, r.w, resp.Subscriptions)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&search, "search", "", "Text search filter")
 	cmd.Flags().StringVar(&subscriptionType, "type", "", "Filter by subscription type: personal|team")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationSubscriptionGet(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "get ID",
 		Short: "Get a notification subscription",
@@ -106,17 +103,16 @@ func (r *runners) InitNotificationSubscriptionGet(parent *cobra.Command) *cobra.
 			if err != nil {
 				return errors.Wrap(err, "get notification subscription")
 			}
-			return print.Notification(outputFormat, r.w, subscription)
+			return print.Notification(r.outputFormat, r.w, subscription)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationSubscriptionCreate(parent *cobra.Command) *cobra.Command {
-	var outputFormat, file string
+	var file string
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -130,19 +126,18 @@ func (r *runners) InitNotificationSubscriptionCreate(parent *cobra.Command) *cob
 			if err != nil {
 				return errors.Wrap(err, "create notification subscription")
 			}
-			return print.Notification(outputFormat, r.w, subscription)
+			return print.Notification(r.outputFormat, r.w, subscription)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&file, "file", "", "Path to a JSON file containing the subscription definition")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	_ = cmd.MarkFlagRequired("file")
 	return cmd
 }
 
 func (r *runners) InitNotificationSubscriptionUpdate(parent *cobra.Command) *cobra.Command {
-	var outputFormat, file string
+	var file string
 
 	cmd := &cobra.Command{
 		Use:   "update ID",
@@ -157,13 +152,12 @@ func (r *runners) InitNotificationSubscriptionUpdate(parent *cobra.Command) *cob
 			if err != nil {
 				return errors.Wrap(err, "update notification subscription")
 			}
-			return print.Notification(outputFormat, r.w, subscription)
+			return print.Notification(r.outputFormat, r.w, subscription)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&file, "file", "", "Path to a JSON file containing the subscription patch")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	_ = cmd.MarkFlagRequired("file")
 	return cmd
 }
@@ -191,8 +185,6 @@ func (r *runners) InitNotificationSubscriptionRemove(parent *cobra.Command) *cob
 }
 
 func (r *runners) InitNotificationSubscriptionEvents(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "events ID",
 		Short: "List delivery events for a notification subscription",
@@ -203,19 +195,17 @@ func (r *runners) InitNotificationSubscriptionEvents(parent *cobra.Command) *cob
 				return errors.Wrap(err, "list notification subscription events")
 			}
 			if len(resp.Events) == 0 {
-				return print.NoNotificationEvents(outputFormat, r.w)
+				return print.NoNotificationEvents(r.outputFormat, r.w)
 			}
-			return print.NotificationEvents(outputFormat, r.w, resp.Events)
+			return print.NotificationEvents(r.outputFormat, r.w, resp.Events)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationEventList(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
 	opts := kotsclient.ListNotificationEventsOpts{}
 
 	cmd := &cobra.Command{
@@ -238,9 +228,9 @@ func (r *runners) InitNotificationEventList(parent *cobra.Command) *cobra.Comman
 				return errors.Wrap(err, "list notification events")
 			}
 			if len(resp.Events) == 0 {
-				return print.NoNotificationEvents(outputFormat, r.w)
+				return print.NoNotificationEvents(r.outputFormat, r.w)
 			}
-			return print.NotificationEvents(outputFormat, r.w, resp.Events)
+			return print.NotificationEvents(r.outputFormat, r.w, resp.Events)
 		},
 		SilenceUsage: true,
 	}
@@ -255,13 +245,10 @@ func (r *runners) InitNotificationEventList(parent *cobra.Command) *cobra.Comman
 	cmd.Flags().StringVar(&opts.Status, "status", "", "Filter by status: success|pending|failed")
 	cmd.Flags().IntVar(&opts.CurrentPage, "current-page", 0, "Pagination page index")
 	cmd.Flags().IntVar(&opts.PageSize, "page-size", 20, "Pagination page size")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationEventRetry(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "retry EVENT_ID",
 		Short: "Retry a notification event",
@@ -271,17 +258,16 @@ func (r *runners) InitNotificationEventRetry(parent *cobra.Command) *cobra.Comma
 			if err != nil {
 				return errors.Wrap(err, "retry notification event")
 			}
-			return print.NotificationRetry(outputFormat, r.w, resp)
+			return print.NotificationRetry(r.outputFormat, r.w, resp)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationEventTypeList(parent *cobra.Command) *cobra.Command {
-	var outputFormat, query string
+	var query string
 	var limit int
 
 	cmd := &cobra.Command{
@@ -293,19 +279,18 @@ func (r *runners) InitNotificationEventTypeList(parent *cobra.Command) *cobra.Co
 			if err != nil {
 				return errors.Wrap(err, "list notification event types")
 			}
-			return print.NotificationEventTypes(outputFormat, r.w, resp)
+			return print.NotificationEventTypes(r.outputFormat, r.w, resp)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&query, "q", "", "Search query")
 	cmd.Flags().IntVar(&limit, "limit", 0, "Maximum results to request from the API (0 means no limit)")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	return cmd
 }
 
 func (r *runners) InitNotificationEmailResendVerification(parent *cobra.Command) *cobra.Command {
-	var outputFormat, email string
+	var email string
 
 	cmd := &cobra.Command{
 		Use:   "resend-verification",
@@ -320,19 +305,18 @@ func (r *runners) InitNotificationEmailResendVerification(parent *cobra.Command)
 			if err != nil {
 				return errors.Wrap(err, "resend verification email")
 			}
-			return print.NotificationEmailAction(outputFormat, r.w, resp)
+			return print.NotificationEmailAction(r.outputFormat, r.w, resp)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&email, "email", "", "Email address to verify")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	_ = cmd.MarkFlagRequired("email")
 	return cmd
 }
 
 func (r *runners) InitNotificationEmailVerify(parent *cobra.Command) *cobra.Command {
-	var outputFormat, email, code string
+	var email, code string
 
 	cmd := &cobra.Command{
 		Use:   "verify",
@@ -351,21 +335,20 @@ func (r *runners) InitNotificationEmailVerify(parent *cobra.Command) *cobra.Comm
 			if err != nil {
 				return errors.Wrap(err, "verify notification email")
 			}
-			return print.NotificationEmailAction(outputFormat, r.w, resp)
+			return print.NotificationEmailAction(r.outputFormat, r.w, resp)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&email, "email", "", "Email address to verify")
 	cmd.Flags().StringVar(&code, "code", "", "Verification code")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	_ = cmd.MarkFlagRequired("email")
 	_ = cmd.MarkFlagRequired("code")
 	return cmd
 }
 
 func (r *runners) InitNotificationWebhookTest(parent *cobra.Command) *cobra.Command {
-	var outputFormat, file string
+	var file string
 
 	cmd := &cobra.Command{
 		Use:   "test",
@@ -379,13 +362,12 @@ func (r *runners) InitNotificationWebhookTest(parent *cobra.Command) *cobra.Comm
 			if err != nil {
 				return errors.Wrap(err, "test notification webhook")
 			}
-			return print.NotificationWebhookTest(outputFormat, r.w, resp)
+			return print.NotificationWebhookTest(r.outputFormat, r.w, resp)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&file, "file", "", "Path to a JSON file containing the webhook test payload")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	_ = cmd.MarkFlagRequired("file")
 	return cmd
 }

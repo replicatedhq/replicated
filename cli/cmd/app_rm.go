@@ -17,8 +17,6 @@ type deleteAppOpts struct {
 
 func (r *runners) InitAppRm(parent *cobra.Command) *cobra.Command {
 	opts := deleteAppOpts{}
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:     "rm NAME",
 		Aliases: []string{"delete"},
@@ -42,20 +40,19 @@ replicated app delete "Custom App" --output json`,
 			if len(args) != 1 {
 				return errors.New("missing app slug or id")
 			}
-			return r.deleteApp(ctx, cmd, args[0], opts, outputFormat)
+			return r.deleteApp(ctx, cmd, args[0], opts)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().BoolVarP(&opts.force, "force", "f", false, "Skip confirmation prompt. There is no undo for this action.")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }
 
-func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName string, opts deleteAppOpts, outputFormat string) error {
+func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName string, opts deleteAppOpts) error {
 	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
-	showSpinners := outputFormat == "table"
+	showSpinners := r.outputFormat == "table"
 
 	if showSpinners {
 		log.ActionWithSpinner("Fetching App")
@@ -77,7 +74,7 @@ func (r *runners) deleteApp(ctx context.Context, cmd *cobra.Command, appName str
 		},
 	}
 
-	err = print.Apps(outputFormat, r.w, apps)
+	err = print.Apps(r.outputFormat, r.w, apps)
 	if err != nil {
 		return errors.Wrap(err, "print app")
 	}

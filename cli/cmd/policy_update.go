@@ -14,7 +14,6 @@ func (r *runners) InitPolicyUpdate(parent *cobra.Command) *cobra.Command {
 		newName        string
 		description    string
 		definitionFile string
-		outputFormat   string
 	)
 
 	cmd := &cobra.Command{
@@ -35,7 +34,7 @@ Vendors not on an enterprise plan cannot update policies.`,
   replicated policy update "My Policy" --description "Updated description" --definition policy.json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.policyUpdate(cmd, args[0], newName, description, definitionFile, outputFormat)
+			return r.policyUpdate(cmd, args[0], newName, description, definitionFile)
 		},
 		SilenceUsage: true,
 	}
@@ -43,12 +42,11 @@ Vendors not on an enterprise plan cannot update policies.`,
 	cmd.Flags().StringVar(&newName, "name", "", "New name for the policy")
 	cmd.Flags().StringVar(&description, "description", "", "New description for the policy")
 	cmd.Flags().StringVar(&definitionFile, "definition", "", "Path to the JSON file containing the updated policy definition")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }
 
-func (r *runners) policyUpdate(cmd *cobra.Command, nameOrID, newName, description, definitionFile, outputFormat string) error {
+func (r *runners) policyUpdate(cmd *cobra.Command, nameOrID, newName, description, definitionFile string) error {
 	if !cmd.Flags().Changed("name") && !cmd.Flags().Changed("description") && !cmd.Flags().Changed("definition") {
 		return errors.New("at least one of --name, --description, or --definition must be specified")
 	}
@@ -88,5 +86,5 @@ func (r *runners) policyUpdate(cmd *cobra.Command, nameOrID, newName, descriptio
 		return errors.Wrap(err, "update policy")
 	}
 
-	return print.Policy(outputFormat, r.w, policy)
+	return print.Policy(r.outputFormat, r.w, policy)
 }

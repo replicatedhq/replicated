@@ -124,6 +124,12 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		runCmds.rootCmd.SetErr(stderr)
 		runCmds.rootCmd.SetOut(stderr)
 	}
+
+	runCmds.rootCmd.PersistentFlags().StringVarP(
+		&runCmds.outputFormat, "output", "o", "table",
+		"The output format to use. Supported formats vary by command (json, table, wide). (default 'table', override with REPLICATED_OUTPUT env var)",
+	)
+
 	if stdout != nil {
 		defaultHelpFunc := runCmds.rootCmd.HelpFunc()
 		runCmds.rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
@@ -329,6 +335,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
+		runCmds.resolveOutputFormat(cmd)
 		if apiToken == "" {
 			// Try to load profile from --profile flag, then default profile
 			var profileName string
@@ -436,6 +443,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	}
 
 	prerunCommand := func(cmd *cobra.Command, args []string) (err error) {
+		runCmds.resolveOutputFormat(cmd)
 		if cmd.SilenceErrors { // when SilenceErrors is set, command wants to use custom error printer
 			defer func() {
 				printIfError(cmd, err)
@@ -547,7 +555,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.InitInitCommand(configCmd)
 	configCmd.PersistentPreRunE = preRunSetupAPIs
 
-	runCmds.rootCmd.AddCommand(Version())
+	runCmds.rootCmd.AddCommand(runCmds.Version())
 
 	return runCmds.rootCmd.Execute()
 }

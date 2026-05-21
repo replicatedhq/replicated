@@ -11,10 +11,7 @@ import (
 )
 
 func (r *runners) InitPolicyGet(parent *cobra.Command) *cobra.Command {
-	var (
-		outputFormat string
-		outputFile   string
-	)
+	var outputFile string
 
 	cmd := &cobra.Command{
 		Use:   "get NAME_OR_ID",
@@ -30,18 +27,17 @@ func (r *runners) InitPolicyGet(parent *cobra.Command) *cobra.Command {
   replicated policy get "My Policy" --output json`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.policyGet(args[0], outputFormat, outputFile)
+			return r.policyGet(args[0], outputFile)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	cmd.Flags().StringVar(&outputFile, "output-file", "", "If set, saves the policy definition to the specified file")
 
 	return cmd
 }
 
-func (r *runners) policyGet(nameOrID, outputFormat, outputFile string) error {
+func (r *runners) policyGet(nameOrID, outputFile string) error {
 	policy, err := r.kotsAPI.GetPolicyByNameOrID(nameOrID)
 	if err != nil {
 		return errors.Wrap(err, "get policy")
@@ -59,5 +55,5 @@ func (r *runners) policyGet(nameOrID, outputFormat, outputFile string) error {
 		return r.w.Flush()
 	}
 
-	return print.Policy(outputFormat, r.w, policy)
+	return print.Policy(r.outputFormat, r.w, policy)
 }

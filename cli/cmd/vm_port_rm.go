@@ -30,7 +30,6 @@ replicated vm port rm VM_ID_OR_NAME --id PORT_ID --output json`,
 	if err != nil {
 		panic(err)
 	}
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }

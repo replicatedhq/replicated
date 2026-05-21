@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"os"
 	"text/tabwriter"
 	"time"
 
@@ -35,6 +36,15 @@ func (r *runners) hasApp() bool {
 		return false
 	}
 	return true
+}
+
+func (r *runners) resolveOutputFormat(cmd *cobra.Command) {
+	if cmd.Flags().Changed("output") {
+		return // explicit flag wins
+	}
+	if env := os.Getenv("REPLICATED_OUTPUT"); env != "" {
+		r.outputFormat = env
+	}
 }
 
 type runnerArgs struct {
@@ -289,7 +299,6 @@ type runnerArgs struct {
 	clusterAddonCreateObjectStoreClusterID string
 	clusterAddonCreateObjectStoreDuration  time.Duration
 	clusterAddonCreateObjectStoreDryRun    bool
-	clusterAddonCreateObjectStoreOutput    string
 
 	demoteReleaseSequence   int64
 	demoteChannelSequence   int64

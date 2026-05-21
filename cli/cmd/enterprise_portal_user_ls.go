@@ -12,7 +12,6 @@ type listEnterprisePortalUsersOpts struct {
 
 func (r *runners) InitEnterprisePortalUserLsCmd(parent *cobra.Command) *cobra.Command {
 	opts := listEnterprisePortalUsersOpts{}
-	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:     "ls",
@@ -41,19 +40,18 @@ replicated enterprise-portal user ls --output json
 # List all users, including invites, for a specific app in table format
 replicated enterprise-portal user ls --app myapp --include-invites --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.enterprisePortalUserLs(cmd, r.appID, opts, outputFormat)
+			return r.enterprisePortalUserLs(cmd, r.appID, opts)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
 	cmd.Flags().BoolVar(&opts.includeInvites, "include-invites", false, "Include pending invitations in the list")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }
 
-func (r *runners) enterprisePortalUserLs(cmd *cobra.Command, appID string, opts listEnterprisePortalUsersOpts, outputFormat string) error {
+func (r *runners) enterprisePortalUserLs(cmd *cobra.Command, appID string, opts listEnterprisePortalUsersOpts) error {
 	users, err := r.kotsAPI.ListEnterprisePortalUsers(appID, opts.includeInvites)
 	if err != nil {
 		return err

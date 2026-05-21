@@ -10,8 +10,6 @@ import (
 )
 
 func (r *runners) InitDefaultShowCommand(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "show KEY",
 		Short: "Show default value for a key",
@@ -29,24 +27,23 @@ replicated default show app
 `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.showDefault(cmd, args[0], outputFormat)
+			return r.showDefault(cmd, args[0])
 		},
 	}
 
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	parent.AddCommand(cmd)
 
 	return cmd
 }
 
-func (r *runners) showDefault(cmd *cobra.Command, defaultType string, outputFormat string) error {
+func (r *runners) showDefault(cmd *cobra.Command, defaultType string) error {
 	defaultValue, err := cache.GetDefault(defaultType)
 	if err != nil {
 		return errors.Wrap(err, "get default value")
 	}
 
 	if defaultValue == "" {
-		if outputFormat == "json" {
+		if r.outputFormat == "json" {
 			fmt.Println("{}")
 		} else {
 			fmt.Printf("No default set for %s\n", defaultType)
@@ -61,7 +58,7 @@ func (r *runners) showDefault(cmd *cobra.Command, defaultType string, outputForm
 			return errors.Wrap(err, "get app")
 		}
 
-		if err := print.Apps(outputFormat, r.w, []types.AppAndChannels{{App: app}}); err != nil {
+		if err := print.Apps(r.outputFormat, r.w, []types.AppAndChannels{{App: app}}); err != nil {
 			return errors.Wrap(err, "print app")
 		}
 	}
