@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/adrg/xdg"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
@@ -94,11 +95,14 @@ func loadCache(path string) (*Cache, error) {
 
 func getCacheDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get user home directory")
+	if err == nil {
+		legacyDir := filepath.Join(homeDir, ".replicated", "cache")
+		if _, err := os.Stat(legacyDir); err == nil {
+			return legacyDir, nil
+		}
 	}
 
-	return filepath.Join(homeDir, ".replicated", "cache"), nil
+	return filepath.Join(xdg.CacheHome, "replicated"), nil
 }
 
 func (c *Cache) SetDefault(defaultType string, defaultValue string) error {
