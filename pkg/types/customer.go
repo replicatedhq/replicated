@@ -20,6 +20,7 @@ type Customer struct {
 	IsEmbeddedClusterDownloadEnabled  bool          `json:"isEmbeddedClusterDownloadEnabled"`
 	IsEmbeddedClusterMultinodeEnabled bool          `json:"isEmbeddedClusterMultinodeEnabled"`
 	IsGeoaxisSupported                bool          `json:"isGeoaxisSupported"`
+	IsHelmInstallEnabled              bool          `json:"isHelmInstallEnabled"`
 	IsHelmVMDownloadEnabled           bool          `json:"isHelmVmDownloadEnabled"`
 	IsIdentityServiceSupported        bool          `json:"isIdentityServiceSupported"`
 	IsInstallerSupportEnabled         bool          `json:"isInstallerSupportEnabled"`
