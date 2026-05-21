@@ -3,7 +3,6 @@ package cmd
 import (
 	"archive/tar"
 	"compress/gzip"
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	kotsrelease "github.com/replicatedhq/replicated/pkg/kots/release"
 	"github.com/replicatedhq/replicated/pkg/logger"
-	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -46,50 +44,6 @@ replicated release download 1 --dest ./manifests`,
 		Args: cobra.MaximumNArgs(1),
 	}
 	parent.AddCommand(cmd)
-
-	// Similar to release create, handle config-based flow in PreRunE
-	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// Check if --app flag was explicitly provided by the user
-		appFlagProvided := cmd.Flags().Changed("app")
-
-		// Check if we should use config-based flow (no --app flag was provided)
-		// Note: Parent's PersistentPreRunE runs BEFORE our PreRunE, so appID/appSlug
-		// may already be set from cache/env even if user didn't provide --app flag
-		usingConfigFlow := false
-		if !appFlagProvided {
-			parser := tools.NewConfigParser()
-			config, err := parser.FindAndParseConfig(".")
-			if err == nil && (config.AppSlug != "" || config.AppId != "") {
-				usingConfigFlow = true
-				// Set app from config
-				if config.AppSlug != "" {
-					r.appSlug = config.AppSlug
-				} else {
-					r.appID = config.AppId
-				}
-			}
-		}
-
-		if usingConfigFlow {
-			// The parent's PersistentPreRunE already ran and may have set wrong app from cache
-			// We need to override it with the app from config and re-resolve
-
-			// Clear the wrong app state that parent set
-			r.appID = ""
-			r.appType = ""
-			// r.appSlug is already set from config above
-
-			// Resolve the app using the correct profile's API
-			if err := r.resolveAppTypeForDownload(); err != nil {
-				return errors.Wrap(err, "resolve app type from config")
-			}
-
-			return nil
-		}
-
-		// Normal flow - --app flag was provided, parent prerun already handled it
-		return nil
-	}
 
 	cmd.RunE = r.releaseDownload
 	cmd.Flags().StringVarP(&r.args.releaseDownloadDest, "dest", "d", "", "File or directory to which release should be downloaded. Auto-generated if not specified.")
@@ -214,29 +168,6 @@ func (r *runners) releaseDownload(command *cobra.Command, args []string) error {
 			return errors.Wrap(err, "save release")
 		}
 	}
-
-	return nil
-}
-
-// resolveAppTypeForDownload resolves the app type for download command
-func (r *runners) resolveAppTypeForDownload() error {
-	if r.appID == "" && r.appSlug == "" {
-		return nil
-	}
-
-	appSlugOrID := r.appSlug
-	if appSlugOrID == "" {
-		appSlugOrID = r.appID
-	}
-
-	app, appType, err := r.api.GetAppType(context.Background(), appSlugOrID, true)
-	if err != nil {
-		return errors.Wrapf(err, "get app type for %q", appSlugOrID)
-	}
-
-	r.appType = appType
-	r.appID = app.ID
-	r.appSlug = app.Slug
 
 	return nil
 }

@@ -103,17 +103,12 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 
 	// Resolve the app slug using the same order as the rest of the CLI:
 	//   1. --app flag (stored in the package-level appSlugOrID)
-	//   2. default app set via `replicated default app <slug>` (cache.DefaultApp)
-	//   3. REPLICATED_APP env var
-	appSlug := appSlugOrID
-	if appSlug == "" && cache != nil {
-		appSlug = cache.DefaultApp
-	}
+	//   2. REPLICATED_APP env var
+	//   3. .replicated file in cwd (or parent directories)
+	//   4. default app set via `replicated default app <slug>` (cache.DefaultApp)
+	appSlug := resolveAppSlugOrID(appSlugOrID)
 	if appSlug == "" {
-		appSlug = os.Getenv("REPLICATED_APP")
-	}
-	if appSlug == "" {
-		return errors.New("app required: pass --app, set REPLICATED_APP, or set a default with `replicated default app <slug>`")
+		return errors.New("app required: pass --app, set REPLICATED_APP, create a .replicated file, or set a default with `replicated default app <slug>`")
 	}
 
 	// Resolve the API token using the same sources the rest of the CLI uses:
