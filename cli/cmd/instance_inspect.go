@@ -20,7 +20,6 @@ func (r *runners) InitInstanceInspectCommand(parent *cobra.Command) *cobra.Comma
 	cmd.Flags().StringVar(&r.args.instanceInspectCustomer, "customer", "", "Customer Name or ID")
 	cmd.Flags().StringVar(&r.args.instanceInspectInstance, "instance", "", "Instance Name or ID")
 
-
 	return cmd
 }
 

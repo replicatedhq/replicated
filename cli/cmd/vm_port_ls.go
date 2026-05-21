@@ -28,7 +28,6 @@ replicated vm port ls VM_ID_OR_NAME --output wide`,
 	}
 	parent.AddCommand(cmd)
 
-
 	return cmd
 }
 

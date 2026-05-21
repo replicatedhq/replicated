@@ -89,7 +89,6 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
-
 	_ = cmd.MarkFlagRequired("distribution")
 
 	return cmd

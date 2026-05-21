@@ -21,7 +21,6 @@ func (r *runners) InitCollectionCreate(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.modelCollectionCreateName, "name", "", "The name of the collection")
 	cmd.MarkFlagRequired("name")
 
-
 	return cmd
 }
 

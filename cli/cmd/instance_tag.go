@@ -20,7 +20,6 @@ func (r *runners) InitInstanceTagCommand(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.instanceTagInstacne, "instance", "", "Instance Name or ID")
 	cmd.Flags().StringArrayVar(&r.args.instanceTagTags, "tag", []string{}, "Tags to apply to instance. Leave value empty to remove tag. Tags not specified will not be removed.")
 
-
 	return cmd
 }
 

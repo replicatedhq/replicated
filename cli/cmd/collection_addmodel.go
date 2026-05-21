@@ -22,7 +22,6 @@ func (r *runners) InitCollectionAddModel(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.modelCollectionAddModelCollectionID, "collection-id", "", "The ID of the collection")
 	cmd.MarkFlagRequired("collection-id")
 
-
 	return cmd
 }
 

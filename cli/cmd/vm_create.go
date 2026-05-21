@@ -90,7 +90,6 @@ ssh -i /tmp/ci_key $(replicated vm ssh-endpoint my-vm --username ci)`,
 
 	cmd.Flags().BoolVar(&r.args.createVMDryRun, "dry-run", false, "Dry run")
 
-
 	_ = cmd.MarkFlagRequired("distribution")
 
 	return cmd

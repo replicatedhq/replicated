@@ -34,7 +34,6 @@ replicated cluster update nodegroup CLUSTER_ID_OR_NAME --nodegroup-id NODEGROUP_
 	cmd.Flags().StringVar(&r.args.updateClusterNodeGroupMinCount, "min-nodes", "", "The minimum number of nodes in the nodegroup")
 	cmd.Flags().StringVar(&r.args.updateClusterNodeGroupMaxCount, "max-nodes", "", "The maximum number of nodes in the nodegroup")
 
-
 	return cmd
 }
 

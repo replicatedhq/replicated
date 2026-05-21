@@ -42,8 +42,6 @@ func (r *runners) InitReleaseLint(parent *cobra.Command) {
 	// New flags (for local lint - when flag=1)
 	cmd.Flags().BoolVarP(&r.args.lintVerbose, "verbose", "v", false, "Show detailed output including extracted container images (local lint only)")
 
-
-
 	cmd.Flags().MarkHidden("chart")
 
 	cmd.RunE = r.releaseLint

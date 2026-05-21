@@ -18,7 +18,6 @@ func (r *runners) InitCollectionRemove(parent *cobra.Command) *cobra.Command {
 	}
 	parent.AddCommand(cmd)
 
-
 	return cmd
 }
 

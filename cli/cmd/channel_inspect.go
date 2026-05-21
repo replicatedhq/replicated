@@ -16,7 +16,6 @@ func (r *runners) InitChannelInspect(parent *cobra.Command) {
 	}
 	parent.AddCommand(cmd)
 
-
 	cmd.RunE = r.channelInspect
 }
 

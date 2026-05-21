@@ -27,7 +27,6 @@ replicated cluster port ls CLUSTER_ID_OR_NAME --output wide`,
 	}
 	parent.AddCommand(cmd)
 
-
 	return cmd
 }
 

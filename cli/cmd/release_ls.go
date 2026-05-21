@@ -16,7 +16,6 @@ func (r *runners) IniReleaseList(parent *cobra.Command) {
 
 	parent.AddCommand(cmd)
 
-
 	cmd.RunE = r.releaseList
 }
 

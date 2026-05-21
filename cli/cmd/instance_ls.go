@@ -21,7 +21,6 @@ func (r *runners) InitInstanceLSCommand(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.instanceListCustomer, "customer", "", "Customer Name or ID")
 	cmd.Flags().StringArrayVar(&r.args.instanceListTags, "tag", []string{}, "Tags to use to filter instances (key=value format, can be specified multiple times). Only one tag needs to match (an OR operation)")
 
-
 	return cmd
 }
 

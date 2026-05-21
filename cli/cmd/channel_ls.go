@@ -16,7 +16,6 @@ func (r *runners) InitChannelList(parent *cobra.Command) {
 
 	parent.AddCommand(cmd)
 
-
 	cmd.RunE = r.channelList
 }
 

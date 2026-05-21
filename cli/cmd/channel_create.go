@@ -18,7 +18,6 @@ func (r *runners) InitChannelCreate(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.channelCreateName, "name", "", "The name of this channel")
 	cmd.Flags().StringVar(&r.args.channelCreateDescription, "description", "", "A longer description of this channel")
 
-
 	cmd.RunE = r.channelCreate
 }
 

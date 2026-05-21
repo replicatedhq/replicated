@@ -32,7 +32,6 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 
 	cmd.Flags().BoolVar(&r.args.createNetworkDryRun, "dry-run", false, "Dry run")
 
-
 	return cmd
 }
 
