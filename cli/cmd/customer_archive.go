@@ -73,7 +73,7 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error 
 
 		if c == nil {
 			// try to get the customer as if we have a name
-			cc, err := r.api.GetCustomerByName(r.appSlug, customer)
+			cc, err := r.api.GetCustomerByName(r.appID, customer)
 			if err != nil {
 				return errors.Wrapf(err, "find customer %q", customer)
 			}
