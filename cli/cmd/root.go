@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 	"text/tabwriter"
 
 	"github.com/Masterminds/sprig/v3"
@@ -36,9 +35,6 @@ var (
 	profileNameFlag string
 	platformOrigin  = "https://api.replicated.com/vendor"
 	kurlDotSHOrigin = "https://kurl.sh"
-	cacheInstance   *replicatedcache.Cache
-	cacheOnce       sync.Once
-	cacheErr        error
 	debugFlag       bool
 )
 
@@ -53,19 +49,6 @@ func init() {
 		debugFlag = true
 		version.SetDebugMode(true)
 	}
-}
-
-// getCache returns the singleton cache instance, initializing it on first call.
-// This lazy initialization ensures that commands like 'completion' which don't
-// need the cache won't fail when HOME is not writable (e.g., during Nix builds).
-func getCache() (*replicatedcache.Cache, error) {
-	cacheOnce.Do(func() {
-		cacheInstance, cacheErr = replicatedcache.InitCache()
-	})
-	if cacheErr != nil {
-		return nil, cacheErr
-	}
-	return cacheInstance, nil
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -456,7 +439,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			return errors.Wrap(err, "set up APIs")
 		}
 
-		cache, err := getCache()
+		cache, err := replicatedcache.GetInstance()
 		if err != nil {
 			return errors.Wrap(err, "initialize cache")
 		}

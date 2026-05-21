@@ -3,9 +3,9 @@ package cmd
 import (
 	"bytes"
 	"os"
-	"sync"
 	"testing"
 
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/spf13/cobra"
 )
 
@@ -23,14 +23,8 @@ func TestShellCompletionsNoHome(t *testing.T) {
 	}()
 
 	// Reset the lazy cache state so this test doesn't interfere with others.
-	cacheOnce = sync.Once{}
-	cacheInstance = nil
-	cacheErr = nil
-	defer func() {
-		cacheOnce = sync.Once{}
-		cacheInstance = nil
-		cacheErr = nil
-	}()
+	replicatedcache.ResetForTesting()
+	defer replicatedcache.ResetForTesting()
 
 	parentCmd := &cobra.Command{
 		Use: "replicated",

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ replicated default clear app`,
 }
 
 func (r *runners) clearDefault(cmd *cobra.Command, defaultType string) error {
-	cache, err := getCache()
+	cache, err := replicatedcache.GetInstance()
 	if err != nil {
 		return errors.Wrap(err, "initialize cache")
 	}
