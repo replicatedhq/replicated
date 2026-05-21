@@ -376,6 +376,9 @@ func customerToPreviewLicense(app *types.App, c types.Customer) previewLicense {
 		IsEmbeddedClusterDownloadEnabled:  c.IsEmbeddedClusterDownloadEnabled,
 		IsEmbeddedClusterMultiNodeEnabled: c.IsEmbeddedClusterMultinodeEnabled,
 		IsKotsInstallEnabled:              c.IsKotsInstallEnabled,
+		IsHelmInstallEnabled:              c.IsHelmInstallEnabled,
+		IsKurlInstallEnabled:              c.IsKurlInstallEnabled,
+		IsHelmAirgapEnabled:               c.IsHelmAirgapEnabled,
 		EntitlementFields:                 []previewEntitlementField{},
 		EntitlementValues:                 values,
 	}
