@@ -5,6 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -40,6 +41,11 @@ replicated default show app
 }
 
 func (r *runners) showDefault(cmd *cobra.Command, defaultType string, outputFormat string) error {
+	cache, err := replicatedcache.GetInstance()
+	if err != nil {
+		return errors.Wrap(err, "initialize cache")
+	}
+
 	defaultValue, err := cache.GetDefault(defaultType)
 	if err != nil {
 		return errors.Wrap(err, "get default value")

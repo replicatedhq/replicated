@@ -1,6 +1,10 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
+	"github.com/spf13/cobra"
+)
 
 func (r *runners) InitDefaultClearAllCommand(parent *cobra.Command) *cobra.Command {
 	cmd := &cobra.Command{
@@ -22,6 +26,11 @@ replicated default clear-all`,
 }
 
 func (r *runners) clearAllDefaults(cmd *cobra.Command) error {
+	cache, err := replicatedcache.GetInstance()
+	if err != nil {
+		return errors.Wrap(err, "initialize cache")
+	}
+
 	if err := cache.ClearDefault("app"); err != nil {
 		return err
 	}

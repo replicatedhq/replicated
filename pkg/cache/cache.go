@@ -4,12 +4,39 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/adrg/xdg"
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
+
+var (
+	instance    *Cache
+	instanceErr error
+	once        sync.Once
+)
+
+// GetInstance returns the singleton cache instance, initializing it on first
+// call. Lazy initialization ensures commands that don't need the cache (e.g.
+// 'completion') won't fail when HOME is not writable.
+func GetInstance() (*Cache, error) {
+	once.Do(func() {
+		instance, instanceErr = InitCache()
+	})
+	if instanceErr != nil {
+		return nil, instanceErr
+	}
+	return instance, nil
+}
+
+// ResetForTesting resets the singleton so tests can control cache state.
+func ResetForTesting() {
+	once = sync.Once{}
+	instance = nil
+	instanceErr = nil
+}
 
 const cacheFileName = "replicated.cache"
 

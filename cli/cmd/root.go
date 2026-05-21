@@ -35,7 +35,6 @@ var (
 	profileNameFlag string
 	platformOrigin  = "https://api.replicated.com/vendor"
 	kurlDotSHOrigin = "https://kurl.sh"
-	cache           *replicatedcache.Cache
 	debugFlag       bool
 )
 
@@ -44,12 +43,6 @@ func init() {
 	if originFromEnv != "" {
 		platformOrigin = originFromEnv
 	}
-
-	c, err := replicatedcache.InitCache()
-	if err != nil {
-		panic(err)
-	}
-	cache = c
 
 	// Set debug mode from environment variable
 	if os.Getenv("REPLICATED_DEBUG") == "1" || os.Getenv("REPLICATED_DEBUG") == "true" {
@@ -444,6 +437,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		if err = preRunSetupAPIs(cmd, args); err != nil {
 			return errors.Wrap(err, "set up APIs")
+		}
+
+		cache, err := replicatedcache.GetInstance()
+		if err != nil {
+			return errors.Wrap(err, "initialize cache")
 		}
 
 		if appSlugOrID == "" {

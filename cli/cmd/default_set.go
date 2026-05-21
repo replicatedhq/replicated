@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/cli/print"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -42,6 +43,11 @@ func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValu
 		app, err := getApp(defaultValue, r.api.KotsClient)
 		if err != nil {
 			return errors.Wrap(err, "get app")
+		}
+
+		cache, err := replicatedcache.GetInstance()
+		if err != nil {
+			return errors.Wrap(err, "initialize cache")
 		}
 
 		if err := cache.SetDefault(defaultType, defaultValue); err != nil {

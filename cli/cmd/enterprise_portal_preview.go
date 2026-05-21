@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
@@ -106,8 +107,11 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 	//   2. default app set via `replicated default app <slug>` (cache.DefaultApp)
 	//   3. REPLICATED_APP env var
 	appSlug := appSlugOrID
-	if appSlug == "" && cache != nil {
-		appSlug = cache.DefaultApp
+	if appSlug == "" {
+		cache, err := replicatedcache.GetInstance()
+		if err == nil && cache != nil {
+			appSlug = cache.DefaultApp
+		}
 	}
 	if appSlug == "" {
 		appSlug = os.Getenv("REPLICATED_APP")

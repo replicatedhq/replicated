@@ -4,11 +4,17 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	replicatedcache "github.com/replicatedhq/replicated/pkg/cache"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
 func getApp(appSlugOrID string, kotsClient *kotsclient.VendorV3Client) (*types.App, error) {
+	cache, err := replicatedcache.GetInstance()
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize cache")
+	}
+
 	app, err := cache.GetApp(appSlugOrID)
 	if err == nil && app != nil {
 		return app, nil
