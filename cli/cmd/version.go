@@ -15,6 +15,8 @@ func (r *runners) Version() *cobra.Command {
 		Short: "Print the current version and exit",
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			r.resolveOutputFormat(cmd)
+
 			currentVersion := version.Version()
 
 			// For version command, do a synchronous update check
