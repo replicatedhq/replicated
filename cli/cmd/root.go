@@ -486,7 +486,19 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			return errors.Wrap(err, "set up APIs")
 		}
 
-		appSlugOrID = resolveAppSlugOrID(appSlugOrID)
+		// release lint reads .replicated independently for lint configuration
+		// (charts, manifests, linters) and doesn't need app context. Skip .replicated
+		// app resolution here to avoid unnecessary API calls when running local lint.
+		if cmd.Name() == "lint" && cmd.Parent() != nil && cmd.Parent().Name() == "release" {
+			if appSlugOrID == "" {
+				appSlugOrID = os.Getenv("REPLICATED_APP")
+			}
+			if appSlugOrID == "" && cache.DefaultApp != "" {
+				appSlugOrID = cache.DefaultApp
+			}
+		} else {
+			appSlugOrID = resolveAppSlugOrID(appSlugOrID)
+		}
 
 		// attempt to load the app from cache
 		if appSlugOrID != "" {
