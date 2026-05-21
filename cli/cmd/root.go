@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"text/tabwriter"
 
 	"github.com/Masterminds/sprig/v3"
@@ -35,7 +36,9 @@ var (
 	profileNameFlag string
 	platformOrigin  = "https://api.replicated.com/vendor"
 	kurlDotSHOrigin = "https://kurl.sh"
-	cache           *replicatedcache.Cache
+	cacheInstance   *replicatedcache.Cache
+	cacheOnce       sync.Once
+	cacheErr        error
 	debugFlag       bool
 )
 
@@ -45,17 +48,24 @@ func init() {
 		platformOrigin = originFromEnv
 	}
 
-	c, err := replicatedcache.InitCache()
-	if err != nil {
-		panic(err)
-	}
-	cache = c
-
 	// Set debug mode from environment variable
 	if os.Getenv("REPLICATED_DEBUG") == "1" || os.Getenv("REPLICATED_DEBUG") == "true" {
 		debugFlag = true
 		version.SetDebugMode(true)
 	}
+}
+
+// getCache returns the singleton cache instance, initializing it on first call.
+// This lazy initialization ensures that commands like 'completion' which don't
+// need the cache won't fail when HOME is not writable (e.g., during Nix builds).
+func getCache() (*replicatedcache.Cache, error) {
+	cacheOnce.Do(func() {
+		cacheInstance, cacheErr = replicatedcache.InitCache()
+	})
+	if cacheErr != nil {
+		return nil, cacheErr
+	}
+	return cacheInstance, nil
 }
 
 // RootCmd represents the base command when called without any subcommands
@@ -444,6 +454,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		if err = preRunSetupAPIs(cmd, args); err != nil {
 			return errors.Wrap(err, "set up APIs")
+		}
+
+		cache, err := getCache()
+		if err != nil {
+			return errors.Wrap(err, "initialize cache")
 		}
 
 		if appSlugOrID == "" {

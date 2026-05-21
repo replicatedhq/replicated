@@ -9,6 +9,11 @@ import (
 )
 
 func getApp(appSlugOrID string, kotsClient *kotsclient.VendorV3Client) (*types.App, error) {
+	cache, err := getCache()
+	if err != nil {
+		return nil, errors.Wrap(err, "initialize cache")
+	}
+
 	app, err := cache.GetApp(appSlugOrID)
 	if err == nil && app != nil {
 		return app, nil

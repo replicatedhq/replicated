@@ -44,6 +44,11 @@ func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValu
 			return errors.Wrap(err, "get app")
 		}
 
+		cache, err := getCache()
+		if err != nil {
+			return errors.Wrap(err, "initialize cache")
+		}
+
 		if err := cache.SetDefault(defaultType, defaultValue); err != nil {
 			return errors.Wrap(err, "set default in cache")
 		}

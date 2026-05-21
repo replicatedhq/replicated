@@ -106,8 +106,11 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 	//   2. default app set via `replicated default app <slug>` (cache.DefaultApp)
 	//   3. REPLICATED_APP env var
 	appSlug := appSlugOrID
-	if appSlug == "" && cache != nil {
-		appSlug = cache.DefaultApp
+	if appSlug == "" {
+		cache, err := getCache()
+		if err == nil && cache != nil {
+			appSlug = cache.DefaultApp
+		}
 	}
 	if appSlug == "" {
 		appSlug = os.Getenv("REPLICATED_APP")

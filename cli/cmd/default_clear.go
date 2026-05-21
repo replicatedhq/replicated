@@ -29,6 +29,11 @@ replicated default clear app`,
 }
 
 func (r *runners) clearDefault(cmd *cobra.Command, defaultType string) error {
+	cache, err := getCache()
+	if err != nil {
+		return errors.Wrap(err, "initialize cache")
+	}
+
 	if err := cache.ClearDefault(defaultType); err != nil {
 		return errors.Wrap(err, "clear default")
 	}

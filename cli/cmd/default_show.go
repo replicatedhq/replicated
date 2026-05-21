@@ -40,6 +40,11 @@ replicated default show app
 }
 
 func (r *runners) showDefault(cmd *cobra.Command, defaultType string, outputFormat string) error {
+	cache, err := getCache()
+	if err != nil {
+		return errors.Wrap(err, "initialize cache")
+	}
+
 	defaultValue, err := cache.GetDefault(defaultType)
 	if err != nil {
 		return errors.Wrap(err, "get default value")
