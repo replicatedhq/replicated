@@ -72,6 +72,9 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error 
 		}
 
 		if c == nil {
+			if !r.hasApp() {
+				return errors.New("no app specified: app is required when looking up customers by name")
+			}
 			// try to get the customer as if we have a name
 			cc, err := r.api.GetCustomerByName(r.appID, customer)
 			if err != nil {
