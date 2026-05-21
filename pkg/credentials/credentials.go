@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"github.com/replicatedhq/replicated/pkg/cmxmetadata"
 	"github.com/replicatedhq/replicated/pkg/credentials/types"
 )
@@ -341,8 +342,19 @@ func GetDefaultProfile() (string, error) {
 	return config.DefaultProfile, nil
 }
 
+// configFilePath returns the path to the config file.
+// It follows the XDG Base Directory specification with backward compatibility:
+// 1. If the legacy config file (~/.replicated/config.yaml) exists, use it
+// 2. Otherwise, use the XDG-compliant path (e.g., ~/.config/replicated/config.yaml on Linux)
 func configFilePath() string {
-	return filepath.Join(homeDir(), ".replicated", "config.yaml")
+	// Check for legacy config file first (backward compatibility)
+	legacyPath := filepath.Join(homeDir(), ".replicated", "config.yaml")
+	if _, err := os.Stat(legacyPath); err == nil {
+		return legacyPath
+	}
+
+	// Use XDG-compliant path for new installations
+	return filepath.Join(xdg.ConfigHome, "replicated", "config.yaml")
 }
 
 func homeDir() string {

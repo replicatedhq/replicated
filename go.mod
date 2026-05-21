@@ -3,6 +3,7 @@ module github.com/replicatedhq/replicated
 go 1.26.1
 
 require (
+	github.com/adrg/xdg v0.5.3
 	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/bmatcuk/doublestar/v4 v4.9.1

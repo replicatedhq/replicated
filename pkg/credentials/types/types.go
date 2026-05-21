@@ -28,7 +28,12 @@ type Profile struct {
 	Namespace string `json:"namespace,omitempty"`
 }
 
-// ConfigFile represents the structure of ~/.replicated/config.yaml
+// ConfigFile represents the structure of the replicated config file.
+// The config file location follows the XDG Base Directory specification:
+// - Linux: ~/.config/replicated/config.yaml
+// - macOS: ~/Library/Application Support/replicated/config.yaml
+// - Windows: %LOCALAPPDATA%\replicated\config.yaml
+// For backward compatibility, if ~/.replicated/config.yaml exists, it will be used instead.
 type ConfigFile struct {
 	// Legacy single token (for backward compatibility)
 	Token string `json:"token,omitempty"`
