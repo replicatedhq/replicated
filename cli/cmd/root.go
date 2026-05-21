@@ -142,8 +142,8 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 	channelCmd := &cobra.Command{
 		Use:   "channel",
-		Short: "List channels",
-		Long:  "List channels",
+		Short: "Manage channels",
+		Long:  `The channel command allows vendors to create, manage, and inspect their channels.`,
 	}
 	releaseCmd := &cobra.Command{
 		Use:   "release",
