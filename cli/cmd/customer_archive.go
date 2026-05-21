@@ -51,15 +51,11 @@ replicated customer archive --app myapp "Acme Inc"`,
 	return cmd
 }
 func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error {
-	if !r.hasApp() {
-		return errors.New("no app specified")
-	}
-
 	if len(customers) == 0 {
 		return errors.Errorf("missing or invalid parameters: customer")
 	}
 
-	if r.appType == "platform" {
+	if r.hasApp() && r.appType == "platform" {
 		return errors.New("archiving customers is not supported for platform applications")
 	}
 
