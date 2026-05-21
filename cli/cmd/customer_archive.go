@@ -8,10 +8,7 @@ import (
 )
 
 func (r *runners) InitCustomersArchiveCommand(parent *cobra.Command) *cobra.Command {
-	var (
-		customer string
-		app      string
-	)
+	var customer string
 
 	cmd := &cobra.Command{
 		Use:   "archive <customer_name_or_id>",
@@ -43,18 +40,17 @@ replicated customer archive --app myapp "Acme Inc"`,
 				customers = args
 			}
 
-			return r.archiveCustomer(cmd, customers, app)
+			return r.archiveCustomer(cmd, customers)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&customer, "customer", "", "The Customer Name or ID to archive")
 	cmd.Flags().MarkHidden("customer")
-	cmd.Flags().StringVar(&app, "app", "", "The app to archive the customer in (not required when using a customer id)")
 
 	return cmd
 }
-func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app string) error {
+func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
@@ -81,7 +77,7 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string, app st
 
 		if c == nil {
 			// try to get the customer as if we have a name
-			cc, err := r.api.GetCustomerByName(app, customer)
+			cc, err := r.api.GetCustomerByName(r.appSlug, customer)
 			if err != nil {
 				return errors.Wrapf(err, "find customer %q", customer)
 			}
