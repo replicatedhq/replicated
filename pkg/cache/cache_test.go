@@ -44,6 +44,25 @@ func TestGetCacheDir_XDGPath(t *testing.T) {
 	assert.NotEqual(t, filepath.Join(tempHome, ".replicated", "cache"), cacheDir)
 }
 
+func TestGetCacheDir_XDGPathWithoutHome(t *testing.T) {
+	tempCache := t.TempDir()
+	originalHome := os.Getenv("HOME")
+	originalXDGCacheHome := os.Getenv("XDG_CACHE_HOME")
+	defer func() {
+		os.Setenv("HOME", originalHome)
+		os.Setenv("XDG_CACHE_HOME", originalXDGCacheHome)
+		xdg.Reload()
+	}()
+
+	os.Unsetenv("HOME")
+	os.Setenv("XDG_CACHE_HOME", tempCache)
+	xdg.Reload()
+
+	cacheDir, err := getCacheDir()
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tempCache, "replicated"), cacheDir)
+}
+
 func TestInitCache_XDGPath(t *testing.T) {
 	tempHome := t.TempDir()
 	originalHome := os.Getenv("HOME")

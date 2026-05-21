@@ -95,13 +95,11 @@ func loadCache(path string) (*Cache, error) {
 
 func getCacheDir() (string, error) {
 	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get user home directory")
-	}
-
-	legacyDir := filepath.Join(homeDir, ".replicated", "cache")
-	if _, err := os.Stat(legacyDir); err == nil {
-		return legacyDir, nil
+	if err == nil {
+		legacyDir := filepath.Join(homeDir, ".replicated", "cache")
+		if _, err := os.Stat(legacyDir); err == nil {
+			return legacyDir, nil
+		}
 	}
 
 	return filepath.Join(xdg.CacheHome, "replicated"), nil
