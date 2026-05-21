@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/creack/pty"
@@ -160,8 +162,8 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 		fmt.Println("Exiting Compatibility Matrix Shell (this will reset your kubeconfig back to default)")
 	}()
 
-	// Setup the shell
-	setupCmd := fmt.Sprintf("export KUBECONFIG=%s\n", tmpFile.Name())
+	// Setup the shell with the appropriate KUBECONFIG command based on shell type
+	setupCmd := getShellSetupCommand(shellCmd, tmpFile.Name())
 	_, _ = io.WriteString(shellPty, setupCmd)
 	_, _ = io.CopyN(io.Discard, shellPty, 2*int64(len(setupCmd))) // Don't print to screen, terminal will echo anyway
 
@@ -171,4 +173,23 @@ func (r *runners) shellCluster(_ *cobra.Command, args []string) error {
 
 	_ = shellExec.Wait()
 	return nil
+}
+
+// getShellSetupCommand returns the appropriate command to set KUBECONFIG
+// based on the detected shell type.
+func getShellSetupCommand(shellCmd, kubeconfigPath string) string {
+	shellName := filepath.Base(shellCmd)
+
+	// Nushell uses $env.VAR = "value" syntax
+	if strings.HasSuffix(shellName, "nu") {
+		return fmt.Sprintf("$env.KUBECONFIG = \"%s\"\n", kubeconfigPath)
+	}
+
+	// Fish shell uses set -x syntax
+	if shellName == "fish" {
+		return fmt.Sprintf("set -x KUBECONFIG %s\n", kubeconfigPath)
+	}
+
+	// Default to POSIX export syntax (bash, zsh, etc.)
+	return fmt.Sprintf("export KUBECONFIG=%s\n", kubeconfigPath)
 }
