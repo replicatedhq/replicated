@@ -9,9 +9,10 @@ import (
 
 func (r *runners) InitChannelCounts(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "counts CHANNEL_ID",
-		Short: "Print channel license counts",
-		Long:  "Print channel license counts",
+		Use:          "counts CHANNEL_ID",
+		Short:        "Print channel license counts",
+		Long:         "Print channel license counts",
+		SilenceUsage: true,
 	}
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)

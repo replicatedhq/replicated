@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -102,10 +103,33 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		return errors.Wrapf(err, "failed to promote release")
 	}
 
-	fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
+	if r.outputFormat == "json" {
+		log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
+		log.Silence()
+
+		out := struct {
+			Channel         string `json:"channel"`
+			ReleaseSequence int64  `json:"release_sequence"`
+			VersionLabel    string `json:"version_label"`
+		}{
+			Channel:         newID,
+			ReleaseSequence: seq,
+			VersionLabel:    r.args.releaseVersion,
+		}
+		enc := json.NewEncoder(r.w)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(out); err != nil {
+			return errors.Wrap(err, "encode json output")
+		}
+	} else {
+		fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
+	}
 
 	if r.appType == "kots" && r.args.releasePromoteWaitForAirgap {
 		log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
+		if r.outputFormat == "json" {
+			log.Silence()
+		}
 		if err := r.waitForAirgapBuilds(promoteResp, r.args.releasePromoteWaitForAirgapTimeout, log); err != nil {
 			return err
 		}

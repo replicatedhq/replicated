@@ -29,6 +29,7 @@ var (
 // This is a singleton that's reused for all requests to avoid leaking connections.
 var httpClient = &http.Client{
 	Transport: &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 			// Check if the address is a .localhost domain
 			host, port, err := net.SplitHostPort(addr)
