@@ -10,12 +10,17 @@ import (
 )
 
 func (r *runners) Version() *cobra.Command {
+	var versionJson bool
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the current version and exit",
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			r.resolveOutputFormat(cmd)
+
+			if cmd.Flags().Changed("json") {
+				r.outputFormat = "json"
+			}
 
 			currentVersion := version.Version()
 
@@ -62,6 +67,9 @@ func (r *runners) Version() *cobra.Command {
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVar(&versionJson, "json", false, "output version info in json")
+	_ = cmd.Flags().MarkDeprecated("json", "use --output json instead")
 
 	cmd.AddCommand(versionUpgradeCmd())
 
