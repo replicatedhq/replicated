@@ -486,10 +486,13 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			return errors.Wrap(err, "set up APIs")
 		}
 
-		// release lint reads .replicated independently for lint configuration
-		// (charts, manifests, linters) and doesn't need app context. Skip .replicated
-		// app resolution here to avoid unnecessary API calls when running local lint.
-		if cmd.Name() == "lint" && cmd.Parent() != nil && cmd.Parent().Name() == "release" {
+		// release lint with REPLICATED_RELEASE_VALIDATION_V2=1 (local lint) reads
+		// .replicated independently for lint config and doesn't need app context.
+		// Skip .replicated app resolution only in that specific case to avoid
+		// unnecessary API calls when the app slug in .replicated doesn't exist.
+		isV2Lint := cmd.Name() == "lint" && cmd.Parent() != nil && cmd.Parent().Name() == "release" &&
+			os.Getenv("REPLICATED_RELEASE_VALIDATION_V2") == "1"
+		if isV2Lint {
 			if appSlugOrID == "" {
 				appSlugOrID = os.Getenv("REPLICATED_APP")
 			}
