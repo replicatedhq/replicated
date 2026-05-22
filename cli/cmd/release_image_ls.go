@@ -126,7 +126,7 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	}
 
 	// Print images
-	return print.ChannelImages(r.w, images)
+	return print.ChannelImages(r.outputFormat, r.w, images)
 }
 
 func cleanImageName(image string, proxyRegistryDomain string) string {
