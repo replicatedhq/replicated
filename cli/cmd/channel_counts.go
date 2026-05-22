@@ -35,7 +35,7 @@ func (r *runners) channelCounts(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if err = print.LicenseCounts(r.w, appChan.LicenseCounts); err != nil {
+		if err = print.LicenseCounts(r.outputFormat, r.w, appChan.LicenseCounts); err != nil {
 			return err
 		}
 	} else if r.appType == "kots" {
