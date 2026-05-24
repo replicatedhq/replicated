@@ -16,6 +16,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/credentials"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/replicatedhq/replicated/pkg/version"
 	"github.com/spf13/cobra"
@@ -99,6 +100,45 @@ Additional help topics:{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
 
 Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
 `
+
+// resolveAppFromConfig looks for a .replicated config file in the current directory
+// and walks up the tree to find an app slug or app id.
+func resolveAppFromConfig() string {
+	parser := tools.NewConfigParser()
+	config, err := parser.FindAndParseConfig(".")
+	if err != nil {
+		return ""
+	}
+	if config.AppSlug != "" {
+		return config.AppSlug
+	}
+	return config.AppId
+}
+
+// resolveAppSlugOrID returns the app slug or ID to use, following the precedence:
+// 1. Explicit --app flag value
+// 2. REPLICATED_APP environment variable
+// 3. .replicated file in cwd (or parent directories)
+// 4. Cached default app
+func resolveAppSlugOrID(flagValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+
+	if v := os.Getenv("REPLICATED_APP"); v != "" {
+		return v
+	}
+
+	if v := resolveAppFromConfig(); v != "" {
+		return v
+	}
+
+	if cache.DefaultApp != "" {
+		return cache.DefaultApp
+	}
+
+	return ""
+}
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -446,14 +486,21 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			return errors.Wrap(err, "set up APIs")
 		}
 
-		if appSlugOrID == "" {
-			if cache.DefaultApp != "" {
+		// release lint with REPLICATED_RELEASE_VALIDATION_V2=1 (local lint) reads
+		// .replicated independently for lint config and doesn't need app context.
+		// Skip .replicated app resolution only in that specific case to avoid
+		// unnecessary API calls when the app slug in .replicated doesn't exist.
+		isV2Lint := cmd.Name() == "lint" && cmd.Parent() != nil && cmd.Parent().Name() == "release" &&
+			os.Getenv("REPLICATED_RELEASE_VALIDATION_V2") == "1"
+		if isV2Lint {
+			if appSlugOrID == "" {
+				appSlugOrID = os.Getenv("REPLICATED_APP")
+			}
+			if appSlugOrID == "" && cache.DefaultApp != "" {
 				appSlugOrID = cache.DefaultApp
 			}
-		}
-
-		if appSlugOrID == "" {
-			appSlugOrID = os.Getenv("REPLICATED_APP")
+		} else {
+			appSlugOrID = resolveAppSlugOrID(appSlugOrID)
 		}
 
 		// attempt to load the app from cache

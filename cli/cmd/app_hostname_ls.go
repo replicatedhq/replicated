@@ -8,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/logger"
-	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
@@ -49,17 +48,10 @@ replicated app hostname ls --app myapp --output json`,
 				}
 			}
 
-			// Load app from .replicated config if not provided via --app flag
-			if r.appSlug == "" && r.appID == "" {
-				parser := tools.NewConfigParser()
-				config, err := parser.FindAndParseConfig(".")
-				if err == nil && (config.AppSlug != "" || config.AppId != "") {
-					if config.AppSlug != "" {
-						r.appSlug = config.AppSlug
-					} else if config.AppId != "" {
-						r.appID = config.AppId
-					}
-				}
+			// Resolve app using full precedence: --app flag > REPLICATED_APP > .replicated > cache default
+			resolved := resolveAppSlugOrID(appSlugOrID)
+			if resolved != "" {
+				r.appSlug = resolved
 			}
 			return nil
 		},
