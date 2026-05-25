@@ -48,7 +48,6 @@ replicated network update NETWORK_ID --policy airgap --collect-report
 
 	cmd.Flags().StringVarP(&r.args.updateNetworkPolicy, "policy", "p", "", "Update network policy setting")
 	cmd.Flags().BoolVarP(&r.args.updateNetworkCollectReport, "collect-report", "r", false, "Enable report collection on this network (use --collect-report=false to disable)")
-	cmd.Flags().StringVar(&r.outputFormat, "output", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }
