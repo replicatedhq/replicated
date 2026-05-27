@@ -240,12 +240,10 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// Check if we should use config-based flow (no explicit source flags provided)
-	// Note: --auto flag will set yaml-dir later, so don't use config flow when --auto is specified
 	useConfigFlow := r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" &&
-		r.args.createReleaseChart == "" &&
-		!r.args.createReleaseAutoDefaults
+		r.args.createReleaseChart == ""
 
 	var config *tools.Config
 	var stagingDir string
@@ -253,49 +251,54 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 	if useConfigFlow {
 		// Try to find and parse .replicated config
 		parser := tools.NewConfigParser()
-		var configErr error
-		config, configErr = parser.FindAndParseConfig(".")
-		if configErr != nil {
-			return errors.Wrap(configErr, "failed to find or parse .replicated config file")
-		}
+		config, _ = parser.FindAndParseConfig(".")
 
 		// Check if config has any charts or manifests configured
-		if len(config.Charts) == 0 && len(config.Manifests) == 0 {
+		if len(config.Charts) > 0 || len(config.Manifests) > 0 {
+			// Validate app ID/slug from config vs CLI flag
+			if err := r.validateAppFromConfig(config); err != nil {
+				return err
+			}
+
+			// After loading app from config, we need to re-resolve the app type
+			// because the prerun might have run with a different app (from cache/env) before we loaded the config
+			// Clear the appType to force a fresh resolution
+			r.appType = ""
+			if err := r.resolveAppType(); err != nil {
+				return errors.Wrap(err, "resolve app type from config")
+			}
+
+			// Defer cleanup of staging directory unless the user asked for the
+			// artifacts to be persisted (--output-dir) or to skip upload (--no-upload),
+			// in which case they likely want to inspect the staged files.
+			defer func() {
+				if stagingDir != "" && r.args.createReleaseOutputDir == "" && !r.args.createReleaseNoUpload {
+					os.RemoveAll(stagingDir)
+				}
+			}()
+		} else if !r.args.createReleaseAutoDefaults {
 			return errors.New("no charts or manifests configured in .replicated config file. Either configure them in .replicated or use --yaml-dir flag")
 		}
-
-		// Validate app ID/slug from config vs CLI flag
-		if err := r.validateAppFromConfig(config); err != nil {
-			return err
-		}
-
-		// After loading app from config, we need to re-resolve the app type
-		// because the prerun might have run with a different app (from cache/env) before we loaded the config
-		// Clear the appType to force a fresh resolution
-		r.appType = ""
-		if err := r.resolveAppType(); err != nil {
-			return errors.Wrap(err, "resolve app type from config")
-		}
-
-		// Defer cleanup of staging directory unless the user asked for the
-		// artifacts to be persisted (--output-dir) or to skip upload (--no-upload),
-		// in which case they likely want to inspect the staged files.
-		defer func() {
-			if stagingDir != "" && r.args.createReleaseOutputDir == "" && !r.args.createReleaseNoUpload {
-				os.RemoveAll(stagingDir)
-			}
-		}()
 	}
 
-	// When using config flow, we've already loaded and resolved the app
-	// For non-config flow, check if app was provided
-	if !useConfigFlow && !r.hasApp() {
+	hasConfigManifests := useConfigFlow && config != nil && (len(config.Charts) > 0 || len(config.Manifests) > 0)
+
+	// When using config flow with manifests, we've already loaded and resolved the app
+	// For non-config flow or auto without config manifests, check if app was provided
+	if !hasConfigManifests && !r.hasApp() {
 		return errors.New("no app specified")
 	}
 
 	if r.appType == "kots" && r.args.createReleaseAutoDefaults {
 		log.ActionWithSpinner("Reading Environment")
+
+		// Save yaml-dir so that config-based manifest paths are not overridden
+		savedYamlDir := r.args.createReleaseYamlDir
 		err = r.setKOTSDefaultReleaseParams()
+		if hasConfigManifests {
+			r.args.createReleaseYamlDir = savedYamlDir
+		}
+
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "resolve kots defaults")
@@ -332,12 +335,24 @@ Prepared to create release with defaults:
 		return errors.Wrap(err, "validate params")
 	}
 
+	// Handle config-based flow first so lint can operate on the staging directory
+	if hasConfigManifests {
+		fmt.Fprintln(r.w)
+		var err error
+		stagingDir, r.args.createReleaseYaml, err = r.createReleaseFromConfig(config, log)
+		if err != nil {
+			return errors.Wrap(err, "create release from config")
+		}
+	}
+
 	// Check if --lint argument has been passed in by the enduser
 	if r.args.createReleaseLint {
-		// Request lint release yaml directory to check
-		r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
+		if hasConfigManifests {
+			r.args.lintReleaseYamlDir = stagingDir
+		} else {
+			r.args.lintReleaseYamlDir = r.args.createReleaseYamlDir
+		}
 		r.args.lintReleaseChart = r.args.createReleaseChart
-		// Call release_lint.go releaseLint function
 		err = r.releaseLint(cmd, args)
 		if err != nil {
 			return errors.Wrap(err, "lint yaml")
@@ -374,16 +389,6 @@ Prepared to create release with defaults:
 		log.FinishSpinner()
 	}
 
-	// Handle config-based flow
-	if useConfigFlow && config != nil {
-		fmt.Fprintln(r.w)
-		var err error
-		stagingDir, r.args.createReleaseYaml, err = r.createReleaseFromConfig(config, log)
-		if err != nil {
-			return errors.Wrap(err, "create release from config")
-		}
-	}
-
 	if r.args.createReleaseChart != "" {
 		fmt.Fprint(r.w, "You are creating a release that will only be installable with the helm CLI.\n"+
 			"For more information, see \n"+
@@ -406,7 +411,7 @@ Prepared to create release with defaults:
 		if absErr != nil {
 			outDir = r.args.createReleaseOutputDir
 		}
-		if !useConfigFlow {
+		if !hasConfigManifests {
 			if err := resetOutputDir(outDir); err != nil {
 				return errors.Wrapf(err, "reset output-dir %s", outDir)
 			}

@@ -9,7 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestUseConfigFlow_WithAutoFlag tests that --auto flag prevents config-based flow
+// TestUseConfigFlow_WithAutoFlag tests that --auto flag still allows config-based flow
+// when no explicit source flags are provided
 func TestUseConfigFlow_WithAutoFlag(t *testing.T) {
 	r := &runners{
 		args: runnerArgs{
@@ -25,10 +26,9 @@ func TestUseConfigFlow_WithAutoFlag(t *testing.T) {
 	useConfigFlow := r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" &&
-		r.args.createReleaseChart == "" &&
-		!r.args.createReleaseAutoDefaults
+		r.args.createReleaseChart == ""
 
-	assert.False(t, useConfigFlow, "--auto flag should prevent config flow")
+	assert.True(t, useConfigFlow, "--auto flag should still allow config flow when no explicit source flags")
 }
 
 // TestUseConfigFlow_WithoutAutoFlag tests that config flow is used when no flags are provided
@@ -47,8 +47,7 @@ func TestUseConfigFlow_WithoutAutoFlag(t *testing.T) {
 	useConfigFlow := r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" &&
-		r.args.createReleaseChart == "" &&
-		!r.args.createReleaseAutoDefaults
+		r.args.createReleaseChart == ""
 
 	assert.True(t, useConfigFlow, "config flow should be used when no flags provided")
 }
@@ -65,8 +64,7 @@ func TestUseConfigFlow_WithYamlDir(t *testing.T) {
 	useConfigFlow := r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" &&
-		r.args.createReleaseChart == "" &&
-		!r.args.createReleaseAutoDefaults
+		r.args.createReleaseChart == ""
 
 	assert.False(t, useConfigFlow, "--yaml-dir flag should prevent config flow")
 }
@@ -83,8 +81,7 @@ func TestUseConfigFlow_WithAutoAndYamlDir(t *testing.T) {
 	useConfigFlow := r.args.createReleaseYaml == "" &&
 		r.args.createReleaseYamlFile == "" &&
 		r.args.createReleaseYamlDir == "" &&
-		r.args.createReleaseChart == "" &&
-		!r.args.createReleaseAutoDefaults
+		r.args.createReleaseChart == ""
 
 	assert.False(t, useConfigFlow, "--auto and --yaml-dir should prevent config flow")
 }
