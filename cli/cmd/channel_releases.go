@@ -25,7 +25,7 @@ replicated channel releases Stable --output json
 replicated channel releases Stable --page 1 --page-size 50`,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
+
 	cmd.Flags().IntVar(&r.args.channelReleasesPage, "page", 0, "The page to fetch (KOTS apps only).")
 	cmd.Flags().IntVar(&r.args.channelReleasesPageSize, "page-size", 0, "The number of releases per page (KOTS apps only).")
 

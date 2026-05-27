@@ -15,7 +15,6 @@ func (r *runners) InitChannelList(parent *cobra.Command) {
 	}
 
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.channelList
 }

@@ -89,8 +89,6 @@ replicated cluster create --distribution eks --version 1.21 --nodes 3 --addon ob
 
 	cmd.Flags().BoolVar(&r.args.createClusterDryRun, "dry-run", false, "Dry run")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
-
 	_ = cmd.MarkFlagRequired("distribution")
 
 	return cmd
@@ -205,7 +203,6 @@ func (r *runners) createAndWaitForAddons(clusterID string) error {
 			r.args.clusterAddonCreateObjectStoreClusterID = clusterID
 			r.args.clusterAddonCreateObjectStoreDryRun = r.args.createClusterDryRun
 			r.args.clusterAddonCreateObjectStoreDuration = r.args.createClusterWaitDuration
-			r.args.clusterAddonCreateObjectStoreOutput = r.outputFormat
 
 			err := r.clusterAddonCreateObjectStoreCreateRun()
 			if err != nil {

@@ -27,7 +27,6 @@ func (r *runners) InitRegistryAddDockerHub(parent *cobra.Command) *cobra.Command
 	cmd.Flags().BoolVar(&r.args.addRegistryTokenFromStdIn, "token-stdin", false, "Take the token from stdin")
 	cmd.Flags().StringVar(&r.args.addRegistryName, "name", "", "Name for the registry")
 	cmd.Flags().StringVar(&r.args.addRegistryAppIds, "app-ids", "", "Comma-separated list of app IDs to scope this registry to")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.RunE = r.registryAddDockerHub
 

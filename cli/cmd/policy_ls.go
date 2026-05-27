@@ -7,8 +7,6 @@ import (
 )
 
 func (r *runners) InitPolicyList(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:     "ls",
 		Aliases: []string{"list"},
@@ -20,21 +18,20 @@ func (r *runners) InitPolicyList(parent *cobra.Command) *cobra.Command {
   # List policies in JSON format
   replicated policy ls --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.policyList(outputFormat)
+			return r.policyList()
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }
 
-func (r *runners) policyList(outputFormat string) error {
+func (r *runners) policyList() error {
 	policies, err := r.kotsAPI.ListPolicies()
 	if err != nil {
 		return errors.Wrap(err, "list policies")
 	}
 
-	return print.Policies(outputFormat, r.w, policies)
+	return print.Policies(r.outputFormat, r.w, policies)
 }

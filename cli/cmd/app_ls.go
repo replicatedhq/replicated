@@ -11,8 +11,6 @@ import (
 )
 
 func (r *runners) InitAppList(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:     "ls [NAME]",
 		Aliases: []string{"list"},
@@ -39,24 +37,22 @@ replicated app ls --output json
 replicated app ls "App Name" --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			return r.listApps(ctx, cmd, args, outputFormat)
+			return r.listApps(ctx, cmd, args)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
 	return cmd
 }
 
-func (r *runners) listApps(ctx context.Context, cmd *cobra.Command, args []string, outputFormat string) error {
+func (r *runners) listApps(ctx context.Context, cmd *cobra.Command, args []string) error {
 	kotsApps, err := r.kotsAPI.ListApps(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "list apps")
 	}
 
 	if len(args) == 0 {
-		return print.Apps(outputFormat, r.w, kotsApps)
+		return print.Apps(r.outputFormat, r.w, kotsApps)
 	}
 
 	appSearch := args[0]
@@ -66,5 +62,5 @@ func (r *runners) listApps(ctx context.Context, cmd *cobra.Command, args []strin
 			resultApps = append(resultApps, app)
 		}
 	}
-	return print.Apps(outputFormat, r.w, resultApps)
+	return print.Apps(r.outputFormat, r.w, resultApps)
 }

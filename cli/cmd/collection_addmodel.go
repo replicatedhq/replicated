@@ -22,8 +22,6 @@ func (r *runners) InitCollectionAddModel(parent *cobra.Command) *cobra.Command {
 	cmd.Flags().StringVar(&r.args.modelCollectionAddModelCollectionID, "collection-id", "", "The ID of the collection")
 	cmd.MarkFlagRequired("collection-id")
 
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
 	return cmd
 }
 

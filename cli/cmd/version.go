@@ -9,14 +9,19 @@ import (
 	"github.com/replicatedhq/replicated/pkg/version"
 )
 
-func Version() *cobra.Command {
+func (r *runners) Version() *cobra.Command {
 	var versionJson bool
-
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the current version and exit",
 		Long:  `Print the current version and exit`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			r.resolveOutputFormat(cmd)
+
+			if cmd.Flags().Changed("json") {
+				r.outputFormat = "json"
+			}
+
 			currentVersion := version.Version()
 
 			// For version command, do a synchronous update check
@@ -36,7 +41,7 @@ func Version() *cobra.Command {
 			// Now get the (potentially updated) build info
 			build := version.GetBuild()
 
-			if !versionJson {
+			if r.outputFormat != "json" {
 				// Special handling for development/unknown version when printing
 				if currentVersion == "unknown" || currentVersion == "development" {
 					fmt.Printf("replicated version %s (development build)\n", currentVersion)
@@ -64,6 +69,7 @@ func Version() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&versionJson, "json", false, "output version info in json")
+	_ = cmd.Flags().MarkDeprecated("json", "use --output json instead")
 
 	cmd.AddCommand(versionUpgradeCmd())
 

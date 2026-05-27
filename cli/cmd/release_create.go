@@ -80,9 +80,6 @@ replicated release create --version 1.0.0 --promote Unstable --required`,
 	cmd.Flags().StringVar(&r.args.createReleaseOutputDir, "output-dir", "", "Stage the release artifacts (packaged charts and manifests) to this directory. Existing contents of the directory are removed before each run. The directory is preserved after the command completes.")
 	cmd.Flags().BoolVar(&r.args.createReleaseNoUpload, "no-upload", false, "Build the release locally but do not upload it. Use with --output-dir to inspect or reuse the staged artifacts. Cannot be used with --promote.")
 
-	// output format
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
 	// not supported for KOTS
 	cmd.Flags().MarkHidden("yaml-file")
 	cmd.Flags().MarkHidden("yaml")

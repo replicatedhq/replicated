@@ -36,8 +36,6 @@ type createCustomerOpts struct {
 
 func (r *runners) InitCustomersCreateCommand(parent *cobra.Command) *cobra.Command {
 	opts := createCustomerOpts{}
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create a new customer for the current application",
@@ -63,7 +61,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	--airgap --snapshot --kots-install --embedded-cluster-download \
 	--support-bundle-upload --ensure-channel`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.createCustomer(cmd, opts, outputFormat)
+			return r.createCustomer(cmd, opts)
 		},
 		SilenceUsage:  false,
 		SilenceErrors: false,
@@ -91,14 +89,13 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be created.")
 	cmd.Flags().StringVar(&opts.CustomerType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("channel")
 
 	return cmd
 }
 
-func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, outputFormat string) (err error) {
+func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts) (err error) {
 	defer func() {
 		printIfError(cmd, err)
 	}()
@@ -176,7 +173,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts, ou
 		return errors.Wrap(err, "create customer")
 	}
 
-	err = print.Customer(outputFormat, r.w, customer)
+	err = print.Customer(r.outputFormat, r.w, customer)
 	if err != nil {
 		return errors.Wrap(err, "print customer")
 	}

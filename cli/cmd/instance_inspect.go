@@ -19,7 +19,6 @@ func (r *runners) InitInstanceInspectCommand(parent *cobra.Command) *cobra.Comma
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&r.args.instanceInspectCustomer, "customer", "", "Customer Name or ID")
 	cmd.Flags().StringVar(&r.args.instanceInspectInstance, "instance", "", "Instance Name or ID")
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

@@ -12,7 +12,6 @@ type updateEnterprisePortalStatusOpts struct {
 
 func (r *runners) InitEnterprisePortalStatusUpdateCmd(parent *cobra.Command) *cobra.Command {
 	opts := updateEnterprisePortalStatusOpts{}
-	var outputFormat string
 
 	cmd := &cobra.Command{
 		Use:   "update",
@@ -38,20 +37,19 @@ replicated enterprise-portal status update --status pending --output json
 # Update the Enterprise Portal status and output in table format (default)
 replicated enterprise-portal status update --status active --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.enterprisePortalStatusUpdate(cmd, r.appID, opts, outputFormat)
+			return r.enterprisePortalStatusUpdate(cmd, r.appID, opts)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 	cmd.Flags().StringVar(&opts.status, "status", "", "The status to set for the enterprise portal (active|inactive|pending)")
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	cmd.MarkFlagRequired("status")
 
 	return cmd
 }
 
-func (r *runners) enterprisePortalStatusUpdate(cmd *cobra.Command, appID string, opts updateEnterprisePortalStatusOpts, outputFormat string) error {
+func (r *runners) enterprisePortalStatusUpdate(cmd *cobra.Command, appID string, opts updateEnterprisePortalStatusOpts) error {
 	status, err := r.kotsAPI.UpdateEnterprisePortalStatus(appID, opts.status)
 	if err != nil {
 		return err

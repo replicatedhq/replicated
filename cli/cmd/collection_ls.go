@@ -16,7 +16,6 @@ func (r *runners) InitCollectionList(parent *cobra.Command) *cobra.Command {
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

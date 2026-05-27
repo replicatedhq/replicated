@@ -38,7 +38,6 @@ replicated vm port expose VM_ID_OR_NAME --port 8080 --protocol https --output js
 		panic(err)
 	}
 	cmd.Flags().StringSliceVar(&r.args.vmExposePortProtocols, "protocol", []string{"http", "https"}, `Protocol to expose (valid values are "http", "https", "ws" and "wss")`)
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table|wide")
 
 	return cmd
 }

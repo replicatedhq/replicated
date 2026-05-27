@@ -1,6 +1,7 @@
 package print
 
 import (
+	"encoding/json"
 	"fmt"
 	"text/tabwriter"
 	"text/template"
@@ -28,52 +29,66 @@ type licenseAdoption struct {
 	Other    allActiveCounts
 }
 
-func ChannelAdoption(w *tabwriter.Writer, adoption *channels.ChannelAdoption) error {
-	countsByLicense := make(map[string]*licenseAdoption)
-
-	var getOrSetLicenseAdoption = func(licenseType string) *licenseAdoption {
-		la, ok := countsByLicense[licenseType]
-		if !ok {
-			la = &licenseAdoption{}
-			countsByLicense[licenseType] = la
+func ChannelAdoption(format string, w *tabwriter.Writer, adoption *channels.ChannelAdoption) error {
+	switch format {
+	case "json":
+		out, err := json.MarshalIndent(adoption, "", "  ")
+		if err != nil {
+			return err
 		}
-		return la
-	}
-
-	// current
-	for licenseType, count := range adoption.CurrentVersionCountActive {
-		getOrSetLicenseAdoption(licenseType).Current.Active = count
-	}
-	for licenseType, count := range adoption.CurrentVersionCountAll {
-		getOrSetLicenseAdoption(licenseType).Current.All = count
-	}
-
-	// previous
-	for licenseType, count := range adoption.PreviousVersionCountActive {
-		getOrSetLicenseAdoption(licenseType).Previous.Active = count
-	}
-	for licenseType, count := range adoption.PreviousVersionCountAll {
-		getOrSetLicenseAdoption(licenseType).Previous.All = count
-	}
-
-	// other
-	for licenseType, count := range adoption.OtherVersionCountActive {
-		getOrSetLicenseAdoption(licenseType).Other.Active = count
-	}
-	for licenseType, count := range adoption.OtherVersionCountAll {
-		getOrSetLicenseAdoption(licenseType).Other.All = count
-	}
-
-	if len(countsByLicense) == 0 {
-		if _, err := fmt.Fprintln(w, "No active licenses in channel"); err != nil {
+		if _, err := fmt.Fprintln(w, string(out)); err != nil {
 			return err
 		}
 		return w.Flush()
-	}
+	case "table":
+		countsByLicense := make(map[string]*licenseAdoption)
 
-	if err := channelAdoptionTmpl.Execute(w, countsByLicense); err != nil {
-		return err
-	}
+		var getOrSetLicenseAdoption = func(licenseType string) *licenseAdoption {
+			la, ok := countsByLicense[licenseType]
+			if !ok {
+				la = &licenseAdoption{}
+				countsByLicense[licenseType] = la
+			}
+			return la
+		}
 
-	return w.Flush()
+		// current
+		for licenseType, count := range adoption.CurrentVersionCountActive {
+			getOrSetLicenseAdoption(licenseType).Current.Active = count
+		}
+		for licenseType, count := range adoption.CurrentVersionCountAll {
+			getOrSetLicenseAdoption(licenseType).Current.All = count
+		}
+
+		// previous
+		for licenseType, count := range adoption.PreviousVersionCountActive {
+			getOrSetLicenseAdoption(licenseType).Previous.Active = count
+		}
+		for licenseType, count := range adoption.PreviousVersionCountAll {
+			getOrSetLicenseAdoption(licenseType).Previous.All = count
+		}
+
+		// other
+		for licenseType, count := range adoption.OtherVersionCountActive {
+			getOrSetLicenseAdoption(licenseType).Other.Active = count
+		}
+		for licenseType, count := range adoption.OtherVersionCountAll {
+			getOrSetLicenseAdoption(licenseType).Other.All = count
+		}
+
+		if len(countsByLicense) == 0 {
+			if _, err := fmt.Fprintln(w, "No active licenses in channel"); err != nil {
+				return err
+			}
+			return w.Flush()
+		}
+
+		if err := channelAdoptionTmpl.Execute(w, countsByLicense); err != nil {
+			return err
+		}
+
+		return w.Flush()
+	default:
+		return fmt.Errorf("unknown format: %s", format)
+	}
 }

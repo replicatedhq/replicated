@@ -13,8 +13,6 @@ import (
 )
 
 func (r *runners) InitAppHostnameListCommand(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:     "ls",
 		Aliases: []string{"list"},
@@ -57,20 +55,18 @@ replicated app hostname ls --app myapp --output json`,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
-			return r.listAppHostnames(ctx, outputFormat)
+			return r.listAppHostnames(ctx)
 		},
 		SilenceUsage: true,
 	}
 	parent.AddCommand(cmd)
 
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
-
 	return cmd
 }
 
-func (r *runners) listAppHostnames(ctx context.Context, outputFormat string) error {
+func (r *runners) listAppHostnames(ctx context.Context) error {
 	// Only show spinners for table output
-	showSpinners := outputFormat == "table"
+	showSpinners := r.outputFormat == "table"
 	log := logger.NewLogger(r.w).SetIsTerminal(r.stdoutIsTTY)
 
 	// Resolve app ID from slug or ID
@@ -133,7 +129,7 @@ func (r *runners) listAppHostnames(ctx context.Context, outputFormat string) err
 	hostnameStrings := extractHostnameStrings(mergedHostnames)
 
 	// Output based on format
-	if outputFormat == "json" {
+	if r.outputFormat == "json" {
 		jsonBytes, err := json.MarshalIndent(hostnameStrings, "", "  ")
 		if err != nil {
 			return errors.Wrap(err, "marshal json")
@@ -145,11 +141,11 @@ func (r *runners) listAppHostnames(ctx context.Context, outputFormat string) err
 		return nil
 	}
 
-	if outputFormat == "table" {
+	if r.outputFormat == "table" {
 		return printHostnamesTable(r.w, hostnameStrings)
 	}
 
-	return errors.Errorf("unsupported output format: %s", outputFormat)
+	return errors.Errorf("unsupported output format: %s", r.outputFormat)
 }
 
 // extractHostnameStrings extracts just the hostname strings from the merged hostnames

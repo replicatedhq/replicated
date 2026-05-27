@@ -8,8 +8,6 @@ import (
 )
 
 func (r *runners) InitDefaultSetCommand(parent *cobra.Command) *cobra.Command {
-	var outputFormat string
-
 	cmd := &cobra.Command{
 		Use:   "set KEY VALUE",
 		Short: "Set default value for a key",
@@ -26,17 +24,16 @@ either table or JSON format.`,
 replicated default set app my-app-slug`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return r.setDefault(cmd, args[0], args[1], outputFormat)
+			return r.setDefault(cmd, args[0], args[1])
 		},
 	}
 
-	cmd.Flags().StringVarP(&outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 	parent.AddCommand(cmd)
 
 	return cmd
 }
 
-func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValue string, outputFormat string) error {
+func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValue string) error {
 	switch defaultType {
 	case "app":
 		app, err := getApp(defaultValue, r.api.KotsClient)
@@ -48,7 +45,7 @@ func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValu
 			return errors.Wrap(err, "set default in cache")
 		}
 
-		if err := print.Apps(outputFormat, r.w, []types.AppAndChannels{{App: app}}); err != nil {
+		if err := print.Apps(r.outputFormat, r.w, []types.AppAndChannels{{App: app}}); err != nil {
 			return errors.Wrap(err, "print app")
 		}
 

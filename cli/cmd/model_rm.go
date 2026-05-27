@@ -16,7 +16,6 @@ func (r *runners) InitModelRemove(parent *cobra.Command) *cobra.Command {
 		Args:         cobra.ExactArgs(1),
 	}
 	parent.AddCommand(cmd)
-	cmd.Flags().StringVarP(&r.outputFormat, "output", "o", "table", "The output format to use. One of: json|table")
 
 	return cmd
 }

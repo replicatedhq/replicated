@@ -9,9 +9,10 @@ import (
 
 func (r *runners) InitChannelAdoption(parent *cobra.Command) {
 	cmd := &cobra.Command{
-		Use:   "adoption CHANNEL_ID",
-		Short: "Print channel adoption statistics by license type",
-		Long:  "Print channel adoption statistics by license type",
+		Use:          "adoption CHANNEL_ID",
+		Short:        "Print channel adoption statistics by license type",
+		Long:         "Print channel adoption statistics by license type",
+		SilenceUsage: true,
 	}
 	cmd.Hidden = true // Not supported in KOTS
 	parent.AddCommand(cmd)
@@ -34,7 +35,7 @@ func (r *runners) channelAdoption(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		if err = print.ChannelAdoption(r.w, appChan.Adoption); err != nil {
+		if err = print.ChannelAdoption(r.outputFormat, r.w, appChan.Adoption); err != nil {
 			return err
 		}
 
