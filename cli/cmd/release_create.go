@@ -90,13 +90,11 @@ replicated release create --version 1.0.0 --promote Unstable --required`,
 	// when using a different profile. For config flow, we'll resolve the app ourselves.
 	originalPreRun := parent.PersistentPreRunE
 	cmd.PreRunE = func(cmd *cobra.Command, args []string) error {
-		// Check if we're using config-based flow
-		// Note: --auto flag will set yaml-dir later, so don't use config flow when --auto is specified
+		// Check if we're using config-based flow (no explicit source flags provided)
 		useConfigFlow := r.args.createReleaseYaml == "" &&
 			r.args.createReleaseYamlFile == "" &&
 			r.args.createReleaseYamlDir == "" &&
-			r.args.createReleaseChart == "" &&
-			!r.args.createReleaseAutoDefaults
+			r.args.createReleaseChart == ""
 
 		if useConfigFlow {
 			// For config flow, temporarily clear app state before calling parent prerun
