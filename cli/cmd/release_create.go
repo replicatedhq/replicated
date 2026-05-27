@@ -251,7 +251,11 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 	if useConfigFlow {
 		// Try to find and parse .replicated config
 		parser := tools.NewConfigParser()
-		config, _ = parser.FindAndParseConfig(".")
+		var configErr error
+		config, configErr = parser.FindAndParseConfig(".")
+		if configErr != nil {
+			return errors.Wrap(configErr, "failed to find or parse .replicated config file")
+		}
 
 		// Check if config has any charts or manifests configured
 		if len(config.Charts) > 0 || len(config.Manifests) > 0 {
