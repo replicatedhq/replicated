@@ -310,6 +310,11 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 		time.Sleep(500 * time.Millisecond)
 		log.FinishSpinner()
 
+		yamlDirDisplay := r.args.createReleaseYamlDir
+		if hasConfigManifests {
+			yamlDirDisplay = "(from .replicated config)"
+		}
+
 		fmt.Fprintf(r.w, `
 Prepared to create release with defaults:
 
@@ -320,7 +325,7 @@ Prepared to create release with defaults:
     ensure-channel  %t
     lint-release    %t
 
-`, r.args.createReleaseYamlDir, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel, r.args.createReleaseLint)
+`, yamlDirDisplay, r.args.createReleasePromote, r.args.createReleasePromoteVersion, r.args.createReleasePromoteNotes, r.args.createReleasePromoteEnsureChannel, r.args.createReleaseLint)
 		if !r.args.createReleaseAutoDefaultsAccept {
 			var confirmed string
 			confirmed, err = promptForConfirm()
