@@ -108,13 +108,15 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		log.Silence()
 
 		out := struct {
-			Channel         string `json:"channel"`
-			ReleaseSequence int64  `json:"release_sequence"`
-			VersionLabel    string `json:"version_label"`
+			Channel         string   `json:"channel"`
+			ReleaseSequence int64    `json:"release_sequence"`
+			VersionLabel    string   `json:"version_label"`
+			Warnings        []string `json:"warnings,omitempty"`
 		}{
 			Channel:         newID,
 			ReleaseSequence: seq,
 			VersionLabel:    r.args.releaseVersion,
+			Warnings:        promoteResp.Warnings,
 		}
 		enc := json.NewEncoder(r.w)
 		enc.SetIndent("", "  ")
@@ -123,6 +125,11 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		}
 	} else {
 		fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
+		if len(promoteResp.Warnings) > 0 {
+			for _, w := range promoteResp.Warnings {
+				fmt.Fprintf(r.w, "Warning: %s\n", w)
+			}
+		}
 	}
 
 	if r.appType == "kots" && r.args.releasePromoteWaitForAirgap {

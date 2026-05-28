@@ -486,7 +486,13 @@ Prepared to create release with defaults:
 		log.FinishSpinner()
 
 		// ignore error since operation was successful
-		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d\n", promoteChanID, release.Sequence)
+		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d", promoteChanID, release.Sequence)
+
+		if len(promoteResp.Warnings) > 0 {
+			for _, w := range promoteResp.Warnings {
+				log.ChildActionWithoutSpinner("Warning: %s\n", w)
+			}
+		}
 
 		if r.appType == "kots" && r.args.createReleasePromoteWaitForAirgap {
 			if err := r.waitForAirgapBuilds(promoteResp, r.args.createReleasePromoteWaitForAirgapTimeout, log); err != nil {
