@@ -490,7 +490,7 @@ Prepared to create release with defaults:
 
 		if len(promoteResp.Warnings) > 0 {
 			for _, w := range promoteResp.Warnings {
-				log.ChildActionWithoutSpinner("Warning: %s\n", w)
+				log.ChildActionWithoutSpinner("Warning: %s", w)
 			}
 		}
 

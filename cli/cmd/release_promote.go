@@ -116,8 +116,12 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 			Channel:         newID,
 			ReleaseSequence: seq,
 			VersionLabel:    r.args.releaseVersion,
-			Warnings:        promoteResp.Warnings,
 		}
+
+		if promoteResp != nil && len(promoteResp.Warnings) > 0 {
+			out.Warnings = promoteResp.Warnings
+		}
+
 		enc := json.NewEncoder(r.w)
 		enc.SetIndent("", "  ")
 		if err := enc.Encode(out); err != nil {
