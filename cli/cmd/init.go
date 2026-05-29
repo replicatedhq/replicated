@@ -62,7 +62,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 
 	if exists {
 		if nonInteractive {
-			return fmt.Errorf("config file already exists at %s (use --force to overwrite)", existingPath)
+			return fmt.Errorf("config file already exists at %s.", existingPath)
 		}
 
 		// Ask if they want to overwrite
