@@ -128,11 +128,12 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 			return errors.Wrap(err, "encode json output")
 		}
 	} else {
-		fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
 		if len(promoteResp.Warnings) > 0 {
 			for _, w := range promoteResp.Warnings {
 				fmt.Fprintf(r.w, "Warning: %s\n", w)
 			}
+		} else {
+			fmt.Fprintf(r.w, "Channel %s successfully set to release %d\n", channelName, seq)
 		}
 	}
 

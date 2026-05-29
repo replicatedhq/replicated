@@ -485,13 +485,12 @@ Prepared to create release with defaults:
 		}
 		log.FinishSpinner()
 
-		// ignore error since operation was successful
-		log.ChildActionWithoutSpinner("Channel %s successfully set to release %d", promoteChanID, release.Sequence)
-
 		if len(promoteResp.Warnings) > 0 {
 			for _, w := range promoteResp.Warnings {
 				log.ChildActionWithoutSpinner("Warning: %s", w)
 			}
+		} else {
+			log.ChildActionWithoutSpinner("Channel %s successfully set to release %d", promoteChanID, release.Sequence)
 		}
 
 		if r.appType == "kots" && r.args.createReleasePromoteWaitForAirgap {
