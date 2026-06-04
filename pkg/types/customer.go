@@ -20,11 +20,13 @@ type Customer struct {
 	IsEmbeddedClusterDownloadEnabled  bool          `json:"isEmbeddedClusterDownloadEnabled"`
 	IsEmbeddedClusterMultinodeEnabled bool          `json:"isEmbeddedClusterMultinodeEnabled"`
 	IsGeoaxisSupported                bool          `json:"isGeoaxisSupported"`
+	IsHelmAirgapEnabled               bool          `json:"isHelmAirgapEnabled"`
 	IsHelmInstallEnabled              bool          `json:"isHelmInstallEnabled"`
 	IsHelmVMDownloadEnabled           bool          `json:"isHelmVmDownloadEnabled"`
 	IsIdentityServiceSupported        bool          `json:"isIdentityServiceSupported"`
 	IsInstallerSupportEnabled         bool          `json:"isInstallerSupportEnabled"`
 	IsKotsInstallEnabled              bool          `json:"isKotsInstallEnabled"`
+	IsKurlInstallEnabled              bool          `json:"isKurlInstallEnabled"`
 	IsSnapshotSupported               bool          `json:"isSnapshotSupported"`
 	IsSupportBundleUploadEnabled      bool          `json:"isSupportBundleUploadEnabled"`
 	IsGitopsSupported                 bool          `json:"isGitopsSupported"`
