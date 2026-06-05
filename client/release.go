@@ -118,13 +118,13 @@ func (c *Client) GetRelease(appID string, appType string, sequence int64) (*type
 	return nil, errors.Errorf("unknown app type %q", appType)
 }
 
-func (c *Client) PromoteRelease(appID string, appType string, sequence int64, label string, notes string, required bool, channelIDs ...string) (*types.PromoteReleaseResponse, error) {
+func (c *Client) PromoteRelease(appID string, appType string, opts types.PromoteReleaseOptions) (*types.PromoteReleaseResponse, error) {
 
 	if appType == "platform" {
-		err := c.PlatformClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
+		err := c.PlatformClient.PromoteRelease(appID, opts)
 		return nil, err
 	} else if appType == "kots" {
-		return c.KotsClient.PromoteRelease(appID, sequence, label, notes, required, channelIDs...)
+		return c.KotsClient.PromoteRelease(appID, opts)
 	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }

@@ -30,6 +30,7 @@ func (r *runners) InitReleasePromote(parent *cobra.Command) {
 	cmd.Flags().StringVar(&r.args.releaseVersion, "version", "", "A version label for the release in this channel")
 	cmd.Flags().BoolVar(&r.args.releasePromoteWaitForAirgap, "wait-for-airgap", false, "Wait for airgap bundle builds to complete (KOTS apps only)")
 	cmd.Flags().DurationVar(&r.args.releasePromoteWaitForAirgapTimeout, "wait-for-airgap-timeout", 30*time.Minute, "Timeout for waiting on airgap bundle builds")
+	cmd.Flags().Bool("notify-users", false, "Notify Enterprise Portal users of this release promotion")
 
 	cmd.RunE = r.releasePromote
 }
@@ -98,7 +99,19 @@ func (r *runners) releasePromote(cmd *cobra.Command, args []string) (err error) 
 		required = r.args.releaseRequired
 	}
 
-	promoteResp, err := r.api.PromoteRelease(r.appID, r.appType, seq, r.args.releaseVersion, r.args.releaseNotes, required, newID)
+	var notifyUsers *bool
+	if cmd.Flags().Changed("notify-users") {
+		v, _ := cmd.Flags().GetBool("notify-users")
+		notifyUsers = &v
+	}
+	promoteResp, err := r.api.PromoteRelease(r.appID, r.appType, types.PromoteReleaseOptions{
+		Sequence:    seq,
+		Label:       r.args.releaseVersion,
+		Notes:       r.args.releaseNotes,
+		Required:    required,
+		ChannelIDs:  []string{newID},
+		NotifyUsers: notifyUsers,
+	})
 	if err != nil {
 		return errors.Wrapf(err, "failed to promote release")
 	}

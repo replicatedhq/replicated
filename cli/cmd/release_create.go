@@ -75,6 +75,7 @@ replicated release create --version 1.0.0 --promote Unstable --required`,
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteEnsureChannel, "ensure-channel", false, "When used with --promote <channel>, will create the channel if it doesn't exist")
 	cmd.Flags().BoolVar(&r.args.createReleasePromoteWaitForAirgap, "wait-for-airgap", false, "When used with --promote <channel>, wait for airgap bundle builds to complete (KOTS apps only)")
 	cmd.Flags().DurationVar(&r.args.createReleasePromoteWaitForAirgapTimeout, "wait-for-airgap-timeout", 30*time.Minute, "Timeout for waiting on airgap bundle builds")
+	cmd.Flags().Bool("notify-users", false, "When used with --promote <channel>, notify Enterprise Portal users of this release promotion")
 	cmd.Flags().BoolVar(&r.args.createReleaseAutoDefaults, "auto", false, "generate default values for use in CI")
 	cmd.Flag("auto").Deprecated = "use a .replicated file instead"
 	cmd.Flags().BoolVarP(&r.args.createReleaseAutoDefaultsAccept, "confirm-auto", "y", false, "skip the confirmation prompt")
@@ -471,15 +472,19 @@ Prepared to create release with defaults:
 
 	if promoteChanID != "" {
 		log.ActionWithSpinner("Promoting")
-		promoteResp, err := r.api.PromoteRelease(
-			r.appID,
-			r.appType,
-			release.Sequence,
-			r.args.createReleasePromoteVersion,
-			r.args.createReleasePromoteNotes,
-			r.args.createReleasePromoteRequired,
-			promoteChanID,
-		)
+		var notifyUsers *bool
+		if cmd.Flags().Changed("notify-users") {
+			v, _ := cmd.Flags().GetBool("notify-users")
+			notifyUsers = &v
+		}
+		promoteResp, err := r.api.PromoteRelease(r.appID, r.appType, types.PromoteReleaseOptions{
+			Sequence:    release.Sequence,
+			Label:       r.args.createReleasePromoteVersion,
+			Notes:       r.args.createReleasePromoteNotes,
+			Required:    r.args.createReleasePromoteRequired,
+			ChannelIDs:  []string{promoteChanID},
+			NotifyUsers: notifyUsers,
+		})
 		if err != nil {
 			log.FinishSpinnerWithError()
 			return errors.Wrap(err, "promote release")
