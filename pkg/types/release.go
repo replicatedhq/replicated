@@ -69,9 +69,19 @@ type KotsPromoteReleaseRequest struct {
 	IsRequired     bool     `json:"isRequired"`
 	ChannelIDs     []string `json:"channelIds"`
 	IgnoreWarnings bool     `json:"ignoreWarnings"`
+	NotifyUsers    *bool    `json:"notifyUsers,omitempty"`
 
 	// Omits channels, charts, and compatibilityResults details in the response body
 	OmitDetailsInResponse bool `json:"omitDetailsInResponse"`
+}
+
+type PromoteReleaseOptions struct {
+	Sequence    int64
+	Label       string
+	Notes       string
+	Required    bool
+	ChannelIDs  []string
+	NotifyUsers *bool
 }
 
 type AirgapBuildSummary struct {

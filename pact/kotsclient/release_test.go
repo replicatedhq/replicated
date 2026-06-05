@@ -7,6 +7,7 @@ import (
 	"github.com/pact-foundation/pact-go/dsl"
 	realkotsclient "github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -197,7 +198,13 @@ func Test_PromoteRelease(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-promote-release-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		_, err = client.PromoteRelease("replicated-cli-promote-release-app", 1, "v0.0.1", "releasenotes", false, "replicated-cli-promote-release-unstable")
+		_, err = client.PromoteRelease("replicated-cli-promote-release-app", types.PromoteReleaseOptions{
+			Sequence:   1,
+			Label:      "v0.0.1",
+			Notes:      "releasenotes",
+			Required:   false,
+			ChannelIDs: []string{"replicated-cli-promote-release-unstable"},
+		})
 		assert.NoError(t, err)
 
 		return nil

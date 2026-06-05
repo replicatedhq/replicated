@@ -175,17 +175,18 @@ func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error)
 	return allReleases, nil
 }
 
-func (c *VendorV3Client) PromoteRelease(appID string, sequence int64, label string, notes string, required bool, channelIDs ...string) (*types.PromoteReleaseResponse, error) {
+func (c *VendorV3Client) PromoteRelease(appID string, opts types.PromoteReleaseOptions) (*types.PromoteReleaseResponse, error) {
 	request := types.KotsPromoteReleaseRequest{
-		ReleaseNotes:          notes,
-		VersionLabel:          label,
-		IsRequired:            required,
-		ChannelIDs:            channelIDs,
+		ReleaseNotes:          opts.Notes,
+		VersionLabel:          opts.Label,
+		IsRequired:            opts.Required,
+		ChannelIDs:            opts.ChannelIDs,
+		NotifyUsers:           opts.NotifyUsers,
 		OmitDetailsInResponse: true,
 	}
 
 	resp := types.PromoteReleaseResponse{}
-	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, sequence)
+	path := fmt.Sprintf("/v3/app/%s/release/%v/promote", appID, opts.Sequence)
 	err := c.DoJSON(context.TODO(), "POST", path, http.StatusOK, request, &resp)
 	if err != nil {
 		return nil, err

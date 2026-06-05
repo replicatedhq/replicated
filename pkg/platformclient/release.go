@@ -74,13 +74,13 @@ func (c *HTTPClient) GetRelease(appID string, sequence int64) (*releases.AppRele
 }
 
 // PromoteRelease points the specified channels at a release sequence.
-func (c *HTTPClient) PromoteRelease(appID string, sequence int64, label, notes string, required bool, channelIDs ...string) error {
-	path := fmt.Sprintf("/v1/app/%s/%d/promote?dry_run=true", appID, sequence)
+func (c *HTTPClient) PromoteRelease(appID string, opts types.PromoteReleaseOptions) error {
+	path := fmt.Sprintf("/v1/app/%s/%d/promote?dry_run=true", appID, opts.Sequence)
 	body := &releases.BodyPromoteRelease{
-		Label:        label,
-		ReleaseNotes: notes,
-		Required:     required,
-		Channels:     channelIDs,
+		Label:        opts.Label,
+		ReleaseNotes: opts.Notes,
+		Required:     opts.Required,
+		Channels:     opts.ChannelIDs,
 	}
 	if err := c.DoJSON(context.TODO(), "POST", path, http.StatusNoContent, body, nil); err != nil {
 		return fmt.Errorf("PromoteRelease: %w", err)
