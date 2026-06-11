@@ -100,6 +100,7 @@ type AirgapBuildSummary struct {
 type PromoteReleaseResponse struct {
 	Release      KotsAppRelease       `json:"release"`
 	AirgapBuilds []AirgapBuildSummary `json:"airgapBuilds"`
+	Warnings     []string             `json:"warnings,omitempty"`
 }
 
 type KotsAppRelease struct {
