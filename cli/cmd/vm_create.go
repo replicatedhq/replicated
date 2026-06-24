@@ -36,9 +36,7 @@ This command allows you to provision VMs with different distributions (e.g., Ubu
 
 By default, the command provisions one VM, but you can customize the number of VMs to create by using the "--count" flag. Additionally, you can use the "--dry-run" flag to simulate the creation without actually provisioning the VMs.
 
-The command also supports a "--wait" flag to wait for the VMs to be ready before returning control, with a customizable timeout duration.
-
-VMs are currently a beta feature.`,
+The command also supports a "--wait" flag to wait for the VMs to be ready before returning control, with a customizable timeout duration.`,
 		Example: `# Create a single Ubuntu 22.04 VM
 replicated vm create --distribution ubuntu --version 22.04
 

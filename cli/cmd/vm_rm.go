@@ -19,9 +19,7 @@ This command supports multiple filtering options, including removing VMs by thei
 
 When specifying a name that matches multiple VMs, all VMs with that name will be removed.
 
-You can also use the '--dry-run' flag to simulate the removal without actually deleting the VMs.
-
-VMs are currently a beta feature.`,
+You can also use the '--dry-run' flag to simulate the removal without actually deleting the VMs.`,
 		Example: `# Remove a VM by ID or name
 replicated vm rm aaaaa11
 

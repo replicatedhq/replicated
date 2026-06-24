@@ -15,9 +15,7 @@ func (r *runners) InitVMVersions(parent *cobra.Command) *cobra.Command {
 		Long: `The 'vm versions' command lists all the available versions of virtual machines that can be provisioned. This includes the available distributions and their respective versions.
 
 - You can filter the list by a specific distribution using the '--distribution' flag.
-- The output can be formatted as a table or in JSON format using the '--output' flag.
-
-VMs are currently a beta feature.`,
+- The output can be formatted as a table or in JSON format using the '--output' flag.`,
 		Example: `# List all available VM versions
 replicated vm versions
 
