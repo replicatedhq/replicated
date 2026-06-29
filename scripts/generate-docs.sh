@@ -17,7 +17,10 @@ go run -tags "containers_image_ostree_stub exclude_graphdriver_devicemapper excl
 # Clone replicated-docs
 DOCS_DIR="/tmp/replicated-docs"
 rm -rf "${DOCS_DIR}"
-git clone --depth 1 "https://${GITHUB_TOKEN}@github.com/replicatedhq/replicated-docs.git" "${DOCS_DIR}"
+# Token goes in the password slot (with a dummy username) so git authenticates
+# the push non-interactively. Without "x-access-token:", the token lands in the
+# username slot with no password and git prompts for one, which fails on CI.
+git clone --depth 1 "https://x-access-token:${GITHUB_TOKEN}@github.com/replicatedhq/replicated-docs.git" "${DOCS_DIR}"
 
 cd "${DOCS_DIR}"
 git config user.email "release@replicated.com"
