@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	dockerregistrytypes "github.com/docker/docker/api/types/registry"
+	dockerregistrytypes "github.com/moby/moby/api/types/registry"
 	"github.com/pkg/errors"
 	releaseTypes "github.com/replicatedhq/replicated/pkg/kots/release/types"
 	"github.com/replicatedhq/replicated/pkg/kotsclient"
