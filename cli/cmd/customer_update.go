@@ -34,11 +34,33 @@ type updateCustomerOpts struct {
 	IsKurlInstallEnabled              bool
 }
 
+var customerUpdateFieldFlags = []string{
+	"name",
+	"custom-id",
+	"channel",
+	"expires-in",
+	"airgap",
+	"gitops",
+	"snapshot",
+	"kots-install",
+	"helm-install",
+	"kurl-install",
+	"embedded-cluster-download",
+	"embedded-cluster-multinode",
+	"geo-axis",
+	"helmvm-cluster-download",
+	"identity-service",
+	"support-bundle-upload",
+	"developer-mode",
+	"email",
+	"type",
+}
+
 func (r *runners) InitCustomerUpdateCommand(parent *cobra.Command) *cobra.Command {
 	opts := updateCustomerOpts{}
 
 	cmd := &cobra.Command{
-		Use:   "update --customer <id> --name <name> [options]",
+		Use:   "update --customer <id> [options]",
 		Short: "Update an existing customer",
 		Long: `Update an existing customer's information and settings.
 
@@ -93,11 +115,9 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().BoolVar(&opts.IsSupportBundleUploadEnabled, "support-bundle-upload", false, "If set, the license will allow uploading support bundles.")
 	cmd.Flags().BoolVar(&opts.IsDeveloperModeEnabled, "developer-mode", false, "If set, Replicated SDK installed in dev mode will use mock data.")
 	cmd.Flags().StringVar(&opts.Email, "email", "", "Email address of the customer that is to be updated.")
-	cmd.Flags().StringVar(&opts.Type, "type", "dev", "The license type to update. One of: dev|trial|paid|community|test (default: dev)")
+	cmd.Flags().StringVar(&opts.Type, "type", "", "The license type to update. One of: dev|trial|paid|community|test")
 
 	cmd.MarkFlagRequired("customer")
-	cmd.MarkFlagRequired("channel")
-	cmd.MarkFlagRequired("name") // until the API supports better patching, this is actually a required field
 
 	return cmd
 }
@@ -115,57 +135,56 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 		return errors.New("missing or invalid parameters: customer")
 	}
 
-	// all of the following validation occurs in the API also, but
-	// we want to fail fast if the user has provided invalid input
-	if err := validateCustomerType(opts.Type); err != nil {
-		return errors.Wrap(err, "validate customer type")
-	}
-	if opts.Type == "test" && opts.ExpiryDuration > time.Hour*48 {
-		return errors.New("test licenses cannot be updated with an expiration date greater than 48 hours")
-	}
-	if opts.Type == "paid" {
-		opts.Type = "prod"
+	if opts.EnsureChannel && !cmd.Flags().Changed("channel") {
+		return errors.New("--ensure-channel requires --channel")
 	}
 
-	getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
-		AppID:          r.appID,
-		AppType:        r.appType,
-		NameOrID:       opts.Channel,
-		Description:    "",
-		CreateIfAbsent: opts.EnsureChannel,
+	if !hasCustomerUpdate(cmd) {
+		return errors.New("at least one customer field must be specified")
 	}
 
-	channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
-	if err != nil {
-		return errors.Wrap(err, "get channel")
+	if cmd.Flags().Changed("type") {
+		// This validation also occurs in the API, but fail fast when possible.
+		if err := validateCustomerType(opts.Type); err != nil {
+			return errors.Wrap(err, "validate customer type")
+		}
+		if opts.Type == "test" && opts.ExpiryDuration > time.Hour*48 {
+			return errors.New("test licenses cannot be updated with an expiration date greater than 48 hours")
+		}
+		if opts.Type == "paid" {
+			opts.Type = "prod"
+		}
 	}
 
-	channels := []kotsclient.CustomerChannel{
-		{
-			ID:        channel.ID,
-			IsDefault: true,
-		},
+	if cmd.Flags().Changed("expires-in") && opts.ExpiryDuration <= 0 {
+		return errors.New("--expires-in must be greater than zero")
 	}
 
 	updateOpts := kotsclient.UpdateCustomerOpts{
-		Name:                         opts.Name,
-		CustomID:                     opts.CustomID,
-		Channels:                     channels,
-		AppID:                        r.appID,
-		ExpiresAtDuration:            opts.ExpiryDuration,
-		IsAirgapEnabled:              opts.IsAirgapEnabled,
-		IsGitopsSupported:            opts.IsGitopsSupported,
-		IsSnapshotSupported:          opts.IsSnapshotSupported,
-		IsKotsInstallEnabled:         opts.IsKotsInstallEnabled,
-		IsGeoaxisSupported:           opts.IsGeoaxisSupported,
-		IsHelmVMDownloadEnabled:      opts.IsHelmVMDownloadEnabled,
-		IsIdentityServiceSupported:   opts.IsIdentityServiceSupported,
-		IsSupportBundleUploadEnabled: opts.IsSupportBundleUploadEnabled,
-		IsDeveloperModeEnabled:       opts.IsDeveloperModeEnabled,
-		LicenseType:                  opts.Type,
-		Email:                        opts.Email,
+		LicenseType: opts.Type,
 	}
 
+	if cmd.Flags().Changed("name") {
+		updateOpts.Name = &opts.Name
+	}
+	if cmd.Flags().Changed("custom-id") {
+		updateOpts.CustomID = &opts.CustomID
+	}
+	if cmd.Flags().Changed("expires-in") {
+		updateOpts.ExpiresAtDuration = &opts.ExpiryDuration
+	}
+	if cmd.Flags().Changed("airgap") {
+		updateOpts.IsAirgapEnabled = &opts.IsAirgapEnabled
+	}
+	if cmd.Flags().Changed("gitops") {
+		updateOpts.IsGitopsSupported = &opts.IsGitopsSupported
+	}
+	if cmd.Flags().Changed("snapshot") {
+		updateOpts.IsSnapshotSupported = &opts.IsSnapshotSupported
+	}
+	if cmd.Flags().Changed("kots-install") {
+		updateOpts.IsKotsInstallEnabled = &opts.IsKotsInstallEnabled
+	}
 	if cmd.Flags().Changed("helm-install") {
 		updateOpts.IsHelmInstallEnabled = &opts.IsHelmInstallEnabled
 	}
@@ -177,6 +196,54 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 	if cmd.Flags().Changed("embedded-cluster-multinode") {
 		updateOpts.IsEmbeddedClusterMultinodeEnabled = &opts.IsEmbeddedClusterMultinodeEnabled
+	}
+	if cmd.Flags().Changed("geo-axis") {
+		updateOpts.IsGeoaxisSupported = &opts.IsGeoaxisSupported
+	}
+	if cmd.Flags().Changed("helmvm-cluster-download") {
+		updateOpts.IsHelmVMDownloadEnabled = &opts.IsHelmVMDownloadEnabled
+	}
+	if cmd.Flags().Changed("identity-service") {
+		updateOpts.IsIdentityServiceSupported = &opts.IsIdentityServiceSupported
+	}
+	if cmd.Flags().Changed("support-bundle-upload") {
+		updateOpts.IsSupportBundleUploadEnabled = &opts.IsSupportBundleUploadEnabled
+	}
+	if cmd.Flags().Changed("developer-mode") {
+		updateOpts.IsDeveloperModeEnabled = &opts.IsDeveloperModeEnabled
+	}
+	if cmd.Flags().Changed("email") {
+		updateOpts.Email = &opts.Email
+	}
+
+	if cmd.Flags().Changed("channel") {
+		currentCustomer, err := r.api.GetCustomerByID(opts.CustomerID)
+		if err != nil {
+			return errors.Wrap(err, "get customer")
+		}
+
+		getOrCreateChannelOptions := client.GetOrCreateChannelOptions{
+			AppID:          r.appID,
+			AppType:        r.appType,
+			NameOrID:       opts.Channel,
+			Description:    "",
+			CreateIfAbsent: opts.EnsureChannel,
+		}
+
+		channel, err := r.api.GetOrCreateChannelByName(getOrCreateChannelOptions)
+		if err != nil {
+			return errors.Wrap(err, "get channel")
+		}
+
+		updateOpts.AddChannels = []kotsclient.CustomerChannel{{
+			ID:        channel.ID,
+			IsDefault: true,
+		}}
+		for _, currentChannel := range currentCustomer.Channels {
+			if currentChannel.ID != channel.ID {
+				updateOpts.RemoveChannels = append(updateOpts.RemoveChannels, currentChannel.ID)
+			}
+		}
 	}
 
 	customer, err := r.api.UpdateCustomer(r.appType, opts.CustomerID, updateOpts)
@@ -190,4 +257,13 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 
 	return nil
+}
+
+func hasCustomerUpdate(cmd *cobra.Command) bool {
+	for _, flagName := range customerUpdateFieldFlags {
+		if cmd.Flags().Changed(flagName) {
+			return true
+		}
+	}
+	return false
 }
