@@ -272,7 +272,7 @@ func (r *runners) prepareCluster(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to install builder app")
 		}
 	} else {
-		if err := installKotsApp(r, log, kubeConfig, customer, appRelease); err != nil {
+		if err := installKotsApp(ctx, r, log, kubeConfig, customer, appRelease); err != nil {
 			return errors.Wrap(err, "failed to install kots")
 		}
 	}
@@ -600,7 +600,7 @@ func installHelmChart(r *runners, appSlug string, chartName string, chartVersion
 	return helmRelease, nil
 }
 
-func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
+func installKotsApp(ctx context.Context, r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
 	var releaseYamls []releaseTypes.KotsSingleSpec
 	if err := json.Unmarshal([]byte(release.Config), &releaseYamls); err != nil {
 		return errors.Wrap(err, "failed to unmarshal release yamls")
@@ -621,7 +621,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		return errors.Wrap(err, "failed to create temp dir")
 	}
 	defer os.RemoveAll(kotsDir)
-	kotCLI, err := installKotsCLI(r, kotsCliVersion, kotsDir)
+	kotCLI, err := installKotsCLI(ctx, r, kotsCliVersion, kotsDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to install KOTS cli")
 	}
@@ -658,7 +658,7 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 		return errors.Wrap(err, "chmod kubeconfig file")
 	}
 
-	cmd := exec.Command(kotCLI, "install",
+	installCmd := exec.CommandContext(ctx, kotCLI, "install",
 		fmt.Sprintf("%s/%s", r.appSlug, "test-channel"),
 		"--kubeconfig", kubeconfigFile.Name(),
 		"--license-file", licenseFile.Name(),
@@ -674,21 +674,21 @@ func installKotsApp(r *runners, log *logger.Logger, kubeConfig []byte, customer 
 			return errors.Wrapf(err, "config values file %q does not exist", r.args.prepareClusterKotsConfigValuesFile)
 		}
 
-		cmd.Args = append(cmd.Args, "--config-values", r.args.prepareClusterKotsConfigValuesFile)
+		installCmd.Args = append(installCmd.Args, "--config-values", r.args.prepareClusterKotsConfigValuesFile)
 	}
 
 	log.Verbose()
-	log.Debug("%s", cmd.String())
-	cmd.Stdout = r.w
-	cmd.Stderr = r.w
-	if err := cmd.Run(); err != nil {
+	log.Debug("%s", installCmd.String())
+	installCmd.Stdout = r.w
+	installCmd.Stderr = r.w
+	if err := installCmd.Run(); err != nil {
 		return errors.Wrap(err, "failed to install KOTS and deploy app")
 	}
 
 	return nil
 }
 
-func installKotsCLI(r *runners, version string, kotsDir string) (string, error) {
+func installKotsCLI(ctx context.Context, r *runners, version string, kotsDir string) (string, error) {
 	kotsInstallURL := "https://kots.io/install"
 	if version != "" {
 		kotsInstallURL = fmt.Sprintf("%s/%s", kotsInstallURL, version)
@@ -724,11 +724,11 @@ func installKotsCLI(r *runners, version string, kotsDir string) (string, error) 
 		return "", errors.Wrap(err, "failed to close install script")
 	}
 
-	cmd := exec.Command(installScript.Name())
-	cmd.Env = append(cmd.Env, fmt.Sprintf("REPL_INSTALL_PATH=%s", kotsDir))
-	cmd.Stdout = r.w
-	cmd.Stderr = r.w
-	if err := cmd.Run(); err != nil {
+	installCmd := exec.CommandContext(ctx, installScript.Name())
+	installCmd.Env = append(installCmd.Env, fmt.Sprintf("REPL_INSTALL_PATH=%s", kotsDir))
+	installCmd.Stdout = r.w
+	installCmd.Stderr = r.w
+	if err := installCmd.Run(); err != nil {
 		return "", errors.Wrap(err, "failed to run KOTS cli install")
 	}
 
