@@ -129,7 +129,7 @@ func (c *HTTPClient) GetOrigin() string {
 	return c.apiOrigin
 }
 
-func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody string) ([]byte, error) {
+func (c *HTTPClient) DoJSONWithoutUnmarshal(ctx context.Context, method string, path string, reqBody string) ([]byte, error) {
 	endpoint := fmt.Sprintf("%s%s", c.apiOrigin, path)
 	var buf *bytes.Buffer
 	if reqBody != "" {
@@ -137,14 +137,18 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 	} else {
 		buf = &bytes.Buffer{}
 	}
-	req, err := http.NewRequest(method, endpoint, buf)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	req, err := http.NewRequestWithContext(ctx, method, endpoint, buf)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	if err := c.setCommonHeaders(req); err != nil {
+		return nil, err
+	}
+
 	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -156,13 +160,21 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(method string, path string, reqBody 
 		return nil, errors.Wrap(err, "read body")
 	}
 
-	// if the response code was NOT a 2xx code, then we either return what the server responded with
-	// or a static error if the server didn't respond with a body
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, ErrNotFound
+	}
+	// Accept any 2xx so callers can use this helper without knowing the exact success code.
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		if len(bodyBytes) > 0 {
-			return nil, errors.Errorf("unexpected status code %d: %s", resp.StatusCode, string(bodyBytes))
+		if resp.StatusCode == http.StatusForbidden {
+			return nil, parseForbiddenError(bodyBytes)
 		}
-		return nil, errors.Errorf("unexpected status code %d", resp.StatusCode)
+		return nil, APIError{
+			Method:     method,
+			Endpoint:   endpoint,
+			StatusCode: resp.StatusCode,
+			Message:    responseBodyToErrorMessage(bodyBytes),
+			Body:       bodyBytes,
+		}
 	}
 
 	return bodyBytes, nil
@@ -185,17 +197,8 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 		return err
 	}
 
-	req.Header.Set("Authorization", c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
-
-	if _, ok := os.LookupEnv("CI"); ok {
-		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
-	}
-
-	if err := addGitHubActionsHeaders(req); err != nil {
-		return errors.Wrap(err, "add github actions headers")
+	if err := c.setCommonHeaders(req); err != nil {
+		return err
 	}
 
 	resp, err := httpClient.Do(req)
@@ -234,6 +237,23 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 		if err := json.NewDecoder(bytes.NewReader(bodyBytes)).Decode(respBody); err != nil {
 			return fmt.Errorf("%s %s response decoding: %w", method, endpoint, err)
 		}
+	}
+
+	return nil
+}
+
+func (c *HTTPClient) setCommonHeaders(req *http.Request) error {
+	req.Header.Set("Authorization", c.apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", fmt.Sprintf("Replicated/%s", version.Version()))
+
+	if _, ok := os.LookupEnv("CI"); ok {
+		req.Header.Set("X-Replicated-CI", os.Getenv("CI"))
+	}
+
+	if err := addGitHubActionsHeaders(req); err != nil {
+		return errors.Wrap(err, "add github actions headers")
 	}
 
 	return nil

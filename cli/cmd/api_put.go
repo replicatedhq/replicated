@@ -50,7 +50,7 @@ func (r *runners) apiPut(cmd *cobra.Command, args []string) error {
 
 	} else if pathParts[0] == "v3" {
 		kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-		response, err := kotsRestClient.Put(path, r.args.apiPutBody)
+		response, err := kotsRestClient.Put(cmd.Context(), path, r.args.apiPutBody)
 		if err != nil {
 			return err
 		}

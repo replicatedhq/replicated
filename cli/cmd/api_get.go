@@ -48,7 +48,7 @@ func (r *runners) apiGet(cmd *cobra.Command, args []string) error {
 
 	} else if pathParts[0] == "v3" {
 		kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-		response, err := kotsRestClient.Get(path)
+		response, err := kotsRestClient.Get(cmd.Context(), path)
 		if err != nil {
 			return err
 		}
