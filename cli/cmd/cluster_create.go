@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -166,10 +165,12 @@ func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 		opts.MaxNodeCount = &maxNodes
 	}
 	cl, err := r.createAndWaitForCluster(opts)
+	var waitTimeout error
 	if err != nil {
 		if _, ok := errors.Cause(err).(ClusterTimeoutError); ok {
+			// Still print the partially ready cluster below, then exit 124.
 			printIfError(cmd, err)
-			defer os.Exit(124)
+			waitTimeout = err
 		} else {
 			return err
 		}
@@ -188,10 +189,19 @@ func (r *runners) createCluster(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		_, err = fmt.Fprintln(r.w, "Dry run succeeded for cluster create.")
+		if err != nil {
+			return err
+		}
+	} else if err := print.Cluster(r.outputFormat, r.w, cl); err != nil {
 		return err
 	}
 
-	return print.Cluster(r.outputFormat, r.w, cl)
+	if waitTimeout != nil {
+		// Error details already printed above; map to exit 124 in main only.
+		cmd.SilenceErrors = true
+		return newExitError(124, waitTimeout)
+	}
+	return nil
 }
 
 func (r *runners) createAndWaitForAddons(clusterID string) error {

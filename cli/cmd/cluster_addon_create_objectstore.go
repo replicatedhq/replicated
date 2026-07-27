@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -72,9 +71,11 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 	}
 
 	addon, err := r.createAndWaitForClusterAddonCreateObjectStore(opts, r.args.clusterAddonCreateObjectStoreDuration)
+	var waitTimeout error
 	if err != nil {
 		if errors.Cause(err) == ErrWaitDurationExceeded {
-			defer os.Exit(124)
+			// Still print the partially ready addon below, then exit 124.
+			waitTimeout = err
 		} else {
 			return err
 		}
@@ -82,10 +83,17 @@ func (r *runners) clusterAddonCreateObjectStoreCreateRun() error {
 
 	if opts.DryRun {
 		_, err := fmt.Fprintln(r.w, "Dry run succeeded for addon object-store creation.")
+		if err != nil {
+			return err
+		}
+	} else if err := print.Addon(r.outputFormat, r.w, addon); err != nil {
 		return err
 	}
 
-	return print.Addon(r.outputFormat, r.w, addon)
+	if waitTimeout != nil {
+		return newExitError(124, waitTimeout)
+	}
+	return nil
 }
 
 func (r *runners) createAndWaitForClusterAddonCreateObjectStore(opts kotsclient.CreateClusterAddonObjectStoreOpts, waitDuration time.Duration) (*types.ClusterAddon, error) {

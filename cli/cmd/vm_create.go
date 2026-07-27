@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -143,10 +142,12 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 	}
 
 	vms, err := r.createAndWaitForVM(opts)
+	var waitTimeout error
 	if err != nil {
 		if _, ok := errors.Cause(err).(VMTimeoutError); ok {
+			// Still print the partially ready VMs below, then exit 124.
 			printIfError(cmd, err)
-			defer os.Exit(124)
+			waitTimeout = err
 		} else {
 			return err
 		}
@@ -163,10 +164,19 @@ func (r *runners) createVM(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		_, err = fmt.Fprintln(r.w, "Dry run succeeded.")
+		if err != nil {
+			return err
+		}
+	} else if err := print.VMs(r.outputFormat, r.w, vms, true); err != nil {
 		return err
 	}
 
-	return print.VMs(r.outputFormat, r.w, vms, true)
+	if waitTimeout != nil {
+		// Error details already printed above; map to exit 124 in main only.
+		cmd.SilenceErrors = true
+		return newExitError(124, waitTimeout)
+	}
+	return nil
 }
 
 func (r *runners) createAndWaitForVM(opts kotsclient.CreateVMOpts) ([]*types.VM, error) {
