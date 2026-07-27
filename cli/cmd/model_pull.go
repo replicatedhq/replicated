@@ -94,14 +94,16 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 	}
 	defer fs.Close()
 
+	ctx := cmd.Context()
+
 	// Copy the manifest from the remote repository
-	manifestDescriptor, err := oras.Copy(context.Background(), repo, tag, fs, tag, oras.DefaultCopyOptions)
+	manifestDescriptor, err := oras.Copy(ctx, repo, tag, fs, tag, oras.DefaultCopyOptions)
 	if err != nil {
 		return err
 	}
 
 	// Fetch the manifest content
-	manifestContent, err := fs.Fetch(context.Background(), manifestDescriptor)
+	manifestContent, err := fs.Fetch(ctx, manifestDescriptor)
 	if err != nil {
 		return err
 	}
@@ -146,7 +148,7 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 			return err
 		}
 
-		err = downloadBlob(context.Background(), repo, layer, layerFile)
+		err = downloadBlob(ctx, repo, layer, layerFile)
 		if err != nil {
 			layerFile.Close()
 			return err

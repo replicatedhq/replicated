@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"os"
@@ -530,7 +529,7 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 		}
 
 		if appSlugOrID != "" && (runCmds.appType == "" || runCmds.appID == "" || runCmds.appSlug == "") {
-			app, appType, err := runCmds.api.GetAppType(context.TODO(), appSlugOrID, true)
+			app, appType, err := runCmds.api.GetAppType(cmd.Context(), appSlugOrID, true)
 			if err != nil {
 				return errors.Wrap(err, "get app type")
 			}

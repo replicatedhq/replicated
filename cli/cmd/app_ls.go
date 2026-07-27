@@ -36,8 +36,7 @@ replicated app ls --output json
 # Search for an application and display results in table format
 replicated app ls "App Name" --output table`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			return r.listApps(ctx, cmd, args)
+			return r.listApps(cmd.Context(), cmd, args)
 		},
 		SilenceUsage: true,
 	}

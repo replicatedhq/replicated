@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -50,7 +49,7 @@ func (r *runners) pushModel(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if err := ociclient.UploadFiles(context.Background(), endpoint, name, tag, modelFiles, baseDir); err != nil {
+	if err := ociclient.UploadFiles(cmd.Context(), endpoint, name, tag, modelFiles, baseDir); err != nil {
 		return err
 	}
 

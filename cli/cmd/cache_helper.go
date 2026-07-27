@@ -8,7 +8,7 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func getApp(appSlugOrID string, kotsClient *kotsclient.VendorV3Client) (*types.App, error) {
+func getApp(ctx context.Context, appSlugOrID string, kotsClient *kotsclient.VendorV3Client) (*types.App, error) {
 	app, err := cache.GetApp(appSlugOrID)
 	if err == nil && app != nil {
 		return app, nil
@@ -19,7 +19,7 @@ func getApp(appSlugOrID string, kotsClient *kotsclient.VendorV3Client) (*types.A
 	}
 
 	if app == nil {
-		a, err := kotsClient.GetApp(context.TODO(), appSlugOrID, true)
+		a, err := kotsClient.GetApp(ctx, appSlugOrID, true)
 		if err != nil {
 			return nil, errors.Wrap(err, "get app from api")
 		}

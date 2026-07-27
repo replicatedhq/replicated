@@ -54,8 +54,7 @@ replicated app hostname ls --app myapp --output json`,
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-			return r.listAppHostnames(ctx)
+			return r.listAppHostnames(cmd.Context())
 		},
 		SilenceUsage: true,
 	}

@@ -275,7 +275,7 @@ func (r *runners) releaseCreate(cmd *cobra.Command, args []string) (err error) {
 		// because the prerun might have run with a different app (from cache/env) before we loaded the config
 		// Clear the appType to force a fresh resolution
 		r.appType = ""
-		if err := r.resolveAppType(); err != nil {
+		if err := r.resolveAppType(cmd.Context()); err != nil {
 			return errors.Wrap(err, "resolve app type from config")
 		}
 
@@ -958,7 +958,7 @@ func copyFile(src, dst string) error {
 }
 
 // resolveAppType resolves the app type by querying the API with the current appID or appSlug
-func (r *runners) resolveAppType() error {
+func (r *runners) resolveAppType(ctx context.Context) error {
 	if r.appID == "" && r.appSlug == "" {
 		return nil // nothing to resolve
 	}
@@ -968,7 +968,7 @@ func (r *runners) resolveAppType() error {
 		appSlugOrID = r.appID
 	}
 
-	app, appType, err := r.api.GetAppType(context.Background(), appSlugOrID, true)
+	app, appType, err := r.api.GetAppType(ctx, appSlugOrID, true)
 	if err != nil {
 		return errors.Wrapf(err, "get app type for %q", appSlugOrID)
 	}

@@ -36,11 +36,10 @@ replicated app delete "Another App" --force
 # Delete an app and output the result in JSON format
 replicated app delete "Custom App" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
 			if len(args) != 1 {
 				return errors.New("missing app slug or id")
 			}
-			return r.deleteApp(ctx, cmd, args[0], opts)
+			return r.deleteApp(cmd.Context(), cmd, args[0], opts)
 		},
 		SilenceUsage: true,
 	}

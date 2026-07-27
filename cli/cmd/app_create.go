@@ -36,13 +36,11 @@ replicated app create "Another App" --output json
 replicated app create "Custom App" --output table`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := context.Background()
-
 			if len(args) != 1 {
 				return errors.New("missing app name")
 			}
 			opts.name = args[0]
-			return r.createApp(ctx, cmd, opts)
+			return r.createApp(cmd.Context(), cmd, opts)
 		},
 		SilenceUsage: true,
 	}

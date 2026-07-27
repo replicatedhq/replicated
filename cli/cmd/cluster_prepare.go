@@ -149,7 +149,7 @@ func validateClusterPrepareFlags(args runnerArgs) error {
 	return nil
 }
 
-func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
+func (r *runners) prepareCluster(cmd *cobra.Command, args []string) error {
 	if !r.hasApp() {
 		return errors.New("no app specified")
 	}
@@ -161,6 +161,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 		return errors.Wrap(err, "prepare release")
 	}
 
+	ctx := cmd.Context()
 	wg := sync.WaitGroup{}
 	clusterName := ""
 	clusterID := ""
@@ -267,7 +268,7 @@ func (r *runners) prepareCluster(_ *cobra.Command, args []string) error {
 	}
 
 	if appRelease.IsHelmOnly {
-		if err := installBuilderApp(r, log, kubeConfig, customer, appRelease); err != nil {
+		if err := installBuilderApp(ctx, r, log, kubeConfig, customer, appRelease); err != nil {
 			return errors.Wrap(err, "failed to install builder app")
 		}
 	} else {
@@ -465,7 +466,7 @@ func runPreflights(ctx context.Context, r *runners, log *logger.Logger, kubeConf
 	return nil
 }
 
-func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
+func installBuilderApp(ctx context.Context, r *runners, log *logger.Logger, kubeConfig []byte, customer *types.Customer, release *types.AppRelease) error {
 	kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
 	if err != nil {
 		return errors.Wrap(err, "failed to create kubeConfigFile file")
@@ -515,7 +516,6 @@ func installBuilderApp(r *runners, log *logger.Logger, kubeConfig []byte, custom
 		return errors.Wrap(err, "failed to write credentials file")
 	}
 
-	ctx := context.Background()
 	for _, chart := range release.Charts {
 		if chart.Status != types.ChartStatusPushed {
 			continue
