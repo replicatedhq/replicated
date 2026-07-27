@@ -52,52 +52,88 @@ func Fetch(endpoint string) error {
 
 // startLocalWebServer handles the token redirect, returning the token
 func startLocalWebServer(ctx context.Context, port int) (string, error) {
-	errChan := make(chan error)
-	tokenChan := make(chan string)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	errChan := make(chan error, 1)
+	tokenChan := make(chan string, 1)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		nonce := r.URL.Query().Get("nonce")
 		if nonce == "" {
-			errChan <- fmt.Errorf("no nonce found in response")
+			select {
+			case errChan <- fmt.Errorf("no nonce found in response"):
+			default:
+			}
+			http.Error(w, "missing nonce", http.StatusBadRequest)
+			return
 		}
 
 		exchange := r.URL.Query().Get("exchange")
 		if exchange == "" {
-			errChan <- fmt.Errorf("no exchange found in response")
+			select {
+			case errChan <- fmt.Errorf("no exchange found in response"):
+			default:
+			}
+			http.Error(w, "missing exchange", http.StatusBadRequest)
+			return
 		}
 
 		token, err := exchangeNonceForToken(exchange, nonce)
 		if err != nil {
-			errChan <- err
+			select {
+			case errChan <- err:
+			default:
+			}
+			http.Error(w, "token exchange failed", http.StatusBadGateway)
+			return
 		}
 
-		tokenChan <- token
+		select {
+		case tokenChan <- token:
+		default:
+		}
 
 		fmt.Fprintln(w, "Authentication successful. You may close this window.")
 	})
 
-	go func() {
-		sm := http.NewServeMux()
-		sm.Handle("/callback", handler)
-		server := &http.Server{
-			Addr:              net.JoinHostPort("127.0.0.1", strconv.Itoa(port)),
-			Handler:           sm,
-			ReadHeaderTimeout: 3 * time.Second,
-		}
+	sm := http.NewServeMux()
+	sm.Handle("/callback", handler)
+	server := &http.Server{
+		Addr:              net.JoinHostPort("127.0.0.1", strconv.Itoa(port)),
+		Handler:           sm,
+		ReadHeaderTimeout: 3 * time.Second,
+	}
 
-		errChan <- server.ListenAndServe()
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			select {
+			case errChan <- err:
+			default:
+			}
+		}
 	}()
 
-	timeout := time.NewTicker(5 * time.Minute)
+	// Always stop admission and drain in-flight callback work when we leave.
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		_ = server.Shutdown(shutdownCtx)
+	}()
+
+	timeout := time.NewTimer(5 * time.Minute)
+	defer timeout.Stop()
 
 	select {
 	case <-timeout.C:
-		ctx.Done()
 		return "", fmt.Errorf("authentication timeout")
+	case <-ctx.Done():
+		return "", ctx.Err()
 	case token := <-tokenChan:
 		return token, nil
 	case e := <-errChan:
-		ctx.Done()
 		return "", e
 	}
 }
