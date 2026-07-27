@@ -99,6 +99,10 @@ func (r *runners) profileAdd(cmd *cobra.Command, args []string) error {
 }
 
 func (r *runners) readAPITokenFromPrompt(label string) (string, error) {
+	if err := ensureInteractive(); err != nil {
+		return "", errors.Wrap(err, "provide --token to set the API token non-interactively")
+	}
+
 	prompt := promptui.Prompt{
 		Label: label,
 		Mask:  '*',

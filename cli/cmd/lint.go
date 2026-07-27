@@ -589,7 +589,10 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 			Label:   "Chart path (leave empty to skip)",
 			Default: "",
 		}
-		chartPath, _ := chartPrompt.Run()
+		chartPath, err := runPrompt(chartPrompt)
+		if err != nil {
+			return errors.Wrap(err, "prompt for chart path")
+		}
 		if chartPath != "" {
 			config.Charts = append(config.Charts, tools.ChartConfig{Path: chartPath})
 		}
@@ -599,7 +602,10 @@ func (r *runners) initConfigForLint(cmd *cobra.Command) error {
 			Label:   "Preflight spec path (leave empty to skip)",
 			Default: "",
 		}
-		preflightPath, _ := preflightPrompt.Run()
+		preflightPath, err := runPrompt(preflightPrompt)
+		if err != nil {
+			return errors.Wrap(err, "prompt for preflight path")
+		}
 		if preflightPath != "" {
 			config.Preflights = append(config.Preflights, tools.PreflightConfig{Path: preflightPath})
 		}

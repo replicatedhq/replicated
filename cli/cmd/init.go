@@ -71,7 +71,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 			Items: []string{"Cancel", "Overwrite", "Edit/Merge"},
 		}
 
-		_, result, err := prompt.Run()
+		_, result, err := runSelect(prompt)
 		if err != nil {
 			return errors.Wrap(err, "prompting for action")
 		}
@@ -159,7 +159,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label:   "App ID or App Slug (optional, check vendor.replicated.com)",
 				Default: "",
 			}
-			appValue, err := appPrompt.Run()
+			appValue, err := runPrompt(appPrompt)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -181,7 +181,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: fmt.Sprintf("Use detected Helm charts? (%d found)", len(detected.Charts)),
 				Items: []string{"Yes", "No", "Let me specify custom paths"},
 			}
-			_, chartChoice, err := useDetectedCharts.Run()
+			_, chartChoice, err := runSelect(useDetectedCharts)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -213,7 +213,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: "Add Helm charts?",
 				Items: []string{"Yes", "No"},
 			}
-			_, addChartsResult, err := addCharts.Run()
+			_, addChartsResult, err := runSelect(addCharts)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -237,7 +237,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: fmt.Sprintf("Use detected manifest patterns? (%d found)", len(detected.Manifests)),
 				Items: []string{"Yes", "No", "Let me specify custom patterns"},
 			}
-			_, manifestChoice, err := useDetectedManifests.Run()
+			_, manifestChoice, err := runSelect(useDetectedManifests)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -270,7 +270,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 					Label: fmt.Sprintf("Add detected support bundle specs to manifests? (%d found)", len(detected.SupportBundles)),
 					Items: []string{"Yes", "No"},
 				}
-				_, sbChoice, err := useSupportBundles.Run()
+				_, sbChoice, err := runSelect(useSupportBundles)
 				if err != nil {
 					if err == promptui.ErrInterrupt {
 						fmt.Fprintf(r.w, "\nCancelled\n")
@@ -294,7 +294,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: "Do you want to add any Kubernetes manifest files?",
 				Items: []string{"No", "Yes"},
 			}
-			_, manifestsResult, err := addManifests.Run()
+			_, manifestsResult, err := runSelect(addManifests)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -318,7 +318,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: fmt.Sprintf("Use detected preflight specs? (%d found)", len(detected.Preflights)),
 				Items: []string{"Yes", "No", "Let me specify custom paths"},
 			}
-			_, preflightChoice, err := useDetectedPreflights.Run()
+			_, preflightChoice, err := runSelect(useDetectedPreflights)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -367,7 +367,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: "Add preflight specs?",
 				Items: []string{"No", "Yes"},
 			}
-			_, addPreflightsResult, err := addPreflights.Run()
+			_, addPreflightsResult, err := runSelect(addPreflights)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -391,7 +391,7 @@ func (r *runners) initConfig(cmd *cobra.Command, nonInteractive bool, skipDetect
 				Label: "Configure linting? (recommended)",
 				Items: []string{"Yes", "No"},
 			}
-			_, lintingResult, err := configureLinting.Run()
+			_, lintingResult, err := runSelect(configureLinting)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					fmt.Fprintf(r.w, "\nCancelled\n")
@@ -528,7 +528,7 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 			Label:   "Chart path (glob patterns supported, e.g., ./charts/*)",
 			Default: "",
 		}
-		path, err := pathPrompt.Run()
+		path, err := runPrompt(pathPrompt)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -546,7 +546,7 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 			Label: "Specify chart/app versions? (optional)",
 			Items: []string{"No", "Yes"},
 		}
-		_, addVersionsResult, err := addVersions.Run()
+		_, addVersionsResult, err := runSelect(addVersions)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -559,7 +559,7 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 				Label:   "Chart version (optional)",
 				Default: "",
 			}
-			chart.ChartVersion, err = chartVersionPrompt.Run()
+			chart.ChartVersion, err = runPrompt(chartVersionPrompt)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					return nil, errors.New("cancelled")
@@ -571,7 +571,7 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 				Label:   "App version (optional)",
 				Default: "",
 			}
-			chart.AppVersion, err = appVersionPrompt.Run()
+			chart.AppVersion, err = runPrompt(appVersionPrompt)
 			if err != nil {
 				if err == promptui.ErrInterrupt {
 					return nil, errors.New("cancelled")
@@ -586,7 +586,7 @@ func (r *runners) promptForChartPaths() ([]tools.ChartConfig, error) {
 			Label: "Add another chart?",
 			Items: []string{"No", "Yes"},
 		}
-		_, result, err := addAnother.Run()
+		_, result, err := runSelect(addAnother)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -649,7 +649,7 @@ func (r *runners) promptForChart(charts []tools.ChartConfig) (string, string, er
 		Items: displayNames,
 	}
 
-	idx, _, err := prompt.Run()
+	idx, _, err := runSelect(prompt)
 	if err != nil {
 		if err == promptui.ErrInterrupt {
 			return "", "", errors.New("cancelled")
@@ -671,7 +671,7 @@ func (r *runners) promptForPreflightPathsWithCharts(charts []tools.ChartConfig, 
 			Label:   "Preflight spec path (e.g., ./preflight.yaml)",
 			Default: "",
 		}
-		path, err := pathPrompt.Run()
+		path, err := runPrompt(pathPrompt)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -705,7 +705,7 @@ func (r *runners) promptForPreflightPathsWithCharts(charts []tools.ChartConfig, 
 			Label: "Add another preflight spec?",
 			Items: []string{"No", "Yes"},
 		}
-		_, result, err := addAnother.Run()
+		_, result, err := runSelect(addAnother)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -729,7 +729,7 @@ func (r *runners) promptForManifests() ([]string, error) {
 			Label:   "Manifest path (glob patterns supported, e.g., ./manifests/*.yaml)",
 			Default: "",
 		}
-		path, err := manifestPrompt.Run()
+		path, err := runPrompt(manifestPrompt)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -746,7 +746,7 @@ func (r *runners) promptForManifests() ([]string, error) {
 			Label: "Add another manifest pattern?",
 			Items: []string{"No", "Yes"},
 		}
-		_, result, err := addAnother.Run()
+		_, result, err := runSelect(addAnother)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -775,7 +775,7 @@ func (r *runners) promptForLintConfig(hasCharts, hasPreflights bool) (*tools.Rep
 			Label: "Enable Helm linting?",
 			Items: []string{"Yes", "No"},
 		}
-		_, result, err := enableHelm.Run()
+		_, result, err := runSelect(enableHelm)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -792,7 +792,7 @@ func (r *runners) promptForLintConfig(hasCharts, hasPreflights bool) (*tools.Rep
 			Label: "Enable preflight linting?",
 			Items: []string{"Yes", "No"},
 		}
-		_, result, err := enablePreflight.Run()
+		_, result, err := runSelect(enablePreflight)
 		if err != nil {
 			if err == promptui.ErrInterrupt {
 				return nil, errors.New("cancelled")
@@ -809,7 +809,7 @@ func (r *runners) promptForLintConfig(hasCharts, hasPreflights bool) (*tools.Rep
 		Label: "Enable support bundle linting?",
 		Items: []string{"Yes", "No"},
 	}
-	_, sbResult, err := enableSupportBundle.Run()
+	_, sbResult, err := runSelect(enableSupportBundle)
 	if err != nil {
 		if err == promptui.ErrInterrupt {
 			return nil, errors.New("cancelled")
@@ -864,7 +864,7 @@ func (r *runners) promptForAppSelection(ctx context.Context) (string, error) {
 		Size:  10,
 	}
 
-	idx, _, err := prompt.Run()
+	idx, _, err := runSelect(prompt)
 	if err != nil {
 		if err == promptui.ErrInterrupt {
 			return "", errors.New("cancelled")
