@@ -122,9 +122,14 @@ func exchangeNonceForToken(uri string, nonce string) (string, error) {
 		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	// Token JSON is small; bound allocation against a hostile exchange endpoint.
+	const maxTokenResponse = 1 << 20 // 1 MiB
+	b, err := io.ReadAll(io.LimitReader(resp.Body, maxTokenResponse+1))
 	if err != nil {
 		return "", err
+	}
+	if len(b) > maxTokenResponse {
+		return "", fmt.Errorf("token response exceeds %d bytes", maxTokenResponse)
 	}
 
 	type tokenResponse struct {

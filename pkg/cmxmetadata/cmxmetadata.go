@@ -17,6 +17,8 @@ const (
 	mmdsPath     = "/latest/vendor-api"
 	mmdsTimeout  = 500 * time.Millisecond // fail fast if not in CMX
 	tokenLeeway  = 60 * time.Second       // refresh token this early before expiry
+	// maxMetadataBody bounds MMDS / token JSON responses (credentials, not archives).
+	maxMetadataBody = 1 << 20 // 1 MiB
 )
 
 // ErrNotAvailable is returned when the CMX metadata service is not reachable.
@@ -61,7 +63,7 @@ func GetVMMetadata() (*VMMetadata, error) {
 		return nil, ErrNotAvailable
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := readAllLimited(resp.Body, maxMetadataBody)
 	if err != nil {
 		return nil, ErrNotAvailable
 	}
@@ -140,7 +142,7 @@ func exchangeCredentials(meta *VMMetadata) (string, *time.Time, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := readAllLimited(resp.Body, maxMetadataBody)
 	if err != nil {
 		return "", nil, fmt.Errorf("reading token response body: %w", err)
 	}
@@ -165,4 +167,15 @@ func exchangeCredentials(meta *VMMetadata) (string, *time.Time, error) {
 	}
 
 	return tokenResp.AccessToken, expiresAt, nil
+}
+
+func readAllLimited(r io.Reader, limit int64) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(r, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, fmt.Errorf("response body exceeds %d bytes", limit)
+	}
+	return body, nil
 }

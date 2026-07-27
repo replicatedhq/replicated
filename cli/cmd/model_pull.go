@@ -109,10 +109,14 @@ func (r *runners) pullModel(cmd *cobra.Command, args []string) error {
 	}
 	defer manifestContent.Close()
 
-	// Read the manifest content into a byte slice
-	manifestBytes, err := io.ReadAll(manifestContent)
+	// Read the manifest content into a byte slice (OCI manifests are small JSON).
+	const maxManifestBody = 16 << 20 // 16 MiB
+	manifestBytes, err := io.ReadAll(io.LimitReader(manifestContent, maxManifestBody+1))
 	if err != nil {
 		return err
+	}
+	if len(manifestBytes) > maxManifestBody {
+		return fmt.Errorf("OCI manifest exceeds %d bytes", maxManifestBody)
 	}
 
 	var manifest v1.Manifest
