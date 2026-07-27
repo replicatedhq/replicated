@@ -156,23 +156,6 @@ func TestDoJSONWithoutUnmarshalErrorHandlingAndHeaders(t *testing.T) {
 	}
 }
 
-func TestReadAllLimited(t *testing.T) {
-	t.Parallel()
-
-	ok, err := readAllLimited(strings.NewReader("hello"), 10)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if string(ok) != "hello" {
-		t.Fatalf("got %q, want hello", ok)
-	}
-
-	_, err = readAllLimited(strings.NewReader(strings.Repeat("a", 11)), 10)
-	if err == nil {
-		t.Fatal("expected error when body exceeds limit")
-	}
-}
-
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {

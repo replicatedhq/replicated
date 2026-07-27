@@ -19,10 +19,6 @@ import (
 
 const apiOrigin = "https://api.replicated.com/vendor"
 
-// maxResponseBody is a generous ceiling for Vendor API response bodies.
-// Large multi-document releases must still fit; this only bounds unbounded allocation.
-const maxResponseBody = 100 << 20 // 100 MiB
-
 var (
 	ErrForbidden = errors.New("the action is not allowed for the current user or team")
 )
@@ -159,7 +155,7 @@ func (c *HTTPClient) DoJSONWithoutUnmarshal(ctx context.Context, method string, 
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, err := readAllLimited(resp.Body, maxResponseBody)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "read body")
 	}
@@ -216,14 +212,14 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	}
 	if resp.StatusCode != successStatus {
 		if resp.StatusCode == http.StatusForbidden {
-			body, err := readAllLimited(resp.Body, maxResponseBody)
+			body, err := io.ReadAll(resp.Body)
 			if err != nil {
 				return ErrForbidden
 			}
 
 			return parseForbiddenError(body)
 		}
-		body, _ := readAllLimited(resp.Body, maxResponseBody)
+		body, _ := io.ReadAll(resp.Body)
 		return APIError{
 			Method:     method,
 			Endpoint:   endpoint,
@@ -233,7 +229,7 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 		}
 	}
 	if respBody != nil {
-		bodyBytes, err := readAllLimited(resp.Body, maxResponseBody)
+		bodyBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "read body")
 		}
@@ -244,17 +240,6 @@ func (c *HTTPClient) DoJSON(ctx context.Context, method string, path string, suc
 	}
 
 	return nil
-}
-
-func readAllLimited(r io.Reader, limit int64) ([]byte, error) {
-	body, err := io.ReadAll(io.LimitReader(r, limit+1))
-	if err != nil {
-		return nil, err
-	}
-	if int64(len(body)) > limit {
-		return nil, fmt.Errorf("response body exceeds %d bytes", limit)
-	}
-	return body, nil
 }
 
 func (c *HTTPClient) setCommonHeaders(req *http.Request) error {
@@ -344,11 +329,11 @@ func (c *HTTPClient) HTTPGet(path string, successStatus int) ([]byte, error) {
 		return nil, ErrNotFound
 	}
 	if resp.StatusCode != successStatus {
-		body, _ := readAllLimited(resp.Body, maxResponseBody)
+		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("GET %s %d: %s", endpoint, resp.StatusCode, body)
 	}
 
-	return readAllLimited(resp.Body, maxResponseBody)
+	return io.ReadAll(resp.Body)
 }
 
 var knownErrorCodes = map[string]string{
