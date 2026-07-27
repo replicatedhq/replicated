@@ -183,7 +183,7 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 	// offer a switcher. Without a token we skip this and the switcher is hidden.
 	customersB64 := ""
 	if token != "" {
-		b64, err := buildPreviewCustomersEnv(appSlug, token)
+		b64, err := buildPreviewCustomersEnv(cmd.Context(), appSlug, token)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not fetch customers (%v) — switcher will be hidden\n", err)
 		} else {
@@ -297,11 +297,11 @@ type previewEntitlementValue struct {
 // buildPreviewCustomersEnv fetches the app + its customers from the vendor API
 // and returns a base64-encoded JSON array of License-shaped objects suitable
 // for the EP_PREVIEW_CUSTOMERS_JSON env var.
-func buildPreviewCustomersEnv(appSlug, token string) (string, error) {
+func buildPreviewCustomersEnv(ctx context.Context, appSlug, token string) (string, error) {
 	httpClient := platformclient.NewHTTPClient(platformOrigin, token)
 	client := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 
-	app, err := client.GetApp(context.TODO(), appSlug, true)
+	app, err := client.GetApp(ctx, appSlug, true)
 	if err != nil {
 		return "", errors.Wrap(err, "get app")
 	}

@@ -53,7 +53,7 @@ func (r *runners) showDefault(cmd *cobra.Command, defaultType string) error {
 
 	switch defaultType {
 	case "app":
-		app, err := getApp(defaultValue, r.api.KotsClient)
+		app, err := getApp(cmd.Context(), defaultValue, r.api.KotsClient)
 		if err != nil {
 			return errors.Wrap(err, "get app")
 		}

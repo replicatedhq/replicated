@@ -36,7 +36,7 @@ replicated default set app my-app-slug`,
 func (r *runners) setDefault(cmd *cobra.Command, defaultType string, defaultValue string) error {
 	switch defaultType {
 	case "app":
-		app, err := getApp(defaultValue, r.api.KotsClient)
+		app, err := getApp(cmd.Context(), defaultValue, r.api.KotsClient)
 		if err != nil {
 			return errors.Wrap(err, "get app")
 		}
