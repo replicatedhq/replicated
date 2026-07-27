@@ -115,6 +115,10 @@ var templates = &promptui.PromptTemplates{
 }
 
 func promptConfirmDelete() (string, error) {
+	if err := ensureInteractive(); err != nil {
+		return "", errors.Wrap(err, "use --force to skip the confirmation prompt")
+	}
+
 	prompt := promptui.Prompt{
 		Label:     "Delete the above listed application? There is no undo:",
 		Templates: templates,

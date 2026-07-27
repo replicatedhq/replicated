@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"strings"
 
 	"github.com/manifoldco/promptui"
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +35,20 @@ func contains(vals []string, val string) bool {
 }
 
 func (r *runners) readPasswordFromStdIn(label string) (string, error) {
+	// --password-stdin / --token-stdin with a pipe: read the secret from stdin
+	// instead of opening an interactive prompt that would hang in CI.
+	if tools.IsNonInteractive() {
+		data, err := io.ReadAll(r.stdin)
+		if err != nil {
+			return "", errors.Wrap(err, "read password from stdin")
+		}
+		password := strings.TrimSpace(string(data))
+		if password == "" {
+			return "", errors.New("password cannot be empty")
+		}
+		return password, nil
+	}
+
 	prompt := promptui.Prompt{
 		Label:     fmt.Sprintf("%s:", label),
 		Mask:      '*',

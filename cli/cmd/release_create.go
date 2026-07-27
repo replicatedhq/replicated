@@ -709,6 +709,10 @@ func makeReleaseFromChart(chartFile string) (string, error) {
 }
 
 func promptForConfirm() (string, error) {
+	if err := ensureInteractive(); err != nil {
+		return "", errors.Wrap(err, "use --confirm-auto or -y to skip the confirmation prompt")
+	}
+
 	prompt := promptui.Prompt{
 		Label:     "Create with these properties? (default Yes) [Y/n]",
 		Templates: templates,
