@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/pkg/errors"
@@ -35,7 +34,7 @@ func (r *runners) InitNetworkCreate(parent *cobra.Command) *cobra.Command {
 	return cmd
 }
 
-func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
+func (r *runners) createNetwork(cmd *cobra.Command, args []string) error {
 	if r.args.createNetworkName == "" {
 		r.args.createNetworkName = namesgenerator.GetRandomName(0)
 	}
@@ -48,9 +47,12 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 	}
 
 	network, err := r.createAndWaitForNetwork(opts)
+	var waitTimeout error
 	if err != nil {
-		if errors.Cause(err) == ErrVMWaitDurationExceeded {
-			defer os.Exit(124)
+		// waitForNetwork returns ErrWaitDurationExceeded (not the VM sentinel).
+		if errors.Cause(err) == ErrWaitDurationExceeded {
+			// Still print the partially ready network below, then exit 124.
+			waitTimeout = err
 		} else {
 			return err
 		}
@@ -58,10 +60,18 @@ func (r *runners) createNetwork(_ *cobra.Command, args []string) error {
 
 	if opts.DryRun {
 		_, err = fmt.Fprintln(r.w, "Dry run succeeded.")
+		if err != nil {
+			return err
+		}
+	} else if err := print.Network(r.outputFormat, r.w, network); err != nil {
 		return err
 	}
 
-	return print.Network(r.outputFormat, r.w, network)
+	if waitTimeout != nil {
+		cmd.SilenceErrors = true
+		return newExitError(124, waitTimeout)
+	}
+	return nil
 }
 
 func (r *runners) createAndWaitForNetwork(opts kotsclient.CreateNetworkOpts) (*types.Network, error) {
