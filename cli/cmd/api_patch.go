@@ -50,7 +50,7 @@ func (r *runners) apiPatch(cmd *cobra.Command, args []string) error {
 
 	} else if pathParts[0] == "v3" {
 		kotsRestClient := kotsclient.VendorV3Client{HTTPClient: *r.platformAPI}
-		response, err := kotsRestClient.Patch(path, r.args.apiPatchBody)
+		response, err := kotsRestClient.Patch(cmd.Context(), path, r.args.apiPatchBody)
 		if err != nil {
 			return err
 		}
