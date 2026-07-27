@@ -15,7 +15,7 @@ We recommend piping the output to jq for easier reading.
 
 Pass the PATH of the request as the final argument (including the API version
 prefix). Supported versions are /v1, /v2, and /v3. Do not include the host.`,
-		Example: `replicated api patch /v3/customer/2VffY549paATVfHSGpJhjh6Ehpy -b '{"name":"Valuable Customer"}'`,
+		Example:      `replicated api patch /v3/customer/2VffY549paATVfHSGpJhjh6Ehpy -b '{"name":"Valuable Customer"}'`,
 		RunE:         r.apiPatch,
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
