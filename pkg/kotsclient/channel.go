@@ -155,7 +155,23 @@ func (c *VendorV3Client) UnDemoteChannelRelease(appID string, channelID string, 
 }
 
 func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
-	return c.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, 0, 0)
+	allReleases := []*types.ChannelRelease{}
+	page := 0
+	pageSize := 20
+
+	for {
+		releases, err := c.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, page, pageSize)
+		if err != nil {
+			return nil, err
+		}
+		allReleases = append(allReleases, releases...)
+		if len(releases) < pageSize {
+			break
+		}
+		page += 1
+	}
+
+	return allReleases, nil
 }
 
 func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
