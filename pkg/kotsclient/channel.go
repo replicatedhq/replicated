@@ -174,6 +174,34 @@ func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, inc
 	return allReleases, nil
 }
 
+func (c *VendorV3Client) ListChannelReleasesByVersion(appID string, channelID string, versionLabel string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
+	type listChannelReleasesResponse struct {
+		Releases []*types.ChannelRelease `json:"releases"`
+	}
+
+	response := listChannelReleasesResponse{}
+	v := url.Values{}
+	v.Set("versionLabel", versionLabel)
+	if includeInstallerImages != "" {
+		v.Set("includeInstallerImages", includeInstallerImages)
+	}
+	// A versionLabel filter should return a small number of releases, so a
+	// single page is sufficient. This avoids the cost of paginating through a
+	// large channel history when looking for a specific version.
+	v.Set("pageSize", "20")
+
+	reqURL := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))
+	if encoded := v.Encode(); encoded != "" {
+		reqURL = fmt.Sprintf("%s?%s", reqURL, encoded)
+	}
+	err := c.DoJSON(context.TODO(), "GET", reqURL, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channel releases by version")
+	}
+
+	return response.Releases, nil
+}
+
 func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
 	type listChannelReleasesResponse struct {
 		Releases []*types.ChannelRelease `json:"releases"`

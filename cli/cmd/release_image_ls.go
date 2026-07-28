@@ -64,15 +64,27 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	var proxyDomain string
 
 	if r.args.releaseImageLSVersion != "" {
-		// For specific versions, we need to get all releases
-		channelReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channel.ID, r.args.releaseImageLSIncludeInstallerImages)
+		// For specific versions, try the server-side versionLabel filter first.
+		// This avoids downloading every page of a large channel history.
+		channelReleases, err := r.api.ListChannelReleasesByVersion(r.appID, r.appType, channel.ID, r.args.releaseImageLSVersion, r.args.releaseImageLSIncludeInstallerImages)
 		if err != nil {
 			return fmt.Errorf("failed to list channel releases: %w", err)
 		}
 
 		targetRelease, err = findTargetRelease(channelReleases, r.args.releaseImageLSVersion)
 		if err != nil {
-			return err
+			// The versionLabel filter may not match when the version label differs
+			// from the semver. Fall back to listing all releases and searching by
+			// semver to preserve the previous behavior in those edge cases.
+			channelReleases, err = r.api.ListChannelReleases(r.appID, r.appType, channel.ID, r.args.releaseImageLSIncludeInstallerImages)
+			if err != nil {
+				return fmt.Errorf("failed to list channel releases: %w", err)
+			}
+
+			targetRelease, err = findTargetRelease(channelReleases, r.args.releaseImageLSVersion)
+			if err != nil {
+				return err
+			}
 		}
 
 		// Get proxy domain for version-specific releases
