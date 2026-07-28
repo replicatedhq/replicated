@@ -66,25 +66,9 @@ func (r *runners) releaseImageLS(cmd *cobra.Command, args []string) error {
 	if r.args.releaseImageLSVersion != "" {
 		// For specific versions, try the server-side versionLabel filter first.
 		// This avoids downloading every page of a large channel history.
-		channelReleases, err := r.api.ListChannelReleasesByVersion(r.appID, r.appType, channel.ID, r.args.releaseImageLSVersion, r.args.releaseImageLSIncludeInstallerImages)
+		targetRelease, err = r.findReleaseByVersion(channel.ID, r.args.releaseImageLSVersion)
 		if err != nil {
-			return fmt.Errorf("failed to list channel releases: %w", err)
-		}
-
-		targetRelease, err = findTargetRelease(channelReleases, r.args.releaseImageLSVersion)
-		if err != nil {
-			// The versionLabel filter may not match when the version label differs
-			// from the semver. Fall back to listing all releases and searching by
-			// semver to preserve the previous behavior in those edge cases.
-			channelReleases, err = r.api.ListChannelReleases(r.appID, r.appType, channel.ID, r.args.releaseImageLSIncludeInstallerImages)
-			if err != nil {
-				return fmt.Errorf("failed to list channel releases: %w", err)
-			}
-
-			targetRelease, err = findTargetRelease(channelReleases, r.args.releaseImageLSVersion)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 
 		// Get proxy domain for version-specific releases
@@ -183,6 +167,24 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 	}
 
 	return cleaned
+}
+
+// findReleaseByVersion tries the API's versionLabel filter first, and falls back
+// to listing all releases when the filter errors or returns no semver match.
+func (r *runners) findReleaseByVersion(channelID string, version string) (*types.ChannelRelease, error) {
+	filteredReleases, err := r.api.ListChannelReleasesByVersion(r.appID, r.appType, channelID, version, r.args.releaseImageLSIncludeInstallerImages)
+	if err == nil {
+		if release, err := findTargetRelease(filteredReleases, version); err == nil {
+			return release, nil
+		}
+	}
+
+	// Fallback: list all releases and search by semver.
+	allReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channelID, r.args.releaseImageLSIncludeInstallerImages)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list channel releases: %w", err)
+	}
+	return findTargetRelease(allReleases, version)
 }
 
 // findTargetRelease finds the target release from a list of releases

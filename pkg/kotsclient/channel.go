@@ -15,6 +15,10 @@ type ListChannelsResponse struct {
 	Channels []*types.KotsChannel `json:"channels"`
 }
 
+type listChannelReleasesResponse struct {
+	Releases []*types.ChannelRelease `json:"releases"`
+}
+
 func (c *VendorV3Client) ListKotsChannels(appID string, channelName string, excludeDetails bool) ([]*types.KotsChannel, error) {
 	var response = ListChannelsResponse{}
 	v := url.Values{}
@@ -164,10 +168,10 @@ func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, inc
 		if err != nil {
 			return nil, err
 		}
-		allReleases = append(allReleases, releases...)
-		if len(releases) < pageSize {
+		if len(releases) == 0 {
 			break
 		}
+		allReleases = append(allReleases, releases...)
 		page += 1
 	}
 
@@ -175,10 +179,6 @@ func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, inc
 }
 
 func (c *VendorV3Client) ListChannelReleasesByVersion(appID string, channelID string, versionLabel string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
-	type listChannelReleasesResponse struct {
-		Releases []*types.ChannelRelease `json:"releases"`
-	}
-
 	response := listChannelReleasesResponse{}
 	v := url.Values{}
 	v.Set("versionLabel", versionLabel)
@@ -203,10 +203,6 @@ func (c *VendorV3Client) ListChannelReleasesByVersion(appID string, channelID st
 }
 
 func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
-	type listChannelReleasesResponse struct {
-		Releases []*types.ChannelRelease `json:"releases"`
-	}
-
 	response := listChannelReleasesResponse{}
 	v := url.Values{}
 	if includeInstallerImages != "" {

@@ -47,7 +47,7 @@ func TestListChannelReleases_Pagination(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, releases, 21)
 	require.Equal(t, "2.17.12", releases[20].Semver)
-	require.Equal(t, 2, pageCount)
+	require.Equal(t, 3, pageCount)
 }
 
 func TestListChannelReleases_Pagination_ExactPageSize(t *testing.T) {
