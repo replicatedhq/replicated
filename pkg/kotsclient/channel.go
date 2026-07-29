@@ -15,6 +15,10 @@ type ListChannelsResponse struct {
 	Channels []*types.KotsChannel `json:"channels"`
 }
 
+type listChannelReleasesResponse struct {
+	Releases []*types.ChannelRelease `json:"releases"`
+}
+
 func (c *VendorV3Client) ListKotsChannels(appID string, channelName string, excludeDetails bool) ([]*types.KotsChannel, error) {
 	var response = ListChannelsResponse{}
 	v := url.Values{}
@@ -155,14 +159,50 @@ func (c *VendorV3Client) UnDemoteChannelRelease(appID string, channelID string, 
 }
 
 func (c *VendorV3Client) ListChannelReleases(appID string, channelID string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
-	return c.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, 0, 0)
+	allReleases := []*types.ChannelRelease{}
+	page := 0
+	pageSize := 20
+
+	for {
+		releases, err := c.ListChannelReleasesPaged(appID, channelID, includeInstallerImages, page, pageSize)
+		if err != nil {
+			return nil, err
+		}
+		if len(releases) == 0 {
+			break
+		}
+		allReleases = append(allReleases, releases...)
+		page += 1
+	}
+
+	return allReleases, nil
+}
+
+func (c *VendorV3Client) ListChannelReleasesByVersion(appID string, channelID string, versionLabel string, includeInstallerImages string) ([]*types.ChannelRelease, error) {
+	response := listChannelReleasesResponse{}
+	v := url.Values{}
+	v.Set("versionLabel", versionLabel)
+	if includeInstallerImages != "" {
+		v.Set("includeInstallerImages", includeInstallerImages)
+	}
+	// A versionLabel filter should return a small number of releases, so a
+	// single page is sufficient. This avoids the cost of paginating through a
+	// large channel history when looking for a specific version.
+	v.Set("pageSize", "20")
+
+	reqURL := fmt.Sprintf("/v3/app/%s/channel/%s/releases", appID, url.QueryEscape(channelID))
+	if encoded := v.Encode(); encoded != "" {
+		reqURL = fmt.Sprintf("%s?%s", reqURL, encoded)
+	}
+	err := c.DoJSON(context.TODO(), "GET", reqURL, http.StatusOK, nil, &response)
+	if err != nil {
+		return nil, errors.Wrap(err, "list channel releases by version")
+	}
+
+	return response.Releases, nil
 }
 
 func (c *VendorV3Client) ListChannelReleasesPaged(appID string, channelID string, includeInstallerImages string, page int, pageSize int) ([]*types.ChannelRelease, error) {
-	type listChannelReleasesResponse struct {
-		Releases []*types.ChannelRelease `json:"releases"`
-	}
-
 	response := listChannelReleasesResponse{}
 	v := url.Values{}
 	if includeInstallerImages != "" {
