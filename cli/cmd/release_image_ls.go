@@ -169,56 +169,16 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 	return cleaned
 }
 
-// findReleaseByVersion tries the API's versionLabel filter first, and falls back
-// to listing all releases when the filter errors or returns no semver match.
+// findReleaseByVersion returns the channel release matching the requested version.
+// ListChannelReleasesByVersion uses a server-side versionLabel filter and returns
+// matching releases sorted by channel sequence, so the first result is the target.
 func (r *runners) findReleaseByVersion(channelID string, version string) (*types.ChannelRelease, error) {
-	filteredReleases, err := r.api.ListChannelReleasesByVersion(r.appID, r.appType, channelID, version, r.args.releaseImageLSIncludeInstallerImages)
-	if err == nil {
-		if release, err := findTargetRelease(filteredReleases, version); err == nil {
-			return release, nil
-		}
-	}
-
-	// Fallback: list all releases and search by semver.
-	allReleases, err := r.api.ListChannelReleases(r.appID, r.appType, channelID, r.args.releaseImageLSIncludeInstallerImages)
+	releases, err := r.api.ListChannelReleasesByVersion(r.appID, r.appType, channelID, version, r.args.releaseImageLSIncludeInstallerImages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list channel releases: %w", err)
 	}
-	return findTargetRelease(allReleases, version)
-}
-
-// findTargetRelease finds the target release from a list of releases
-// If requestedVersion is empty, returns the current release (highest channel sequence)
-// If requestedVersion is specified, returns the release with matching semver
-func findTargetRelease(releases []*types.ChannelRelease, requestedVersion string) (*types.ChannelRelease, error) {
 	if len(releases) == 0 {
-		return nil, errors.New("no releases found in channel")
+		return nil, fmt.Errorf("no release found with version %q in channel", version)
 	}
-
-	var targetRelease *types.ChannelRelease
-
-	if requestedVersion != "" {
-		// Find release by semver
-		for _, release := range releases {
-			if release.Semver == requestedVersion {
-				targetRelease = release
-				break
-			}
-		}
-		if targetRelease == nil {
-			return nil, fmt.Errorf("no release found with version %q in channel", requestedVersion)
-		}
-	} else {
-		// Find the current release (highest channel sequence)
-		for _, release := range releases {
-			if targetRelease == nil || release.ChannelSequence > targetRelease.ChannelSequence {
-				targetRelease = release
-			}
-		}
-		if targetRelease == nil {
-			return nil, errors.New("no current release found")
-		}
-	}
-
-	return targetRelease, nil
+	return releases[0], nil
 }
