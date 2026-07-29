@@ -15,6 +15,9 @@ var checksumHTTPClient = &http.Client{
 	Timeout: 30 * time.Second,
 }
 
+// maxChecksumBody bounds checksum text files (not the archives themselves).
+const maxChecksumBody = 1 << 20 // 1 MiB
+
 // VerifyHelmChecksum verifies a Helm binary against its .sha256sum file
 func VerifyHelmChecksum(data []byte, archiveURL string) error {
 	// Helm provides per-file checksums: <url>.sha256sum
@@ -31,7 +34,7 @@ func VerifyHelmChecksum(data []byte, archiveURL string) error {
 		return fmt.Errorf("checksum file not found (HTTP %d): %s", resp.StatusCode, checksumURL)
 	}
 
-	checksumData, err := io.ReadAll(resp.Body)
+	checksumData, err := readAllLimited(resp.Body, maxChecksumBody)
 	if err != nil {
 		return fmt.Errorf("reading checksum file: %w", err)
 	}
@@ -71,7 +74,7 @@ func VerifyTroubleshootChecksum(data []byte, version, filename string) error {
 		return fmt.Errorf("checksums file not found (HTTP %d): %s", resp.StatusCode, checksumURL)
 	}
 
-	checksumData, err := io.ReadAll(resp.Body)
+	checksumData, err := readAllLimited(resp.Body, maxChecksumBody)
 	if err != nil {
 		return fmt.Errorf("reading checksums file: %w", err)
 	}
@@ -101,4 +104,15 @@ func VerifyTroubleshootChecksum(data []byte, version, filename string) error {
 	}
 
 	return nil
+}
+
+func readAllLimited(r io.Reader, limit int64) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(r, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(body)) > limit {
+		return nil, fmt.Errorf("response body exceeds %d bytes", limit)
+	}
+	return body, nil
 }
