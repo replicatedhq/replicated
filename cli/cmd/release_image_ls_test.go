@@ -76,5 +76,3 @@ func TestCleanImageName(t *testing.T) {
 		})
 	}
 }
-
-
