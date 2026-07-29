@@ -161,9 +161,7 @@ func cleanImageName(image string, proxyRegistryDomain string) string {
 	}
 
 	for _, prefix := range prefixes {
-		if strings.HasPrefix(cleaned, prefix) {
-			cleaned = strings.TrimPrefix(cleaned, prefix)
-		}
+		cleaned = strings.TrimPrefix(cleaned, prefix)
 	}
 
 	return cleaned
