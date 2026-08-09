@@ -512,7 +512,17 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 
 		// attempt to load the app from cache
 		if appSlugOrID != "" {
-			app, err := cache.GetApp(appSlugOrID)
+			var app *types.App
+			var err error
+			if isV2Lint {
+				// Local v2 lint intentionally works without an API. It is the only
+				// path allowed to resolve an app slug from the origin-agnostic cache.
+				app, err = cache.GetApp(appSlugOrID)
+			} else {
+				// IDs are globally unique enough to cache. Slugs are not: the same
+				// slug can identify different apps when switching API origins.
+				app, err = cache.GetAppByID(appSlugOrID)
+			}
 			if err != nil {
 				return errors.Wrap(err, "get app from cache")
 			}
