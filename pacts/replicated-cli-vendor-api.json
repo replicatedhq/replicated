@@ -1199,7 +1199,7 @@
         "method": "GET",
         "path": "/v3/policies",
         "headers": {
-          "Authorization": "replicated-cli-list-policies-token",
+          "Authorization": "replicated-cli-list-policies-personal-token",
           "Content-Type": "application/json"
         }
       },
@@ -1242,7 +1242,7 @@
         "method": "GET",
         "path": "/v3/policies",
         "headers": {
-          "Authorization": "replicated-cli-get-policy-token",
+          "Authorization": "replicated-cli-get-policy-personal-token",
           "Content-Type": "application/json"
         }
       },
@@ -1285,7 +1285,7 @@
         "method": "POST",
         "path": "/v3/policy",
         "headers": {
-          "Authorization": "replicated-cli-create-policy-token",
+          "Authorization": "replicated-cli-create-policy-personal-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -1328,7 +1328,7 @@
         "method": "PUT",
         "path": "/v3/policy/replicated-cli-update-policy-id",
         "headers": {
-          "Authorization": "replicated-cli-update-policy-token",
+          "Authorization": "replicated-cli-update-policy-personal-token",
           "Content-Type": "application/json"
         },
         "body": {
@@ -1371,7 +1371,7 @@
         "method": "DELETE",
         "path": "/v3/policy/replicated-cli-delete-policy-id",
         "headers": {
-          "Authorization": "replicated-cli-delete-policy-token",
+          "Authorization": "replicated-cli-delete-policy-personal-token",
           "Content-Type": "application/json"
         }
       },

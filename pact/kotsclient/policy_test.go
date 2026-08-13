@@ -15,7 +15,7 @@ const adminPolicyDefinition = `{"v1":{"name":"Admin","resources":{"allowed":["**
 func Test_ListPolicies(t *testing.T) {
 	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		api := platformclient.NewHTTPClient(u, "replicated-cli-list-policies-token")
+		api := platformclient.NewHTTPClient(u, "replicated-cli-list-policies-personal-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		policies, err := client.ListPolicies()
@@ -34,7 +34,7 @@ func Test_ListPolicies(t *testing.T) {
 			Method: "GET",
 			Path:   dsl.String("/v3/policies"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-list-policies-token"),
+				"Authorization": dsl.String("replicated-cli-list-policies-personal-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
@@ -62,7 +62,7 @@ func Test_ListPolicies(t *testing.T) {
 func Test_GetPolicyByNameOrID(t *testing.T) {
 	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		api := platformclient.NewHTTPClient(u, "replicated-cli-get-policy-token")
+		api := platformclient.NewHTTPClient(u, "replicated-cli-get-policy-personal-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		policy, err := client.GetPolicyByNameOrID("Custom")
@@ -83,7 +83,7 @@ func Test_GetPolicyByNameOrID(t *testing.T) {
 			Method: "GET",
 			Path:   dsl.String("/v3/policies"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-get-policy-token"),
+				"Authorization": dsl.String("replicated-cli-get-policy-personal-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
@@ -111,7 +111,7 @@ func Test_GetPolicyByNameOrID(t *testing.T) {
 func Test_CreatePolicy(t *testing.T) {
 	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		api := platformclient.NewHTTPClient(u, "replicated-cli-create-policy-token")
+		api := platformclient.NewHTTPClient(u, "replicated-cli-create-policy-personal-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		policy, err := client.CreatePolicy("New Policy", "A test policy", adminPolicyDefinition)
@@ -130,7 +130,7 @@ func Test_CreatePolicy(t *testing.T) {
 			Method: "POST",
 			Path:   dsl.String("/v3/policy"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-create-policy-token"),
+				"Authorization": dsl.String("replicated-cli-create-policy-personal-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -161,7 +161,7 @@ func Test_CreatePolicy(t *testing.T) {
 func Test_UpdatePolicy(t *testing.T) {
 	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		api := platformclient.NewHTTPClient(u, "replicated-cli-update-policy-token")
+		api := platformclient.NewHTTPClient(u, "replicated-cli-update-policy-personal-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		policy, err := client.UpdatePolicy(
@@ -184,7 +184,7 @@ func Test_UpdatePolicy(t *testing.T) {
 			Method: "PUT",
 			Path:   dsl.String("/v3/policy/replicated-cli-update-policy-id"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-update-policy-token"),
+				"Authorization": dsl.String("replicated-cli-update-policy-personal-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 			Body: map[string]interface{}{
@@ -215,7 +215,7 @@ func Test_UpdatePolicy(t *testing.T) {
 func Test_DeletePolicy(t *testing.T) {
 	test := func() error {
 		u := fmt.Sprintf("http://localhost:%d", pact.Server.Port)
-		api := platformclient.NewHTTPClient(u, "replicated-cli-delete-policy-token")
+		api := platformclient.NewHTTPClient(u, "replicated-cli-delete-policy-personal-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
 		err := client.DeletePolicy("replicated-cli-delete-policy-id")
@@ -231,7 +231,7 @@ func Test_DeletePolicy(t *testing.T) {
 			Method: "DELETE",
 			Path:   dsl.String("/v3/policy/replicated-cli-delete-policy-id"),
 			Headers: dsl.MapMatcher{
-				"Authorization": dsl.String("replicated-cli-delete-policy-token"),
+				"Authorization": dsl.String("replicated-cli-delete-policy-personal-token"),
 				"Content-Type":  dsl.String("application/json"),
 			},
 		}).
