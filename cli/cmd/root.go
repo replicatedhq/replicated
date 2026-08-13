@@ -489,16 +489,19 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 			}()
 		}
 
-		if err = preRunSetupAPIs(cmd, args); err != nil {
-			return errors.Wrap(err, "set up APIs")
-		}
-
 		// release lint with REPLICATED_RELEASE_VALIDATION_V2=1 (local lint) reads
 		// .replicated independently for lint config and doesn't need app context.
 		// Skip .replicated app resolution only in that specific case to avoid
 		// unnecessary API calls when the app slug in .replicated doesn't exist.
 		isV2Lint := cmd.Name() == "lint" && cmd.Parent() != nil && cmd.Parent().Name() == "release" &&
 			os.Getenv("REPLICATED_RELEASE_VALIDATION_V2") == "1"
+
+		// v2 lint runs locally and intentionally works without API credentials.
+		if !isV2Lint {
+			if err = preRunSetupAPIs(cmd, args); err != nil {
+				return errors.Wrap(err, "set up APIs")
+			}
+		}
 		if isV2Lint {
 			if appSlugOrID == "" {
 				appSlugOrID = os.Getenv("REPLICATED_APP")
