@@ -25,12 +25,12 @@ require (
 	github.com/pact-foundation/pact-go v1.10.0
 	github.com/pkg/errors v0.9.1
 	github.com/replicatedhq/kotskinds v0.1.0
-	github.com/replicatedhq/troubleshoot v0.132.1
+	github.com/replicatedhq/troubleshoot v0.132.2
 	github.com/schollz/progressbar/v3 v3.19.1
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
-	github.com/stretchr/testify v1.12.0
+	github.com/stretchr/testify v1.12.1
 	github.com/tj/go-spin v1.1.0
 	golang.org/x/crypto v0.55.0
 	golang.org/x/term v0.45.0

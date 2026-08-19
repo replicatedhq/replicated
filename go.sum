@@ -620,8 +620,8 @@ github.com/replicatedhq/kotskinds v0.1.0 h1:FkFAExFH+kfDLXV2fZFVNtdXR02GkpDAGlUc
 github.com/replicatedhq/kotskinds v0.1.0/go.mod h1:8sswH8+cIoOVQdFtUfzOri+SEHIKw8YYwJvGOG9yYgI=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851 h1:eRlNDHxGfVkPCRXbA4BfQJvt5DHjFiTtWy3R/t4djyY=
 github.com/replicatedhq/termui/v3 v3.1.1-0.20200811145416-f40076d26851/go.mod h1:JDxG6+uubnk9/BZ2yUsyAJJwlptjrnmB2MPF5d2Xe/8=
-github.com/replicatedhq/troubleshoot v0.132.1 h1:jIVfvf8ltKh5GkPBNUxX8MGwT89WOUUs13RWF0nWqHA=
-github.com/replicatedhq/troubleshoot v0.132.1/go.mod h1:aP7exiwLrChMUYakpExytCIlXKJDeO7dDrcyKobRYLE=
+github.com/replicatedhq/troubleshoot v0.132.2 h1:mIdZ8L1G0J1DuP8WeE/dHWFtCflM37E1wK3nz/RlbVU=
+github.com/replicatedhq/troubleshoot v0.132.2/go.mod h1:aP7exiwLrChMUYakpExytCIlXKJDeO7dDrcyKobRYLE=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
@@ -680,8 +680,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
-github.com/stretchr/testify v1.12.0 h1:K6Mr6jO9JICuend/5xzTM03ydSV3vdNRYAdPSukj8uI=
-github.com/stretchr/testify v1.12.0/go.mod h1:bOYBZb5qJ00vPzWfIqBUZPaxK8jWiXc6d3ErP4Ca9Gw=
+github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
+github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8=
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/tj/go-spin v1.1.0 h1:lhdWZsvImxvZ3q1C5OIB7d72DuOwP4O2NdBg9PyzNds=
