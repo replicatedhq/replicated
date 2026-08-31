@@ -674,6 +674,42 @@ func TestIsHiddenPath(t *testing.T) {
 	}
 }
 
+func TestIsHiddenPath_AbsolutePathUnderHiddenParent(t *testing.T) {
+	// Paths should be evaluated relative to the project (cwd), not the absolute
+	// filesystem path. A workspace located under a hidden directory like
+	// /home/user/.openclaw/project should not cause files inside the project to
+	// be treated as hidden.
+	tmpDir := t.TempDir()
+	projectDir := filepath.Join(tmpDir, ".openclaw", "workspace")
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := os.Chdir(originalWd); err != nil {
+			t.Errorf("failed to restore cwd: %v", err)
+		}
+	}()
+
+	if err := os.Chdir(projectDir); err != nil {
+		t.Fatal(err)
+	}
+
+	normalFile := filepath.Join(projectDir, "manifests", "helmchart.yaml")
+	if isHiddenPath(normalFile) {
+		t.Errorf("isHiddenPath(%q) = true, want false (hidden parent outside project should not matter)", normalFile)
+	}
+
+	hiddenFile := filepath.Join(projectDir, ".hidden", "config.yaml")
+	if !isHiddenPath(hiddenFile) {
+		t.Errorf("isHiddenPath(%q) = false, want true (hidden segment inside project should be hidden)", hiddenFile)
+	}
+}
+
 func TestIsChartDirectory(t *testing.T) {
 	tmpDir := t.TempDir()
 

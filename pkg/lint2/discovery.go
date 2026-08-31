@@ -47,6 +47,18 @@ func DiscoverSupportBundlesFromManifests(manifestGlobs []string) ([]string, erro
 // Returns true for paths like .git, .github, foo/.hidden/bar, etc.
 // Does not consider . or .. as hidden (current/parent directory references).
 func isHiddenPath(path string) bool {
+	// Treat paths relative to the current working directory so that parent
+	// directories outside the project (e.g., /home/user/.openclaw/...) are not
+	// considered hidden. Hidden directories should only be evaluated within the
+	// project tree.
+	if abs, err := filepath.Abs(path); err == nil {
+		if cwd, err := os.Getwd(); err == nil {
+			if rel, err := filepath.Rel(cwd, abs); err == nil && !filepath.IsAbs(rel) {
+				path = rel
+			}
+		}
+	}
+
 	parts := strings.Split(filepath.ToSlash(path), "/")
 	for _, part := range parts {
 		if strings.HasPrefix(part, ".") && part != "." && part != ".." {
