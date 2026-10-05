@@ -50,6 +50,7 @@ jobs:
           echo "HOMEBREW_TAP_GITHUB_TOKEN first 4: ${HOMEBREW_TAP_GITHUB_TOKEN:0:4}"
       - name: Run goreleaser
         env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
         run: goreleaser release --clean
 
