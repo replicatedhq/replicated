@@ -1,0 +1,19 @@
+.depot/workflows/release.yml
+  s_4609202e511375::t_c98316b5ec4c2e 53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5a38ae48d6c2d2ebcbbde78b8febdafd6ea6dfc6",
+  "prompts": {},
+  "sessions": {
+    "s_4609202e511375": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10c9a-b81e-7432-a0d7-30a4ad95ab31",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Josh Sandlin <joshs@replicated.com>"
+    }
+  }
+}
