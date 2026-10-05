@@ -15,6 +15,7 @@ type createCustomerOpts struct {
 	CustomID                          string
 	ChannelName                       string
 	ExpiryDuration                    time.Duration
+	ExpiresAt                         string
 	EnsureChannel                     bool
 	IsAirgapEnabled                   bool
 	IsGitopsSupported                 bool
@@ -55,6 +56,9 @@ replicated customer create --app myapp --name "Enterprise Ltd" --type paid --cha
 # Create a trial customer with an expiration date
 replicated customer create --app myapp --name "Trial User" --type trial --channel stable --expires-in 720h
 
+# Create a customer whose license expires at a specific date
+replicated customer create --app myapp --name "Annual Customer" --type paid --channel stable --expires-at 2027-01-31
+
 # Create a customer with all available options
 replicated customer create --app myapp --name "Full Options Inc" --custom-id "FULL001" \
 	--channel stable --type paid --email "contact@fulloptions.com" --expires-in 8760h \
@@ -72,6 +76,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().StringVar(&opts.CustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
 	cmd.Flags().StringVar(&opts.ChannelName, "channel", "", "Release channel to which the customer should be assigned")
 	cmd.Flags().DurationVar(&opts.ExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
+	cmd.Flags().StringVar(&opts.ExpiresAt, "expires-at", "", "If set, the license will expire at this date. Accepts RFC3339 timestamps like '2027-01-31T15:04:05Z' or dates like '2027-01-31' (midnight UTC)")
 	cmd.Flags().BoolVar(&opts.EnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&opts.IsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
 	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
@@ -91,6 +96,7 @@ replicated customer create --app myapp --name "Full Options Inc" --custom-id "FU
 	cmd.Flags().StringVar(&opts.CustomerType, "type", "dev", "The license type to create. One of: dev|trial|paid|community|test (default: dev)")
 
 	cmd.MarkFlagRequired("channel")
+	cmd.MarkFlagsMutuallyExclusive("expires-in", "expires-at")
 
 	return cmd
 }
@@ -107,6 +113,15 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts) (e
 
 	if err := validateCustomerType(opts.CustomerType); err != nil {
 		return errors.Wrap(err, "validate customer type")
+	}
+	var expiresAt string
+	if cmd.Flags().Changed("expires-at") {
+		t, err := parseExpiresAt(opts.ExpiresAt)
+		if err != nil {
+			return err
+		}
+		expiresAt = t.Format(time.RFC3339)
+		opts.ExpiryDuration = time.Until(t)
 	}
 	if opts.CustomerType == "test" && opts.ExpiryDuration > time.Hour*48 {
 		return errors.New("test licenses cannot be created with an expiration date greater than 48 hours")
@@ -140,7 +155,7 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts) (e
 		CustomID:                     opts.CustomID,
 		Channels:                     channels,
 		AppID:                        r.appID,
-		ExpiresAtDuration:            opts.ExpiryDuration,
+		ExpiresAt:                    expiresAt,
 		IsAirgapEnabled:              opts.IsAirgapEnabled,
 		IsGitopsSupported:            opts.IsGitopsSupported,
 		IsSnapshotSupported:          opts.IsSnapshotSupported,
@@ -155,6 +170,9 @@ func (r *runners) createCustomer(cmd *cobra.Command, opts createCustomerOpts) (e
 		Email:                        opts.Email,
 	}
 
+	if cmd.Flags().Changed("expires-in") {
+		createOpts.ExpiresAtDuration = opts.ExpiryDuration
+	}
 	if cmd.Flags().Changed("helm-install") {
 		createOpts.IsHelmInstallEnabled = &opts.IsHelmInstallEnabled
 	}
@@ -188,4 +206,15 @@ func validateCustomerType(customerType string) error {
 	default:
 		return errors.Errorf("invalid customer type: %s", customerType)
 	}
+}
+
+// parseExpiresAt parses an RFC3339 timestamp or a YYYY-MM-DD date (midnight UTC).
+func parseExpiresAt(value string) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339, value); err == nil {
+		return t.UTC(), nil
+	}
+	if t, err := time.Parse(time.DateOnly, value); err == nil {
+		return t.UTC(), nil
+	}
+	return time.Time{}, errors.Errorf("invalid --expires-at value %q: must be an RFC3339 timestamp (e.g. 2027-01-31T15:04:05Z) or a date (e.g. 2027-01-31)", value)
 }
