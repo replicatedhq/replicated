@@ -16,6 +16,7 @@ type updateCustomerOpts struct {
 	CustomID                          string
 	Channel                           string
 	ExpiryDuration                    time.Duration
+	ExpiresAt                         string
 	EnsureChannel                     bool
 	IsAirgapEnabled                   bool
 	IsGitopsSupported                 bool
@@ -39,6 +40,7 @@ var customerUpdateFieldFlags = []string{
 	"custom-id",
 	"channel",
 	"expires-in",
+	"expires-at",
 	"airgap",
 	"gitops",
 	"snapshot",
@@ -84,6 +86,9 @@ replicated customer update --customer cus_abcdef123456 --name "Updated Corp" --t
 # Set an expiration date for a customer's license
 replicated customer update --customer cus_abcdef123456 --expires-in 8760h
 
+# Set the license to expire at a specific date and time
+replicated customer update --customer cus_abcdef123456 --expires-at 2027-01-31T00:00:00Z
+
 # Update a customer and output the result in JSON format
 replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --output json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -100,6 +105,7 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().StringVar(&opts.CustomID, "custom-id", "", "Set a custom customer ID to more easily tie this customer record to your external data systems")
 	cmd.Flags().StringVar(&opts.Channel, "channel", "", "Release channel to which the customer should be assigned")
 	cmd.Flags().DurationVar(&opts.ExpiryDuration, "expires-in", 0, "If set, an expiration date will be set on the license. Supports Go durations like '72h' or '3600m'")
+	cmd.Flags().StringVar(&opts.ExpiresAt, "expires-at", "", "If set, the license will expire at this date. Accepts RFC3339 timestamps like '2027-01-31T15:04:05Z' or dates like '2027-01-31' (midnight UTC)")
 	cmd.Flags().BoolVar(&opts.EnsureChannel, "ensure-channel", false, "If set, channel will be created if it does not exist.")
 	cmd.Flags().BoolVar(&opts.IsAirgapEnabled, "airgap", false, "If set, the license will allow airgap installs.")
 	cmd.Flags().BoolVar(&opts.IsGitopsSupported, "gitops", false, "If set, the license will allow the GitOps usage.")
@@ -118,6 +124,7 @@ replicated customer update --customer cus_abcdef123456 --name "JSON Corp" --outp
 	cmd.Flags().StringVar(&opts.Type, "type", "", "The license type to update. One of: dev|trial|paid|community|test")
 
 	cmd.MarkFlagRequired("customer")
+	cmd.MarkFlagsMutuallyExclusive("expires-in", "expires-at")
 
 	return cmd
 }
@@ -141,6 +148,16 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 
 	if !hasCustomerUpdate(cmd) {
 		return errors.New("at least one customer field must be specified")
+	}
+
+	var expiresAt string
+	if cmd.Flags().Changed("expires-at") {
+		t, err := parseExpiresAt(opts.ExpiresAt)
+		if err != nil {
+			return err
+		}
+		expiresAt = t.Format(time.RFC3339)
+		opts.ExpiryDuration = time.Until(t)
 	}
 
 	if cmd.Flags().Changed("type") {
@@ -172,6 +189,9 @@ func (r *runners) updateCustomer(cmd *cobra.Command, opts updateCustomerOpts) (e
 	}
 	if cmd.Flags().Changed("expires-in") {
 		updateOpts.ExpiresAtDuration = &opts.ExpiryDuration
+	}
+	if cmd.Flags().Changed("expires-at") {
+		updateOpts.ExpiresAt = &expiresAt
 	}
 	if cmd.Flags().Changed("airgap") {
 		updateOpts.IsAirgapEnabled = &opts.IsAirgapEnabled

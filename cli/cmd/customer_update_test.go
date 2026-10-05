@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"text/tabwriter"
+	"time"
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
@@ -103,6 +104,96 @@ func TestCustomerUpdateRequiresAChangedField(t *testing.T) {
 
 	err := updateCmd.RunE(updateCmd, nil)
 	require.EqualError(t, err, "at least one customer field must be specified")
+}
+
+func TestCustomerUpdateExpiresAt(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    string
+		expected string
+	}{
+		{name: "rfc3339 timestamp", value: "2027-01-31T15:04:05Z", expected: "2027-01-31T15:04:05Z"},
+		{name: "rfc3339 with offset is converted to UTC", value: "2027-01-31T15:04:05+02:00", expected: "2027-01-31T13:04:05Z"},
+		{name: "date only", value: "2027-01-31", expected: "2027-01-31T00:00:00Z"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var patchBody map[string]interface{}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				require.Equal(t, http.MethodPatch, r.Method)
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&patchBody))
+
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(`{"customer":{"id":"customer-id"}}`))
+			}))
+			defer server.Close()
+
+			r := &runners{
+				appID:        "app-id",
+				appType:      "kots",
+				api:          client.NewClient(server.URL, "fake-api-key", ""),
+				outputFormat: "json",
+				w:            tabwriter.NewWriter(io.Discard, 0, 0, 0, ' ', 0),
+			}
+
+			parent := r.InitCustomersCommand(&cobra.Command{Use: "replicated"})
+			updateCmd := r.InitCustomerUpdateCommand(parent)
+			require.NoError(t, updateCmd.Flags().Set("customer", "customer-id"))
+			require.NoError(t, updateCmd.Flags().Set("expires-at", tt.value))
+			require.NoError(t, updateCmd.RunE(updateCmd, nil))
+
+			require.Equal(t, map[string]interface{}{"expires_at": tt.expected}, patchBody)
+		})
+	}
+}
+
+func TestCustomerUpdateExpiresAtInvalid(t *testing.T) {
+	r := &runners{
+		appID:   "app-id",
+		appType: "kots",
+	}
+
+	parent := r.InitCustomersCommand(&cobra.Command{Use: "replicated"})
+	updateCmd := r.InitCustomerUpdateCommand(parent)
+	require.NoError(t, updateCmd.Flags().Set("customer", "customer-id"))
+	require.NoError(t, updateCmd.Flags().Set("expires-at", "next tuesday"))
+
+	err := updateCmd.RunE(updateCmd, nil)
+	require.ErrorContains(t, err, `invalid --expires-at value "next tuesday"`)
+}
+
+func TestCustomerUpdateExpiresAtTestLicenseLimit(t *testing.T) {
+	r := &runners{
+		appID:   "app-id",
+		appType: "kots",
+	}
+
+	parent := r.InitCustomersCommand(&cobra.Command{Use: "replicated"})
+	updateCmd := r.InitCustomerUpdateCommand(parent)
+	require.NoError(t, updateCmd.Flags().Set("customer", "customer-id"))
+	require.NoError(t, updateCmd.Flags().Set("type", "test"))
+	require.NoError(t, updateCmd.Flags().Set("expires-at", time.Now().Add(72*time.Hour).UTC().Format(time.RFC3339)))
+
+	err := updateCmd.RunE(updateCmd, nil)
+	require.EqualError(t, err, "test licenses cannot be updated with an expiration date greater than 48 hours")
+}
+
+func TestCustomerUpdateExpiresFlagsMutuallyExclusive(t *testing.T) {
+	r := &runners{
+		appID:   "app-id",
+		appType: "kots",
+	}
+
+	root := &cobra.Command{Use: "replicated"}
+	parent := r.InitCustomersCommand(root)
+	r.InitCustomerUpdateCommand(parent)
+	root.SetOut(io.Discard)
+	root.SetErr(io.Discard)
+	root.SetArgs([]string{"customer", "update", "--customer", "customer-id", "--expires-in", "72h", "--expires-at", "2027-01-31"})
+
+	err := root.Execute()
+	require.ErrorContains(t, err, "none of the others can be")
 }
 
 func customerUpdateMapKeys(values map[string]interface{}) []string {
