@@ -84,9 +84,18 @@ func (c *VendorV3Client) GetCustomerByID(customerID string) (*types.Customer, er
 }
 
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
+	return c.getCustomerByName(appID, name, false)
+}
+
+// GetCustomerByNameIncludeArchived is like GetCustomerByName but also matches archived customers.
+func (c *VendorV3Client) GetCustomerByNameIncludeArchived(appID string, name string) (*types.Customer, error) {
+	return c.getCustomerByName(appID, name, true)
+}
+
+func (c *VendorV3Client) getCustomerByName(appID string, name string, includeArchived bool) (*types.Customer, error) {
 	// Using the search API, we first to narrow down fuzzy matches to one exact match.
 	// Since search API may return stale data, we then also need to use the customer ID to get the exact customer record.
-	customers, err := c.listCustomersByName(appID, name)
+	customers, err := c.listCustomersByName(appID, name, includeArchived)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +129,7 @@ func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Cu
 
 // This function will use the search API to find customers by name, which uses fuzzy matching, so it may return multiple customers with similar names.
 // In most practical cases, this is still faster than using the /cutomers API to list all customers for the app.
-func (c *VendorV3Client) listCustomersByName(appID string, name string) ([]types.Customer, error) {
+func (c *VendorV3Client) listCustomersByName(appID string, name string, includeArchived bool) ([]types.Customer, error) {
 	if name == "" {
 		return nil, errors.New("name is required to search customers")
 	}
@@ -148,7 +157,7 @@ func (c *VendorV3Client) listCustomersByName(appID string, name string) ([]types
 			PageSize:         100,
 			Query:            fmt.Sprintf("name:%s", name),
 			IncludeActive:    true,
-			IncluseArchived:  false,
+			IncluseArchived:  includeArchived,
 			IncludeCommunity: true,
 			IncludeDev:       true,
 			IncludeInactive:  true,
