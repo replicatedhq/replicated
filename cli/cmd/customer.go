@@ -19,26 +19,11 @@ func (r *runners) InitCustomersCommand(parent *cobra.Command) *cobra.Command {
 }
 
 // resolveCustomer looks up a customer by ID first, then by name in the current app.
-func (r *runners) resolveCustomer(nameOrID string) (*types.Customer, error) {
-	customers, err := r.resolveCustomers(nameOrID, func(appID, name string) ([]types.Customer, error) {
-		c, err := r.api.GetCustomerByName(appID, name)
-		if err != nil {
-			return nil, err
-		}
-		return []types.Customer{*c}, nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &customers[0], nil
-}
-
-// resolveCustomers looks up a customer by ID first. If no customer has that ID, it falls back
-// to byName, which looks up customers by name in the current app.
-func (r *runners) resolveCustomers(nameOrID string, byName func(appID, name string) ([]types.Customer, error)) ([]types.Customer, error) {
+// archived controls whether the name lookup matches archived or active customers.
+func (r *runners) resolveCustomer(nameOrID string, archived bool) (*types.Customer, error) {
 	c, err := r.api.GetCustomerByID(nameOrID)
 	if err == nil {
-		return []types.Customer{*c}, nil
+		return c, nil
 	}
 	if errors.Cause(err) != platformclient.ErrNotFound {
 		return nil, errors.Wrapf(err, "find customer %q", nameOrID)
@@ -48,10 +33,14 @@ func (r *runners) resolveCustomers(nameOrID string, byName func(appID, name stri
 		return nil, errors.New("no app specified: app is required when looking up customers by name")
 	}
 
-	customers, err := byName(r.appID, nameOrID)
+	if archived {
+		c, err = r.api.GetArchivedCustomerByName(r.appID, nameOrID)
+	} else {
+		c, err = r.api.GetCustomerByName(r.appID, nameOrID)
+	}
 	if err != nil {
 		return nil, errors.Wrapf(err, "find customer %q", nameOrID)
 	}
 
-	return customers, nil
+	return c, nil
 }

@@ -84,36 +84,19 @@ func (c *VendorV3Client) GetCustomerByID(customerID string) (*types.Customer, er
 }
 
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
-	return c.getCustomerByName(appID, name)
+	return c.getCustomerByName(appID, name, false)
 }
 
-// GetArchivedCustomersByName returns every archived customer whose name exactly matches name.
-// Active customers with the same name are skipped.
-func (c *VendorV3Client) GetArchivedCustomersByName(appID string, name string) ([]types.Customer, error) {
-	customers, err := c.listCustomersByName(appID, name, true)
-	if err != nil {
-		return nil, err
-	}
-
-	matches := []types.Customer{}
-	for _, customer := range customers {
-		// include_active=false does not exclude active customers from the search, so filter here
-		if customer.Name == name && customer.IsArchived {
-			matches = append(matches, customer)
-		}
-	}
-
-	if len(matches) == 0 {
-		return nil, ErrCustomerNotFound{Name: name}
-	}
-
-	return matches, nil
+// GetArchivedCustomerByName is like GetCustomerByName but only matches archived customers.
+// An archived customer can share its name with an active one, so active customers are skipped.
+func (c *VendorV3Client) GetArchivedCustomerByName(appID string, name string) (*types.Customer, error) {
+	return c.getCustomerByName(appID, name, true)
 }
 
-func (c *VendorV3Client) getCustomerByName(appID string, name string) (*types.Customer, error) {
+func (c *VendorV3Client) getCustomerByName(appID string, name string, archived bool) (*types.Customer, error) {
 	// Using the search API, we first to narrow down fuzzy matches to one exact match.
 	// Since search API may return stale data, we then also need to use the customer ID to get the exact customer record.
-	customers, err := c.listCustomersByName(appID, name, false)
+	customers, err := c.listCustomersByName(appID, name, archived)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +107,8 @@ func (c *VendorV3Client) getCustomerByName(appID string, name string) (*types.Cu
 
 	exactMatches := make([]*types.Customer, 0)
 	for _, customer := range customers {
-		if customer.Name == name {
+		// include_active=false does not exclude active customers from the search, so filter here
+		if customer.Name == name && customer.IsArchived == archived {
 			exactMatches = append(exactMatches, &customer)
 		}
 	}

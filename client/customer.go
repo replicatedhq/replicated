@@ -68,8 +68,8 @@ func (c *Client) GetCustomerByName(app string, name string) (*types.Customer, er
 	return c.KotsClient.GetCustomerByName(app, name)
 }
 
-func (c *Client) GetArchivedCustomersByName(app string, name string) ([]types.Customer, error) {
-	return c.KotsClient.GetArchivedCustomersByName(app, name)
+func (c *Client) GetArchivedCustomerByName(app string, name string) (*types.Customer, error) {
+	return c.KotsClient.GetArchivedCustomerByName(app, name)
 }
 
 func (c *Client) DownloadLicense(appType string, appID string, customerID string) ([]byte, error) {

@@ -51,7 +51,7 @@ func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, custo
 		return errors.Errorf("app required")
 	}
 
-	c, err := r.resolveCustomer(customer)
+	c, err := r.resolveCustomer(customer, false)
 	if err != nil {
 		return err
 	}

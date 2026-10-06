@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -16,9 +14,9 @@ func (r *runners) InitCustomersUnarchiveCommand(parent *cobra.Command) *cobra.Co
 This command restores a previously archived customer, making them
 visible in active customer lists again.
 
-The customer can be specified by either their name or ID. When a name
-matches more than one archived customer, all of them are unarchived.
-Active customers with the same name are not affected.`,
+The customer can be specified by either their name or ID. A name only
+matches archived customers. If more than one archived customer has that
+name, use the customer ID.`,
 		Example: `# Unarchive a customer by name
 replicated customer unarchive "Acme Inc"
 
@@ -51,20 +49,15 @@ func (r *runners) unarchiveCustomer(cmd *cobra.Command, customers []string) erro
 	}
 
 	for _, customer := range customers {
-		// an archived customer can share its name with other archived customers; unarchive all of them
-		matches, err := r.resolveCustomers(customer, r.api.GetArchivedCustomersByName)
+		c, err := r.resolveCustomer(customer, true)
 		if err != nil {
 			return err
 		}
 
-		for _, c := range matches {
-			if err := r.api.UnarchiveCustomer(c.ID); err != nil {
-				return errors.Wrapf(err, "unarchive customer %q (%s)", c.Name, c.ID)
-			}
-			fmt.Fprintf(r.w, "Unarchived customer %s (%s)\n", c.Name, c.ID)
+		if err := r.api.UnarchiveCustomer(c.ID); err != nil {
+			return errors.Wrapf(err, "unarchive customer %q", c.Name)
 		}
 	}
-	r.w.Flush()
 
 	return nil
 }
