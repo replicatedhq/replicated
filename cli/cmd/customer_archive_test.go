@@ -10,6 +10,7 @@ import (
 
 	"github.com/replicatedhq/replicated/client"
 	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -23,7 +24,7 @@ func TestCustomerArchiveByNameFallsBackAfterIDNotFound(t *testing.T) {
 		case r.Method == http.MethodGet && r.URL.Path == "/v3/customer/Acme":
 			http.Error(w, "not found", http.StatusNotFound)
 		case r.Method == http.MethodPost && r.URL.Path == "/v3/customers/search":
-			require.NoError(t, json.NewDecoder(r.Body).Decode(&searchBody))
+			assert.NoError(t, json.NewDecoder(r.Body).Decode(&searchBody))
 			_, _ = w.Write([]byte(`{"customers":[{"id":"cus-1","name":"Acme"}],"total_hits":1}`))
 		case r.Method == http.MethodGet && r.URL.Path == "/v3/customer/cus-1":
 			_, _ = w.Write([]byte(`{"customer":{"id":"cus-1","name":"Acme"}}`))

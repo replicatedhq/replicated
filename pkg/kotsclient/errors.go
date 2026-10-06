@@ -1,7 +1,8 @@
 package kotsclient
 
-import "github.com/pkg/errors"
+import "github.com/replicatedhq/replicated/pkg/platformclient"
 
 var (
-	ErrNotFound = errors.New("not found")
+	// ErrNotFound is the error returned for a 404 response from the API.
+	ErrNotFound = platformclient.ErrNotFound
 )

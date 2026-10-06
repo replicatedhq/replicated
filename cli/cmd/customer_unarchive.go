@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/platformclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -49,37 +47,12 @@ func (r *runners) unarchiveCustomer(cmd *cobra.Command, customers []string) erro
 	}
 
 	for _, customer := range customers {
-		var c *types.Customer
-
-		// try to get the customer as if we have an id first
-		cc, err := r.api.GetCustomerByID(customer)
-		if err != nil && errors.Cause(err) != platformclient.ErrNotFound {
-			return errors.Wrapf(err, "find customer %q", customer)
-		}
-		if cc != nil {
-			c = cc
-		}
-
-		if c == nil {
-			if !r.hasApp() {
-				return errors.New("no app specified: app is required when looking up customers by name")
-			}
-			// try to get the customer as if we have a name, including archived customers
-			cc, err := r.api.GetCustomerByNameIncludeArchived(r.appID, customer)
-			if err != nil {
-				return errors.Wrapf(err, "find customer %q", customer)
-			}
-			if cc != nil {
-				c = cc
-			}
-		}
-
-		if c == nil {
-			return errors.Errorf("customer %q not found", customer)
-		}
-
-		err = r.api.UnarchiveCustomer(c.ID)
+		c, err := r.resolveCustomer(customer, true)
 		if err != nil {
+			return err
+		}
+
+		if err := r.api.UnarchiveCustomer(c.ID); err != nil {
 			return errors.Wrapf(err, "unarchive customer %q", c.Name)
 		}
 	}
