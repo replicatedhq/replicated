@@ -65,7 +65,7 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error 
 	}
 
 	for _, customer := range customers {
-		c, err := r.resolveCustomer(customer, false)
+		c, err := r.resolveCustomer(customer)
 		if err != nil {
 			return err
 		}

@@ -30,6 +30,7 @@ type Customer struct {
 	IsSnapshotSupported               bool          `json:"isSnapshotSupported"`
 	IsSupportBundleUploadEnabled      bool          `json:"isSupportBundleUploadEnabled"`
 	IsGitopsSupported                 bool          `json:"isGitopsSupported"`
+	IsArchived                        bool          `json:"isArchived"`
 }
 
 func (c Customer) WithExpiryTime(expiryTime string) (Customer, error) {
