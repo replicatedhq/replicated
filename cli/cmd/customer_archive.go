@@ -31,6 +31,13 @@ replicated customer archive cus_abcdef123456 cus_xyz9876543210
 
 # Archive a customer in a specific app (if you have multiple apps)
 replicated customer archive --app myapp "Acme Inc"`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			// the hidden --customer flag can be used in place of args
+			if customer != "" {
+				return nil
+			}
+			return cobra.MinimumNArgs(1)(cmd, args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// for compatibility reasons, we want to continue to support --customer but also read from args[0] if that's set
 			customers := []string{}

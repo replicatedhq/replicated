@@ -28,6 +28,7 @@ replicated customer unarchive cus_abcdef123456 cus_xyz9876543210
 
 # Unarchive a customer in a specific app (if you have multiple apps)
 replicated customer unarchive --app myapp "Acme Inc"`,
+		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return r.unarchiveCustomer(cmd, args)
 		},
