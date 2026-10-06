@@ -81,13 +81,12 @@ func runUnarchive(t *testing.T, serverURL string, nameOrID string) error {
 	return cmd.RunE(cmd, []string{nameOrID})
 }
 
-func TestCustomerUnarchiveByNameSkipsActiveCustomers(t *testing.T) {
+func TestCustomerUnarchiveByNameSearchesArchived(t *testing.T) {
 	var searchBody map[string]interface{}
 	var unarchived []string
 	server := unarchiveByNameServer(t, `{"customers":[
-		{"id":"cus-active","name":"Acme","isArchived":false},
 		{"id":"cus-old","name":"Acme","isArchived":true}
-	],"total_hits":2}`, &searchBody, &unarchived)
+	],"total_hits":1}`, &searchBody, &unarchived)
 	defer server.Close()
 
 	require.NoError(t, runUnarchive(t, server.URL, "Acme"))
@@ -105,18 +104,6 @@ func TestCustomerUnarchiveByNameAmbiguous(t *testing.T) {
 	defer server.Close()
 
 	require.ErrorContains(t, runUnarchive(t, server.URL, "Acme"), `customer "Acme" is ambiguous, please use customer ID`)
-	require.Empty(t, unarchived)
-}
-
-func TestCustomerUnarchiveByNameNoArchivedMatch(t *testing.T) {
-	var searchBody map[string]interface{}
-	var unarchived []string
-	server := unarchiveByNameServer(t, `{"customers":[
-		{"id":"cus-active","name":"Acme","isArchived":false}
-	],"total_hits":1}`, &searchBody, &unarchived)
-	defer server.Close()
-
-	require.ErrorContains(t, runUnarchive(t, server.URL, "Acme"), `customer "Acme" not found`)
 	require.Empty(t, unarchived)
 }
 

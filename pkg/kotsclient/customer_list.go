@@ -107,8 +107,7 @@ func (c *VendorV3Client) getCustomerByName(appID string, name string, archived b
 
 	exactMatches := make([]*types.Customer, 0)
 	for _, customer := range customers {
-		// include_active=false does not exclude active customers from the search, so filter here
-		if customer.Name == name && customer.IsArchived == archived {
+		if customer.Name == name {
 			exactMatches = append(exactMatches, &customer)
 		}
 	}
