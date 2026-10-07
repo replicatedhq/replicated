@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
 	"github.com/replicatedhq/replicated/pkg/platformclient"
 	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
@@ -39,6 +40,11 @@ func (r *runners) resolveCustomer(nameOrID string, archived bool) (*types.Custom
 		c, err = r.api.GetCustomerByName(r.appID, nameOrID)
 	}
 	if err != nil {
+		// ErrCustomerNotFound already names the customer.
+		var notFound kotsclient.ErrCustomerNotFound
+		if errors.As(err, &notFound) {
+			return nil, err
+		}
 		return nil, errors.Wrapf(err, "find customer %q", nameOrID)
 	}
 

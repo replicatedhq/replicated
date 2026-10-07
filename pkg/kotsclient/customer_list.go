@@ -15,9 +15,14 @@ var _ error = ErrCustomerNotFound{}
 
 type ErrCustomerNotFound struct {
 	Name string
+	// Archived is set when the lookup only matched archived customers.
+	Archived bool
 }
 
 func (e ErrCustomerNotFound) Error() string {
+	if e.Archived {
+		return fmt.Sprintf("no archived customer named %q found; it may not be archived", e.Name)
+	}
 	return fmt.Sprintf("customer %q not found", e.Name)
 }
 
@@ -102,6 +107,9 @@ func (c *VendorV3Client) getCustomerByName(appID string, name string, archived b
 	}
 
 	if len(customers) == 0 {
+		if archived {
+			return nil, ErrCustomerNotFound{Name: name, Archived: true}
+		}
 		return nil, platformclient.ErrNotFound
 	}
 
@@ -115,7 +123,7 @@ func (c *VendorV3Client) getCustomerByName(appID string, name string, archived b
 	}
 
 	if len(exactMatches) == 0 {
-		return nil, ErrCustomerNotFound{Name: name}
+		return nil, ErrCustomerNotFound{Name: name, Archived: archived}
 	}
 
 	if len(exactMatches) > 1 {

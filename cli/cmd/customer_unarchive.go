@@ -54,6 +54,11 @@ func (r *runners) unarchiveCustomer(cmd *cobra.Command, customers []string) erro
 			return err
 		}
 
+		// A lookup by ID also returns active customers, and the API accepts unarchiving them.
+		if !c.IsArchived {
+			return errors.Errorf("customer %q is not archived", c.Name)
+		}
+
 		if err := r.api.UnarchiveCustomer(c.ID); err != nil {
 			return errors.Wrapf(err, "unarchive customer %q", c.Name)
 		}

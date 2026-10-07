@@ -17,32 +17,40 @@ import (
 
 func TestCustomerUnarchiveByID(t *testing.T) {
 	var unarchived []string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := unarchiveByIDServer(t, true, &unarchived)
+	defer server.Close()
+
+	require.NoError(t, runUnarchive(t, server.URL, "cus-1"))
+	require.Equal(t, []string{"cus-1"}, unarchived)
+}
+
+func TestCustomerUnarchiveByIDNotArchived(t *testing.T) {
+	var unarchived []string
+	server := unarchiveByIDServer(t, false, &unarchived)
+	defer server.Close()
+
+	require.EqualError(t, runUnarchive(t, server.URL, "cus-1"), `customer "Acme" is not archived`)
+	require.Empty(t, unarchived)
+}
+
+// unarchiveByIDServer fakes the vendor API for an unarchive of customer cus-1.
+// Every unarchive call is recorded in unarchived.
+func unarchiveByIDServer(t *testing.T, archived bool, unarchived *[]string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		switch {
 		case r.Method == http.MethodGet && r.URL.Path == "/v3/customer/cus-1":
-			_, _ = w.Write([]byte(`{"customer":{"id":"cus-1","name":"Acme"}}`))
+			assert.NoError(t, json.NewEncoder(w).Encode(map[string]interface{}{
+				"customer": map[string]interface{}{"id": "cus-1", "name": "Acme", "isArchived": archived},
+			}))
 		case r.Method == http.MethodPost && r.URL.Path == "/v3/customer/cus-1/unarchive":
-			unarchived = append(unarchived, "cus-1")
+			*unarchived = append(*unarchived, "cus-1")
 			w.WriteHeader(http.StatusNoContent)
 		default:
 			http.Error(w, "unexpected request", http.StatusNotFound)
 		}
 	}))
-	defer server.Close()
-
-	r := &runners{
-		appID:   "app-id",
-		appType: "kots",
-		api:     client.NewClient(server.URL, "fake-api-key", ""),
-		w:       tabwriter.NewWriter(io.Discard, 0, 0, 0, ' ', 0),
-	}
-
-	parent := r.InitCustomersCommand(&cobra.Command{Use: "replicated"})
-	cmd := r.InitCustomersUnarchiveCommand(parent)
-	require.NoError(t, cmd.RunE(cmd, []string{"cus-1"}))
-	require.Equal(t, []string{"cus-1"}, unarchived)
 }
 
 // unarchiveByNameServer fakes the vendor API for an unarchive by name of "Acme".
@@ -116,7 +124,17 @@ func TestCustomerUnarchiveByNameNoArchivedMatch(t *testing.T) {
 	],"total_hits":1}`, &searchBody, &unarchived)
 	defer server.Close()
 
-	require.ErrorContains(t, runUnarchive(t, server.URL, "Acme"), `customer "Acme" not found`)
+	require.EqualError(t, runUnarchive(t, server.URL, "Acme"), `no archived customer named "Acme" found; it may not be archived`)
+	require.Empty(t, unarchived)
+}
+
+func TestCustomerUnarchiveByNameNoSearchResults(t *testing.T) {
+	var searchBody map[string]interface{}
+	var unarchived []string
+	server := unarchiveByNameServer(t, `{"customers":[],"total_hits":0}`, &searchBody, &unarchived)
+	defer server.Close()
+
+	require.EqualError(t, runUnarchive(t, server.URL, "Acme"), `no archived customer named "Acme" found; it may not be archived`)
 	require.Empty(t, unarchived)
 }
 
