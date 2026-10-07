@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -49,34 +47,13 @@ replicated enterprise-portal invite --app myapp --customer "ACME Inc" user1@exam
 }
 
 func (r *runners) enterprisePortalInvite(cmd *cobra.Command, appID string, customer string, emailAddresses []string) error {
-	var c *types.Customer
-
-	// try to get the customer as if we have an id first
-	cc, err := r.api.GetCustomerByID(customer)
-	if err != nil && err != kotsclient.ErrNotFound {
-		return errors.Wrapf(err, "find customer %q", customer)
-	}
-	if cc != nil {
-		c = cc
-	}
-
 	if appID == "" {
 		return errors.Errorf("app required")
 	}
 
-	if c == nil {
-		// try to get the customer as if we have a name
-		cc, err := r.api.GetCustomerByName(r.appID, customer)
-		if err != nil {
-			return errors.Wrapf(err, "find customer %q", customer)
-		}
-		if cc != nil {
-			c = cc
-		}
-	}
-
-	if c == nil {
-		return errors.Errorf("customer %q not found", customer)
+	c, err := r.resolveCustomer(customer, false)
+	if err != nil {
+		return err
 	}
 
 	for _, emailAddress := range emailAddresses {

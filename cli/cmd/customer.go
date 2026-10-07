@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
+	"github.com/replicatedhq/replicated/pkg/kotsclient"
+	"github.com/replicatedhq/replicated/pkg/platformclient"
+	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -13,4 +17,36 @@ func (r *runners) InitCustomersCommand(parent *cobra.Command) *cobra.Command {
 	parent.AddCommand(customersCmd)
 
 	return customersCmd
+}
+
+// resolveCustomer looks up a customer by ID first, then by name in the current app.
+// archived controls whether the name lookup matches archived or active customers.
+func (r *runners) resolveCustomer(nameOrID string, archived bool) (*types.Customer, error) {
+	c, err := r.api.GetCustomerByID(nameOrID)
+	if err == nil {
+		return c, nil
+	}
+	if errors.Cause(err) != platformclient.ErrNotFound {
+		return nil, errors.Wrapf(err, "find customer %q", nameOrID)
+	}
+
+	if !r.hasApp() {
+		return nil, errors.New("no app specified: app is required when looking up customers by name")
+	}
+
+	if archived {
+		c, err = r.api.GetArchivedCustomerByName(r.appID, nameOrID)
+	} else {
+		c, err = r.api.GetCustomerByName(r.appID, nameOrID)
+	}
+	if err != nil {
+		// ErrCustomerNotFound already names the customer.
+		var notFound kotsclient.ErrCustomerNotFound
+		if errors.As(err, &notFound) {
+			return nil, err
+		}
+		return nil, errors.Wrapf(err, "find customer %q", nameOrID)
+	}
+
+	return c, nil
 }

@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"github.com/pkg/errors"
-	"github.com/replicatedhq/replicated/pkg/kotsclient"
-	"github.com/replicatedhq/replicated/pkg/types"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +29,13 @@ replicated customer archive cus_abcdef123456 cus_xyz9876543210
 
 # Archive a customer in a specific app (if you have multiple apps)
 replicated customer archive --app myapp "Acme Inc"`,
+		Args: func(cmd *cobra.Command, args []string) error {
+			// the hidden --customer flag can be used in place of args
+			if customer != "" {
+				return nil
+			}
+			return cobra.MinimumNArgs(1)(cmd, args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// for compatibility reasons, we want to continue to support --customer but also read from args[0] if that's set
 			customers := []string{}
@@ -60,37 +65,12 @@ func (r *runners) archiveCustomer(cmd *cobra.Command, customers []string) error 
 	}
 
 	for _, customer := range customers {
-		var c *types.Customer
-
-		// try to get the customer as if we have an id first
-		cc, err := r.api.GetCustomerByID(customer)
-		if err != nil && err != kotsclient.ErrNotFound {
-			return errors.Wrapf(err, "find customer %q", customer)
-		}
-		if cc != nil {
-			c = cc
-		}
-
-		if c == nil {
-			if !r.hasApp() {
-				return errors.New("no app specified: app is required when looking up customers by name")
-			}
-			// try to get the customer as if we have a name
-			cc, err := r.api.GetCustomerByName(r.appID, customer)
-			if err != nil {
-				return errors.Wrapf(err, "find customer %q", customer)
-			}
-			if cc != nil {
-				c = cc
-			}
-		}
-
-		if c == nil {
-			return errors.Errorf("customer %q not found", customer)
-		}
-
-		err = r.api.ArchiveCustomer(c.ID)
+		c, err := r.resolveCustomer(customer, false)
 		if err != nil {
+			return err
+		}
+
+		if err := r.api.ArchiveCustomer(c.ID); err != nil {
 			return errors.Wrapf(err, "archive customer %q", c.Name)
 		}
 	}

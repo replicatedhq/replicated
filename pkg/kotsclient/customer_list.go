@@ -15,9 +15,14 @@ var _ error = ErrCustomerNotFound{}
 
 type ErrCustomerNotFound struct {
 	Name string
+	// Archived is set when the lookup only matched archived customers.
+	Archived bool
 }
 
 func (e ErrCustomerNotFound) Error() string {
+	if e.Archived {
+		return fmt.Sprintf("no archived customer named %q found; it may not be archived", e.Name)
+	}
 	return fmt.Sprintf("customer %q not found", e.Name)
 }
 
@@ -84,26 +89,41 @@ func (c *VendorV3Client) GetCustomerByID(customerID string) (*types.Customer, er
 }
 
 func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Customer, error) {
+	return c.getCustomerByName(appID, name, false)
+}
+
+// GetArchivedCustomerByName is like GetCustomerByName but only matches archived customers.
+// An archived customer can share its name with an active one, so active customers are skipped.
+func (c *VendorV3Client) GetArchivedCustomerByName(appID string, name string) (*types.Customer, error) {
+	return c.getCustomerByName(appID, name, true)
+}
+
+func (c *VendorV3Client) getCustomerByName(appID string, name string, archived bool) (*types.Customer, error) {
 	// Using the search API, we first to narrow down fuzzy matches to one exact match.
 	// Since search API may return stale data, we then also need to use the customer ID to get the exact customer record.
-	customers, err := c.listCustomersByName(appID, name)
+	customers, err := c.listCustomersByName(appID, name, archived)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(customers) == 0 {
+		if archived {
+			return nil, ErrCustomerNotFound{Name: name, Archived: true}
+		}
 		return nil, platformclient.ErrNotFound
 	}
 
 	exactMatches := make([]*types.Customer, 0)
 	for _, customer := range customers {
-		if customer.Name == name {
+		// include_archived adds archived customers to the results but the search API has no archived-only filter, so filter here.
+		// (include_active is unrelated: it filters on recent instance activity.)
+		if customer.Name == name && customer.IsArchived == archived {
 			exactMatches = append(exactMatches, &customer)
 		}
 	}
 
 	if len(exactMatches) == 0 {
-		return nil, ErrCustomerNotFound{Name: name}
+		return nil, ErrCustomerNotFound{Name: name, Archived: archived}
 	}
 
 	if len(exactMatches) > 1 {
@@ -120,7 +140,7 @@ func (c *VendorV3Client) GetCustomerByName(appID string, name string) (*types.Cu
 
 // This function will use the search API to find customers by name, which uses fuzzy matching, so it may return multiple customers with similar names.
 // In most practical cases, this is still faster than using the /cutomers API to list all customers for the app.
-func (c *VendorV3Client) listCustomersByName(appID string, name string) ([]types.Customer, error) {
+func (c *VendorV3Client) listCustomersByName(appID string, name string, includeArchived bool) ([]types.Customer, error) {
 	if name == "" {
 		return nil, errors.New("name is required to search customers")
 	}
@@ -148,7 +168,7 @@ func (c *VendorV3Client) listCustomersByName(appID string, name string) ([]types
 			PageSize:         100,
 			Query:            fmt.Sprintf("name:%s", name),
 			IncludeActive:    true,
-			IncluseArchived:  false,
+			IncluseArchived:  includeArchived,
 			IncludeCommunity: true,
 			IncludeDev:       true,
 			IncludeInactive:  true,
