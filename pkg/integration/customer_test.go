@@ -161,7 +161,7 @@ func (f *fakeCustomerAPI) server(t *testing.T) *httptest.Server {
 		json.NewEncoder(w).Encode(map[string]interface{}{"customers": customers, "total_hits": len(customers)})
 	})
 
-	record := func(w http.ResponseWriter, req *http.Request) {
+	record := func(_ http.ResponseWriter, req *http.Request) {
 		f.mu.Lock()
 		f.writes = append(f.writes, req.Method+" "+req.URL.Path)
 		f.mu.Unlock()
