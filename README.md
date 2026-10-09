@@ -178,13 +178,13 @@ The release process:
 4. Builds and publishes binaries to GitHub Releases
 5. Publishes Docker images to Docker Hub (as `replicated/vendor-cli`)
 
-Once the release is out, if there any changes to CLI commands or parameters, new docs have to be generated:
+After a tagged release is published, the docs job dispatches the
+[CLI docs workflow](https://github.com/replicatedhq/replicated-docs/blob/main/.depot/workflows/replicated-cli-docs.yml)
+in the docs repository. That workflow generates docs from the latest published CLI
+release and creates or updates a PR, which needs to be reviewed and merged.
 
-```bash
-make docs
-```
-
-This will create a PR in https://github.com/replicatedhq/replicated-docs, which then needs to be reviewed and merged.
+The dispatch job requires a `DEPOT_ORG_TOKEN` CI secret containing a Depot API token
+with access to the docs repository.
 
 ### Regenerating Client Code
 
