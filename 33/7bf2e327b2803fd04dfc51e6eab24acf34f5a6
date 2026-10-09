@@ -1,0 +1,23 @@
+.depot/workflows/release.yml
+  s_8a100132200b4f::t_95065bd63dbb6a 100-101,103-104
+  s_8a100132200b4f::t_ee143242c733e1 105-111
+  s_8a100132200b4f::t_e9078963d05b72 13-14,35,38,61-62,85
+README.md
+  s_8a100132200b4f::t_95065bd63dbb6a 181-184,186-187
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "337bf2e327b2803fd04dfc51e6eab24acf34f5a6",
+  "prompts": {},
+  "sessions": {
+    "s_8a100132200b4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a12270-a6e9-7683-a947-1f833bb82307",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": null
+    }
+  }
+}
