@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetFeaturesRespectsCanceledContext(t *testing.T) {
@@ -160,4 +162,44 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 	return f(r)
+}
+
+func TestResponseBodyToErrorMessage(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		want string
+	}{
+		{
+			name: "v3 error key surfaces its message",
+			body: `{"error":"A release sequence conflict occurred. It is safe to retry this request."}`,
+			want: "A release sequence conflict occurred. It is safe to retry this request.",
+		},
+		{
+			name: "message key still wins over error key",
+			body: `{"message":"the message","error":"the error"}`,
+			want: "the message",
+		},
+		{
+			name: "known error code maps to its friendly message",
+			body: `{"error_code":"CUSTOMER_CHANNEL_ERROR"}`,
+			want: knownErrorCodes["CUSTOMER_CHANNEL_ERROR"],
+		},
+		{
+			name: "non-JSON body passes through",
+			body: "gateway timeout",
+			want: "gateway timeout",
+		},
+		{
+			name: "JSON without a recognized key passes through",
+			body: `{"foo":"bar"}`,
+			want: `{"foo":"bar"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Equal(t, tt.want, responseBodyToErrorMessage([]byte(tt.body)))
+		})
+	}
 }
