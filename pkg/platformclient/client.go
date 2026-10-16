@@ -361,5 +361,10 @@ func responseBodyToErrorMessage(body []byte) string {
 		return m
 	}
 
+	// The v3 vendor API reports errors as {"error": "..."}.
+	if m, ok := u["error"].(string); ok && m != "" {
+		return m
+	}
+
 	return string(body)
 }
