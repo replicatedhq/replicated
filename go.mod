@@ -36,10 +36,10 @@ require (
 	golang.org/x/term v0.47.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.22.0
+	helm.sh/helm/v3 v3.22.1
 	k8s.io/apimachinery v0.37.1
 	k8s.io/client-go v0.37.1
-	oras.land/oras-go/v2 v2.6.3
+	oras.land/oras-go/v2 v2.6.4
 )
 
 require (
@@ -112,7 +112,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/distribution/distribution/v3 v3.1.2 // indirect
 	github.com/docker/cli v29.9.0+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.9.10 // indirect
 	github.com/ebitengine/purego v0.11.1 // indirect
