@@ -375,6 +375,11 @@ func Execute(rootCmd *cobra.Command, stdin io.Reader, stdout io.Writer, stderr i
 	runCmds.rootCmd.SetUsageTemplate(rootCmdUsageTmpl)
 
 	preRunSetupAPIs := func(cmd *cobra.Command, args []string) error {
+		// Subcommands' PersistentPreRunE shadows the root PersistentPreRun, so
+		// enable debug mode here too for --debug to take effect.
+		if debugFlag {
+			version.SetDebugMode(true)
+		}
 		runCmds.resolveOutputFormat(cmd)
 		if apiToken == "" {
 			// Try to load profile from --profile flag, then default profile

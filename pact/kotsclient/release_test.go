@@ -88,7 +88,7 @@ func Test_ListReleases(t *testing.T) {
 		api := platformclient.NewHTTPClient(u, "replicated-cli-list-releases-token")
 		client := realkotsclient.VendorV3Client{HTTPClient: *api}
 
-		releases, err := client.ListReleases("replicated-cli-list-releases-app")
+		releases, err := client.ListReleases("replicated-cli-list-releases-app", 0, 0)
 		assert.NoError(t, err)
 
 		assert.Len(t, releases, 2)

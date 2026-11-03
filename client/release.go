@@ -5,8 +5,13 @@ import (
 	"github.com/replicatedhq/replicated/pkg/types"
 )
 
-func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo, error) {
+// ListReleases returns the app's releases, newest first. A limit of 0 returns all releases.
+// pageSize sets how many releases are fetched per request; 0 uses the default.
+func (c *Client) ListReleases(appID string, appType string, limit int, pageSize int) ([]types.ReleaseInfo, error) {
 	if appType == "platform" {
+		if pageSize > 0 {
+			return nil, errors.New("Listing releases by page is not currently supported for Platform applications.")
+		}
 		platformReleases, err := c.PlatformClient.ListReleases(appID)
 		if err != nil {
 			return nil, err
@@ -37,10 +42,14 @@ func (c *Client) ListReleases(appID string, appType string) ([]types.ReleaseInfo
 			releaseInfos = append(releaseInfos, releaseInfo)
 		}
 
+		if limit > 0 && len(releaseInfos) > limit {
+			releaseInfos = releaseInfos[:limit]
+		}
+
 		return releaseInfos, nil
 
 	} else if appType == "kots" {
-		return c.KotsClient.ListReleases(appID)
+		return c.KotsClient.ListReleases(appID, limit, pageSize)
 	}
 
 	return nil, errors.Errorf("unknown app type %q", appType)
@@ -138,5 +147,15 @@ func (c *Client) LintRelease(appType string, data []byte, isBuildersRelease bool
 		return c.KotsClient.LintRelease(data, isBuildersRelease, contentType)
 	}
 
+	return nil, errors.Errorf("unknown app type %q", appType)
+}
+
+// ListReleasesPaged returns one page of the app's releases, newest first. page is 0-indexed.
+func (c *Client) ListReleasesPaged(appID string, appType string, page int, pageSize int) ([]types.ReleaseInfo, error) {
+	if appType == "platform" {
+		return nil, errors.New("Listing releases by page is not currently supported for Platform applications.")
+	} else if appType == "kots" {
+		return c.KotsClient.ListReleasesPaged(appID, page, pageSize)
+	}
 	return nil, errors.Errorf("unknown app type %q", appType)
 }

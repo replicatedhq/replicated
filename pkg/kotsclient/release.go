@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/replicatedhq/replicated/pkg/graphql"
 	"github.com/replicatedhq/replicated/pkg/types"
+	"github.com/replicatedhq/replicated/pkg/version"
 )
 
 type GraphQLResponseListReleases struct {
@@ -129,50 +131,75 @@ func (c *VendorV3Client) UpdateRelease(appID string, sequence int64, multiyaml s
 	return nil
 }
 
-func (c *VendorV3Client) ListReleases(appID string) ([]types.ReleaseInfo, error) {
-	allReleases := []types.ReleaseInfo{}
-	done := false
-	page := 0
-	for !done {
-		resp := types.KotsListReleasesResponse{}
-		path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=20", appID, page)
-		err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
-		if err != nil {
-			done = true
-			continue
-		}
-		page += 1
-		for _, release := range resp.Releases {
-			activeChannels := []types.Channel{}
-
-			for _, kotsReleaseChannel := range release.Channels {
-				if kotsReleaseChannel.IsArchived {
-					continue
-				}
-				activeChannel := types.Channel{
-					ID:   kotsReleaseChannel.ID,
-					Name: kotsReleaseChannel.Name,
-				}
-				activeChannels = append(activeChannels, activeChannel)
-			}
-
-			newReleaseInfo := types.ReleaseInfo{
-				ActiveChannels: activeChannels,
-				AppID:          release.AppID,
-				CreatedAt:      release.CreatedAt,
-				Editable:       !release.IsReleaseNotEditable,
-				Sequence:       release.Sequence,
-			}
-			allReleases = append(allReleases, newReleaseInfo)
-		}
-
-		if len(resp.Releases) == 0 {
-			done = true
-			continue
+// ListReleases returns the app's releases, newest first, fetching pageSize releases per request.
+// A limit of 0 returns all releases. A pageSize of 0 uses the default of 20, or limit if smaller.
+func (c *VendorV3Client) ListReleases(appID string, limit int, pageSize int) ([]types.ReleaseInfo, error) {
+	if pageSize == 0 {
+		pageSize = 20
+		if limit > 0 && limit < pageSize {
+			pageSize = limit
 		}
 	}
 
+	allReleases := []types.ReleaseInfo{}
+	page := 0
+	for {
+		if version.IsDebugMode() {
+			fmt.Fprintf(os.Stderr, "[DEBUG] Fetching releases page %d (%d releases so far)\n", page, len(allReleases))
+		}
+		releases, err := c.ListReleasesPaged(appID, page, pageSize)
+		if err != nil {
+			return nil, err
+		}
+		if len(releases) == 0 {
+			break
+		}
+		allReleases = append(allReleases, releases...)
+		if limit > 0 && len(allReleases) >= limit {
+			allReleases = allReleases[:limit]
+			break
+		}
+		page += 1
+	}
+
 	return allReleases, nil
+}
+
+// ListReleasesPaged returns one page of the app's releases, newest first. page is 0-indexed.
+func (c *VendorV3Client) ListReleasesPaged(appID string, page int, pageSize int) ([]types.ReleaseInfo, error) {
+	resp := types.KotsListReleasesResponse{}
+	path := fmt.Sprintf("/v3/app/%s/releases?currentPage=%d&pageSize=%d", appID, page, pageSize)
+	err := c.DoJSON(context.TODO(), "GET", path, http.StatusOK, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "list releases")
+	}
+
+	releases := []types.ReleaseInfo{}
+	for _, release := range resp.Releases {
+		activeChannels := []types.Channel{}
+
+		for _, kotsReleaseChannel := range release.Channels {
+			if kotsReleaseChannel.IsArchived {
+				continue
+			}
+			activeChannel := types.Channel{
+				ID:   kotsReleaseChannel.ID,
+				Name: kotsReleaseChannel.Name,
+			}
+			activeChannels = append(activeChannels, activeChannel)
+		}
+
+		newReleaseInfo := types.ReleaseInfo{
+			ActiveChannels: activeChannels,
+			AppID:          release.AppID,
+			CreatedAt:      release.CreatedAt,
+			Editable:       !release.IsReleaseNotEditable,
+			Sequence:       release.Sequence,
+		}
+		releases = append(releases, newReleaseInfo)
+	}
+
+	return releases, nil
 }
 
 func (c *VendorV3Client) PromoteRelease(appID string, opts types.PromoteReleaseOptions) (*types.PromoteReleaseResponse, error) {
