@@ -18,6 +18,11 @@ func SetDebugMode(debug bool) {
 	debugMode = debug
 }
 
+// IsDebugMode reports whether debug mode is enabled
+func IsDebugMode() bool {
+	return debugMode
+}
+
 // debugLog logs messages when debug mode is enabled
 func debugLog(format string, args ...interface{}) {
 	if debugMode {
