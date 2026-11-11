@@ -1,0 +1,25 @@
+cli/cmd/enterprise_portal_preview.go
+  s_0255c4a7314532::t_3fe8ea24aa6899 50,186,188,192,194-197,220,304-312,318,321,326,330,333,338,340
+cli/cmd/enterprise_portal_preview_metadata.go
+  s_0255c4a7314532::t_6bffe1dccfbda9 1-123
+cli/cmd/enterprise_portal_preview_metadata_test.go
+  s_0255c4a7314532::t_59176af27879f5 1-7,9-36,40-55,59-103,112-121
+  s_0255c4a7314532::t_ba4b11db24469b 8,37-39,104-111
+  s_0255c4a7314532::t_de58b6abb940e7 56-58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0918810027af4331f227575938e273da4d7fb2a4",
+  "prompts": {},
+  "sessions": {
+    "s_0255c4a7314532": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1cc27-f5a4-7692-969e-76d4ceeb02e4",
+        "model": "gpt-6-sol"
+      },
+      "human_author": "Lawrence Lee Keener <lawrence@replicated.com>"
+    }
+  }
+}
