@@ -47,6 +47,7 @@ services:
       - REPLICATED_APP={{.AppSlug}}
       - REPLICATED_API_TOKEN=${REPLICATED_API_TOKEN}
       - EP_PREVIEW_CUSTOMERS_JSON=${EP_PREVIEW_CUSTOMERS_JSON}
+      - EP_PREVIEW_METADATA_JSON=${EP_PREVIEW_METADATA_JSON}
 `
 
 type composeTemplateData struct {
@@ -182,13 +183,18 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 	// Pre-fetch the real customer list + licenses so the preview toolbar can
 	// offer a switcher. Without a token we skip this and the switcher is hidden.
 	customersB64 := ""
+	metadataB64 := ""
 	if token != "" {
-		b64, err := buildPreviewCustomersEnv(cmd.Context(), appSlug, token)
+		customers, err := buildPreviewCustomersEnv(cmd.Context(), appSlug, token)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not fetch customers (%v) — switcher will be hidden\n", err)
 		} else {
-			customersB64 = b64
+			customersB64 = customers.encoded
 			fmt.Fprintf(os.Stderr, "Loaded customers — switcher available in preview UI\n")
+			metadataB64, err = buildPreviewMetadataEnv(cmd.Context(), customers.appID, customers.customerIDs, token)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: customer release metadata unavailable (%v); draft branches remain available\n", err)
+			}
 		}
 	} else {
 		fmt.Fprintf(os.Stderr, "No API token found — preview will use mock customer data\n")
@@ -211,6 +217,7 @@ func (r *runners) enterprisePortalPreview(cmd *cobra.Command, args []string) err
 	dockerCmd.Env = append(os.Environ(),
 		"REPLICATED_API_TOKEN="+token,
 		"EP_PREVIEW_CUSTOMERS_JSON="+customersB64,
+		"EP_PREVIEW_METADATA_JSON="+metadataB64,
 	)
 
 	if err := dockerCmd.Run(); err != nil {
@@ -294,36 +301,43 @@ type previewEntitlementValue struct {
 	Value string `json:"value"`
 }
 
-// buildPreviewCustomersEnv fetches the app + its customers from the vendor API
-// and returns a base64-encoded JSON array of License-shaped objects suitable
-// for the EP_PREVIEW_CUSTOMERS_JSON env var.
-func buildPreviewCustomersEnv(ctx context.Context, appSlug, token string) (string, error) {
+type previewCustomersBundle struct {
+	appID       string
+	customerIDs []string
+	encoded     string
+}
+
+// buildPreviewCustomersEnv fetches the app and customers once for both preview
+// transports. encoded is the existing License-shaped customer array.
+func buildPreviewCustomersEnv(ctx context.Context, appSlug, token string) (previewCustomersBundle, error) {
 	httpClient := platformclient.NewHTTPClient(platformOrigin, token)
 	client := &kotsclient.VendorV3Client{HTTPClient: *httpClient}
 
 	app, err := client.GetApp(ctx, appSlug, true)
 	if err != nil {
-		return "", errors.Wrap(err, "get app")
+		return previewCustomersBundle{}, errors.Wrap(err, "get app")
 	}
 	if app == nil {
-		return "", errors.Errorf("app %q not found", appSlug)
+		return previewCustomersBundle{}, errors.Errorf("app %q not found", appSlug)
 	}
 
 	customers, err := client.ListCustomers(app.ID, false)
 	if err != nil {
-		return "", errors.Wrap(err, "list customers")
+		return previewCustomersBundle{}, errors.Wrap(err, "list customers")
 	}
 
 	out := make([]previewLicense, 0, len(customers))
+	ids := make([]string, 0, len(customers))
 	for _, cust := range customers {
 		out = append(out, customerToPreviewLicense(app, cust))
+		ids = append(ids, cust.ID)
 	}
 
 	raw, err := json.Marshal(out)
 	if err != nil {
-		return "", errors.Wrap(err, "encode customers")
+		return previewCustomersBundle{}, errors.Wrap(err, "encode customers")
 	}
-	return base64.StdEncoding.EncodeToString(raw), nil
+	return previewCustomersBundle{appID: app.ID, customerIDs: ids, encoded: base64.StdEncoding.EncodeToString(raw)}, nil
 }
 
 func customerToPreviewLicense(app *types.App, c types.Customer) previewLicense {
