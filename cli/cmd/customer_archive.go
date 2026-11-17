@@ -14,8 +14,13 @@ func (r *runners) InitCustomersArchiveCommand(parent *cobra.Command) *cobra.Comm
 		Long: `Archive a customer for the current application.
 
 This command allows you to archive a customer record. Archiving a customer
-will make their license inactive and remove them from active customer lists.
-This action is reversible - you can unarchive a customer later if needed.
+removes them from active customer lists. It is not a way to cut off the
+customer's access. Some requests that use an archived customer's license are
+rejected, such as logging in to the Replicated registry, but not all of them.
+To stop a customer from installing, updating, or pulling images, set an
+expiration date first with 'replicated customer update --expires-at'.
+
+This action is reversible. You can unarchive a customer later if needed.
 
 The customer can be specified by either their name or ID.`,
 		Example: `# Archive a customer by name
