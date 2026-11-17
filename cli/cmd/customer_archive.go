@@ -18,7 +18,8 @@ removes them from active customer lists. It is not a way to cut off the
 customer's access. Some requests that use an archived customer's license are
 rejected, such as logging in to the Replicated registry, but not all of them.
 To stop a customer from installing, updating, or pulling images, set an
-expiration date first with 'replicated customer update --expires-at'.
+expiration date first with
+'replicated customer update --customer <customer_id> --expires-at <date>'.
 
 This action is reversible. You can unarchive a customer later if needed.
 
