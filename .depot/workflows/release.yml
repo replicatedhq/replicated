@@ -100,12 +100,12 @@ jobs:
       - uses: depot/setup-action@91bc8495a33ebfc504ffc89e5674379ccf23c29c # v1
       - name: Dispatch CLI docs workflow
         env:
-          DEPOT_CI_DISPATCH_TOKEN: ${{ secrets.DEPOT_CI_DISPATCH_TOKEN }}
+          DEPOT_ORG_TOKEN: ${{ secrets.DEPOT_ORG_TOKEN }}
         run: |
-          : "${DEPOT_CI_DISPATCH_TOKEN:?DEPOT_CI_DISPATCH_TOKEN is required to dispatch the docs workflow}"
+          : "${DEPOT_ORG_TOKEN:?DEPOT_ORG_TOKEN is required to dispatch the docs workflow}"
           depot ci dispatch \
             --repo replicatedhq/replicated-docs \
             --workflow replicated-cli-docs.yml \
             --ref main \
             --input dry_run=false \
-            --token "$DEPOT_CI_DISPATCH_TOKEN"
+            --token "$DEPOT_ORG_TOKEN"

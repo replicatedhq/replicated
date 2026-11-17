@@ -183,7 +183,7 @@ After a tagged release is published, the docs job dispatches the
 in the docs repository. That workflow generates docs from the latest published CLI
 release and creates or updates a PR, which needs to be reviewed and merged.
 
-The dispatch job requires a `DEPOT_CI_DISPATCH_TOKEN` CI secret containing a Depot API token
+The dispatch job requires a `DEPOT_ORG_TOKEN` CI secret containing a Depot API token
 with access to the docs repository.
 
 ### Regenerating Client Code
